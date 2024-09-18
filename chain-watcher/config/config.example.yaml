@@ -1,0 +1,25 @@
+database:
+  url: postgresql://username:password@localhost:5432/chain_watcher
+
+chain:
+  name: Polkadot
+
+environment: development
+
+rabbitmq:
+  url: amqp://username:password@localhost:5672
+  queue: chain_watcher_queue
+
+monitoring_config_sources:
+  - name: polkadot-governance-config
+    url: https://gitlab.com/org/polkadot-governance-config.git
+    branch: main
+    auth_token: gitlab_access_token  # Optional, if not provided assumes public repo
+
+  - name: kusama-validator-config
+    url: https://github.com/org/kusama-validator-config.git
+    branch: development
+    auth_token: access_token
+
+logging:
+  level: info
