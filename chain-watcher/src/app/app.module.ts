@@ -1,11 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { Logger } from '@nestjs/common';
-
 import { ProcessedBlockModule } from './block-tracker/block-tracker.module';
 import { AppService } from './app.service';
-import { ChainWatcherConfigService } from './config-services/chain-watcher-config.service';
 import { AppConfigService } from './config-services/app-config.service';
+import { MonitoringConfigService } from './config-services/monitoring-config.service';
+import { ConfigService } from './config-services/config.service';
 
 @Module({
   imports: [
@@ -15,8 +14,15 @@ import { AppConfigService } from './config-services/app-config.service';
   providers: [
     Logger,
     AppService,
-    ChainWatcherConfigService,
-    AppConfigService
+    AppConfigService,
+    MonitoringConfigService,
+    ConfigService,
   ],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(private monitoringConfigService: MonitoringConfigService) {}
+
+  async onModuleInit() {
+    await this.monitoringConfigService.initialize();
+  }
+}

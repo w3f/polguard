@@ -3,6 +3,10 @@ database:
 
 chain:
   name: Polkadot
+  rpcs:
+    - wss://rpc.polkadot.w3f.local
+    - wss://polkadot.api.onfinality.io/public-ws
+    - wss://polkadot-rpc.dwellir.com
 
 environment: development
 

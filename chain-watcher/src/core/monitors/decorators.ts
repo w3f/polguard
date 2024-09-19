@@ -1,26 +1,41 @@
 export function EventHandler(eventName: string) {
-  return function (target: any, propertyKey: string) {
-    if (!target.constructor.eventHandlers) {
-      target.constructor.eventHandlers = new Map<string, string>();
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    if (!target.constructor.prototype.eventHandlers) {
+      target.constructor.prototype.eventHandlers = new Map<string, string>();
     }
-    target.constructor.eventHandlers.set(eventName, propertyKey);
+    target.constructor.prototype.eventHandlers.set(eventName, propertyKey);
+    return descriptor;
   };
 }
-  
+
 export function CallHandler(callName: string) {
-  return function (target: any, propertyKey: string) {
-    if (!target.constructor.callHandlers) {
-      target.constructor.callHandlers = new Map<string, string>();
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    if (!target.constructor.prototype.callHandlers) {
+      target.constructor.prototype.callHandlers = new Map<string, string>();
     }
-    target.constructor.callHandlers.set(callName, propertyKey);
+    target.constructor.prototype.callHandlers.set(callName, propertyKey);
+    return descriptor;
   };
 }
-  
+
 export function BlockHandler() {
-  return function (target: any, propertyKey: string) {
-    if (!target.constructor.blockHandlers) {
-      target.constructor.blockHandlers = new Set<string>();
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    if (!target.constructor.prototype.blockHandlers) {
+      target.constructor.prototype.blockHandlers = new Set<string>();
     }
-    target.constructor.blockHandlers.add(propertyKey);
+    target.constructor.prototype.blockHandlers.add(propertyKey);
+    return descriptor;
   };
 }

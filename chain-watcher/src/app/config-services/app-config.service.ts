@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
-import { findProjectRoot } from '@app/utils';
+import * as Joi from 'joi';
 import { Chain } from '@core/constants';
 
 @Injectable()
@@ -10,48 +10,58 @@ export class AppConfigService {
   private readonly config: AppConfig;
 
   constructor(private readonly logger: Logger) {
-    const projectRoot = findProjectRoot();
-    const configPath = path.join(projectRoot, 'config.yaml');
+    const configPath = this.getConfigPath();
     try {
-      if (!fs.existsSync(configPath)) {
-        throw new Error(`Configuration file not found: ${configPath}`);
-      }
-      this.config = yaml.load(fs.readFileSync(configPath, 'utf8')) as AppConfig;
-      this.validateConfig();
+      const rawConfig = this.loadConfig(configPath);
+      this.config = this.validateConfig(rawConfig);
     } catch (error) {
       this.logger.error(`Failed to load or validate configuration: ${error.message}`);
       throw error;
     }
   }
 
-  private validateConfig() {
-    const requiredKeys: (keyof AppConfig)[] = [
-      'database',
-      'chain',
-      'environment',
-      'rabbitmq',
-      'monitoring_config_sources'
-    ];
+  private getConfigPath(): string {
+    return path.join(process.cwd(), 'config/config.yaml');
+  }
 
-    for (const key of requiredKeys) {
-      if (!(key in this.config)) {
-        throw new Error(`Missing required configuration key: ${key}`);
-      }
+  private loadConfig(configPath: string): unknown {
+    if (!fs.existsSync(configPath)) {
+      throw new Error(`Configuration file not found: ${configPath}`);
     }
+    return yaml.load(fs.readFileSync(configPath, 'utf8'));
+  }
 
-    if (!Object.values(Chain).includes(this.config.chain)) {
-      throw new Error(`Invalid chain specified: ${this.config.chain}. Valid values are: ${Object.values(Chain).join(', ')}`);
-    }
-
-    if (!Array.isArray(this.config.monitoring_config_sources) || this.config.monitoring_config_sources.length === 0) {
-      throw new Error('monitoring_config_sources must be a non-empty array');
-    }
-
-    this.config.monitoring_config_sources.forEach((source, index) => {
-      if (!source.name || !source.url || !source.branch) {
-        throw new Error(`Invalid monitoring config source at index ${index}: missing required fields`);
-      }
+  private validateConfig(config: unknown): AppConfig {
+    const schema = Joi.object({
+      database: Joi.object({
+        url: Joi.string().uri().required()
+      }).required(),
+      chain: Joi.object({
+        name: Joi.string().valid(...Object.values(Chain)).required(),
+        rpcs: Joi.array().items(Joi.string().uri()).min(1).required()
+      }).required(),
+      environment: Joi.string().valid('development', 'production', 'test').required(),
+      rabbitmq: Joi.object({
+        url: Joi.string().uri().required(),
+        queue: Joi.string().required()
+      }).required(),
+      monitoring_config_sources: Joi.array().items(Joi.object({
+        name: Joi.string().required(),
+        url: Joi.string().uri().required(),
+        branch: Joi.string().required(),
+        auth_token: Joi.string().optional()
+      })).min(1).required(),
+      logging: Joi.object({
+        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info')
+      }).optional()
     });
+
+    const { error, value } = schema.validate(config, { abortEarly: false });
+    if (error) {
+      throw new Error(`Configuration validation failed: ${error.message}`);
+    }
+
+    return value;
   }
 
   getDatabaseUrl(): string {
@@ -59,7 +69,11 @@ export class AppConfigService {
   }
 
   getChain(): Chain {
-    return this.config.chain;
+    return this.config.chain.name;
+  }
+
+  getRPCs(): string[] {
+    return this.config.chain.rpcs;
   }
 
   getEnvironment(): string {
@@ -72,6 +86,10 @@ export class AppConfigService {
 
   getMonitoringConfigSources(): MonitoringConfigSource[] {
     return this.config.monitoring_config_sources;
+  }
+
+  getLoggingLevel(): string {
+    return this.config.logging?.level || 'info';
   }
 }
 
@@ -86,11 +104,17 @@ interface AppConfig {
   database: {
     url: string;
   };
-  chain: Chain;
+  chain: {
+    name: Chain;
+    rpcs: string[];
+  };
   environment: string;
   rabbitmq: {
     url: string;
     queue: string;
   };
   monitoring_config_sources: MonitoringConfigSource[];
+  logging?: {
+    level: string;
+  };
 }

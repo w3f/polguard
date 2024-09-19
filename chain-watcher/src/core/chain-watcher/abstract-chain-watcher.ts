@@ -1,17 +1,15 @@
-import { ApiPromise, WsProvider } from '@polkadot/api';
+import { ApiPromise } from '@polkadot/api';
 import type { EventRecord } from '@polkadot/types/interfaces/system';
 import { EventEmitter, once } from 'events';
 
-import { Logger, Monitor } from '../interfaces';
-import { Chain, MonitorType, RPC_ADDRESSES } from '../constants';
+import { Logger, Monitor, MonitoringGroup } from '../interfaces';
+import { Chain, MonitorType } from '../constants';
 import { GovernanceMonitor } from '../monitors/governance/governance-monitor';
 import { TransactionMonitor } from '../monitors/transaction/transaction-monitor';
 import { ValidatorMonitor } from '../monitors/validator/validator-monitor';
-import { getMonitoringGroups } from '../config-processor';
 
 export abstract class AbstractChainWatcher {
   protected log: Logger;
-  protected api: ApiPromise;
   private latestBlockNumber: number = 0;
   private isRunning: boolean = false;
   protected monitors: Monitor[] = [];
@@ -19,8 +17,12 @@ export abstract class AbstractChainWatcher {
   constructor(
     protected logger: Logger,
     protected chain: Chain,
-    protected eventDispatcher: EventEmitter
-  ) {}
+    protected monitoringGroups: MonitoringGroup[],
+    protected eventDispatcher: EventEmitter,
+    protected api: ApiPromise
+  ) {
+    this.initializeMonitors();
+  }
 
   protected async processBlock(blockNumber: number): Promise<void> {
     this.log.debug(`Processing block: #${blockNumber}`);
@@ -41,18 +43,10 @@ export abstract class AbstractChainWatcher {
   }
 
   async start(): Promise<void> {
-    if (this.api) {
+    if (this.isRunning) {
       this.log.debug('ChainWatcher has already been started.');
       return;
     }
-
-    this.api = await ApiPromise.create({
-      provider: new WsProvider(RPC_ADDRESSES[this.chain]),
-      noInitWarn: true
-    });
-
-    // Initialize monitors after API is ready
-    this.initializeMonitors();
 
     // Initialize the latest block number
     const header = await this.api.rpc.chain.getHeader();
@@ -70,13 +64,10 @@ export abstract class AbstractChainWatcher {
 
   async stop(): Promise<void> {
     this.isRunning = false;
-    if (this.api) {
-      await this.api.disconnect();
-    }
+    await this.api.disconnect();
   }
 
   protected initializeMonitors(): void {
-    const groups = getMonitoringGroups().filter((group) => group.chain.includes(this.chain));
     const monitorClasses = [
       { monitorType: MonitorType.Governance, class: GovernanceMonitor },
       { monitorType: MonitorType.Transaction, class: TransactionMonitor },
@@ -84,10 +75,10 @@ export abstract class AbstractChainWatcher {
     ];
   
     this.monitors = monitorClasses.map(({ monitorType, class: MonitorClass }) => {
-      const monitorGroups = groups.filter((group) =>
+      const monitoringGroups = this.monitoringGroups.filter((group) =>
         group.monitors.some((monitor) => monitor.name === monitorType)
       );
-      return new MonitorClass(this.api, monitorGroups, this.eventDispatcher);
+      return new MonitorClass(this.api, monitoringGroups, this.eventDispatcher);
     });
   }
 

@@ -3,30 +3,48 @@ import { BlockHash, Phase } from '@polkadot/types/interfaces';
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import { formatBalance } from '@polkadot/util';
-import { Monitor, MonitorHandler, MonitoringGroup, Incident, AccountId } from '../interfaces';
+import { Monitor, MonitoringGroup, Incident, AccountId } from '../interfaces';
 import EventEmitter from 'events';
 
 export abstract class AbstractMonitor implements Monitor {
-  protected incidentEmitter: EventEmitter;
-  protected eventHandlers: Map<string, string> = new Map();
-  protected callHandlers: Map<string, string> = new Map();
-  protected blockHandlers: Map<string, string> = new Map();
+  protected eventHandlers: Map<string, (eventRecord: EventRecord, blockHash: BlockHash) => Promise<void>>;
+  protected callHandlers: Map<string, (call: Call, blockHash: BlockHash) => Promise<void>>;
+  protected blockHandlers: Set<(blockHash: BlockHash, blockNumber: number) => Promise<void>>;
   protected accountGroups: Map<string, { account: AccountId; group: MonitoringGroup }[]> = new Map();
 
   constructor(
     protected api: ApiPromise,
     protected groups: MonitoringGroup[],
-    incidentEmitter: EventEmitter
+    protected eventDispatcher: EventEmitter
   ) {
-    this.incidentEmitter = incidentEmitter;
-    // Initialize event handlers
-    const constructor = this.constructor as any;
-    if (constructor.eventHandlers) {
-      this.eventHandlers = constructor.eventHandlers;
-    }
-
     // Build accountGroups map for better account lookup
     this.buildAccountGroups();
+    this.initializeHandlers();
+  }
+
+  private initializeHandlers(): void {
+    const prototype = Object.getPrototypeOf(this);
+    
+    const eventHandlers = prototype.eventHandlers || new Map();
+    for (const [eventName, methodName] of eventHandlers) {
+      if (typeof this[methodName] === 'function') {
+        this.eventHandlers.set(eventName, this[methodName].bind(this));
+      }
+    }
+
+    const callHandlers = prototype.callHandlers || new Map();
+    for (const [callName, methodName] of callHandlers) {
+      if (typeof this[methodName] === 'function') {
+        this.callHandlers.set(callName, this[methodName].bind(this));
+      }
+    }
+
+    const blockHandlers = prototype.blockHandlers || new Set();
+    for (const methodName of blockHandlers) {
+      if (typeof this[methodName] === 'function') {
+        this.blockHandlers.add(this[methodName].bind(this));
+      }
+    }
   }
 
   private buildAccountGroups(): void {
@@ -41,25 +59,30 @@ export abstract class AbstractMonitor implements Monitor {
   }  
 
   protected emitIncident(incident: Incident): void {
-    this.incidentEmitter.emit('newIncident', incident);
+    this.eventDispatcher.emit('newIncident', incident);
   }
 
   async processEvent(blockHash: BlockHash, eventRecord: EventRecord): Promise<void> {
     const { event } = eventRecord;
     const eventName = `${event.section}.${event.method}`;
+    const handler = this.eventHandlers.get(eventName);
+    if (handler) {
+      await handler(eventRecord, blockHash);
+    }
+  }
 
-    const handlerName = this.eventHandlers.get(eventName);
-    if (handlerName && typeof this[handlerName] === 'function') {
-      await this[handlerName](eventRecord, blockHash);
+  async processCall(blockHash: BlockHash, call: Call): Promise<void> {
+    const callName = `${call.section}.${call.method}`;
+    const handler = this.callHandlers.get(callName);
+    if (handler) {
+      await handler(call, blockHash);
     }
   }
 
   async processBlock(blockHash: BlockHash, blockNumber: number): Promise<void> {
-  
-  }
-
-  async processCall(blockHash: BlockHash, call: Call): Promise<void> {
-
+    for (const handler of this.blockHandlers) {
+      await handler(blockHash, blockNumber);
+    }
   }
 
   async getEventLink(blockHash: BlockHash, phase: Phase): Promise<string> {

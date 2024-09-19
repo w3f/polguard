@@ -2,6 +2,7 @@ import { Chain, MonitorType } from './constants';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { Call } from '@polkadot/types/interfaces/runtime';
+import { ApiPromise } from '@polkadot/api';
 
 export interface HandlerContext<T> {
   blockHash: BlockHash;

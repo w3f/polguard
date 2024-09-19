@@ -2,7 +2,7 @@ import { ApiPromise } from '@polkadot/api';
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { AbstractMonitor } from '../abstract-monitor';
-import { Incident, MonitoringGroup, AccountId } from '../../interfaces';
+import { Incident, MonitoringGroup, AccountId, AlertSettings } from '../../interfaces';
 import { EventHandler } from '../decorators';
 import EventEmitter from 'events';
 
@@ -22,33 +22,45 @@ export class TransactionMonitor extends AbstractMonitor {
 
     const createIncident = (
       account: AccountId,
-      action: string,
-      group: MonitoringGroup
-    ): Incident => ({
-      message: `New Transfer of ${this.formatBalance(amount)} ${action} account "${account.name}". Details: ${this.getEventLink(
-        blockHash,
-        eventRecord.phase
-      )}`,
-      alerts: group.alerts,
-    });
+      isSent: boolean,
+      alerts: AlertSettings
+    ): Incident => {
+      const clonedAlerts = JSON.parse(JSON.stringify(alerts));
+      
+      // We do not want to escalate ingress transactions
+      if (!isSent) {
+        // This owerwrites config which is suboptimal and is temporary decision.
+        // TODO: potentially move this to the config or handle in different way
+        clonedAlerts.matrix.escalation = null;
+      }
+
+      const action = isSent ? 'sent from' : 'received in';
+
+      return {
+        message: `New Transfer of ${this.formatBalance(amount)} ${action} account "${account.name}". Details: ${this.getEventLink(
+          blockHash,
+          eventRecord.phase
+        )}`,
+        alerts: clonedAlerts,
+      }
+    };
 
     const fromMatches = this.accountGroups.get(from) || [];
     const toMatches = this.accountGroups.get(to) || [];
 
-    for (const { account, group } of fromMatches) {
+    fromMatches.forEach(({ account, group }) => {
       this.emitIncident(
-        createIncident(account, 'sent from', group)
+        createIncident(account, true, group.alerts)
       );
-    }
+    });
 
-    for (const { account, group } of toMatches) {
+    toMatches.forEach(({ account, group }) => {
       this.emitIncident(
-        createIncident(account, 'received in', group)
+        createIncident(account, false, group.alerts)
       );
-    }
+    });
 
-    // TODO: Let's not yet flud config with ingress_ack = False, but for now handle it directly here.
-    // Later we could add it to the config if make sense.
+
   }
 
 }
