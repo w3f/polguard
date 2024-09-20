@@ -1,33 +1,22 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AbstractChainWatcher } from '@core/index';
-import { Incident } from '@core/interfaces';
 import { BlockTrackerService } from './block-tracker/block-tracker.service';
 import { ConfigService } from './config-services/config.service';
-import EventEmitter from 'events';
-import { ApiFactory } from '@core/api/api-factory';
+import { ReconnectableApi } from '@core/polkadot-api/reconnectable-api';
+import { EventDispatcherAdapter } from './event-dispatcher.adapter';
 
 @Injectable()
 export class AppService extends AbstractChainWatcher implements OnModuleInit, OnModuleDestroy {
   constructor(
     protected logger: Logger,
-    private eventEmitter: EventEmitter2,
+    protected eventDispatcher: EventDispatcherAdapter,
     private blockTracker: BlockTrackerService,
-    private config: ConfigService
+    private config: ConfigService,
+    private reconnectableApi: ReconnectableApi
   ) {
-    const eventDispatcher = new EventEmitter();
-    const chain = config.getChain()
-    const rpcs = config.getRPCs()
+    const chain = config.getChain();
     const groups = config.getMonitoringGroups(chain);
-
-    // TODO: initalize api
-    // const api = ApiFactory.create(rpcs)
-    super(logger, chain, groups, eventDispatcher, api);
-    // TODO: refactor event emitters
-    // We have two event emitters, one for the chain watcher and another one for the app
-    eventDispatcher.on('newIncident', (incident: Incident) => {
-      this.eventEmitter.emit('newIncident', incident);
-    });
+    super(logger, chain, groups, eventDispatcher, reconnectableApi.getApi());
   }
 
   async onModuleInit() {
@@ -40,7 +29,6 @@ export class AppService extends AbstractChainWatcher implements OnModuleInit, On
     }
   }
   
-
   async onModuleDestroy() {
     try {
       this.logger.log('Stopping ChainWatcher...');
@@ -51,12 +39,18 @@ export class AppService extends AbstractChainWatcher implements OnModuleInit, On
       throw error;
     }
   }
-
+  /**
+   * Implements Chain Watcher method to retrieve the last processed block.
+   * Uses ORM to fetch or create a record for the current chain.
+   */
   protected async getLastProcessedBlock(): Promise<number> {
     const processedBlock = await this.blockTracker.getOrCreate(this.chain);
     return processedBlock.block;
   }
-
+  /**
+   * Implements Chain Watcher method to update the last processed block.
+   * Uses ORM to persist the latest block number for the current chain.
+   */
   protected async setLastProcessedBlock(block: number): Promise<void> {
     await this.blockTracker.update(this.chain, block);
   }

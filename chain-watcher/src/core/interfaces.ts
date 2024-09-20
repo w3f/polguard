@@ -2,7 +2,12 @@ import { Chain, MonitorType } from './constants';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { Call } from '@polkadot/types/interfaces/runtime';
-import { ApiPromise } from '@polkadot/api';
+
+export interface EventDispatcher {
+  emit(eventName: string | symbol, ...args: any[]): boolean;
+  on(eventName: string | symbol, listener: (...args: any[]) => void): this;
+  off(eventName: string | symbol, listener: (...args: any[]) => void): this;
+}
 
 export interface HandlerContext<T> {
   blockHash: BlockHash;
@@ -27,19 +32,21 @@ export interface Logger {
   verbose(message: string): void;
   fatal(message: string): void;
 }
-
 export interface AccountId {
   ss58: string;
   hex: string;
   name: string;
 }
 
-export interface MonitoringGroup {
-  name: string;
-  chain: Chain;
-  accounts: AccountId[];
-  monitors: MonitorSettings[];
-  alerts: AlertSettings;
+export interface ValidatorSettings {
+  commission?: number;
+  payee?: string;
+}
+
+export interface GovernanceSettings {
+}
+
+export interface TransactionSettings {
 }
 
 export interface AlertSettings {
@@ -57,26 +64,27 @@ export interface Incident {
   alerts: AlertSettings;
 }
 
-interface BaseMonitor {
+export type MonitorSettings = {
+  [MonitorType.Validator]: ValidatorSettings;
+  [MonitorType.Governance]: GovernanceSettings;
+  [MonitorType.Transaction]: TransactionSettings;
+}
+
+export interface MonitorConfig {
   name: MonitorType;
+  settings: MonitorSettings[MonitorType];
 }
 
-interface ValidatorMonitorSettings extends BaseMonitor {
-  name: MonitorType.Validator;
-  defaults: {
-    commission?: number;
-    payee?: AccountId;
-  }
+export interface AccountSettings extends AccountId {
+  [MonitorType.Validator]?: ValidatorSettings;
+  [MonitorType.Governance]?: GovernanceSettings;
+  [MonitorType.Transaction]?: TransactionSettings;
 }
 
-interface GovernanceMonitorSettings extends BaseMonitor {
-  name: MonitorType.Governance;
+export interface MonitoringGroup {
+  name: string;
+  chain: Chain;
+  monitors: MonitorConfig[];
+  accounts: AccountSettings[];
+  alerts: AlertSettings;
 }
-
-interface TransactionMonitorSettings extends BaseMonitor {
-  name: MonitorType.Transaction;
-}
-
-export type MonitorSettings = ValidatorMonitorSettings | 
-                              GovernanceMonitorSettings | 
-                              TransactionMonitorSettings;

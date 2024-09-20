@@ -26,9 +26,8 @@ groups:
       - Kusama
     monitors:     # overwrites default
       - name: Validator
-        defaults:
-          commission: 10
-          payee: E8MByjWbS49hmzFM1U5rvFJES1Xgz1TSBAZLiYqZQiFTNUY
+        commission: 10
+        payee: E8MByjWbS49hmzFM1U5rvFJES1Xgz1TSBAZLiYqZQiFTNUY
       - name: Governance
       - name: Transaction
     accounts:
@@ -63,8 +62,7 @@ groups:
       - Kusama
     monitors:
       - name: Validator
-        defaults:
-          commission: 3
+        commission: 3
     accounts:
       - name: Validator3
         address: E8MByjWbS49hmzFM1U5rvFJES1Xgz1TSBAZLiYqZQiFTNUY
@@ -77,8 +75,7 @@ groups:
       - Kusama
     monitors:
       - name: Validator
-        defaults:
-          commission: 10
+        commission: 10
     accounts:
       - name: Validator3
         address: E8MByjWbS49hmzFM1U5rvFJES1Xgz1TSBAZLiYqZQiFTNUY

@@ -1,8 +1,8 @@
 import { ApiPromise } from '@polkadot/api';
 import type { EventRecord } from '@polkadot/types/interfaces/system';
-import { EventEmitter, once } from 'events';
+import { once } from '../utils';
 
-import { Logger, Monitor, MonitoringGroup } from '../interfaces';
+import { EventDispatcher, Logger, Monitor, MonitoringGroup } from '../interfaces';
 import { Chain, MonitorType } from '../constants';
 import { GovernanceMonitor } from '../monitors/governance/governance-monitor';
 import { TransactionMonitor } from '../monitors/transaction/transaction-monitor';
@@ -18,7 +18,7 @@ export abstract class AbstractChainWatcher {
     protected logger: Logger,
     protected chain: Chain,
     protected monitoringGroups: MonitoringGroup[],
-    protected eventDispatcher: EventEmitter,
+    protected eventDispatcher: EventDispatcher,
     protected api: ApiPromise
   ) {
     this.initializeMonitors();

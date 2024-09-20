@@ -2,19 +2,12 @@ import { ApiPromise } from '@polkadot/api';
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { AbstractMonitor } from '../abstract-monitor';
-import { Incident, MonitoringGroup, AccountId, AlertSettings } from '../../interfaces';
+import { Incident, MonitoringGroup, AccountId, AlertSettings, EventDispatcher } from '../../interfaces';
 import { EventHandler } from '../decorators';
 import EventEmitter from 'events';
 
 
 export class TransactionMonitor extends AbstractMonitor {
-  constructor(
-    api: ApiPromise,
-    groups: MonitoringGroup[],
-    incidentEmitter: EventEmitter
-  ) {
-    super(api, groups, incidentEmitter);
-  }
 
   @EventHandler('balances.Transfer')
   async handleBalancesTransfer(eventRecord: EventRecord, blockHash: BlockHash): Promise<void> {

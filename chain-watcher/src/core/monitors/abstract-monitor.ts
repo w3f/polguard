@@ -3,8 +3,7 @@ import { BlockHash, Phase } from '@polkadot/types/interfaces';
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import { formatBalance } from '@polkadot/util';
-import { Monitor, MonitoringGroup, Incident, AccountId } from '../interfaces';
-import EventEmitter from 'events';
+import { Monitor, MonitoringGroup, Incident, AccountId, EventDispatcher } from '../interfaces';
 
 export abstract class AbstractMonitor implements Monitor {
   protected eventHandlers: Map<string, (eventRecord: EventRecord, blockHash: BlockHash) => Promise<void>>;
@@ -15,7 +14,7 @@ export abstract class AbstractMonitor implements Monitor {
   constructor(
     protected api: ApiPromise,
     protected groups: MonitoringGroup[],
-    protected eventDispatcher: EventEmitter
+    protected eventDispatcher: EventDispatcher
   ) {
     // Build accountGroups map for better account lookup
     this.buildAccountGroups();

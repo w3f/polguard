@@ -5,7 +5,7 @@ export interface RawConfig {
   version: string;
   defaults: {
     chains: Chain[];
-    monitors: RawMonitor[];
+    monitors: RawMonitorSettings[];
     alerts: AlertSettings;
   };
   groups: RawMonitoringGroup[];
@@ -14,15 +14,18 @@ export interface RawConfig {
 export interface RawMonitoringGroup {
   name: string;
   chains?: Chain[];
-  monitors?: RawMonitor[];
+  monitors?: RawMonitorSettings[];
   alerts?: AlertSettings;
-  accounts: { name: string; address: string }[];
-};
+  accounts: RawAccountSettings[];
+}
 
-export interface RawMonitor {
+export interface RawMonitorSettings {
   name: MonitorType;
-  defaults?: {
-    commission?: number;
-    payee?: string;
-  }
+  [key: string]: any;
+}
+
+export interface RawAccountSettings {
+  name?: string;
+  address: string;
+  [key: string]: any;
 }
