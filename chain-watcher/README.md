@@ -6,7 +6,7 @@ The following diagram illustrates the high-level architecture and connections be
 
 ```mermaid
 flowchart TD
-    subgraph NestClasses["Nest.js Classes /app"]
+    subgraph NestClasses["Nest.js components /app"]
         A[NestMicroservice<br><br>Main entry point<br>Initializes components<br>Coordinates services]
         B[ConfigService<br><br>Central config management<br>Delegates to specific services<br>Provides unified config interface]
         C[AppConfigService<br><br>Manages YAML app config<br>DB, RabbitMQ, chain, RPCs<br>Supports environment-specific configs]
@@ -14,7 +14,7 @@ flowchart TD
         E[BlockTrackerService<br><br>Tracks processed blocks<br>Uses ORM for persistence<br>Prevents missed/duplicate blocks]
     end
 
-    subgraph ChainWatcherClasses["ChainWatcher Classes /core"]
+    subgraph ChainWatcherClasses["ChainWatcher components /core"]
         F[ChainWatcher<br><br>Orchestrates monitoring<br>Manages monitors<br>Processes blockchain data]
         G[AbstractMonitor<br><br>Base class for monitors<br>Defines handler interfaces<br>Common monitoring utilities]
         H[ConcreteMonitor<br><br>Specific implementations:<br>- ValidatorMonitor<br>- GovernanceMonitor<br>- TransactionIngressMonitor<br>- TransactionEgressMonitor]
