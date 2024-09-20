@@ -1,4 +1,4 @@
-# Monitoring Platform (Draft Phase)
+# Monitoring Platform
 
 🚧 **This project is in active development and is currently a draft.** 🚧  
 Regular Git flow with PRs will start once the first version is ready.
