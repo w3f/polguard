@@ -9,7 +9,7 @@ flowchart TD
     subgraph NestClasses["Nest.js components /app"]
         A[NestMicroservice<br><br>Main entry point<br>Initializes components<br>Coordinates services]
         B[ConfigService<br><br>Central config management<br>Provides unified config interface]
-        C[AppConfigService<br><br>Manages YAML app config<br>DB, RabbitMQ, chain, RPCs<br>Supports environment-specific configs]
+        C[AppConfigService<br><br>Manages YAML app config<br>DB, RabbitMQ, chain, RPCs, monitoring config sources - repos]
         D[MonitoringConfigService<br><br>Retrieves configs from list of repos]
         E[BlockTrackerService<br><br>Tracks processed blocks<br>Uses ORM for persistence]
     end
