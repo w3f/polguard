@@ -1,23 +1,5 @@
 # Chain Watcher
 
-## Project Structure
-
-This project is structured into two main parts:
-
-1. **app folder**: Contains all Nest.js related code, including:
-   - Microservice setup and configuration
-   - Controllers for handling incoming requests
-   - Nest-specific services (ConfigService, BlockTrackerService, etc.)
-   - Dependency injection and module definitions
-   - Integration with RabbitMQ for inter-service communication
-
-2. **core folder**: Houses the core Chain Watcher functionality, including:
-   - Main ChainWatcher class for orchestrating the monitoring process
-   - Abstract and concrete monitor implementations (Validator, Governance, Transaction, etc.)
-   - ReconnectableApi for resilient blockchain communication
-   - ConfigProcessor for handling and validating configuration files
-   - Utility functions and shared interfaces
-
 ## Architecture Overview
 
 The following diagram illustrates the high-level architecture and connections between different components of the system:
