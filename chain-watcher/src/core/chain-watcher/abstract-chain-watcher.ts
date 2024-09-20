@@ -5,7 +5,7 @@ import { once } from '../utils';
 import { EventDispatcher, Logger, Monitor, MonitoringGroup } from '../interfaces';
 import { Chain, MonitorType } from '../constants';
 import { GovernanceMonitor } from '../monitors/governance/governance-monitor';
-import { TransactionMonitor } from '../monitors/transaction/transaction-monitor';
+import { TransactionEgressMonitor, TransactionIngressMonitor } from '../monitors/transaction/transaction-monitor';
 import { ValidatorMonitor } from '../monitors/validator/validator-monitor';
 
 export abstract class AbstractChainWatcher {
@@ -70,15 +70,17 @@ export abstract class AbstractChainWatcher {
   protected initializeMonitors(): void {
     const monitorClasses = [
       { monitorType: MonitorType.Governance, class: GovernanceMonitor },
-      { monitorType: MonitorType.Transaction, class: TransactionMonitor },
       { monitorType: MonitorType.Validator, class: ValidatorMonitor },
+      { monitorType: MonitorType.TransactionIngress, class: TransactionIngressMonitor },
+      { monitorType: MonitorType.TransactionEgress, class: TransactionEgressMonitor },
     ];
   
-    this.monitors = monitorClasses.map(({ monitorType, class: MonitorClass }) => {
+    this.monitors = monitorClasses.flatMap(({ monitorType, class: MonitorClass }) => {
       const monitoringGroups = this.monitoringGroups.filter((group) =>
         group.monitors.some((monitor) => monitor.name === monitorType)
       );
-      return new MonitorClass(this.api, monitoringGroups, this.eventDispatcher);
+
+      return [new MonitorClass(this.api, monitoringGroups, this.eventDispatcher)];
     });
   }
 

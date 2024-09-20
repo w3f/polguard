@@ -2,58 +2,60 @@ import { ApiPromise } from '@polkadot/api';
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { AbstractMonitor } from '../abstract-monitor';
-import { Incident, MonitoringGroup, AccountId, AlertSettings, EventDispatcher } from '../../interfaces';
+import { Incident, MonitoringGroup, AlertSettings, EventDispatcher, AccountSettings } from '../../interfaces';
 import { EventHandler } from '../decorators';
-import EventEmitter from 'events';
+import { TransactionType } from '../../constants';
 
+abstract class TransactionMonitor extends AbstractMonitor {
+  protected transactionType: TransactionType;
 
-export class TransactionMonitor extends AbstractMonitor {
+  constructor(
+    api: ApiPromise,
+    groups: MonitoringGroup[],
+    eventDispatcher: EventDispatcher,
+    transactionType: TransactionType
+  ) {
+    super(api, groups, eventDispatcher);
+    this.transactionType = transactionType;
+  }
 
   @EventHandler('balances.Transfer')
   async handleBalancesTransfer(eventRecord: EventRecord, blockHash: BlockHash): Promise<void> {
     const [from, to, amount] = eventRecord.event.data.map((item) => item.toString());
 
-    const createIncident = (
-      account: AccountId,
-      isSent: boolean,
+    const createTransferIncident = (
+      account: AccountSettings,
       alerts: AlertSettings
     ): Incident => {
-      const clonedAlerts = JSON.parse(JSON.stringify(alerts));
-      
-      // We do not want to escalate ingress transactions
-      if (!isSent) {
-        // This owerwrites config which is suboptimal and is temporary decision.
-        // TODO: potentially move this to the config or handle in different way
-        clonedAlerts.matrix.escalation = null;
-      }
-
-      const action = isSent ? 'sent from' : 'received in';
+      const action = this.transactionType === TransactionType.Ingress ? 'received in' : 'sent from';
 
       return {
         message: `New Transfer of ${this.formatBalance(amount)} ${action} account "${account.name}". Details: ${this.getEventLink(
           blockHash,
           eventRecord.phase
         )}`,
-        alerts: clonedAlerts,
-      }
+        alerts: alerts,
+      };
     };
 
-    const fromMatches = this.accountGroups.get(from) || [];
-    const toMatches = this.accountGroups.get(to) || [];
+    const matches = this.transactionType === TransactionType.Ingress
+      ? this.getGroups(to) : this.getGroups(from);
 
-    fromMatches.forEach(({ account, group }) => {
-      this.emitIncident(
-        createIncident(account, true, group.alerts)
-      );
+    matches.forEach(({ account, group }) => {
+      const incident = createTransferIncident(account, group.alerts);
+      this.emitIncident(incident);
     });
-
-    toMatches.forEach(({ account, group }) => {
-      this.emitIncident(
-        createIncident(account, false, group.alerts)
-      );
-    });
-
-
   }
+}
 
+export class TransactionIngressMonitor extends TransactionMonitor {
+  constructor(api: ApiPromise, groups: MonitoringGroup[], eventDispatcher: EventDispatcher) {
+    super(api, groups, eventDispatcher, TransactionType.Ingress);
+  }
+}
+
+export class TransactionEgressMonitor extends TransactionMonitor {
+  constructor(api: ApiPromise, groups: MonitoringGroup[], eventDispatcher: EventDispatcher) {
+    super(api, groups, eventDispatcher, TransactionType.Egress);
+  }
 }

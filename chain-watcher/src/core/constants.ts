@@ -8,12 +8,11 @@ export enum Chain {
 export enum MonitorType {
   Validator = 'Validator',
   Governance = 'Governance',
-  Transaction = 'Transaction',
+  TransactionIngress = 'TransactionIngress',
+  TransactionEgress = 'TransactionEgress',
 }
 
-// TODO: implement list of addresses and reconnect or fall back to getting the rpc from config
-export const RPC_ADDRESSES: { [key in Chain]: string } = {
-  [Chain.Polkadot]: 'wss://polkadot-rpc.dwellir.com',
-  [Chain.Kusama]: 'wss://kusama-rpc.dwellir.com',
-  [Chain.Centrifuge]: 'wss://fullnode.centrifuge.io',
+export enum TransactionType {
+  Ingress = 'Ingress',
+  Egress = 'Egress',
 }

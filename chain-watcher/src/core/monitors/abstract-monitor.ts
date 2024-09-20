@@ -55,7 +55,11 @@ export abstract class AbstractMonitor implements Monitor {
         this.accountGroups.get(account.ss58).push({ account, group });
       }
     }
-  }  
+  }
+
+  protected getGroups(address: string): { account: AccountId; group: MonitoringGroup }[] {
+    return this.accountGroups.get(address) || [];
+  }
 
   protected emitIncident(incident: Incident): void {
     this.eventDispatcher.emit('newIncident', incident);
