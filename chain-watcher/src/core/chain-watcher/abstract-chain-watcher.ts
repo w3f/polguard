@@ -7,6 +7,7 @@ import { Chain, MonitorType } from '../constants';
 import { GovernanceMonitor } from '../monitors/governance/governance-monitor';
 import { TransactionEgressMonitor, TransactionIngressMonitor } from '../monitors/transaction/transaction-monitor';
 import { ValidatorMonitor } from '../monitors/validator/validator-monitor';
+import { BalanceDecrementMonitor, BalanceIncrementMonitor } from '@core/monitors/balance/balance-monitor';
 
 export abstract class AbstractChainWatcher {
   protected log: Logger;
@@ -22,24 +23,6 @@ export abstract class AbstractChainWatcher {
     protected api: ApiPromise
   ) {
     this.initializeMonitors();
-  }
-
-  protected async processBlock(blockNumber: number): Promise<void> {
-    this.log.debug(`Processing block: #${blockNumber}`);
-    const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
-    const apiAt = await this.api.at(blockHash);
-
-    for (const monitor of this.monitors) {
-      await monitor.processBlock(blockHash, blockNumber);
-    }
-    await apiAt.query.system.events(async (records: EventRecord[]) => {
-      for (const eventRecord of records) {
-        for (const monitor of this.monitors) {
-          await monitor.processEvent(blockHash, eventRecord);
-        }
-      }
-    })
-    await this.setLastProcessedBlock(blockNumber);
   }
 
   async start(): Promise<void> {
@@ -73,6 +56,8 @@ export abstract class AbstractChainWatcher {
       { monitorType: MonitorType.Validator, class: ValidatorMonitor },
       { monitorType: MonitorType.TransactionIngress, class: TransactionIngressMonitor },
       { monitorType: MonitorType.TransactionEgress, class: TransactionEgressMonitor },
+      { monitorType: MonitorType.BalanceDecrement, class: BalanceDecrementMonitor },
+      { monitorType: MonitorType.BalanceIncrement, class: BalanceIncrementMonitor },
     ];
   
     this.monitors = monitorClasses.flatMap(({ monitorType, class: MonitorClass }) => {
@@ -84,19 +69,33 @@ export abstract class AbstractChainWatcher {
     });
   }
 
-  private async runBlockProcessing(): Promise<void> {
-    let lastProcessedBlock = await this.getLastProcessedBlock();
-    let nextBlockToProcess = lastProcessedBlock + 1;
+  protected async processBlock(blockNumber: number): Promise<void> {
+    this.log.debug(`Processing block: #${blockNumber}`);
+    const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
+    const apiAt = await this.api.at(blockHash);
 
+    for (const monitor of this.monitors) {
+      await monitor.processBlock(blockHash, blockNumber);
+    }
+    await apiAt.query.system.events(async (records: EventRecord[]) => {
+      for (const eventRecord of records) {
+        for (const monitor of this.monitors) {
+          await monitor.processEvent(blockHash, eventRecord);
+        }
+      }
+    })
+    await this.setLastProcessedBlock(blockNumber);
+  }
+
+  private async runBlockProcessing(): Promise<void> {
+    let nextBlockToProcess = await this.getLastProcessedBlock() + 1;
+  
     while (this.isRunning) {
       if (nextBlockToProcess <= this.latestBlockNumber) {
         await this.processBlock(nextBlockToProcess);
         nextBlockToProcess++;
       } else {
-        // Wait for the next block to be produced
-        while (this.latestBlockNumber < nextBlockToProcess) {
-          await once(this.eventDispatcher, 'newBlock');
-        }
+        await once(this.eventDispatcher, 'newBlock');
       }
     }
   }

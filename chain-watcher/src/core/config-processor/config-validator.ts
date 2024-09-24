@@ -1,85 +1,115 @@
-import * as Joi from 'joi';
+import Joi from 'joi';
 import { Chain, MonitorType } from '../constants';
 
 const alertSchema = Joi.object({
   matrix: Joi.object({
     rooms: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required(),
-    escalation: Joi.object({
-      timeout: Joi.number().required(),
-      rooms: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required()
+    acknowledgement: Joi.object({
+      escalation: Joi.object({
+        timeout: Joi.number().required(),
+        rooms: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required()
+      }).optional()
     }).optional()
   }).required()
 });
 
-const validatorSettingsSchema = Joi.object({
-  commission: Joi.number().min(0).max(100).optional(),
-  payee: Joi.string().optional()
-});
-
-const governanceSettingsSchema = Joi.object({
-  // TODO: governance-specific validation here
-});
-
-const transactionSettingsSchema = Joi.object({
-  // TODO: transaction-specific validation here
-});
+const monitorSettingsSchemas = {
+  [MonitorType.Validator]: Joi.object({
+    commission: Joi.number().min(0).max(100).optional(),
+    payee: Joi.string().optional(),
+  }),
+  [MonitorType.Governance]: Joi.object({
+  }),
+  [MonitorType.TransactionIngress]: Joi.object({
+  }),
+  [MonitorType.TransactionEgress]: Joi.object({
+  }),
+  [MonitorType.BalanceIncrement]: Joi.object({
+    balanceThreshold: Joi.string().pattern(/^\d+$/).optional(),
+  }),
+  [MonitorType.BalanceDecrement]: Joi.object({
+    balanceThreshold: Joi.string().pattern(/^\d+$/).optional(),
+  }),
+};
 
 const monitorConfigSchema = Joi.object({
   name: Joi.string().valid(...Object.values(MonitorType)).required(),
   settings: Joi.alternatives().conditional('name', {
-    switch: [
-      { is: MonitorType.Validator, then: validatorSettingsSchema },
-      { is: MonitorType.Governance, then: governanceSettingsSchema },
-      { is: MonitorType.Transaction, then: transactionSettingsSchema },
-    ]
-  }).required()
+    switch: Object.entries(monitorSettingsSchemas).map(([monitorType, schema]) => ({
+      is: monitorType,
+      then: schema,
+    })),
+  }).required(),
 });
 
-const accountSchema = Joi.object({
-  name: Joi.string().optional(),
-  address: Joi.string().pattern(/^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/).required(),
-  [MonitorType.Validator]: validatorSettingsSchema.optional(),
-  [MonitorType.Governance]: governanceSettingsSchema.optional(),
-  [MonitorType.Transaction]: transactionSettingsSchema.optional()
-});
+// Dynamically create the account schema based on monitor settings
+const createAccountSchema = (monitors) => {
+  const accountSchemaObj = {
+    name: Joi.string().optional(),
+    address: Joi.string().pattern(/^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/).required(),
+    balanceThreshold: Joi.string().pattern(/^\d+$/).optional(),
+  };
 
-const groupSchema = Joi.object({
+  monitors.forEach(monitor => {
+    const monitorSchema = monitorSettingsSchemas[monitor.name];
+    if (monitorSchema) {
+      Object.assign(accountSchemaObj, monitorSchema.extract());
+    }
+  });
+
+  return Joi.object(accountSchemaObj).strict();
+};
+
+const createGroupSchema = (monitors) => Joi.object({
   name: Joi.string().required(),
   chains: Joi.array().items(Joi.string().valid(...Object.values(Chain))).optional(),
   monitors: Joi.array().items(monitorConfigSchema).optional(),
-  accounts: Joi.array().items(accountSchema).min(1).required(),
-  alerts: alertSchema.optional()
-});
+  accounts: Joi.array().items(createAccountSchema(monitors)).min(1).required(),
+  alerts: alertSchema.optional(),
+}).strict();
 
-export const configSchema = Joi.object({
+const configSchema = Joi.object({
   version: Joi.string().required(),
   defaults: Joi.object({
     chains: Joi.array().items(Joi.string().valid(...Object.values(Chain))).min(1).required(),
     monitors: Joi.array().items(monitorConfigSchema).min(1).required(),
     alerts: alertSchema.required()
   }).required(),
-  groups: Joi.array().items(groupSchema).min(1).required()
-});
+  groups: Joi.array().items(Joi.object()).min(1).required()
+}).strict();
 
 export function validateConfig(config: any): void {
-  const { error } = configSchema.validate(config, { abortEarly: false });
-  if (error) {
-    throw new Error(`Configuration validation failed: ${error.message}`);
+  const { error: defaultsError } = configSchema.validate(config, { abortEarly: false });
+  if (defaultsError) {
+    throw new Error(`Configuration validation failed: ${defaultsError.message}`);
   }
+
+  // Validate each group with its specific monitors
+  config.groups.forEach((group: any) => {
+    const groupSchema = createGroupSchema(group.monitors || config.defaults.monitors);
+    const { error: groupError } = groupSchema.validate(group, { abortEarly: false });
+    if (groupError) {
+      throw new Error(`Group "${group.name}" validation failed: ${groupError.message}`);
+    }
+  });
 
   // Cross-field validations
   config.groups.forEach((group: any) => {
-    validateGroup(group);
+    validateGroup(group, config.defaults);
   });
 }
 
-export function validateGroup(group: any): void {
-  const hasValidatorMonitor = group.monitors.some((monitor: any) => monitor.name === MonitorType.Validator);
+function validateGroup(group: any, defaults: any): void {
+  const monitors = group.monitors || defaults.monitors;
+  const hasValidatorMonitor = monitors.some((monitor: any) => monitor.name === MonitorType.Validator);
 
   if (hasValidatorMonitor) {
+    const validatorMonitor = monitors.find((monitor: any) => monitor.name === MonitorType.Validator);
+    const monitorCommission = validatorMonitor.settings?.commission;
+
     group.accounts.forEach((account: any) => {
-      if (!account[MonitorType.Validator] || account[MonitorType.Validator].commission === undefined) {
-        throw new Error(`Account ${account.name || account.address} in group ${group.name} is missing commission for Validator monitor`);
+      if (account.commission === undefined && monitorCommission === undefined) {
+        throw new Error(`Neither the Validator monitor nor account ${account.name || account.address} in group ${group.name} has a commission specified`);
       }
     });
   }

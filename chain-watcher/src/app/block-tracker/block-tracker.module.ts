@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { BlockTrackerService } from './block-tracker.service.js';
 import { BlockTracker } from './block-tracker.entity.ts';
-import { AppConfigService } from '../config-services/app-config.service.js';
+import { AppConfigService } from '../config/app-config.service.js';
 import { createMikroOrmConfig } from '../orm.config.js';
 
 @Module({

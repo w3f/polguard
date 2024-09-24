@@ -37,9 +37,11 @@ export type AccountSettings = AccountId & Partial<MonitorSettings>;
 export interface AlertSettings {
   matrix: {
     rooms: string[];
-    escalation?: {
-      timeout: number;
-      rooms: string[];
+    acknowledgement?: {
+      escalation?: {
+        timeout: number;
+        rooms: string[];
+      };
     };
   };
 }
@@ -51,7 +53,7 @@ export interface Incident {
 
 // Monitor-specific settings interfaces
 export interface ValidatorSettings {
-  commission?: number;
+  commission: number;
   payee?: string;
 }
 
@@ -59,11 +61,17 @@ export interface GovernanceSettings {}
 
 export interface TransactionSettings {}
 
+export interface BalanceSettings {
+  balanceThreshold?: bigint;
+}
+
 export type MonitorSettings = {
   [MonitorType.Validator]: ValidatorSettings;
   [MonitorType.Governance]: GovernanceSettings;
   [MonitorType.TransactionIngress]: TransactionSettings;
   [MonitorType.TransactionEgress]: TransactionSettings;
+  [MonitorType.BalanceIncrement]: BalanceSettings;
+  [MonitorType.BalanceDecrement]: BalanceSettings;
 }
 
 export interface MonitorConfig {

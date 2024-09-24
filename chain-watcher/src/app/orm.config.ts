@@ -1,5 +1,5 @@
 import { Options, PostgreSqlDriver } from '@mikro-orm/postgresql';
-import { AppConfigService } from './config-services/app-config.service'; // Adjust the path as needed
+import { AppConfigService } from './config/app-config.service';
 
 function parseDatabaseUrl(dbUrl: string) {
   const url = new URL(dbUrl);

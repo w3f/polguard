@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 
 import { AppModule } from './app.module';
-import { AppConfigService } from './config-services/app-config.service';
+import { AppConfigService } from './config/app-config.service';
 
 async function bootstrap() {
   const appContext = await NestFactory.createApplicationContext(AppModule);

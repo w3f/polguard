@@ -4,19 +4,18 @@ import { BlockHash } from '@polkadot/types/interfaces';
 import { AbstractMonitor } from '../abstract-monitor';
 import { Incident, MonitoringGroup, AlertSettings, EventDispatcher, AccountSettings } from '../../interfaces';
 import { EventHandler } from '../decorators';
-import { TransactionType } from '../../constants';
+import { MonitorType } from '@core/constants';
+
 
 abstract class TransactionMonitor extends AbstractMonitor {
-  protected transactionType: TransactionType;
 
   constructor(
     api: ApiPromise,
     groups: MonitoringGroup[],
     eventDispatcher: EventDispatcher,
-    transactionType: TransactionType
+    protected monitorType: MonitorType
   ) {
     super(api, groups, eventDispatcher);
-    this.transactionType = transactionType;
   }
 
   @EventHandler('balances.Transfer')
@@ -27,10 +26,10 @@ abstract class TransactionMonitor extends AbstractMonitor {
       account: AccountSettings,
       alerts: AlertSettings
     ): Incident => {
-      const action = this.transactionType === TransactionType.Ingress ? 'received in' : 'sent from';
+      const action = this.monitorType === MonitorType.TransactionIngress ? 'received in' : 'sent from';
 
       return {
-        message: `New Transfer of ${this.formatBalance(amount)} ${action} account "${account.name}". Details: ${this.getEventLink(
+        message: `New Transfer of ${this.formatBalance(amount)} ${action} account "${account}". Details: ${this.getEventLink(
           blockHash,
           eventRecord.phase
         )}`,
@@ -38,7 +37,7 @@ abstract class TransactionMonitor extends AbstractMonitor {
       };
     };
 
-    const matches = this.transactionType === TransactionType.Ingress
+    const matches = this.monitorType === MonitorType.TransactionIngress
       ? this.getGroups(to) : this.getGroups(from);
 
     matches.forEach(({ account, group }) => {
@@ -50,12 +49,12 @@ abstract class TransactionMonitor extends AbstractMonitor {
 
 export class TransactionIngressMonitor extends TransactionMonitor {
   constructor(api: ApiPromise, groups: MonitoringGroup[], eventDispatcher: EventDispatcher) {
-    super(api, groups, eventDispatcher, TransactionType.Ingress);
+    super(api, groups, eventDispatcher, MonitorType.TransactionIngress);
   }
 }
 
 export class TransactionEgressMonitor extends TransactionMonitor {
   constructor(api: ApiPromise, groups: MonitoringGroup[], eventDispatcher: EventDispatcher) {
-    super(api, groups, eventDispatcher, TransactionType.Egress);
+    super(api, groups, eventDispatcher, MonitorType.TransactionEgress);
   }
 }

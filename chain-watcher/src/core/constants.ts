@@ -10,9 +10,6 @@ export enum MonitorType {
   Governance = 'Governance',
   TransactionIngress = 'TransactionIngress',
   TransactionEgress = 'TransactionEgress',
-}
-
-export enum TransactionType {
-  Ingress = 'Ingress',
-  Egress = 'Egress',
+  BalanceIncrement = 'BalanceIncrement',
+  BalanceDecrement = 'BalanceDecrement'
 }

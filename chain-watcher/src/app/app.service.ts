@@ -1,8 +1,8 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { AbstractChainWatcher } from '@core/index';
 import { BlockTrackerService } from './block-tracker/block-tracker.service';
-import { ConfigService } from './config-services/config.service';
-import { ReconnectableApi } from '@core/polkadot-api/reconnectable-api';
+import { ConfigService } from './config/config.service';
+import { ReconnectableApi } from '@core/api/reconnectable-api';
 import { EventDispatcherAdapter } from './event-dispatcher.adapter';
 
 @Injectable()
