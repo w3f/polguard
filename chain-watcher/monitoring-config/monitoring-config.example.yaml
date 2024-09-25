@@ -3,13 +3,14 @@ version: 1.0
 defaults:
   alerts:
     matrix:
-      rooms:
+      targets:
         - "!xyz987:matrix.org"
-    acknowledgement:
-      escalation:
-        timeout: 60  # minutes
-        rooms:
-          - "!xyz987:matrix.org"
+      repeat_interval: 60  # for constantly firing incidents
+      acknowledgement:
+        escalation:
+          timeout: 60 # in minutes
+          targets:
+            - "!xyz987:matrix.org"
   chains:
     - Polkadot
   monitors:
@@ -45,10 +46,13 @@ groups:
       - name: Transaction
     alerts:  # overwrites default
       matrix:
-        rooms:
-          - "!ghi789:matrix.org"  
-        escalation:
-          timeout: 20
+        targets:
+          - "!ghi789:matrix.org"
+        acknowledgement:
+          escalation:
+            timeout: 20
+            targets:
+              - "!ghi789:matrix.org"
     accounts:
       - name: Account1
         # account could use any SS58 prefix, ex. here it's Polkadot prefix

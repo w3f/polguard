@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { AbstractChainWatcher } from '@core/chain-watcher/abstract-chain-watcher';
+import { AbstractChainWatcher } from '@core/chain-watcher';
 import { ReconnectableApi } from '@core/api/reconnectable-api';
 import { BlockTrackerService } from './block-tracker/block-tracker.service';
 import { ConfigService } from './config/config.service';

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { SimpleGit, simpleGit } from 'simple-git';
 import * as fs from 'fs';
 import * as path from 'path';
-import { MonitoringConfigProcessor } from '@core/config-processor/config-processor';
+import { MonitoringConfigProcessor } from '@core/config/config-processor';
 import { MonitoringGroup } from '@core/interfaces';
 import { AppConfigService } from './app-config.service';
 import { Chain } from '@core/constants';

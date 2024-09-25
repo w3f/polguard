@@ -2,6 +2,7 @@ import { Chain, MonitorType } from './constants';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { Call } from '@polkadot/types/interfaces/runtime';
+import { ApiPromise } from '@polkadot/api';
 
 export interface EventDispatcher {
   emitIncident(incident: Incident): Promise<void>;
@@ -11,6 +12,10 @@ export interface Monitor {
   processBlock(blockHash: BlockHash, blockNumber: number): Promise<void>;
   processEvent(blockHash: BlockHash, eventRecord: EventRecord): Promise<void>;
   processCall(blockHash: BlockHash, call: Call): Promise<void>;
+}
+
+export interface MonitorConstructor {
+  new(api: ApiPromise, groups: MonitoringGroup[], eventDispatcher: EventDispatcher): Monitor;
 }
 
 export interface Logger {

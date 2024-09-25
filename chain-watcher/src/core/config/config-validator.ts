@@ -3,11 +3,12 @@ import { Chain, MonitorType } from '../constants';
 
 const alertSchema = Joi.object({
   matrix: Joi.object({
-    rooms: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required(),
+    targets: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required(),
+    repeat_interval: Joi.number().optional(),
     acknowledgement: Joi.object({
       escalation: Joi.object({
         timeout: Joi.number().required(),
-        rooms: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required()
+        targets: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required()
       }).optional()
     }).optional()
   }).required()

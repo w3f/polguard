@@ -1,13 +1,14 @@
 import { ApiPromise } from '@polkadot/api';
 import type { EventRecord } from '@polkadot/types/interfaces/system';
 
-import { EventDispatcher, Logger, Monitor, MonitoringGroup } from '../interfaces';
-import { Chain, MonitorType } from '../constants';
-import { GovernanceMonitor } from '../monitors/governance/governance-monitor';
-import { TransactionEgressMonitor, TransactionIngressMonitor } from '../monitors/transaction/transaction-monitor';
-import { ValidatorMonitor } from '../monitors/validator/validator-monitor';
-import { BalanceDecrementMonitor, BalanceIncrementMonitor } from '../monitors/balance/balance-monitor';
-import { BalanceThresholdMonitor } from '../monitors/balance/balance-threshold-monitor';
+import { EventDispatcher, Logger, Monitor, MonitorConstructor, MonitoringGroup } from './interfaces';
+import { Chain, MonitorType } from './constants';
+import { GovernanceMonitor } from './monitors/governance/governance-monitor';
+import { TransactionEgressMonitor, TransactionIngressMonitor } from './monitors/transaction/transaction-monitor';
+import { ValidatorMonitor } from './monitors/validator/validator-monitor';
+import { BalanceDecrementMonitor, BalanceIncrementMonitor } from './monitors/balance/balance-monitor';
+import { BalanceThresholdMonitor } from './monitors/balance/balance-threshold-monitor';
+
 
 export abstract class AbstractChainWatcher {
   protected log: Logger;
@@ -50,22 +51,22 @@ export abstract class AbstractChainWatcher {
   }
 
   protected initializeMonitors(): void {
-    const monitorClasses = [
-      { monitorType: MonitorType.Governance, class: GovernanceMonitor },
-      { monitorType: MonitorType.Validator, class: ValidatorMonitor },
-      { monitorType: MonitorType.TransactionIngress, class: TransactionIngressMonitor },
-      { monitorType: MonitorType.TransactionEgress, class: TransactionEgressMonitor },
-      { monitorType: MonitorType.BalanceDecrement, class: BalanceDecrementMonitor },
-      { monitorType: MonitorType.BalanceIncrement, class: BalanceIncrementMonitor },
-      { monitorType: MonitorType.BalanceThreshold, class: BalanceThresholdMonitor }
-    ];
+    const monitorMapping = new Map<MonitorType, MonitorConstructor>([
+      [MonitorType.Governance, GovernanceMonitor],
+      [MonitorType.Validator, ValidatorMonitor],
+      [MonitorType.TransactionIngress, TransactionIngressMonitor],
+      [MonitorType.TransactionEgress, TransactionEgressMonitor],
+      [MonitorType.BalanceDecrement, BalanceDecrementMonitor],
+      [MonitorType.BalanceIncrement, BalanceIncrementMonitor],
+      [MonitorType.BalanceThreshold, BalanceThresholdMonitor],
+    ]);
   
-    this.monitors = monitorClasses.flatMap(({ monitorType, class: MonitorClass }) => {
-      const monitoringGroups = this.monitoringGroups.filter((group) =>
-        group.monitors.some((monitor) => monitor.name === monitorType)
+    this.monitors = Array.from(monitorMapping.entries()).flatMap(([monitorType, MonitorClass]) => {
+      const relevantGroups = this.monitoringGroups.filter(group =>
+        group.monitors.some(monitor => monitor.name === monitorType)
       );
-
-      return [new MonitorClass(this.api, monitoringGroups, this.eventDispatcher)];
+  
+      return [new MonitorClass(this.api, relevantGroups, this.eventDispatcher)];
     });
   }
 
@@ -102,4 +103,21 @@ export abstract class AbstractChainWatcher {
 
   protected abstract getLastProcessedBlock(): Promise<number>;
   protected abstract setLastProcessedBlock(block: number): Promise<void>;
+}
+
+
+export class ChainWatcherInMemory extends AbstractChainWatcher {
+  private lastProcessedBlock: number | null = null;
+
+  protected async getLastProcessedBlock(): Promise<number> {
+    if (this.lastProcessedBlock === null) {
+      const lastHeader = await this.api.rpc.chain.getHeader();
+      this.lastProcessedBlock = lastHeader.number.toNumber() - 1;
+    }
+    return this.lastProcessedBlock;
+  }
+
+  protected async setLastProcessedBlock(block: number): Promise<void> {
+    this.lastProcessedBlock = block;
+  }
 }
