@@ -1,6 +1,5 @@
 import { ApiPromise } from '@polkadot/api';
 import type { EventRecord } from '@polkadot/types/interfaces/system';
-import { once } from '../utils';
 
 import { EventDispatcher, Logger, Monitor, MonitoringGroup } from '../interfaces';
 import { Chain, MonitorType } from '../constants';
@@ -39,7 +38,6 @@ export abstract class AbstractChainWatcher {
     this.api.rpc.chain.subscribeFinalizedHeads((header) => {
       const blockNumber = header.number.toNumber();
       this.latestBlockNumber = blockNumber;
-      this.eventDispatcher.emit('newBlock', blockNumber);
     });
 
     this.isRunning = true;
@@ -97,7 +95,7 @@ export abstract class AbstractChainWatcher {
         await this.processBlock(nextBlockToProcess);
         nextBlockToProcess++;
       } else {
-        await once(this.eventDispatcher, 'newBlock');
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
   }

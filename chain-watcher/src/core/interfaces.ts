@@ -4,9 +4,7 @@ import { EventRecord } from '@polkadot/types/interfaces/system';
 import { Call } from '@polkadot/types/interfaces/runtime';
 
 export interface EventDispatcher {
-  emit(eventName: string | symbol, ...args: any[]): boolean;
-  on(eventName: string | symbol, listener: (...args: any[]) => void): this;
-  off(eventName: string | symbol, listener: (...args: any[]) => void): this;
+  emitIncident(incident: Incident): Promise<void>;
 }
 
 export interface Monitor {

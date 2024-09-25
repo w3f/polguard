@@ -40,10 +40,10 @@ abstract class TransactionMonitor extends AbstractMonitor {
     const matches = this.monitorType === MonitorType.TransactionIngress
       ? this.getGroups(to) : this.getGroups(from);
 
-    matches.forEach(({ account, group }) => {
+    for (const { account, group } of matches) {
       const incident = createTransferIncident(account, group.alerts);
-      this.emitIncident(incident);
-    });
+      await this.eventDispatcher.emitIncident(incident);
+    }
   }
 }
 

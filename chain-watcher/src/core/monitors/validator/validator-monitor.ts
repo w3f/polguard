@@ -19,7 +19,7 @@ export class ValidatorMonitor extends AbstractMonitor {
         )}`,
         alerts: group.alerts,
       };
-      this.emitIncident(incident);
+      await this.eventDispatcher.emitIncident(incident);
     }
   }
   

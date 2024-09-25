@@ -68,10 +68,6 @@ export abstract class AbstractMonitor implements Monitor {
     return this.accountGroups.get(address) || [];
   }
 
-  protected emitIncident(incident: Incident): void {
-    this.eventDispatcher.emit('newIncident', incident);
-  }
-
   protected async getBalances(blockNumber: number): Promise<Record<string, bigint>> {
     let balances: Record<string, bigint> = this.cache.get(blockNumber, CacheKey.Balances);
     

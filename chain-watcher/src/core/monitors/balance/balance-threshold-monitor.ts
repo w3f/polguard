@@ -15,7 +15,7 @@ export class BalanceThresholdMonitor extends AbstractMonitor {
       for (const { account: accountSettings, group } of accountGroups) {
         const settings = accountSettings[MonitorType.BalanceThreshold] as BalanceSettings;
         if (settings && settings.balanceThreshold !== undefined && currentBalance < settings.balanceThreshold) {
-          this.emitIncident({
+          await this.eventDispatcher.emitIncident({
             message: `Balance for account "${accountSettings.name}" is below threshold. ` +
                      `Current balance: ${currentBalance}, ` +
                      `Threshold: ${settings.balanceThreshold}`,

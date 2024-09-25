@@ -1,10 +1,8 @@
 import { Logger, Module, OnModuleInit } from '@nestjs/common';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ProcessedBlockModule } from './block-tracker/block-tracker.module';
 import { AppService } from './app.service';
 import { ReconnectableApi } from '@core/api/reconnectable-api';
-import { EventDispatcherAdapter } from './event-dispatcher.adapter';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventDispatcherService } from './event-dispatcher.service';
 import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { ConfigModule } from './config/config.module';
@@ -12,7 +10,6 @@ import { ConfigService } from './config/config.service';
 
 @Module({
   imports: [
-    EventEmitterModule.forRoot(),
     ProcessedBlockModule,
     HealthModule,
     MetricsModule,
@@ -21,15 +18,11 @@ import { ConfigService } from './config/config.service';
   providers: [
     Logger,
     AppService,
+    EventDispatcherService,
     {
       provide: ReconnectableApi,
       useFactory: (logger: Logger) => new ReconnectableApi(logger),
       inject: [Logger],
-    },
-    {
-      provide: EventDispatcherAdapter,
-      useFactory: (eventEmitter: EventEmitter2) => new EventDispatcherAdapter(eventEmitter),
-      inject: [EventEmitter2],
     },
   ],
 })

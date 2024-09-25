@@ -4,7 +4,6 @@ import { AbstractMonitor } from '../abstract-monitor';
 import { MonitoringGroup, EventDispatcher } from '../../interfaces';
 import { BlockHandler } from '../decorators';
 import { MonitorType } from '@core/constants';
-import { BlockCache } from '../../cache/block-cache';
 
 abstract class BalanceMonitor extends AbstractMonitor {
   constructor(
@@ -33,7 +32,7 @@ abstract class BalanceMonitor extends AbstractMonitor {
         for (const { account: accountSettings, group } of accountGroups) {
           const changeType = this.monitorType === MonitorType.BalanceIncrement ? 'increased' : 'decreased';
           
-          this.emitIncident({
+          await this.eventDispatcher.emitIncident({
             message: `Balance ${changeType} for account "${accountSettings.name}". ` +
                      `Previous balance: ${previousBalance.toString()}, ` +
                      `New balance: ${currentBalance.toString()}`,

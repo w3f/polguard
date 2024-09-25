@@ -41,9 +41,8 @@ export class AppConfigService {
         rpcs: Joi.array().items(Joi.string().uri()).min(1).required()
       }).required(),
       environment: Joi.string().valid('development', 'production', 'test').required(),
-      rabbitmq: Joi.object({
+      redis: Joi.object({
         url: Joi.string().uri().required(),
-        queue: Joi.string().required()
       }).required(),
       monitoring_config_sources: Joi.array().items(Joi.object({
         name: Joi.string().required(),
@@ -80,8 +79,13 @@ export class AppConfigService {
     return this.config.environment;
   }
 
-  getRabbitMQConfig(): { url: string; queue: string } {
-    return this.config.rabbitmq;
+  getRedisConfig(): {host: string, port: number, db: number } {
+    const redisUrl = new URL(this.config.redis.url);
+    return {
+      host: redisUrl.hostname,
+      port: Number(redisUrl.port) || 6379,
+      db: Number(redisUrl.pathname.split('/')[1]) || 0,
+    };
   }
 
   getMonitoringConfigSources(): MonitoringConfigSource[] {
@@ -109,9 +113,8 @@ interface AppConfig {
     rpcs: string[];
   };
   environment: string;
-  rabbitmq: {
+  redis: {
     url: string;
-    queue: string;
   };
   monitoring_config_sources: MonitoringConfigSource[];
   logging?: {

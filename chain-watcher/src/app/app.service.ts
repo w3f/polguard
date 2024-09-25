@@ -1,15 +1,15 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { AbstractChainWatcher } from '@core/index';
+import { AbstractChainWatcher } from '@core/chain-watcher/abstract-chain-watcher';
+import { ReconnectableApi } from '@core/api/reconnectable-api';
 import { BlockTrackerService } from './block-tracker/block-tracker.service';
 import { ConfigService } from './config/config.service';
-import { ReconnectableApi } from '@core/api/reconnectable-api';
-import { EventDispatcherAdapter } from './event-dispatcher.adapter';
+import { EventDispatcherService } from './event-dispatcher.service';
 
 @Injectable()
 export class AppService extends AbstractChainWatcher implements OnModuleInit, OnModuleDestroy {
   constructor(
     protected logger: Logger,
-    protected eventDispatcher: EventDispatcherAdapter,
+    protected eventDispatcher: EventDispatcherService,
     private blockTracker: BlockTrackerService,
     private config: ConfigService,
     private reconnectableApi: ReconnectableApi
@@ -39,18 +39,12 @@ export class AppService extends AbstractChainWatcher implements OnModuleInit, On
       throw error;
     }
   }
-  /**
-   * Implements Chain Watcher method to retrieve the last processed block.
-   * Uses ORM to fetch or create a record for the current chain.
-   */
+
   protected async getLastProcessedBlock(): Promise<number> {
     const processedBlock = await this.blockTracker.getOrCreate(this.chain);
     return processedBlock.block;
   }
-  /**
-   * Implements Chain Watcher method to update the last processed block.
-   * Uses ORM to persist the latest block number for the current chain.
-   */
+
   protected async setLastProcessedBlock(block: number): Promise<void> {
     await this.blockTracker.update(this.chain, block);
   }
