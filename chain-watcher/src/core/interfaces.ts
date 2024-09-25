@@ -72,6 +72,7 @@ export type MonitorSettings = {
   [MonitorType.TransactionEgress]: TransactionSettings;
   [MonitorType.BalanceIncrement]: BalanceSettings;
   [MonitorType.BalanceDecrement]: BalanceSettings;
+  [MonitorType.BalanceThreshold]: BalanceSettings;
 }
 
 export interface MonitorConfig {

@@ -11,5 +11,10 @@ export enum MonitorType {
   TransactionIngress = 'TransactionIngress',
   TransactionEgress = 'TransactionEgress',
   BalanceIncrement = 'BalanceIncrement',
-  BalanceDecrement = 'BalanceDecrement'
+  BalanceDecrement = 'BalanceDecrement',
+  BalanceThreshold = 'BalanceThreshold'
+}
+
+export enum CacheKey {
+  Balances = 'balances',
 }

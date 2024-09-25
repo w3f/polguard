@@ -3,13 +3,18 @@ import { BlockHash, Phase } from '@polkadot/types/interfaces';
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import { formatBalance } from '@polkadot/util';
+import { AccountInfo } from '@polkadot/types/interfaces';
 import { Monitor, MonitoringGroup, Incident, AccountId, EventDispatcher, AccountSettings } from '../interfaces';
+import { BlockCache } from '../cache/block-cache';
+import { CacheKey } from '../constants';
 
 export abstract class AbstractMonitor implements Monitor {
   protected eventHandlers: Map<string, (eventRecord: EventRecord, blockHash: BlockHash) => Promise<void>>;
   protected callHandlers: Map<string, (call: Call, blockHash: BlockHash) => Promise<void>>;
   protected blockHandlers: Set<(blockHash: BlockHash, blockNumber: number) => Promise<void>>;
   protected accountGroups: Map<string, { account: AccountId; group: MonitoringGroup }[]> = new Map();
+  protected accounts: Array<string>;
+  protected cache: BlockCache = BlockCache.getInstance();
 
   constructor(
     protected api: ApiPromise,
@@ -19,6 +24,8 @@ export abstract class AbstractMonitor implements Monitor {
     // Build accountGroups map for better account lookup
     this.buildAccountGroups();
     this.initializeHandlers();
+    // Get all unique accounts from all monitoring groups
+    this.accounts = Array.from(new Set(this.groups.flatMap(group => group.accounts.map(account => account.ss58))));
   }
 
   private initializeHandlers(): void {
@@ -65,6 +72,25 @@ export abstract class AbstractMonitor implements Monitor {
     this.eventDispatcher.emit('newIncident', incident);
   }
 
+  protected async getBalances(blockNumber: number): Promise<Record<string, bigint>> {
+    let balances: Record<string, bigint> = this.cache.get(blockNumber, CacheKey.Balances);
+    
+    if (!balances) {
+      const accountInfos = await this.api.query.system.account.multi<AccountInfo>(this.accounts);
+      
+      balances = Object.fromEntries(
+        this.accounts.map((account, index) => [
+          account,
+          accountInfos[index].data.free.toBigInt()
+        ])
+      );
+      
+      this.cache.set(blockNumber, CacheKey.Balances, balances);
+    }
+
+    return balances;
+  }
+
   async processEvent(blockHash: BlockHash, eventRecord: EventRecord): Promise<void> {
     const { event } = eventRecord;
     const eventName = `${event.section}.${event.method}`;
@@ -88,7 +114,7 @@ export abstract class AbstractMonitor implements Monitor {
     }
   }
 
-  async getEventLink(blockHash: BlockHash, phase: Phase): Promise<string> {
+  protected async getEventLink(blockHash: BlockHash, phase: Phase): Promise<string> {
     const block = await this.api.rpc.chain.getBlock(blockHash);
     const networkId = (this.api.runtimeVersion.specName).toString();
     if (!phase.isApplyExtrinsic) {
@@ -99,7 +125,7 @@ export abstract class AbstractMonitor implements Monitor {
     return `https://${networkId}.subscan.io/event?extrinsic=${blockNumber}-${extrinsicIndex}`;
   }
 
-  formatBalance(amount: number | string | bigint): string {
+  protected formatBalance(amount: number | string | bigint): string {
     return formatBalance(amount, {
       decimals: this.api.registry.chainDecimals[0],
       withUnit: this.api.registry.chainTokens[0],

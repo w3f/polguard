@@ -7,7 +7,8 @@ import { Chain, MonitorType } from '../constants';
 import { GovernanceMonitor } from '../monitors/governance/governance-monitor';
 import { TransactionEgressMonitor, TransactionIngressMonitor } from '../monitors/transaction/transaction-monitor';
 import { ValidatorMonitor } from '../monitors/validator/validator-monitor';
-import { BalanceDecrementMonitor, BalanceIncrementMonitor } from '@core/monitors/balance/balance-monitor';
+import { BalanceDecrementMonitor, BalanceIncrementMonitor } from '../monitors/balance/balance-monitor';
+import { BalanceThresholdMonitor } from '../monitors/balance/balance-threshold-monitor';
 
 export abstract class AbstractChainWatcher {
   protected log: Logger;
@@ -58,6 +59,7 @@ export abstract class AbstractChainWatcher {
       { monitorType: MonitorType.TransactionEgress, class: TransactionEgressMonitor },
       { monitorType: MonitorType.BalanceDecrement, class: BalanceDecrementMonitor },
       { monitorType: MonitorType.BalanceIncrement, class: BalanceIncrementMonitor },
+      { monitorType: MonitorType.BalanceThreshold, class: BalanceThresholdMonitor }
     ];
   
     this.monitors = monitorClasses.flatMap(({ monitorType, class: MonitorClass }) => {
