@@ -18,26 +18,19 @@ flowchart TD
         F[ChainWatcher<br><br>Orchestrates monitoring<br>Manages monitors<br>Listens to new blocks]
         G[AbstractMonitor<br><br>Base class for monitors<br>Defines handler interfaces<br>Common monitoring utilities]
         H[ConcreteMonitor<br><br>Specific implementations:<br>- ValidatorMonitor<br>- GovernanceMonitor<br>- TransactionIngressMonitor<br>- TransactionEgressMonitor<br>- BalanceMonitors]
-        I[ReconnectableApi<br><br>Resilient RPC connection<br>Automatic reconnection<br>Manages multiple RPC endpoints]
-        J[ConfigProcessor<br><br>Validates config files<br>Transforms config data]
-        K[IncidentHandler<br><br>Manages incidents<br>Handles alerting]
-        L[ChainWatcherStore<br><br>Manages state persistence<br>Interfaces with Redis<br>Emits events]
+        I[IncidentHandler<br><br>Manages incidents<br>Handles alerting]
+        J[ChainWatcherStore<br><br>Manages state persistence<br>Interfaces with Redis]
+        K[ConfigProcessor<br><br>Validates config files<br>Transforms config data]
     end
 
-    M[Event Consumers<br><br>Other services<br>consuming events]
-
+    D --> B
+    C --> B
+    B --> A
     A --> F
-    A --> B
-    A --> E
-    B --> C
-    B --> D
-    D --> J
-    C --> D
+    E --> A
     F --> G
     G --> H
-    I --> F
-    H --> K
-    F --> L
-    K --> L
-    E --> L
-    L --> M
+    H --> I
+    F --> J
+    I --> J
+
