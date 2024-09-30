@@ -1,6 +1,3 @@
-database:
-  url: postgresql://username:password@localhost:5432/chain_watcher
-
 chain:
   name: Polkadot
   rpcs:
@@ -24,6 +21,12 @@ monitoring_config_sources:
     url: https://github.com/org/kusama-validator-config.git
     branch: development
     auth_token: access_token
+
+alerts:
+  matrix:
+    targets:
+      - "!abcdefghijklmno:matrix.org"
+      - "!pqrstuvwxyz12345:matrix.org"
 
 logging:
   level: info

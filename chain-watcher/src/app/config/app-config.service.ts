@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as Joi from 'joi';
 import { Chain } from '@core/constants';
+import { AlertSettings } from '@core/interfaces';
 
 @Injectable()
 export class AppConfigService {
@@ -33,9 +34,6 @@ export class AppConfigService {
 
   private validateConfig(config: unknown): AppConfig {
     const schema = Joi.object({
-      database: Joi.object({
-        url: Joi.string().uri().required()
-      }).required(),
       chain: Joi.object({
         name: Joi.string().valid(...Object.values(Chain)).required(),
         rpcs: Joi.array().items(Joi.string().uri()).min(1).required()
@@ -50,6 +48,18 @@ export class AppConfigService {
         branch: Joi.string().required(),
         auth_token: Joi.string().optional()
       })).min(1).required(),
+      alerts: Joi.object({
+        matrix: Joi.object({
+          targets: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required(),
+          repeat_interval: Joi.number().optional(),
+          acknowledgement: Joi.object({
+            escalation: Joi.object({
+              timeout: Joi.number().required(),
+              targets: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required()
+            }).optional()
+          }).optional()
+        }).required()
+      }).required(),
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info')
       }).optional()
@@ -61,10 +71,6 @@ export class AppConfigService {
     }
 
     return value;
-  }
-
-  getDatabaseUrl(): string {
-    return this.config.database.url;
   }
 
   getChain(): Chain {
@@ -79,7 +85,11 @@ export class AppConfigService {
     return this.config.environment;
   }
 
-  getRedisConfig(): {host: string, port: number, db: number } {
+  getAppFailureAlertSettings(): AlertSettings {
+    return this.config.alerts;
+  }
+
+  getRedisConfig(): { host: string, port: number, db: number } {
     const redisUrl = new URL(this.config.redis.url);
     return {
       host: redisUrl.hostname,
@@ -120,4 +130,5 @@ interface AppConfig {
   logging?: {
     level: string;
   };
+  alerts: AlertSettings
 }

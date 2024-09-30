@@ -5,9 +5,15 @@ import { EventHandler } from '../decorators';
 
 export class GovernanceMonitor extends AbstractMonitor {
 
-  @EventHandler('placeholder.Placeholder')
-  async handleSlashReported(eventRecord: EventRecord, blockHash: BlockHash): Promise<void> {
+  @EventHandler('referenda.Submitted')
+  async handleReferendaSubmitted(eventRecord: EventRecord, blockHash: BlockHash, blockNumber: number): Promise<void> {
+    // TODO: Do we need persistence?
+  }
 
+  @EventHandler('convictionVoting.Voted')
+  async handleConvictionVoted(eventRecord: EventRecord, blockHash: BlockHash, blockNumber: number): Promise<void> {
+    // TODO: polkadot-sdk currently doesn't have referenda id in the event. PR/issue to polkadot-sdk is required.
+    // Current Event: Voted { who: T::AccountId, vote: AccountVote<BalanceOf<T, I>> },
   }
   
 }

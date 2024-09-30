@@ -7,6 +7,7 @@ defaults:
         - "!xyz987:matrix.org"
       repeat_interval: 60  # for constantly firing incidents
       acknowledgement:
+        # TODO: remove escalation
         escalation:
           timeout: 60 # in minutes
           targets:
@@ -29,7 +30,6 @@ groups:
     monitors:     # overwrites default
       - name: Validator
         commission: 10
-        payee: E8MByjWbS49hmzFM1U5rvFJES1Xgz1TSBAZLiYqZQiFTNUY
       - name: Governance
       - name: Transaction
     accounts:

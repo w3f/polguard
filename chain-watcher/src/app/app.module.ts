@@ -1,39 +1,34 @@
-import { Logger, Module, OnModuleInit } from '@nestjs/common';
-import { ProcessedBlockModule } from './block-tracker/block-tracker.module';
+import { Logger, Module } from '@nestjs/common';
 import { AppService } from './app.service';
-import { ReconnectableApi } from '@core/api/reconnectable-api';
-import { EventDispatcherService } from './event-dispatcher.service';
 import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { ConfigModule } from './config/config.module';
 import { ConfigService } from './config/config.service';
+import { RedisModule } from './redis/redis.module';
+import { ChainWatcherStore } from '@core/store/chain-watcher-store';
+import { IncidentHandler } from '@core/incident/incident-handler';
 
 @Module({
   imports: [
-    ProcessedBlockModule,
     HealthModule,
     MetricsModule,
     ConfigModule,
+    RedisModule,
   ],
   providers: [
     Logger,
     AppService,
-    EventDispatcherService,
     {
-      provide: ReconnectableApi,
-      useFactory: (logger: Logger) => new ReconnectableApi(logger),
-      inject: [Logger],
+      provide: ChainWatcherStore,
+      useFactory: (redisClient) => new ChainWatcherStore(redisClient),
+      inject: ['REDIS_CLIENT'],
+    },
+    {
+      provide: IncidentHandler,
+      useFactory: (store: ChainWatcherStore, configService: ConfigService) => 
+        new IncidentHandler(store, configService.getChain()),
+      inject: [ChainWatcherStore, ConfigService],
     },
   ],
 })
-export class AppModule implements OnModuleInit {
-  constructor(
-    private reconnectableApi: ReconnectableApi,
-    private configService: ConfigService,
-  ) {}
-
-  async onModuleInit() {
-    const rpcs = this.configService.getRPCs();
-    await this.reconnectableApi.connect(rpcs);
-  }
-}
+export class AppModule {}

@@ -4,22 +4,22 @@ import { EventRecord } from '@polkadot/types/interfaces/system';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import { formatBalance } from '@polkadot/util';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { Monitor, MonitoringGroup, Incident, AccountId, EventDispatcher, AccountSettings } from '../interfaces';
-import { BlockCache } from '../cache/block-cache';
-import { CacheKey } from '../constants';
+import { Monitor, MonitoringGroup, AccountId, AccountSettings } from '../interfaces';
+import { IncidentHandler } from '../incident/incident-handler';
+import { ChainWatcherStore } from '@core/store/chain-watcher-store';
 
 export abstract class AbstractMonitor implements Monitor {
-  protected eventHandlers: Map<string, (eventRecord: EventRecord, blockHash: BlockHash) => Promise<void>>;
-  protected callHandlers: Map<string, (call: Call, blockHash: BlockHash) => Promise<void>>;
+  protected eventHandlers: Map<string, (eventRecord: EventRecord, blockHash: BlockHash, blockNumber: number) => Promise<void>>;
+  protected callHandlers: Map<string, (call: Call, blockHash: BlockHash, blockNumber: number) => Promise<void>>;
   protected blockHandlers: Set<(blockHash: BlockHash, blockNumber: number) => Promise<void>>;
   protected accountGroups: Map<string, { account: AccountId; group: MonitoringGroup }[]> = new Map();
   protected accounts: Array<string>;
-  protected cache: BlockCache = BlockCache.getInstance();
 
   constructor(
     protected api: ApiPromise,
     protected groups: MonitoringGroup[],
-    protected eventDispatcher: EventDispatcher
+    protected incidentHandler: IncidentHandler,
+    protected store: ChainWatcherStore
   ) {
     // Build accountGroups map for better account lookup
     this.buildAccountGroups();
@@ -68,39 +68,38 @@ export abstract class AbstractMonitor implements Monitor {
     return this.accountGroups.get(address) || [];
   }
 
-  protected async getBalances(blockNumber: number): Promise<Record<string, bigint>> {
-    let balances: Record<string, bigint> = this.cache.get(blockNumber, CacheKey.Balances);
-    
-    if (!balances) {
-      const accountInfos = await this.api.query.system.account.multi<AccountInfo>(this.accounts);
-      
-      balances = Object.fromEntries(
-        this.accounts.map((account, index) => [
-          account,
-          accountInfos[index].data.free.toBigInt()
-        ])
-      );
-      
-      this.cache.set(blockNumber, CacheKey.Balances, balances);
-    }
-
-    return balances;
+protected async getBalances(blockNumber: number): Promise<Map<string, bigint>> {
+  let balances: Map<string, bigint> | null = await this.store.getAccountBalances(blockNumber);
+  
+  if (!balances) {
+    const accountInfos = await this.api.query.system.account.multi<AccountInfo>(this.accounts);
+    balances = new Map(
+      this.accounts.map((account, index) => [
+        account,
+        accountInfos[index].data.free.toBigInt()
+      ])
+    );
+    await this.store.setAccountBalances(blockNumber, balances);
   }
+  
+  return balances;
+}
 
-  async processEvent(blockHash: BlockHash, eventRecord: EventRecord): Promise<void> {
+
+  async processEvent(blockHash: BlockHash, blockNumber: number, eventRecord: EventRecord): Promise<void> {
     const { event } = eventRecord;
     const eventName = `${event.section}.${event.method}`;
     const handler = this.eventHandlers.get(eventName);
     if (handler) {
-      await handler(eventRecord, blockHash);
+      await handler(eventRecord, blockHash, blockNumber);
     }
   }
 
-  async processCall(blockHash: BlockHash, call: Call): Promise<void> {
+  async processCall(blockHash: BlockHash, blockNumber: number, call: Call): Promise<void> {
     const callName = `${call.section}.${call.method}`;
     const handler = this.callHandlers.get(callName);
     if (handler) {
-      await handler(call, blockHash);
+      await handler(call, blockHash, blockNumber);
     }
   }
 

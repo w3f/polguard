@@ -3,19 +3,17 @@ import { BlockHash } from '@polkadot/types/interfaces';
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import { ApiPromise } from '@polkadot/api';
-
-export interface EventDispatcher {
-  emitIncident(incident: Incident): Promise<void>;
-}
+import { IncidentHandler } from './incident/incident-handler';
+import { ChainWatcherStore } from './store/chain-watcher-store';
 
 export interface Monitor {
   processBlock(blockHash: BlockHash, blockNumber: number): Promise<void>;
-  processEvent(blockHash: BlockHash, eventRecord: EventRecord): Promise<void>;
-  processCall(blockHash: BlockHash, call: Call): Promise<void>;
+  processEvent(blockHash: BlockHash, blockNumber: number, eventRecord: EventRecord): Promise<void>;
+  processCall(blockHash: BlockHash, blockNumber: number, call: Call): Promise<void>;
 }
 
 export interface MonitorConstructor {
-  new(api: ApiPromise, groups: MonitoringGroup[], eventDispatcher: EventDispatcher): Monitor;
+  new(api: ApiPromise, groups: MonitoringGroup[], incidentHandler: IncidentHandler, store: ChainWatcherStore): Monitor;
 }
 
 export interface Logger {
@@ -39,18 +37,28 @@ export type AccountSettings = AccountId & Partial<MonitorSettings>;
 // Alert-related interfaces
 export interface AlertSettings {
   matrix: {
-    rooms: string[];
+    targets: string[];
     acknowledgement?: {
       escalation?: {
         timeout: number;
-        rooms: string[];
+        targets: string[];
       };
     };
   };
 }
 
-export interface Incident {
+export interface IncidentEvent {
+  id: string;
+  blockNumber: number;
+  chain: Chain;
   message: string;
+  alerts: AlertSettings;
+}
+
+export interface IncidentResolvedEvent {
+  id: string;
+  blockNumber: number;
+  chain: Chain;
   alerts: AlertSettings;
 }
 
@@ -89,4 +97,12 @@ export interface MonitoringGroup {
   monitors: MonitorConfig[];
   accounts: AccountSettings[];
   alerts: AlertSettings;
+}
+
+export interface RedisClient {
+  set(key: string, value: string): Promise<void>;
+  setex(key: string, ttl: number, value: string): Promise<void>;
+  get(key: string): Promise<string | null>;
+  del(key: string): Promise<void>;
+  publish(channel: string, message: string): Promise<void>;
 }

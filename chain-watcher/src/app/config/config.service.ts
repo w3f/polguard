@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { MonitoringGroup } from '../../core/interfaces';
+import { AlertSettings, MonitoringGroup } from '../../core/interfaces';
 import { AppConfigService } from './app-config.service';
 import { MonitoringConfigService } from './monitoring-config.service';
 import { Chain } from '@core/constants';
@@ -13,10 +13,6 @@ export class ConfigService {
   ) {}
 
   // Proxy methods for AppConfigService
-  getDatabaseUrl(): string {
-    return this.appConfig.getDatabaseUrl();
-  }
-
   getChain(): Chain {
     return this.appConfig.getChain();
   }
@@ -29,8 +25,12 @@ export class ConfigService {
     return this.appConfig.getEnvironment();
   }
 
-  getRabbitMQConfig(): { url: string; queue: string } {
-    return this.appConfig.getRabbitMQConfig();
+  getAppFailureAlertSettings(): AlertSettings {
+    return this.appConfig.getAppFailureAlertSettings();
+  }
+
+  getRedisConfig():  { host: string, port: number, db: number } {
+    return this.appConfig.getRedisConfig();
   }
 
 // Proxy methods for MonitoringConfigService

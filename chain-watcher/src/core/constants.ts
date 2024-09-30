@@ -14,7 +14,3 @@ export enum MonitorType {
   BalanceDecrement = 'BalanceDecrement',
   BalanceThreshold = 'BalanceThreshold'
 }
-
-export enum CacheKey {
-  Balances = 'balances',
-}
