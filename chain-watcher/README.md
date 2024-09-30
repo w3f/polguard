@@ -31,6 +31,6 @@ flowchart TD
     F --> G
     G --> H
     H --> I
-    F --> J
-    I --> J
+    J --> F
+    J --> I
 
