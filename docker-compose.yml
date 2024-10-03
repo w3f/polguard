@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  chain-watcher:
+    build:
+      context: ./chain-watcher
+    volumes:
+      - ./config/chain-watcher.yaml:/app/config/config.yaml
+      - ./config/chain-watcher.monitoring.yaml:/app/monitoring-configs/config.yaml
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "127.0.0.1:6379:6379"

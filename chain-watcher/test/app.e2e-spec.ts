@@ -1,8 +1,7 @@
-// app.e2e-spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestMicroservice } from '@nestjs/common';
 import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { AppModule } from '../src/app/app.module';
+import { AppModule } from '../src/service/app.module';
 import { timeout } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
 

@@ -6,20 +6,20 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build -p tsconfig.build.json",
+    "build": "nest build",
+    "start": "node dist/service/main",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/service/main",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "node dist/app/main",
-    "start:dev": "nest start -p tsconfig.build.json --watch",
-    "start:debug": "nest start -p tsconfig.build.json --debug --watch",
-    "start:prod": "node dist/app/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:app": "jest --config src/app/jest.config.json",
-    "test:core": "jest --config src/core/jest.config.json"
+    "test:service": "jest --config src/service/jest.config.json",
+    "test:lib": "jest --config src/lib/jest.config.json"
   },
   "dependencies": {
     "@mikro-orm/core": "^6.3.8",
@@ -33,6 +33,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/terminus": "^10.2.3",
     "@polkadot/api": "^12.4.2",
+    "ioredis": "^5.4.1",
     "joi": "^17.13.3",
     "js-yaml": "^4.1.0",
     "node-cache": "^5.1.2",
@@ -82,8 +83,8 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@app/(.*)$": "<rootDir>/app/$1",
-      "^@core/(.*)$": "<rootDir>/core/$1"
+      "^@service/(.*)$": "<rootDir>/service/$1",
+      "^@lib/(.*)$": "<rootDir>/lib/$1"
     },
     "testPathIgnorePatterns": [
       "/node_modules/",

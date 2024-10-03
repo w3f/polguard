@@ -1,4 +1,8 @@
-# compiled output
+# App
+/monitoring-configs
+/config
+
+# Compiled output
 /dist
 /node_modules
 /build
