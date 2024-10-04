@@ -3,7 +3,7 @@ import Redis from 'ioredis';
 import { StorageClient } from '@lib/interfaces';
 
 @Injectable()
-export class RedisStorageService implements StorageClient {
+export class StorageService implements StorageClient {
   constructor(@Inject('REDIS_CLIENT') private readonly client: Redis) {}
 
   async get(key: string): Promise<string | null> {

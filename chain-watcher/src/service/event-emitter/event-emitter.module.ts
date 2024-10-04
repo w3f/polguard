@@ -1,29 +1,30 @@
 import { Module, DynamicModule } from '@nestjs/common';
-import Redis from 'ioredis';
-import { RedisStorageService } from './redis-storage.service';
-import { RedisPubSubService } from './redis-pubsub.service';
+import { EventEmitterService } from './event-emitter.service';
 import { ConfigModule } from '../config/config.module';
 import { ConfigService } from '../config/config.service';
+import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 
 @Module({})
-export class RedisModule {
+export class EventEmitterModule {
   static forRootAsync(): DynamicModule {
     return {
-      module: RedisModule,
+      module: EventEmitterModule,
       imports: [ConfigModule],
       providers: [
         {
-          provide: 'REDIS_CLIENT',
+          provide: 'REDIS_PROXY_CLIENT',
           useFactory: (configService: ConfigService) => {
             const redisConfig = configService.getRedisConfig();
-            return new Redis(redisConfig);
+            return ClientProxyFactory.create({
+              transport: Transport.REDIS,
+              options: redisConfig,
+            });
           },
           inject: [ConfigService],
         },
-        RedisStorageService,
-        RedisPubSubService,
+        EventEmitterService,
       ],
-      exports: [RedisStorageService, RedisPubSubService],
+      exports: [EventEmitterService],
     };
   }
 }

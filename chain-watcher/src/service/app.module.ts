@@ -4,32 +4,34 @@ import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { ConfigModule } from './config/config.module';
 import { ConfigService } from './config/config.service';
-import { RedisModule } from './redis/redis.module';
+import { StorageModule } from './storage/storage.module';
+import { StorageService } from './storage/storage.service';
 import { ChainWatcherStore } from '@lib/store/chain-watcher-store';
 import { IncidentHandler } from '@lib/incident/incident-handler';
-import { RedisStorageService } from './redis/redis-storage.service';
-import { RedisPubSubService } from './redis/redis-pubsub.service';
+import { EventEmitterModule } from './event-emitter/event-emitter.module';
+import { EventEmitterService } from './event-emitter/event-emitter.service';
 
 @Module({
   imports: [
     HealthModule,
     MetricsModule,
     ConfigModule,
-    RedisModule.forRootAsync(),
+    StorageModule.forRootAsync(),
+    EventEmitterModule.forRootAsync(),
   ],
   providers: [
     Logger,
     AppService,
     {
       provide: ChainWatcherStore,
-      useFactory: (redisStorageService: RedisStorageService) => new ChainWatcherStore(redisStorageService),
-      inject: [RedisStorageService],
+      useFactory: (storageService: StorageService) => new ChainWatcherStore(storageService),
+      inject: [StorageService],
     },
     {
       provide: IncidentHandler,
-      useFactory: (store: ChainWatcherStore, configService: ConfigService, pubSub: RedisPubSubService) => 
-        new IncidentHandler(store, pubSub, configService.getChain()),
-      inject: [ChainWatcherStore, ConfigService, RedisPubSubService],
+      useFactory: (store: ChainWatcherStore, configService: ConfigService, eventEmitter: EventEmitterService) => 
+        new IncidentHandler(store, eventEmitter, configService.getChain()),
+      inject: [ChainWatcherStore, ConfigService, EventEmitterService],
     },
   ],
 })

@@ -55,13 +55,6 @@ export interface IncidentEvent {
   alerts: AlertSettings;
 }
 
-export interface IncidentResolvedEvent {
-  id: string;
-  blockNumber: number;
-  chain: Chain;
-  alerts: AlertSettings;
-}
-
 // Monitor-specific settings interfaces
 export interface ValidatorSettings {
   commission: number;
@@ -106,6 +99,6 @@ export interface StorageClient {
   del(key: string): Promise<void>;
 }
 
-export interface MessageBroker {
-  publish(channel: string, message: string): Promise<void>;
+export interface EventEmitterClient {
+  emit(event: string , payload: any): boolean;
 }

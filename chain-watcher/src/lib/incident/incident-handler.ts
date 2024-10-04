@@ -1,5 +1,5 @@
 import { ChainWatcherStore } from '../store/chain-watcher-store';
-import { IncidentEvent, AlertSettings, IncidentResolvedEvent, MessageBroker } from '../interfaces';
+import { IncidentEvent, AlertSettings, EventEmitterClient } from '../interfaces';
 import { createHash } from 'crypto';
 import { Chain } from '../constants';
 
@@ -20,11 +20,10 @@ import { Chain } from '../constants';
  */
 export class IncidentHandler {
   private readonly THRESHOLD = 3;
-  private readonly INCIDENT_CHANNEL = 'incident_channel';
 
   constructor(
     private store: ChainWatcherStore,
-    private messageBroker: MessageBroker,
+    private eventEmitter: EventEmitterClient,
     private chain: Chain,
     private repeatInterval: number = 6
   ) {}
@@ -56,7 +55,7 @@ export class IncidentHandler {
         const shouldEmit = state.lastEmitted === 0 || (currentTimestamp - state.lastEmitted >= this.repeatInterval);
         
         if (shouldEmit) {
-          await this.emitEvent(state.incident);
+          await this.emitIncident(state.incident);
           state.lastEmitted = currentTimestamp;
         }
       }
@@ -65,13 +64,14 @@ export class IncidentHandler {
       state.consecutiveFiringBlocks = 0;
 
       if (state.consecutiveNormalBlocks >= this.THRESHOLD) {
-        const resolvedIncident: IncidentResolvedEvent = {
+        const resolvedIncident: IncidentEvent = {
           id: incidentId,
           blockNumber,
+          message: `Incident resolved: ${incidentId}`,
           alerts: state.incident.alerts,
           chain: this.chain
         };
-        await this.emitEvent(resolvedIncident);
+        await this.emitIncidentResolved(resolvedIncident);
         await this.store.deleteOngoingIncident(incidentId);
         return;
       }
@@ -87,11 +87,15 @@ export class IncidentHandler {
   ): Promise<void> {
     const incidentId = this.generateIncidentId(incidentKey);
     const incident: IncidentEvent = { id: incidentId, message, blockNumber, alerts, chain: this.chain };
-    await this.emitEvent(incident);
+    await this.emitIncident(incident);
   }
 
-  private async emitEvent(event: IncidentEvent | IncidentResolvedEvent): Promise<void> {
-    await this.messageBroker.publish(this.INCIDENT_CHANNEL, JSON.stringify(event));
+  private async emitIncident(event: IncidentEvent): Promise<void> {
+    this.eventEmitter.emit('incident', event);
+  }
+
+  private async emitIncidentResolved(event: IncidentEvent): Promise<void> {
+    this.eventEmitter.emit('incident-resolved', event);
   }
 
   private generateIncidentId(incidentKey: string): string {
