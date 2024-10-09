@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   chain-watcher:
     build:
@@ -7,6 +5,14 @@ services:
     volumes:
       - ./config/chain-watcher.yaml:/app/config/config.yaml
       - ./config/chain-watcher.monitoring.yaml:/app/monitoring-configs/config.yaml
+    depends_on:
+      - redis
+  
+  matrix:
+    build:
+      context: ./matrix
+    volumes:
+      - ./config/matrix.yaml:/app/config/config.yaml
     depends_on:
       - redis
 

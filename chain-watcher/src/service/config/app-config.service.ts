@@ -115,9 +115,6 @@ interface MonitoringConfigSource {
 }
 
 interface AppConfig {
-  database: {
-    url: string;
-  };
   chain: {
     name: Chain;
     rpcs: string[];
