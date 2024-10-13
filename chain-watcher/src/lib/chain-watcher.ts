@@ -60,13 +60,16 @@ export class ChainWatcher {
       [MonitorType.BalanceIncrement, BalanceIncrementMonitor],
       [MonitorType.BalanceThreshold, BalanceThresholdMonitor],
     ]);
-  
+    
     this.monitors = Array.from(monitorMapping.entries()).flatMap(([monitorType, MonitorClass]) => {
       const relevantGroups = this.monitoringGroups.filter(group =>
         group.monitors.some(monitor => monitor.name === monitorType)
       );
-  
-      return [new MonitorClass(this.api, relevantGroups, this.incidentHandler, this.store)];
+      if (relevantGroups.length > 0) {
+        this.logger.debug(`${monitorType} monitor initialized with ${relevantGroups.length} groups`);
+        return [new MonitorClass(this.logger, this.api, relevantGroups, this.incidentHandler, this.store)];
+      }
+      return [];
     });
   }
 
@@ -108,7 +111,7 @@ export class ChainWatcher {
   }
 
   private async processBlock(blockNumber: number): Promise<void> {
-    this.logger.log(`Processing block: #${blockNumber}`);
+    this.logger.debug(`Processing block: #${blockNumber}`);
     const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
     const apiAt = await this.api.at(blockHash);
 
@@ -126,7 +129,7 @@ export class ChainWatcher {
   }
 
   private async runBlockProcessing(startBlock?: number): Promise<void> {
-    this.logger.log(`Start processing from block: #${startBlock}`);
+    this.logger.log(`Start processing from block: #${startBlock || "<NOT_PROVIDED>"}`);
     let nextBlockToProcess = startBlock ? startBlock : await this.getLastProcessedBlock() + 1;
   
     while (this.isRunning) {

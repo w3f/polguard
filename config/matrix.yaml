@@ -5,13 +5,11 @@ redis:
 
 matrix:
   serverAddress: "https://matrix.web3.foundation"
-  userId: "@test:web3.foundation"
-  password: "password"
-  # Default logging level is warn for matrix sdk, console logs are not suppresed for debug level only
-  # logging:
-    # level: debug
+  userId: "@vlad-test:web3.foundation"
+  # password is provided via env variable MATRIX_PASSWORD
   rooms:
-    - id: "!loooongroom1d:web3.foundation"
+    # TestMonitoringPlatform room
+    - id: "!BabNKVNdOktKGafXzd:web3.foundation"
 
 logging:
   level: info

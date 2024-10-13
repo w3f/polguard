@@ -1,21 +1,20 @@
-chain:
-  name: Polkadot
-  # start_block: 22807000
-  rpcs:
-    - wss://polkadot-rpc.dwellir.com
-
 environment: development
 
 redis:
   url: redis://redis:6379/0
+
+chain:
+  name: Polkadot
+  start_block: 22904317
+  rpcs:
+    - wss://polkadot-rpc.dwellir.com
 
 monitoring_config_sources: []
 
 alerts:
   matrix:
     targets:
-      - "!abcdefghijklmno:matrix.org"
-      - "!pqrstuvwxyz12345:matrix.org"
+      - "!BabNKVNdOktKGafXzd:web3.foundation"
 
 logging:
   level: info

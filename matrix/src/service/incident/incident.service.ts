@@ -1,17 +1,16 @@
 import { Incident, IncidentServiceInterface } from '@lib/interfaces';
-import { Injectable, Inject } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { Injectable } from '@nestjs/common';
+import { RedisStreamsClient } from '@w3f/nest-redis-streams';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class IncidentService implements IncidentServiceInterface {
-
-  constructor(@Inject('REDIS_PROXY_CLIENT') private readonly client: ClientProxy) {}
+  constructor(private readonly client: RedisStreamsClient) {}
 
   async getNonAckedIncidentsForRoom(roomId: string): Promise<Incident[]> {
     try {
-      return await firstValueFrom(
-        this.client.send<Incident[]>({ cmd: 'get_non_acked_incidents' }, { roomId })
+      return await lastValueFrom(
+        this.client.send<Incident[]>('get_non_acked_incidents', { roomId })
       );
     } catch (error) {
       throw new Error('Failed to fetch non-acknowledged incidents');

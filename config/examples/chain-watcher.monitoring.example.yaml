@@ -1,0 +1,79 @@
+version: "1.0"
+
+defaults:
+  alerts:
+    matrix:
+      targets:
+        - "!xyz987:matrix.org"
+      repeat_interval: 60  # for constantly firing incidents
+      acknowledgement: true
+  chains:
+    - Polkadot
+  monitors:
+    - name: Governance
+
+groups:
+  - name: Example of using defaults
+    # defaults: chains, monitors, alerts
+    accounts:
+      # name is optional, wallet address will be used if not provided
+      - address: E8MByjWbS49hmzFM1U5rvFJES1Xgz1TSBAZLiYqZQiFTNUY
+  
+  - name: Kusama all the monitors
+    chains:       # overwrites default
+      - Polkadot
+    monitors:     # overwrites default
+      - name: Validator
+        commission: 10
+      - name: Governance
+      - name: TransactionEgress
+    accounts:
+      - address: HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F
+        commission: 11
+      - name: Account-2
+        address: E8MByjWbS49hmzFM1U5rvFJES1Xgz1TSBAZLiYqZQiFTNUY
+
+  - name: Multi-Chain Transaction Monitors
+    chains:
+      - Polkadot
+      - Kusama
+    monitors:
+      - name: TransactionEgress
+    alerts:  # overwrites default
+      matrix:
+        targets:
+          - "!ghi789:matrix.org"
+        acknowledgement: true
+    accounts:
+      - name: Account1
+        # account could use any SS58 prefix, ex. here it's Polkadot prefix
+        # transformation: ss58_any => public key hex => proper ss58_chain_prefix
+        address: 15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5
+      - name: Account2
+        # Public key hex format is allowed
+        address: "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+
+  - name: Kusama Validators commission 3
+    chains:
+      - Kusama
+    monitors:
+      - name: Validator
+        commission: 3
+    accounts:
+      - name: Validator3
+        address: E8MByjWbS49hmzFM1U5rvFJES1Xgz1TSBAZLiYqZQiFTNUY
+        commission: 4
+      - name: Validator4
+        address: "0xa2b8d4b36df4a2c3e5d6f9a7b2c4e8f7a5d9e6b2f8c7d4b3e9f6d2c8b7a5e4c3"
+
+  - name: Kusama Validators commission 10
+    chains:
+      - Kusama
+    monitors:
+      - name: Validator
+        commission: 10
+    accounts:
+      - name: Validator3
+        address: E8MByjWbS49hmzFM1U5rvFJES1Xgz1TSBAZLiYqZQiFTNUY
+      - name: Validator4
+        address: "0xa2b8d4b36df4a2c3e5d6f9a7b2c4e8f7a5d9e6b2f8c7d4b3e9f6d2c8b7a5e4c3"

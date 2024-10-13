@@ -1,7 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { AbstractMonitor } from '../abstract-monitor';
-import { MonitoringGroup } from '../../interfaces';
+import { Logger, MonitoringGroup } from '../../interfaces';
 import { BlockHandler } from '../decorators';
 import { MonitorType } from '../../constants';
 import { IncidentHandler } from '../../incident/incident-handler';
@@ -9,20 +9,20 @@ import { ChainWatcherStore } from '../../store/chain-watcher-store';
 
 abstract class BalanceMonitor extends AbstractMonitor {
   constructor(
+    logger: Logger,
     api: ApiPromise,
     groups: MonitoringGroup[],
     incidentHandler: IncidentHandler,
     store: ChainWatcherStore,
     protected monitorType: MonitorType
   ) {
-    super(api, groups, incidentHandler, store);
+    super(logger, api, groups, incidentHandler, store);
   }
 
   @BlockHandler()
   async handleBalanceChange(_blockHash: BlockHash, blockNumber: number): Promise<void> {
     const currentBalances = await this.getBalances(blockNumber);
     const previousBalances = await this.getBalances(blockNumber - 1);
-  
     for (const [account, currentBalance] of Object.entries(currentBalances)) {
       const previousBalance = previousBalances[account];
       
@@ -37,6 +37,7 @@ abstract class BalanceMonitor extends AbstractMonitor {
                         `Previous balance: ${previousBalance.toString()}, ` +
                         `New balance: ${currentBalance.toString()}`
         const incidentKey = `${account}:${group.name}:handleBalanceChange`;
+        this.logger.debug(`Balance change detected for account "${accountSettings.name}"`)
         await this.incidentHandler.handleOngoingIncident(
           incidentKey,
           balanceChanged,
@@ -52,13 +53,13 @@ abstract class BalanceMonitor extends AbstractMonitor {
 }
 
 export class BalanceIncrementMonitor extends BalanceMonitor {
-  constructor(api: ApiPromise, groups: MonitoringGroup[], incidentHandler: IncidentHandler, store: ChainWatcherStore) {
-    super(api, groups, incidentHandler, store, MonitorType.BalanceIncrement);
+  constructor(logger: Logger, api: ApiPromise, groups: MonitoringGroup[], incidentHandler: IncidentHandler, store: ChainWatcherStore) {
+    super(logger, api, groups, incidentHandler, store, MonitorType.BalanceIncrement);
   }
 }
 
 export class BalanceDecrementMonitor extends BalanceMonitor {
-  constructor(api: ApiPromise, groups: MonitoringGroup[], incidentHandler: IncidentHandler, store: ChainWatcherStore) {
-    super(api, groups, incidentHandler, store, MonitorType.BalanceDecrement);
+  constructor(logger: Logger, api: ApiPromise, groups: MonitoringGroup[], incidentHandler: IncidentHandler, store: ChainWatcherStore) {
+    super(logger, api, groups, incidentHandler, store, MonitorType.BalanceDecrement);
   }
 }

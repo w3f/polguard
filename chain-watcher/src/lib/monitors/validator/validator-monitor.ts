@@ -11,7 +11,7 @@ export class ValidatorMonitor extends AbstractMonitor {
     const matches = this.getGroups(validatorId);
 
     for (const { account, group } of matches) {
-      const message = `Validator ${account.name} has been slashed. Details: ${this.getEventLink(
+      const message = `Validator ${account.name} has been slashed. Details: ${await this.getEventLink(
         blockHash,
         eventRecord.phase
       )}`;

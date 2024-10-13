@@ -198,13 +198,18 @@ export class MatrixClient {
 
   public async sendMessage(roomId: string, message: string) {
     try {
-      await this.client.sendMessage(roomId, {
+      const content: any = {
         msgtype: MsgType.Text,
         body: message,
-      });
+        format: "org.matrix.custom.html",
+        formatted_body: message
+      };
+  
+      await this.client.sendMessage(roomId, content);
       this.logger.debug(`Sent message to room ${roomId}`);
     } catch (error) {
       this.logger.error(`Failed to send message to room ${roomId}: ${error.message}`);
+      throw error;
     }
   }
 

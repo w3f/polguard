@@ -4,7 +4,7 @@ import { EventRecord } from '@polkadot/types/interfaces/system';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import { formatBalance } from '@polkadot/util';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { Monitor, MonitoringGroup, AccountId, AccountSettings } from '../interfaces';
+import { Monitor, MonitoringGroup, AccountId, AccountSettings, Logger } from '../interfaces';
 import { IncidentHandler } from '../incident/incident-handler';
 import { ChainWatcherStore } from '../store/chain-watcher-store';
 
@@ -16,6 +16,7 @@ export abstract class AbstractMonitor implements Monitor {
   protected accounts: Array<string>;
 
   constructor(
+    protected logger: Logger,
     protected api: ApiPromise,
     protected groups: MonitoringGroup[],
     protected incidentHandler: IncidentHandler,
@@ -123,7 +124,7 @@ protected async getBalances(blockNumber: number): Promise<Map<string, bigint>> {
     }
     const extrinsicIndex = phase.asApplyExtrinsic.toNumber();
     const blockNumber = block.block.header.number.toNumber();
-    return `https://${networkId}.subscan.io/event?extrinsic=${blockNumber}-${extrinsicIndex}`;
+    return `<a href="https://${networkId}.subscan.io/event?extrinsic=${blockNumber}-${extrinsicIndex}">polkadot.subscan.io</a>`;
   }
 
   protected formatBalance(amount: number | string | bigint): string {

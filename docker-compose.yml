@@ -11,6 +11,8 @@ services:
   matrix:
     build:
       context: ./matrix
+    environment:
+      - MATRIX_PASSWORD
     volumes:
       - ./config/matrix.yaml:/app/config/config.yaml
     depends_on:

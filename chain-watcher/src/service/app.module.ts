@@ -8,8 +8,8 @@ import { StorageModule } from './storage/storage.module';
 import { StorageService } from './storage/storage.service';
 import { ChainWatcherStore } from '@lib/store/chain-watcher-store';
 import { IncidentHandler } from '@lib/incident/incident-handler';
-import { EventEmitterModule } from './event-emitter/event-emitter.module';
-import { EventEmitterService } from './event-emitter/event-emitter.service';
+import { EventEmitterModule } from './incident/incident.module';
+import { IncidentPublisherService } from './incident/incident-publisher.service';
 
 @Module({
   imports: [
@@ -29,9 +29,9 @@ import { EventEmitterService } from './event-emitter/event-emitter.service';
     },
     {
       provide: IncidentHandler,
-      useFactory: (store: ChainWatcherStore, configService: ConfigService, eventEmitter: EventEmitterService) => 
-        new IncidentHandler(store, eventEmitter, configService.getChain()),
-      inject: [ChainWatcherStore, ConfigService, EventEmitterService],
+      useFactory: (store: ChainWatcherStore, configService: ConfigService, eventEmitter: IncidentPublisherService) => 
+        new IncidentHandler(new Logger(IncidentHandler.name), store, eventEmitter, configService.getChain()),
+      inject: [ChainWatcherStore, ConfigService, IncidentPublisherService],
     },
   ],
 })

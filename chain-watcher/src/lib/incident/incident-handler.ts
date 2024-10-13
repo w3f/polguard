@@ -2,6 +2,7 @@ import { ChainWatcherStore } from '../store/chain-watcher-store';
 import { IncidentEvent, AlertSettings, EventEmitterClient } from '../interfaces';
 import { createHash } from 'crypto';
 import { Chain } from '../constants';
+import { Logger } from '@nestjs/common';
 
 /**
  * IncidentHandler is responsible for managing and emitting incident events.
@@ -22,6 +23,7 @@ export class IncidentHandler {
   private readonly THRESHOLD = 3;
 
   constructor(
+    private logger: Logger,
     private store: ChainWatcherStore,
     private eventEmitter: EventEmitterClient,
     private chain: Chain,
@@ -91,11 +93,13 @@ export class IncidentHandler {
   }
 
   private async emitIncident(event: IncidentEvent): Promise<void> {
-    this.eventEmitter.emit('incident', event);
+    this.logger.debug(`Emitting incident.created: ${JSON.stringify(event)}`);
+    await this.eventEmitter.emit('incident.created', event);
   }
-
+  
   private async emitIncidentResolved(event: IncidentEvent): Promise<void> {
-    this.eventEmitter.emit('incident-resolved', event);
+    this.logger.debug(`Emitting incident.resolved: ${JSON.stringify(event)}`);
+    await this.eventEmitter.emit('incident.resolved', event);
   }
 
   private generateIncidentId(incidentKey: string): string {

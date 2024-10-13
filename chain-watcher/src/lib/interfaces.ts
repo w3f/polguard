@@ -13,7 +13,7 @@ export interface Monitor {
 }
 
 export interface MonitorConstructor {
-  new(api: ApiPromise, groups: MonitoringGroup[], incidentHandler: IncidentHandler, store: ChainWatcherStore): Monitor;
+  new(logger: Logger, api: ApiPromise, groups: MonitoringGroup[], incidentHandler: IncidentHandler, store: ChainWatcherStore): Monitor;
 }
 
 export interface Logger {
@@ -100,5 +100,5 @@ export interface StorageClient {
 }
 
 export interface EventEmitterClient {
-  emit(event: string , payload: any): boolean;
+  emit(event: string , payload: any): Promise<boolean>;
 }

@@ -1,5 +1,7 @@
 {
   "name": "chain-watcher",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -29,6 +31,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/terminus": "^10.2.3",
     "@polkadot/api": "^12.4.2",
+    "@w3f/nest-redis-streams": "^1.0.0",
     "ioredis": "^5.4.1",
     "joi": "^17.13.3",
     "js-yaml": "^4.1.0",

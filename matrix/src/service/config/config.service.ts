@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
+// @ts-ignore: Suppress ts(80003)
 import * as Joi from 'joi';
 import { MatrixConfig } from '@lib/interfaces';
 
@@ -11,7 +12,10 @@ export class ConfigService {
 
   constructor() {
     const configPath = this.getConfigPath();
-    const rawConfig = this.loadConfig(configPath);
+    const rawConfig: any = this.loadConfig(configPath);
+    if (!rawConfig?.matrix?.password && process.env.MATRIX_PASSWORD) {
+      rawConfig.matrix.password = process.env.MATRIX_PASSWORD;
+    }
     this.config = this.validateConfig(rawConfig);
   }
 
@@ -31,16 +35,19 @@ export class ConfigService {
       environment: Joi.string().valid('development', 'production', 'test').required(),
       matrix: Joi.object({
         serverAddress: Joi.string().uri().required(),
-        logging:  Joi.object({
-          level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error')}).default({level:'warn'}),
+        logging: Joi.object({
+          level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error')
+        }).default({level:'warn'}),
         userId: Joi.string().required(),
-        password: Joi.string().required(),
+        password: Joi.string().required().messages({
+          'any.required': 'Matrix password is required. Provide it in the config file or set the MATRIX_PASSWORD environment variable.',
+        }),
         rooms: Joi.array().items(
           Joi.object({
             id: Joi.string().pattern(/^[!#][A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/).required(),
             acknowledgement: Joi.boolean().default(false).optional()
           })
-        ).min(1).required()
+        ).optional()
       }).required(),
       redis: Joi.object({
         url: Joi.string().uri().required(),

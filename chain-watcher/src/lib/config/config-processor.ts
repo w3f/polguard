@@ -105,7 +105,7 @@ export class MonitoringConfigProcessor {
     const hex = this.addressToHex(address);
     const ss58 = this.hexToSs58(hex, chain);
     return { 
-      name: name || ss58,
+      name: name || `${ss58.slice(0, 4)}...${ss58.slice(-4)}`,
       hex, 
       ss58
     };

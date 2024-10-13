@@ -2,9 +2,9 @@ import { Module, DynamicModule } from '@nestjs/common';
 import { IncidentService } from './incident.service';
 import { ConfigModule } from '../config/config.module';
 import { ConfigService } from '../config/config.service';
-import { ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { IncidentEventHandlerService } from './incident-handler.service';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+import { IncidentController } from './incident.controller';
+import { AppModule } from '../app.module';
+import { RedisStreamsModule } from '@w3f/nest-redis-streams';
 
 @Module({})
 export class IncidentModule {
@@ -12,25 +12,26 @@ export class IncidentModule {
     return {
       module: IncidentModule,
       imports: [
-        ConfigModule,
-        EventEmitterModule.forRoot()
-      ],
-      providers: [
-        {
-          provide: 'REDIS_PROXY_CLIENT',
-          useFactory: (configService: ConfigService) => {
+        ConfigModule, 
+        AppModule,
+        RedisStreamsModule.registerAsync({
+          imports: [ConfigModule],
+          useFactory: async (configService: ConfigService) => {
             const redisConfig = configService.getRedisConfig();
-            return ClientProxyFactory.create({
-              transport: Transport.REDIS,
-              options: redisConfig,
-            });
+            return {
+              host: redisConfig.host,
+              port: redisConfig.port,
+              streamName: 'incidents',
+              groupName: 'matrix',
+              consumerName: 'matrix',
+            };
           },
           inject: [ConfigService],
-        },
-        IncidentService,
-        IncidentEventHandlerService
+        }),
       ],
-      exports: [IncidentService, IncidentEventHandlerService],
+      controllers: [IncidentController],
+      providers: [IncidentService],
+      exports: [IncidentService],
     };
   }
 }
