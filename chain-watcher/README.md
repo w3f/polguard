@@ -5,7 +5,7 @@
 The following diagram illustrates the high-level architecture and connections between different components of the system:
 
 ```mermaid
-flowchart LR
+flowchart RL
     subgraph NestClasses["Nest.js /service"]
         A[NestMicroservice<br><br>Main entry point. Initializes components, coordinates services]
         B[ConfigService<br><br>Provides unified config interface]
@@ -29,16 +29,18 @@ flowchart LR
     D --> B
     C --> B
     B --> A
-    E --> N
+    E -.-> N
+    E --> A
+    I --> A
     F --> A
     G --> A
 
-    J --> A
+    J ==> A
     K --> J
     L --> K
     M --> J
     N --> J
     N --> M
-    O --> D
-    I --> M
+    O ==> D
+    I -.-> M
 ```
