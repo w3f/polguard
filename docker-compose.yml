@@ -22,3 +22,13 @@ services:
     image: redis:alpine
     ports:
       - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --save 1 1
+             # Append-Only File persistence, save the dataset every 1 second if at least 1 key changed.
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    restart: always
+
+volumes:
+  redis-data:
