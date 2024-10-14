@@ -9,10 +9,10 @@ import { Logger } from '@nestjs/common';
  * It handles both ongoing incidents and one-time incidents.
  * 
  * Key features:
- * 1. Tracks the state of ongoing incidents.
- * 2. Uses a threshold mechanism to determine when to emit or resolve incidents.
- * 3. Supports periodic re-emission of unresolved incidents.
- * 4. Handles one-time incidents.
+ * - Tracks the state of ongoing incidents.
+ * - Uses a threshold mechanism to determine when to emit or resolve incidents.
+ * - Supports periodic re-emission of unresolved incidents.
+ * - Handles one-time incidents.
  * 
  * For ongoing incidents:
  * - An incident is emitted when it has been firing for a specified number of consecutive blocks (threshold).

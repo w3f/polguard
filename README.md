@@ -8,10 +8,39 @@ Regular Git flow with PRs will start once the first version is ready.
 The Monitoring Platform consists of three microservices:
 
 1. **ChainWatcher** - Monitoring service responsible for observing blockchain activities and generating incidents. [More details](./chain-watcher/README.md)
-2. **Matrix** - Notification service for sending alerts and updates to specified channels.
+2. **Matrix** - Notification service for sending alerts and updates to specified channels. [More details](./matrix/README.md)
 3. **Incident Management** - API gateway service for managing and coordinating incidents across the platform.
 
-All services are built with Nest.js and communicate asynchronously using RabbitMQ.
+All services are built with Nest.js, supporting both synchronous and asynchronous communication using Redis Streams.
+
+## Architecture Overview
+
+```mermaid
+flowchart LR
+    CW[ChainWatcher]
+    M[Matrix]
+    IM[Incident Management]
+    RS[(Redis Streams)]
+    RKV[(Redis Key/Value)]
+    DB[(PostgreSQL)]
+    API[REST API]
+
+    CW --> RKV
+    M <--> RS
+    IM <--> RS
+    IM --> DB
+    API --> IM
+
+    subgraph Events
+        IC[Incident.Created]
+        IR[Incident.Resolved]
+    end
+
+    CW --> IC
+    CW --> IR
+    IC --> RS
+    IR --> RS
+```
 
 ## Links
 
