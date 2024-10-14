@@ -23,23 +23,24 @@ flowchart LR
     RS[(Redis Streams)]
     RKV[(Redis Key/Value)]
     DB[(PostgreSQL)]
-    API[REST API]
-
+    API([REST API])
     CW --> RKV
     M <--> RS
     IM <--> RS
     IM --> DB
-    API --> IM
-
+    API -.-o IM
     subgraph Events
-        IC[Incident.Created]
-        IR[Incident.Resolved]
+        IC([Incident.Created])
+        IR([Incident.Resolved])
     end
-
     CW --> IC
     CW --> IR
     IC --> RS
     IR --> RS
+
+    style CW stroke:#c68c8c,stroke-width:3px,font-weight:bold
+    style M stroke:#8cc68c,stroke-width:3px,font-weight:bold
+    style IM stroke:#8c8cc6,stroke-width:3px,font-weight:bold
 ```
 
 ## Links
