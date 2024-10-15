@@ -17,18 +17,18 @@ All services are built with Nest.js, supporting both synchronous and asynchronou
 
 ```mermaid
 flowchart LR
-    CW[ChainWatcher]
-    M[Matrix]
-    IM[Incident Management]
+    CW[1 - ChainWatcher]
+    M[2 - Matrix]
+    IM[3 - Incident Management]
     RS[(Redis Streams)]
     RKV[(Redis Key/Value)]
     DB[(PostgreSQL)]
-    API([REST API])
+
     CW --> RKV
-    M <--> RS
-    IM <--> RS
+    M --> |HTTP sync| IM
+    RS --> |async| M
+    RS --> |async| IM
     IM --> DB
-    API -.-o IM
     subgraph Events
         IC([Incident.Created])
         IR([Incident.Resolved])
