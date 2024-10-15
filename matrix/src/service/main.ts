@@ -6,6 +6,7 @@ import { ConfigService } from './config/config.service';
 import { RedisStreamsServer } from '@w3f/nest-redis-streams';
 
 async function bootstrap() {
+  const httpPort = 3000;
   const logger = new Logger('Main');
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
@@ -21,9 +22,10 @@ async function bootstrap() {
     }),
   });
 
-  logger.log('Application created, starting initialization...');
+  logger.debug('Application created, starting initialization...');
   await app.init();
-  logger.log('Application initialized successfully');
+  await app.listen(httpPort);
+  logger.log(`HTTP server is listening on port ${httpPort}`);
   await microservice.listen();
   logger.log('Microservice is ready to consume events from Redis Streams');
 }

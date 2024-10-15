@@ -5,8 +5,11 @@ services:
     volumes:
       - ./config/chain-watcher.yaml:/app/config/config.yaml
       - ./config/chain-watcher.monitoring.yaml:/app/monitoring-configs/config.yaml
+    ports:
+      - "127.0.0.1:8080:3000"
     depends_on:
       - redis
+
   
   matrix:
     build:
@@ -15,6 +18,9 @@ services:
       - MATRIX_PASSWORD
     volumes:
       - ./config/matrix.yaml:/app/config/config.yaml
+      - ./matrix/matrix-storage:/app/matrix-storage/
+    ports:
+      - "127.0.0.1:8081:3000"
     depends_on:
       - redis
 

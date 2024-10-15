@@ -10,6 +10,9 @@ matrix:
   rooms:
     # TestMonitoringPlatform room
     - id: "!BabNKVNdOktKGafXzd:web3.foundation"
+  logging:
+    level: warn
+
 
 logging:
   level: info
