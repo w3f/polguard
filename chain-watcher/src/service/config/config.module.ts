@@ -10,15 +10,16 @@ import { ConfigService } from './config.service';
     MonitoringConfigService,
     {
       provide: ConfigService,
-      useFactory: async (monitoringConfigService: MonitoringConfigService, appConfigService: AppConfigService) => {
+      useFactory: async (
+        monitoringConfigService: MonitoringConfigService,
+        appConfigService: AppConfigService,
+      ) => {
         await monitoringConfigService.initialize();
         return new ConfigService(appConfigService, monitoringConfigService);
       },
       inject: [MonitoringConfigService, AppConfigService],
     },
   ],
-  exports: [
-    ConfigService,
-  ],
+  exports: [ConfigService],
 })
 export class ConfigModule {}

@@ -1,15 +1,17 @@
 import { Chain, MonitorType } from './constants';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { EventRecord } from '@polkadot/types/interfaces/system';
-import { Call } from '@polkadot/types/interfaces/runtime';
+import { CallBase } from '@polkadot/types/types/calls';
+import { AnyTuple } from '@polkadot/types/types';
 import { ApiPromise } from '@polkadot/api';
 import { IncidentHandler } from './incident/incident-handler';
 import { ChainWatcherStore } from './store/chain-watcher-store';
 
+// TODO: Refactor interfaces, split into smaller chunks.
 export interface Monitor {
-  processBlock(blockHash: BlockHash, blockNumber: number): Promise<void>;
-  processEvent(blockHash: BlockHash, blockNumber: number, eventRecord: EventRecord): Promise<void>;
-  processCall(blockHash: BlockHash, blockNumber: number, call: Call): Promise<void>;
+  processBlock(params: BlockHandlerParams): Promise<void>;
+  processEvent(params: EventHandlerParams): Promise<void>;
+  processCall(params: CallHandlerParams): Promise<void>;
 }
 
 export interface MonitorConstructor {
@@ -101,4 +103,22 @@ export interface StorageClient {
 
 export interface EventEmitterClient {
   emit(event: string , payload: any): Promise<boolean>;
+}
+
+export interface CallHandlerParams {
+  call: CallBase<AnyTuple>;
+  origin: string;
+  blockHash: BlockHash;
+  blockNumber: number;
+}
+
+export interface EventHandlerParams {
+  eventRecord: EventRecord;
+  blockHash: BlockHash;
+  blockNumber: number;
+}
+
+export interface BlockHandlerParams {
+  blockHash: BlockHash;
+  blockNumber: number;
 }

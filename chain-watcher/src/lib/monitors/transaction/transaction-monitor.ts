@@ -1,8 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
-import { EventRecord } from '@polkadot/types/interfaces/system';
-import { BlockHash } from '@polkadot/types/interfaces';
+import { PalletBalancesEvent } from '@polkadot/types/lookup';
 import { AbstractMonitor } from '../abstract-monitor';
-import { Logger, MonitoringGroup } from '../../interfaces';
+import { EventHandlerParams, Logger, MonitoringGroup } from '../../interfaces';
 import { EventHandler } from '../decorators';
 import { MonitorType } from '../../constants';
 import { IncidentHandler } from '../../incident/incident-handler';
@@ -21,7 +20,7 @@ abstract class TransactionMonitor extends AbstractMonitor {
   }
 
   @EventHandler('balances.Transfer')
-  async handleBalancesTransfer(eventRecord: EventRecord, blockHash: BlockHash, blockNumber: number): Promise<void> {
+  async handleBalancesTransfer({ eventRecord, blockHash, blockNumber }: EventHandlerParams): Promise<void> {
     const [from, to, amount] = eventRecord.event.data.map((item) => item.toString());
     const matches = this.monitorType === MonitorType.TransactionIngress
       ? this.getGroups(to) : this.getGroups(from);
@@ -29,17 +28,10 @@ abstract class TransactionMonitor extends AbstractMonitor {
     for (const { account, group } of matches) {
       this.logger.debug(`BalancesTransfer: ${from} -> ${to}: ${amount}`);
       const action = this.monitorType === MonitorType.TransactionIngress ? 'received in' : 'sent from';
-      const message = `New Transfer of ${this.formatBalance(amount)} ${action} account "${account.name}". Details: ${await this.getEventLink(
-        blockHash,
-        eventRecord.phase
-      )}`;
-      const incidentKey = `${account.ss58}:${group.name}:handleBalancesTransfer`;
-      await this.incidentHandler.handleOneTimeIncident(
-        incidentKey,
-        message,
-        group.alerts,
-        blockNumber
-      );
+      const message = `New Transfer of ${this.formatBalance(amount)} ` +
+                      `${action} account "${account.name}". ` +
+                      `Details: ${await this.getEventLink(blockNumber, eventRecord.phase)}`;
+      await this.incidents.oneTimeIncident(message, group.alerts, blockNumber);
     }
   }
 }

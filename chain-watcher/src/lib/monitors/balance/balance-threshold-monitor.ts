@@ -1,32 +1,26 @@
-import { BlockHash } from '@polkadot/types/interfaces';
-import { AbstractMonitor } from '../abstract-monitor';
 import { BalanceSettings } from '../../interfaces';
 import { BlockHandler } from '../decorators';
 import { MonitorType } from '../../constants';
+import { AbstractBalanceMonitor } from './abstract-balance-monitor';
 
-export class BalanceThresholdMonitor extends AbstractMonitor {
+export class BalanceThresholdMonitor extends AbstractBalanceMonitor {
+
   @BlockHandler()
-  async handleBalanceThreshold(_blockHash: BlockHash, blockNumber: number): Promise<void> {
+  async handleBalanceThreshold({ blockHash, blockNumber }): Promise<void> {
     const currentBalances = await this.getBalances(blockNumber);
 
-    for (const [account, currentBalance] of Object.entries(currentBalances)) {
-      const accountGroups = this.getGroups(account);
-      for (const { account: accountSettings, group } of accountGroups) {
-        const settings = accountSettings[MonitorType.BalanceThreshold] as BalanceSettings;
-        
+    for (const [acc, currentBalance] of Object.entries(currentBalances)) {
+      for (const { account, group } of this.getGroups(acc)) {
+        const settings: BalanceSettings = account[MonitorType.BalanceThreshold];
+
         if (settings && settings.balanceThreshold !== undefined) {
           const isFiring = currentBalance < settings.balanceThreshold;
-          const message = `Balance for account "${accountSettings.name}" is below threshold. ` +
-                          `Current balance: ${currentBalance}, Threshold: ${settings.balanceThreshold}`;
-          
-          const incidentKey = `${account}:${group.name}:handleBalanceThreshold`;
-          await this.incidentHandler.handleOngoingIncident(
-            incidentKey,
-            isFiring,
-            message,
-            group.alerts,
-            blockNumber
-          );
+          const message =
+            `Balance for account "${account.name}" is below threshold. ` +
+            `Current balance: ${currentBalance}, Threshold: ${settings.balanceThreshold}`;
+
+          const key = `${account}:${group.name}:handleBalanceThreshold`;
+          await this.incidents.ongoingIncident(message, group.alerts, blockNumber, key, isFiring);
         }
       }
     }

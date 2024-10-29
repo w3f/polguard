@@ -5,7 +5,9 @@ import { IncidentEvent, StorageClient } from '../interfaces';
  * for the Chain Watcher system. It uses Redis for data storage and pub/sub functionality.
  * 
  * This class provides methods to:
- * - Store and retrieve account balances (with a 5-minute TTL)
+ * - Store and retrieve account balances
+ * - Store and retrieve validator active sets
+ * - Store and retrieve the current era
  * - Track the last processed block
  * - Manage active incidents
  * 
@@ -13,10 +15,13 @@ import { IncidentEvent, StorageClient } from '../interfaces';
  * for storing and retrieving data specific to the Chain Watcher's needs.
  */
 export class ChainWatcherStore {
-  private readonly INCIDENT_PREFIX = 'incident:';
-  private readonly ACCOUNT_BALANCES_PREFIX = 'account_balances:';
-  private readonly LAST_PROCESSED_BLOCK_KEY = 'last_processed_block';
-  private readonly ACCOUNT_BALANCES_TTL = 300; // 5 minutes
+  private readonly KEYS = {
+    INCIDENT: 'incident',
+    ACCOUNT_BALANCES: 'account_balances',
+    VALIDATOR_ACTIVE_SET: 'validator_active_set',
+    LAST_PROCESSED_BLOCK: 'last_processed_block',
+    CURRENT_ERA: 'current_era',
+  };
 
   constructor(private storageClient: StorageClient) {}
 
@@ -39,39 +44,57 @@ export class ChainWatcherStore {
   }
 
   async getAccountBalances(block: number): Promise<Map<string, bigint>> {
-    const key = `${this.ACCOUNT_BALANCES_PREFIX}${block}`;
+    const key = `${this.KEYS.ACCOUNT_BALANCES}:${block}`;
     const data = await this.get<Record<string, string>>(key);
     return new Map(
       Object.entries(data || {}).map(([account, balance]) => [account, BigInt(balance)])
     );
   }
 
-  async setAccountBalances(block: number, balances: Map<string, bigint>): Promise<void> {
-    const key = `${this.ACCOUNT_BALANCES_PREFIX}${block}`;
+  async setAccountBalances(block: number, balances: Map<string, bigint>, ttl: number = 300): Promise<void> {
+    const key = `${this.KEYS.ACCOUNT_BALANCES}:${block}`;
     const data = Object.fromEntries(
       Array.from(balances, ([account, balance]) => [account, balance.toString()])
     );
-    await this.set(key, data, this.ACCOUNT_BALANCES_TTL);
+    await this.set(key, data, ttl);
+  }
+
+  async getEraValidators(era: number): Promise<Set<string> | null> {
+    const key = `${this.KEYS.VALIDATOR_ACTIVE_SET}:${era}`;
+    return this.get<Set<string>>(key);
+  }
+
+  async setEraValidators(era: number, validators: Set<string>, ttl: number = 2592000): Promise<void> {
+    const key = `${this.KEYS.VALIDATOR_ACTIVE_SET}:${era}`;
+    await this.set(key, validators, ttl);
   }
 
   async getLastProcessedBlock(): Promise<number | null> {
-    return this.get<number>(this.LAST_PROCESSED_BLOCK_KEY);
+    return this.get<number>(this.KEYS.LAST_PROCESSED_BLOCK);
   }
 
   async setLastProcessedBlock(block: number): Promise<void> {
-    await this.set(this.LAST_PROCESSED_BLOCK_KEY, block);
+    await this.set(this.KEYS.LAST_PROCESSED_BLOCK, block);
+  }
+
+  async getCurrentEra(): Promise<number | null> {
+    return this.get<number>(this.KEYS.CURRENT_ERA);
+  }
+
+  async setCurrentEra(era: number): Promise<void> {
+    await this.set(this.KEYS.CURRENT_ERA, era);
   }
 
   async getOngoingIncident(incidentId: string): Promise<ActiveIncidentState | null> {
-    return this.get<ActiveIncidentState>(`${this.INCIDENT_PREFIX}${incidentId}`);
+    return this.get<ActiveIncidentState>(`${this.KEYS.INCIDENT}:${incidentId}`);
   }
 
   async setOngoingIncident(incidentId: string, state: ActiveIncidentState): Promise<void> {
-    await this.set(`${this.INCIDENT_PREFIX}${incidentId}`, state);
+    await this.set(`${this.KEYS.INCIDENT}:${incidentId}`, state);
   }
 
   async deleteOngoingIncident(incidentId: string): Promise<void> {
-    await this.delete(`${this.INCIDENT_PREFIX}${incidentId}`);
+    await this.delete(`${this.KEYS.INCIDENT}:${incidentId}`);
   }
 }
 

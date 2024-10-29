@@ -1,19 +1,24 @@
-import { ChainWatcherStore } from '../store/chain-watcher-store';
-import { IncidentEvent, AlertSettings, EventEmitterClient } from '../interfaces';
-import { createHash } from 'crypto';
-import { Chain } from '../constants';
 import { Logger } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
+import { createHash } from 'crypto';
+import { ChainWatcherStore } from '../store/chain-watcher-store';
+import {
+  IncidentEvent,
+  AlertSettings,
+  EventEmitterClient,
+} from '../interfaces';
+import { Chain } from '../constants';
 
 /**
  * IncidentHandler is responsible for managing and emitting incident events.
  * It handles both ongoing incidents and one-time incidents.
- * 
+ *
  * Key features:
  * - Tracks the state of ongoing incidents.
  * - Uses a threshold mechanism to determine when to emit or resolve incidents.
  * - Supports periodic re-emission of unresolved incidents.
  * - Handles one-time incidents.
- * 
+ *
  * For ongoing incidents:
  * - An incident is emitted when it has been firing for a specified number of consecutive blocks (threshold).
  * - An incident is resolved when it has not been firing for the same number of consecutive blocks.
@@ -27,15 +32,15 @@ export class IncidentHandler {
     private store: ChainWatcherStore,
     private eventEmitter: EventEmitterClient,
     private chain: Chain,
-    private repeatInterval: number = 6
+    private repeatInterval: number = 6,
   ) {}
 
-  async handleOngoingIncident(
-    incidentKey: string,
-    isFiring: boolean,
+  async ongoingIncident(
     message: string,
     alerts: AlertSettings,
-    blockNumber: number
+    blockNumber: number,
+    incidentKey: string,
+    isFiring: boolean,
   ): Promise<void> {
     const incidentId = this.generateIncidentId(incidentKey);
     let state = await this.store.getOngoingIncident(incidentId);
@@ -44,7 +49,7 @@ export class IncidentHandler {
         incident: { id: incidentId, blockNumber, message, alerts, chain: this.chain },
         consecutiveFiringBlocks: 0,
         consecutiveNormalBlocks: 0,
-        lastEmitted: 0
+        lastEmitted: 0,
       };
     }
 
@@ -71,7 +76,7 @@ export class IncidentHandler {
           blockNumber,
           message: `Incident resolved: ${incidentId}`,
           alerts: state.incident.alerts,
-          chain: this.chain
+          chain: this.chain,
         };
         await this.emitIncidentResolved(resolvedIncident);
         await this.store.deleteOngoingIncident(incidentId);
@@ -81,14 +86,13 @@ export class IncidentHandler {
     await this.store.setOngoingIncident(incidentId, state);
   }
 
-  async handleOneTimeIncident(
-    incidentKey: string,
+  async oneTimeIncident(
     message: string,
     alerts: AlertSettings,
-    blockNumber: number
+    blockNumber: number,
   ): Promise<void> {
-    const incidentId = this.generateIncidentId(incidentKey);
-    const incident: IncidentEvent = { id: incidentId, message, blockNumber, alerts, chain: this.chain };
+    const incidentId = this.generateIncidentId();
+    const incident: IncidentEvent = { id: incidentId, message, blockNumber, alerts, chain: this.chain};
     await this.emitIncident(incident);
   }
 
@@ -96,13 +100,20 @@ export class IncidentHandler {
     this.logger.debug(`Emitting incident.created: ${JSON.stringify(event)}`);
     await this.eventEmitter.emit('incident.created', event);
   }
-  
+
   private async emitIncidentResolved(event: IncidentEvent): Promise<void> {
     this.logger.debug(`Emitting incident.resolved: ${JSON.stringify(event)}`);
     await this.eventEmitter.emit('incident.resolved', event);
   }
 
-  private generateIncidentId(incidentKey: string): string {
-    return createHash('md5').update(incidentKey).digest('hex').substring(0, 16);
+  private generateIncidentId(incidentKey?: string): string {
+    // TODO: check if truncation to 16 chars doesn't cause collisions
+    if (incidentKey) {
+      return createHash('md5')
+        .update(incidentKey)
+        .digest('hex')
+        .substring(0, 16);
+    }
+    return uuidv4().replace(/-/g, '').substring(0, 16);
   }
 }

@@ -1,7 +1,12 @@
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 import { Chain } from '../constants';
-import { MonitoringGroup, AccountId, MonitorConfig, AccountSettings } from '../interfaces';
+import {
+  MonitoringGroup,
+  AccountId,
+  MonitorConfig,
+  AccountSettings,
+} from '../interfaces';
 import { RawConfig, RawMonitoringGroup } from './interfaces';
 import { u8aToHex, hexToU8a, isHex } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -45,7 +50,7 @@ export class MonitoringConfigProcessor {
       ...group,
       chains: group.chains || defaults.chains,
       monitors: group.monitors || defaults.monitors,
-      alerts: group.alerts || defaults.alerts
+      alerts: group.alerts || defaults.alerts,
     };
   }
 
@@ -65,24 +70,25 @@ export class MonitoringConfigProcessor {
       alerts: group.alerts
     };
   }
-  
 
   private static transformMonitors(monitors: RawMonitoringGroup['monitors']): MonitorConfig[] {
     return monitors.map(monitor => {
       const { name, ...settings } = monitor;
       return {
         name,
-        settings: Object.keys(settings).length > 0 ? settings : undefined
+        settings: Object.keys(settings).length > 0 ? settings : undefined,
       };
     });
   }
-  
-  
 
-  private static transformAccount(account: RawMonitoringGroup['accounts'][number], chain: Chain, monitors: MonitorConfig[]): AccountSettings {
+  private static transformAccount(
+    account: RawMonitoringGroup['accounts'][number],
+    chain: Chain,
+    monitors: MonitorConfig[],
+  ): AccountSettings {
     const accountId = this.transformAddress(account.address, account.name, chain);
     const { address, name, ...accountSettings } = account;
-  
+
     // Collect all settings from monitors
     const monitorSettings = monitors.reduce((acc, monitor) => {
       if (monitor.settings) {
@@ -90,16 +96,14 @@ export class MonitoringConfigProcessor {
       }
       return acc;
     }, {});
-  
+
     // Merge monitor settings with account settings, giving priority to account settings
     const mergedSettings = { ...monitorSettings, ...accountSettings };
-  
     return {
       ...accountId,
       ...mergedSettings
     };
   }
-  
 
   private static transformAddress(address: string, name: string | undefined, chain: Chain): AccountId {
     const hex = this.addressToHex(address);
@@ -107,7 +111,7 @@ export class MonitoringConfigProcessor {
     return { 
       name: name || `${ss58.slice(0, 4)}...${ss58.slice(-4)}`,
       hex, 
-      ss58
+      ss58,
     };
   }
 

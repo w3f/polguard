@@ -1,5 +1,10 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from './config/config.service';
 import { IncidentHandler } from '@lib/incident/incident-handler';
 import { ChainWatcherStore } from '@lib/store/chain-watcher-store';
@@ -14,7 +19,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private config: ConfigService,
     private chainWatcherStore: ChainWatcherStore,
-    private incidentHandler: IncidentHandler
+    private incidentHandler: IncidentHandler,
   ) {}
 
   async onModuleInit() {
@@ -31,7 +36,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         groups,
         this.api,
         this.incidentHandler,
-        this.chainWatcherStore
+        this.chainWatcherStore,
       );
 
       this.logger.log('Starting ChainWatcher...');
@@ -49,7 +54,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Connected to RPC: ${rpcUrl}`);
     return api;
   }
-  
+
   async onModuleDestroy() {
     try {
       this.logger.log('Stopping ChainWatcher...');

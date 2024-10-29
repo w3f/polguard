@@ -1,17 +1,17 @@
 import { ApiPromise } from '@polkadot/api';
 import { BlockHash, Phase } from '@polkadot/types/interfaces';
 import { EventRecord } from '@polkadot/types/interfaces/system';
-import { Call } from '@polkadot/types/interfaces/runtime';
+import { CallBase } from '@polkadot/types/types/calls';
+import { AnyTuple } from '@polkadot/types/types';
 import { formatBalance } from '@polkadot/util';
-import { AccountInfo } from '@polkadot/types/interfaces';
-import { Monitor, MonitoringGroup, AccountId, AccountSettings, Logger } from '../interfaces';
+import { Monitor, MonitoringGroup, AccountId, AccountSettings, Logger, EventHandlerParams, CallHandlerParams, BlockHandlerParams } from '../interfaces';
 import { IncidentHandler } from '../incident/incident-handler';
 import { ChainWatcherStore } from '../store/chain-watcher-store';
 
 export abstract class AbstractMonitor implements Monitor {
-  protected eventHandlers: Map<string, (eventRecord: EventRecord, blockHash: BlockHash, blockNumber: number) => Promise<void>>;
-  protected callHandlers: Map<string, (call: Call, blockHash: BlockHash, blockNumber: number) => Promise<void>>;
-  protected blockHandlers: Set<(blockHash: BlockHash, blockNumber: number) => Promise<void>>;
+  protected eventHandlers: Map<string, (params: EventHandlerParams) => Promise<void>>;
+  protected callHandlers: Map<string, (params: CallHandlerParams) => Promise<void>>;
+  protected blockHandlers: Set<(params: BlockHandlerParams) => Promise<void>>;
   protected accountGroups: Map<string, { account: AccountId; group: MonitoringGroup }[]> = new Map();
   protected accounts: Array<string>;
 
@@ -19,7 +19,7 @@ export abstract class AbstractMonitor implements Monitor {
     protected logger: Logger,
     protected api: ApiPromise,
     protected groups: MonitoringGroup[],
-    protected incidentHandler: IncidentHandler,
+    protected incidents: IncidentHandler,
     protected store: ChainWatcherStore
   ) {
     // Build accountGroups map for better account lookup
@@ -75,56 +75,77 @@ export abstract class AbstractMonitor implements Monitor {
     return this.accountGroups.get(address) || [];
   }
 
-protected async getBalances(blockNumber: number): Promise<Map<string, bigint>> {
-  let balances: Map<string, bigint> | null = await this.store.getAccountBalances(blockNumber);
-  
-  if (!balances) {
-    const accountInfos = await this.api.query.system.account.multi<AccountInfo>(this.accounts);
-    balances = new Map(
-      this.accounts.map((account, index) => [
-        account,
-        accountInfos[index].data.free.toBigInt()
-      ])
-    );
-    await this.store.setAccountBalances(blockNumber, balances);
-  }
-  
-  return balances;
-}
-
-
-  async processEvent(blockHash: BlockHash, blockNumber: number, eventRecord: EventRecord): Promise<void> {
+  async processEvent({ eventRecord, blockHash, blockNumber }: EventHandlerParams): Promise<void> {
     const { event } = eventRecord;
     const eventName = `${event.section}.${event.method}`;
     const handler = this.eventHandlers.get(eventName);
     if (handler) {
-      await handler(eventRecord, blockHash, blockNumber);
+      await handler({ eventRecord, blockHash, blockNumber });
     }
   }
 
-  async processCall(blockHash: BlockHash, blockNumber: number, call: Call): Promise<void> {
+  async processCall({ call, origin, blockHash, blockNumber }: CallHandlerParams): Promise<void> {
     const callName = `${call.section}.${call.method}`;
     const handler = this.callHandlers.get(callName);
     if (handler) {
-      await handler(call, blockHash, blockNumber);
+      await handler({ call, origin, blockHash, blockNumber });
     }
   }
 
-  async processBlock(blockHash: BlockHash, blockNumber: number): Promise<void> {
+  async processBlock({ blockHash, blockNumber }: BlockHandlerParams): Promise<void> {
     for (const handler of this.blockHandlers) {
-      await handler(blockHash, blockNumber);
+      await handler({ blockHash, blockNumber });
     }
   }
 
-  protected async getEventLink(blockHash: BlockHash, phase: Phase): Promise<string> {
-    const block = await this.api.rpc.chain.getBlock(blockHash);
-    const networkId = (this.api.runtimeVersion.specName).toString();
+  protected async getEventLink(blockNumber: number, phase: Phase): Promise<string> {
     if (!phase.isApplyExtrinsic) {
-      return ''
+      this.logger.warn(
+        `Unable to generate event link: Phase is not ApplyExtrinsic in block ${blockNumber}`
+      );
+      return '';
     }
-    const extrinsicIndex = phase.asApplyExtrinsic.toNumber();
+    const index = phase.asApplyExtrinsic.toNumber();
+    const network = this.getNetwork();
+    return `<a href="https://${network}.subscan.io/event?extrinsic=${blockNumber}-${index}">${network}.subscan.io</a>`;
+  }
+
+  protected async getAccountLink(address: string): Promise<string> {
+    return `<a href="https://${this.getNetwork()}.subscan.io/account/${address}">${this.getNetwork()}.subscan.io</a>`;
+  }
+
+  protected async getExtrinsicLink(blockHash: BlockHash, call: CallBase<AnyTuple>): Promise<string> {
+    const block = await this.api.rpc.chain.getBlock(blockHash);
     const blockNumber = block.block.header.number.toNumber();
-    return `<a href="https://${networkId}.subscan.io/event?extrinsic=${blockNumber}-${extrinsicIndex}">polkadot.subscan.io</a>`;
+    
+    const index = block.block.extrinsics.findIndex(ext => 
+      ext.method.section === call.section && ext.method.method === call.method
+    );
+
+    if (index === -1) {
+      this.logger.warn(
+        `Unable to generate extrinsic link: Extrinsic ${call.section}.${call.method} ` +
+        `not found in block ${blockNumber}`
+      );
+      return '';
+    }
+
+    const network = this.getNetwork();
+    const url = `https://${network}.subscan.io/extrinsic/${blockNumber}-${index}`;
+
+    return `<a href="${url}">${network}.subscan.io</a>`;
+  }
+
+  private getNetwork(): string {
+    return this.api.runtimeVersion.specName.toString();
+  }
+
+  protected formatMessage(title: string, details: string[]): string {
+    const formattedDetails = [
+      `<li>Network: ${this.getNetwork()}</li>`,
+      ...details.map(detail => `<li>${detail}</li>`)
+    ].join('');
+    return `<b>${title}</b><br/><ul style="list-style-type: none; padding-left: 0;">${formattedDetails}</ul>`;
   }
 
   protected formatBalance(amount: number | string | bigint): string {

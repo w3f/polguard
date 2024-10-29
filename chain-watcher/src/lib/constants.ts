@@ -12,5 +12,5 @@ export enum MonitorType {
   TransactionEgress = 'TransactionEgress',
   BalanceIncrement = 'BalanceIncrement',
   BalanceDecrement = 'BalanceDecrement',
-  BalanceThreshold = 'BalanceThreshold'
+  BalanceThreshold = 'BalanceThreshold',
 }

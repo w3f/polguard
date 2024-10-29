@@ -1,5 +1,9 @@
 import { ApiPromise } from '@polkadot/api';
 import type { EventRecord } from '@polkadot/types/interfaces/system';
+import { AnyTuple } from '@polkadot/types/types';
+import { CallBase } from '@polkadot/types/types/calls';
+import { BlockHash } from '@polkadot/types/interfaces';
+import { TypeRegistry } from '@polkadot/types';
 
 import { Logger, Monitor, MonitorConstructor, MonitoringGroup } from './interfaces';
 import { MonitorType } from './constants';
@@ -11,6 +15,7 @@ import { BalanceDecrementMonitor, BalanceIncrementMonitor } from './monitors/bal
 import { BalanceThresholdMonitor } from './monitors/balance/balance-threshold-monitor';
 import { ChainWatcherStore } from './store/chain-watcher-store';
 
+export const registry = new TypeRegistry()
 
 /**
  * ChainWatcher is the core class responsible for monitoring a blockchain.
@@ -110,24 +115,6 @@ export class ChainWatcher {
     await this.store.setLastProcessedBlock(block);
   }
 
-  private async processBlock(blockNumber: number): Promise<void> {
-    this.logger.debug(`Processing block: #${blockNumber}`);
-    const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
-    const apiAt = await this.api.at(blockHash);
-
-    for (const monitor of this.monitors) {
-      await monitor.processBlock(blockHash, blockNumber);
-    }
-    await apiAt.query.system.events(async (records: EventRecord[]) => {
-      for (const eventRecord of records) {
-        for (const monitor of this.monitors) {
-          await monitor.processEvent(blockHash, blockNumber, eventRecord);
-        }
-      }
-    })
-    await this.setLastProcessedBlock(blockNumber);
-  }
-
   private async runBlockProcessing(startBlock?: number): Promise<void> {
     this.logger.log(`Start processing from block: #${startBlock || "<NOT_PROVIDED>"}`);
     let nextBlockToProcess = startBlock ? startBlock : await this.getLastProcessedBlock() + 1;
@@ -141,4 +128,60 @@ export class ChainWatcher {
       }
     }
   }
+
+  private async processBlock(blockNumber: number): Promise<void> {
+    this.logger.debug(`Processing block: #${blockNumber}`);
+    const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
+    const block = await this.api.rpc.chain.getBlock(blockHash);
+    const apiAt = await this.api.at(blockHash);
+
+    // Apply block handlers: process custom logic, usually storage calls
+    for (const monitor of this.monitors) {
+      await monitor.processBlock({ blockHash, blockNumber });
+    }
+    // Apply event handlers: process event payload
+    await apiAt.query.system.events(async (records: EventRecord[]) => {
+      for (const eventRecord of records) {
+        for (const monitor of this.monitors) {
+          await monitor.processEvent({ blockHash, blockNumber, eventRecord });
+        }
+      }
+    })
+    // Apply call handlers: process call signature
+    for (const extrinsic of block.block.extrinsics) {
+      const origin = extrinsic.signer.toString();
+      await this.processCallTree(blockHash, blockNumber, extrinsic.method, origin);
+    }
+
+    await this.setLastProcessedBlock(blockNumber);
+  }
+
+  private async processCallTree(
+    blockHash: BlockHash, 
+    blockNumber: number, 
+    call: CallBase<AnyTuple>, 
+    origin: string
+  ): Promise<void> {
+    // NOTE: This method processes calls with the original extrinsic signer as the origin.
+    // If the origin changes during execution (e.g., through the proxy pallet), 
+    // this change is not reflected in nested calls processed here. 
+    // Additional logic would be needed to track origin changes within the call tree if required.
+
+    // TODO: Origin tracking, discover all the cases (proxy, etc.).
+    for (const monitor of this.monitors) {
+      await monitor.processCall({ blockHash, blockNumber, call, origin });
+    }
+    for (const arg of call.args) {
+      if (arg && typeof arg === 'object' && 'callIndex' in arg) {
+        await this.processCallTree(blockHash, blockNumber, arg as CallBase<AnyTuple>, origin);
+      } else if (Array.isArray(arg)) {
+        for (const subArg of arg) {
+          if (subArg && typeof subArg === 'object' && 'callIndex' in subArg) {
+            await this.processCallTree(blockHash, blockNumber, subArg as CallBase<AnyTuple>, origin);
+          }
+        }
+      }
+    }
+  }
+
 }
