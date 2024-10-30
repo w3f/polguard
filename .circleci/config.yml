@@ -11,26 +11,12 @@ jobs:
           command: |
             cd "${MODULE}"
             yarn
-            yarn lint
-
-  yarnLintTest:
-    docker:
-      - image: web3f/node-dind:v3
-    steps:
-      - checkout
-      - run:
-          command: |
-            cd matrix
-            yarn
-            yarn lint          
+            yarn lint     
 
   yarnLintChainWatcher:
+    environment:
+      MODULE: chain-watcher
     <<: *yarnLint
-    steps:
-      - run:
-          command: |
-            export DIRECTORY=chain-watcher
-            ${JOB_NAME}
 
   yarnLintMatrix:
     environment:
