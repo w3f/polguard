@@ -1,3 +1,5 @@
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/w3f/monitoring-platform/tree/master.svg?style=svg&circle-token=xxx)](https://dl.circleci.com/status-badge/redirect/gh/w3f/monitoring-platform/tree/master)
+
 # Monitoring Platform
 
 🚧 **This project is in active development and is currently a draft.** 🚧  

@@ -1,0 +1,5 @@
+description: Monitoring Platform
+name: monitoring-platform
+version: v0.0.1
+appVersion: v0.0.1
+apiVersion: v2
