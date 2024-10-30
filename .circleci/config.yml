@@ -7,22 +7,21 @@ jobs:
       - image: web3f/node-dind:v3
     steps:
       - checkout
-      - run: |
-        cd "${DIRECTORY}"
-        yarn
-        yarn lint
+      - run:
+          command: |
+            cd "${MODULE}"
+            yarn
+            yarn lint     
 
   yarnLintChainWatcher:
+    environment:
+      MODULE: chain-watcher
     <<: *yarnLint
-    steps:
-      - run: |
-        DIRECTORY=chain-watcher
 
   yarnLintMatrix:
+    environment:
+      MODULE: matrix
     <<: *yarnLint
-    steps:
-      - run: |
-        DIRECTORY=matrix
 
   helmLint:
     docker:
@@ -30,8 +29,7 @@ jobs:
     steps:
       - checkout
       - run:
-          command: |
-            helm lint ./charts/monitoring-platform        
+          command: helm lint ./charts/monitoring-platform
 
 workflows:
   version: 2
@@ -48,4 +46,4 @@ workflows:
       - helmLint:
           filters:
             tags:
-              only: /.*/                
+              only: /.*/
