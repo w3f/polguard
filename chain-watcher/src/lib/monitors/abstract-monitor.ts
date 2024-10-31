@@ -98,7 +98,7 @@ export abstract class AbstractMonitor implements Monitor {
     }
   }
 
-  protected async getEventLink(blockNumber: number, phase: Phase): Promise<string> {
+  protected getEventLink(blockNumber: number, phase: Phase): string {
     if (!phase.isApplyExtrinsic) {
       this.logger.warn(
         `Unable to generate event link: Phase is not ApplyExtrinsic in block ${blockNumber}`
@@ -110,7 +110,7 @@ export abstract class AbstractMonitor implements Monitor {
     return `<a href="https://${network}.subscan.io/event?extrinsic=${blockNumber}-${index}">${network}.subscan.io</a>`;
   }
 
-  protected async getAccountLink(address: string): Promise<string> {
+  protected getAccountLink(address: string): string {
     return `<a href="https://${this.getNetwork()}.subscan.io/account/${address}">${this.getNetwork()}.subscan.io</a>`;
   }
 

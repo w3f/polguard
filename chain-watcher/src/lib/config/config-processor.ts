@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
-import { Chain } from '../constants';
+import { Chain, MonitorType } from '../constants';
 import {
   MonitoringGroup,
   AccountId,
@@ -10,7 +10,7 @@ import {
 import { RawConfig, RawMonitoringGroup } from './interfaces';
 import { u8aToHex, hexToU8a, isHex } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
-import { validateConfig } from './config-validator';
+import { monitorSettingsSchemas, validateConfig } from './config-validator';
 
 export class MonitoringConfigProcessor {
   private static chainPrefixMap = new Map<Chain, number>([
@@ -88,21 +88,31 @@ export class MonitoringConfigProcessor {
   ): AccountSettings {
     const accountId = this.transformAddress(account.address, account.name, chain);
     const { address, name, ...accountSettings } = account;
-
-    // Collect all settings from monitors
-    const monitorSettings = monitors.reduce((acc, monitor) => {
-      if (monitor.settings) {
-        Object.assign(acc, monitor.settings);
+  
+    // Collect all settings from monitors and group them by monitor type
+    const monitorSettings = Object.fromEntries(
+      monitors
+        .filter(monitor => monitor.settings)
+        .map(monitor => [monitor.name, monitor.settings])
+    );
+  
+    // Merge monitor settings with account settings
+    const mergedSettings = { ...monitorSettings };
+  
+    // Identify which account settings belong to which monitor type
+    Object.entries(accountSettings).forEach(([key, value]) => {
+      for (const monitorType of Object.values(MonitorType)) {
+        if (monitorSettingsSchemas[monitorType].describe().keys[key]) {
+          mergedSettings[monitorType] = {
+            ...mergedSettings[monitorType],
+            [key]: value
+          };
+          delete accountSettings[key];
+          break;
+        }
       }
-      return acc;
-    }, {});
-
-    // Merge monitor settings with account settings, giving priority to account settings
-    const mergedSettings = { ...monitorSettings, ...accountSettings };
-    return {
-      ...accountId,
-      ...mergedSettings
-    };
+    });
+    return { ...accountId, ...mergedSettings};
   }
 
   private static transformAddress(address: string, name: string | undefined, chain: Chain): AccountId {

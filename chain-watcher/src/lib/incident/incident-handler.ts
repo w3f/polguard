@@ -32,7 +32,7 @@ export class IncidentHandler {
     private store: ChainWatcherStore,
     private eventEmitter: EventEmitterClient,
     private chain: Chain,
-    private repeatInterval: number = 6,
+    private repeatInterval: number = 20000, // 20 sec
   ) {}
 
   async ongoingIncident(
@@ -42,8 +42,11 @@ export class IncidentHandler {
     incidentKey: string,
     isFiring: boolean,
   ): Promise<void> {
-    const incidentId = this.generateIncidentId(incidentKey);
+    const incidentId = this.getIncidentId(incidentKey);
     let state = await this.store.getOngoingIncident(incidentId);
+    if (!isFiring && !state) {
+      return
+    }
     if (!state) {
       state = {
         incident: { id: incidentId, blockNumber, message, alerts, chain: this.chain },
@@ -91,7 +94,7 @@ export class IncidentHandler {
     alerts: AlertSettings,
     blockNumber: number,
   ): Promise<void> {
-    const incidentId = this.generateIncidentId();
+    const incidentId = this.getIncidentId();
     const incident: IncidentEvent = { id: incidentId, message, blockNumber, alerts, chain: this.chain};
     await this.emitIncident(incident);
   }
@@ -106,7 +109,7 @@ export class IncidentHandler {
     await this.eventEmitter.emit('incident.resolved', event);
   }
 
-  private generateIncidentId(incidentKey?: string): string {
+  private getIncidentId(incidentKey?: string): string {
     // TODO: check if truncation to 16 chars doesn't cause collisions
     if (incidentKey) {
       return createHash('md5')

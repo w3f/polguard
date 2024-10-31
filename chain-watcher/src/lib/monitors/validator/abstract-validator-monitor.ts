@@ -2,7 +2,7 @@ import { ApiPromise } from '@polkadot/api';
 import { Option } from '@polkadot/types';
 import { ActiveEraInfo } from '@polkadot/types/interfaces/staking';
 import { Vec } from '@polkadot/types/codec';
-import { AccountId } from '@polkadot/types/interfaces/runtime';
+import { AccountId, AccountId32 } from '@polkadot/types/interfaces/runtime';
 import { PalletStakingRewardDestination } from '@polkadot/types/lookup';
 import { Logger, MonitoringGroup } from '../../interfaces';
 import { IncidentHandler } from '../../incident/incident-handler';

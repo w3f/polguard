@@ -61,12 +61,14 @@ export class ChainWatcherStore {
 
   async getEraValidators(era: number): Promise<Set<string> | null> {
     const key = `${this.KEYS.VALIDATOR_ACTIVE_SET}:${era}`;
-    return this.get<Set<string>>(key);
+    const validatorsArray = await this.get<string[]>(key);
+    const result = Array.isArray(validatorsArray) ? new Set(validatorsArray) : null;
+    return result
   }
 
   async setEraValidators(era: number, validators: Set<string>, ttl: number = 2592000): Promise<void> {
     const key = `${this.KEYS.VALIDATOR_ACTIVE_SET}:${era}`;
-    await this.set(key, validators, ttl);
+    await this.set(key, Array.from(validators), ttl);
   }
 
   async getLastProcessedBlock(): Promise<number | null> {

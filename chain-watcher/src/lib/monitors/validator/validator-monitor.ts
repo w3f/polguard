@@ -2,10 +2,9 @@ import '@polkadot/api-augment/polkadot';
 import { Option } from '@polkadot/types';
 import { BlockHandler, CallHandler, EventHandler } from '../decorators';
 import { AbstractValidatorMonitor } from './abstract-validator-monitor';
-import { PalletStakingPalletEvent, PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
+import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
 import { BlockHandlerParams, CallHandlerParams, EventHandlerParams, ValidatorSettings } from '../../interfaces';
 import { MonitorType } from '../../constants';
-import { registry } from '../../chain-watcher';
 
 export class ValidatorMonitor extends AbstractValidatorMonitor {
   
@@ -21,7 +20,7 @@ export class ValidatorMonitor extends AbstractValidatorMonitor {
     for (const { account, group } of this.getGroups(validatorId)) {
       const message = this.formatMessage(
         `Validator ${account.name} has been slashed.`,
-        [`Details: ${await this.getEventLink(blockNumber, eventRecord.phase)}`]
+        [`Event details: ${this.getEventLink(blockNumber, eventRecord.phase)}`]
       );
       await this.incidents.oneTimeIncident(message, group.alerts, blockNumber);
     }
@@ -29,15 +28,14 @@ export class ValidatorMonitor extends AbstractValidatorMonitor {
   
   @EventHandler('staking.ValidatorPrefsSet')
   async handleCommissionChanged({ eventRecord, blockHash, blockNumber }: EventHandlerParams): Promise<void> {
-    const [stashRaw, prefsRaw] = eventRecord.event.data;
-    const stash = stashRaw.toString();
-    const prefs = registry.createType('PalletStakingValidatorPrefs', prefsRaw.toU8a());
+    const stash = eventRecord.event.data[0].toString();
+    const prefs = eventRecord.event.data[1] as PalletStakingValidatorPrefs;
     for (const { account, group } of this.getGroups(stash)) {
       const message = this.formatMessage(
         `New commission change detected for ${account.name}.`,
         [
           `New commission: ${prefs.commission}`,
-          `Event details: ${await this.getEventLink(blockNumber, eventRecord.phase)}`
+          `Event details: ${this.getEventLink(blockNumber, eventRecord.phase)}`
         ]
       );
       await this.incidents.oneTimeIncident(message, group.alerts, blockNumber);
@@ -58,19 +56,18 @@ export class ValidatorMonitor extends AbstractValidatorMonitor {
       await this.incidents.oneTimeIncident(message, group.alerts, blockNumber);
     }
   }
-  
 
   @BlockHandler()
   async handleCommissionUnexpected({ blockHash, blockNumber }: BlockHandlerParams): Promise<void> {
-    const results = await this.api.queryMulti<Option<PalletStakingValidatorPrefs>[]>(
+    const results = await this.api.queryMulti<PalletStakingValidatorPrefs[]>(
       this.accounts.map(account => [this.api.query.staking.validators, account])
     );
     for (let i = 0; i < this.accounts.length; i++) {
       for (const { account, group } of this.getGroups(this.accounts[i])) {
         const settings: ValidatorSettings = account[MonitorType.Validator];
-        const currentCommission = results[i].isSome ? results[i].unwrap() : -1;
+        const currentCommission = results[i].commission.toNumber()
         const expectedCommission = settings.commission;
-        const isFiring = currentCommission !== expectedCommission;
+        const isFiring = currentCommission !== expectedCommission * 10000000;
         const message = this.formatMessage(
           `New commission change detected for ${account.name}.`,
           [
@@ -115,7 +112,7 @@ export class ValidatorMonitor extends AbstractValidatorMonitor {
     const validators = await this.getCurrentEraValidators();
     for (const acc of this.accounts) {
       for (const { account, group } of this.getGroups(acc)) {
-        const isFiring = !validators.has(account.ss58);
+        const isFiring = !(validators.has(account.ss58));
         const message = this.formatMessage(
           `Target ${account.name} is not present in the validation active set.`,
           [`Era: ${this.currentEra}`]

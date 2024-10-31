@@ -1,6 +1,8 @@
 import * as Joi from 'joi';
 import { Chain, MonitorType } from '../constants';
 
+// TODO: Refactor. Make the validation more robust and easier to read.
+
 const alertSchema = Joi.object({
   matrix: Joi.object({
     targets: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required(),
@@ -10,7 +12,7 @@ const alertSchema = Joi.object({
 });
 
 
-const monitorSettingsSchemas = {
+export const monitorSettingsSchemas = {
   [MonitorType.Validator]: Joi.object({
     commission: Joi.number().min(0).max(100).optional(),
     payee: Joi.string().optional(),
@@ -21,38 +23,18 @@ const monitorSettingsSchemas = {
   [MonitorType.BalanceIncrement]: Joi.object({
     balanceThreshold: Joi.string().pattern(/^\d+$/).optional(),
   }),
-  [MonitorType.BalanceDecrement]: Joi.object({
+  [MonitorType.BalanceDecrement]: Joi.object({}),
+  [MonitorType.BalanceThreshold]: Joi.object({
     balanceThreshold: Joi.string().pattern(/^\d+$/).optional(),
   }),
 };
 
-
-
 const createMonitorConfigSchema = (monitorType: MonitorType) => {
-  const baseSchema = {
+  return Joi.object({
     name: Joi.string().valid(monitorType).required(),
-  };
-
-  if (monitorType === MonitorType.Validator) {
-    return Joi.object({
-      ...baseSchema,
-      commission: Joi.number().min(0).max(100).optional(),
-      payee: Joi.string().optional(),
-    });
-  }
-
-  const monitorSchema = monitorSettingsSchemas[monitorType];
-  if (monitorSchema) {
-    return Joi.object({
-      ...baseSchema,
-      ...monitorSchema.describe().keys,
-    });
-  }
-
-  // For monitor types without specific settings
-  return Joi.object(baseSchema);
+  }).concat(monitorSettingsSchemas[monitorType] || Joi.object({}))
+    .unknown(true);
 };
-
 
 const monitorConfigSchema = Joi.alternatives().try(
   ...Object.values(MonitorType).map(monitorType => createMonitorConfigSchema(monitorType))
@@ -73,7 +55,7 @@ const createAccountSchema = (monitors) => {
       
       Object.keys(schemaKeys).forEach(key => {
         if (!acc[key]) {
-          acc[key] = monitorSchema.extract(key);
+          acc[key] = monitorSchema.extract(key).optional();
         }
       });
     }
@@ -136,7 +118,10 @@ function validateGroup(group: any, defaults: any): void {
 
     group.accounts.forEach((account: any) => {
       if (account.commission === undefined && monitorCommission === undefined) {
-        throw new Error(`Neither the Validator monitor nor account ${account.name || account.address} in group ${group.name} has a commission specified`);
+        throw new Error(
+          `Neither the Validator monitor nor account ${account.name || account.address} ` +
+          `in group ${group.name} has a commission specified`
+        );
       }
     });
   }
