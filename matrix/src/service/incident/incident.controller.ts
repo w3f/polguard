@@ -17,6 +17,12 @@ export class IncidentController {
     await this.notifyMatrix(event);
   }
 
+  @MessagePattern('incident.resolved')
+  async handleIncidentResolvedEvent(event: IncidentEvent) {
+    this.logger.log('Received incident resolved event');
+    await this.notifyMatrix(event);
+  }
+
   private async notifyMatrix(event: IncidentEvent) {
     event.alerts.matrix.targets.forEach((roomId) => {
       this.matrixClient.sendMessage(roomId, event.message)

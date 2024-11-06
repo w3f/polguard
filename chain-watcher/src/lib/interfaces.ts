@@ -9,13 +9,13 @@ import { ChainWatcherStore } from './store/chain-watcher-store';
 
 // TODO: Refactor interfaces, split into smaller chunks.
 export interface Monitor {
-  processBlock(params: BlockHandlerParams): Promise<void>;
+  processEveryBlock(params: EveryBlockHandlerParams): Promise<void>;
   processEvent(params: EventHandlerParams): Promise<void>;
   processCall(params: CallHandlerParams): Promise<void>;
 }
 
 export interface MonitorConstructor {
-  new(logger: Logger, api: ApiPromise, groups: MonitoringGroup[], incidentHandler: IncidentHandler, store: ChainWatcherStore): Monitor;
+  new(logger: Logger, api: ApiPromise, groups: MonitoringGroup[], incidentHandler: IncidentHandler, store: ChainWatcherStore, monitorType: MonitorType): Monitor;
 }
 
 export interface Logger {
@@ -34,9 +34,18 @@ export interface AccountId {
   name: string;
 }
 
-export type AccountSettings = AccountId & Partial<MonitorSettings>;
+export interface ConfigAccountSettings extends AccountId {
+  [MonitorType: string]: any;
+}
+
+
+export interface AccountSettings<T extends MonitorType> extends AccountId {
+  settings: MonitorSettings<T>;
+}
 
 // Alert-related interfaces
+// TODO: Update AlertSettings to use MessengerType enum instead
+// TODO: Remove escalation
 export interface AlertSettings {
   matrix: {
     targets: string[];
@@ -71,7 +80,7 @@ export interface BalanceSettings {
   balanceThreshold?: bigint;
 }
 
-export type MonitorSettings = {
+export type MonitorTypeSettings = {
   [MonitorType.Validator]: ValidatorSettings;
   [MonitorType.Governance]: GovernanceSettings;
   [MonitorType.TransactionIngress]: TransactionSettings;
@@ -81,16 +90,18 @@ export type MonitorSettings = {
   [MonitorType.BalanceThreshold]: BalanceSettings;
 }
 
+export type MonitorSettings<T extends MonitorType> = MonitorTypeSettings[T];
+
 export interface MonitorConfig {
   name: MonitorType;
-  settings?: MonitorSettings[MonitorType];
+  settings?: MonitorTypeSettings[MonitorType];
 }
 
 export interface MonitoringGroup {
   name: string;
   chain: Chain;
   monitors: MonitorConfig[];
-  accounts: AccountSettings[];
+  accounts: ConfigAccountSettings[];
   alerts: AlertSettings;
 }
 
@@ -118,7 +129,12 @@ export interface EventHandlerParams {
   blockNumber: number;
 }
 
-export interface BlockHandlerParams {
+export interface EveryBlockHandlerParams {
   blockHash: BlockHash;
   blockNumber: number;
+}
+
+export interface Message {
+  title: string;
+  details: string[];
 }

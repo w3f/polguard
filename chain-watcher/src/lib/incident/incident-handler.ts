@@ -6,8 +6,10 @@ import {
   IncidentEvent,
   AlertSettings,
   EventEmitterClient,
+  Message,
 } from '../interfaces';
-import { Chain } from '../constants';
+import { Chain, MessageType, MessengerType } from '../constants';
+import { MessageStyler } from './message-styler';
 
 /**
  * IncidentHandler is responsible for managing and emitting incident events.
@@ -36,7 +38,7 @@ export class IncidentHandler {
   ) {}
 
   async ongoingIncident(
-    message: string,
+    message: Message,
     alerts: AlertSettings,
     blockNumber: number,
     incidentKey: string,
@@ -49,7 +51,7 @@ export class IncidentHandler {
     }
     if (!state) {
       state = {
-        incident: { id: incidentId, blockNumber, message, alerts, chain: this.chain },
+        incidentId,
         consecutiveFiringBlocks: 0,
         consecutiveNormalBlocks: 0,
         lastEmitted: 0,
@@ -65,7 +67,7 @@ export class IncidentHandler {
         const shouldEmit = state.lastEmitted === 0 || (currentTimestamp - state.lastEmitted >= this.repeatInterval);
         
         if (shouldEmit) {
-          await this.emitIncident(state.incident);
+          await this.emitIncident(incidentId, message, alerts, blockNumber, MessageType.Firing);
           state.lastEmitted = currentTimestamp;
         }
       }
@@ -74,14 +76,7 @@ export class IncidentHandler {
       state.consecutiveFiringBlocks = 0;
 
       if (state.consecutiveNormalBlocks >= this.THRESHOLD) {
-        const resolvedIncident: IncidentEvent = {
-          id: incidentId,
-          blockNumber,
-          message: `Incident resolved: ${incidentId}`,
-          alerts: state.incident.alerts,
-          chain: this.chain,
-        };
-        await this.emitIncidentResolved(resolvedIncident);
+        await this.emitIncident(incidentId, message, alerts, blockNumber, MessageType.Resolved);
         await this.store.deleteOngoingIncident(incidentId);
         return;
       }
@@ -90,27 +85,38 @@ export class IncidentHandler {
   }
 
   async oneTimeIncident(
-    message: string,
+    message: Message,
     alerts: AlertSettings,
     blockNumber: number,
   ): Promise<void> {
     const incidentId = this.getIncidentId();
-    const incident: IncidentEvent = { id: incidentId, message, blockNumber, alerts, chain: this.chain};
-    await this.emitIncident(incident);
+    await this.emitIncident(incidentId, message, alerts, blockNumber, MessageType.OneTime);
   }
 
-  private async emitIncident(event: IncidentEvent): Promise<void> {
-    this.logger.debug(`Emitting incident.created: ${JSON.stringify(event)}`);
-    await this.eventEmitter.emit('incident.created', event);
-  }
+  private async emitIncident(
+    id: string,
+    message: Message,
+    alerts: AlertSettings,
+    blockNumber: number,
+    messageType: MessageType
+  ): Promise<void> {
+    const styledMessage = MessageStyler.applyStyle(message, messageType, MessengerType.Matrix);
 
-  private async emitIncidentResolved(event: IncidentEvent): Promise<void> {
-    this.logger.debug(`Emitting incident.resolved: ${JSON.stringify(event)}`);
-    await this.eventEmitter.emit('incident.resolved', event);
+    const incident: IncidentEvent = {
+      id,
+      blockNumber,
+      chain: this.chain,
+      message: styledMessage,
+      alerts,
+    };
+
+    this.logger.debug(`Emitting incident: ${JSON.stringify(incident)}`);
+    
+    const eventName = messageType === MessageType.Resolved ? 'incident.resolved' : 'incident.created';
+    await this.eventEmitter.emit(eventName, incident);
   }
 
   private getIncidentId(incidentKey?: string): string {
-    // TODO: check if truncation to 16 chars doesn't cause collisions
     if (incidentKey) {
       return createHash('md5')
         .update(incidentKey)

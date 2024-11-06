@@ -55,8 +55,9 @@ export class ChainWatcher {
     this.initializeMonitors();
   }
 
+
   private initializeMonitors(): void {
-    const monitorMapping = new Map<MonitorType, MonitorConstructor>([
+    const monitorConfigs: [MonitorType, MonitorConstructor][] = [
       [MonitorType.Governance, GovernanceMonitor],
       [MonitorType.Validator, ValidatorMonitor],
       [MonitorType.TransactionIngress, TransactionIngressMonitor],
@@ -64,15 +65,17 @@ export class ChainWatcher {
       [MonitorType.BalanceDecrement, BalanceDecrementMonitor],
       [MonitorType.BalanceIncrement, BalanceIncrementMonitor],
       [MonitorType.BalanceThreshold, BalanceThresholdMonitor],
-    ]);
+    ];
     
-    this.monitors = Array.from(monitorMapping.entries()).flatMap(([monitorType, MonitorClass]) => {
-      const relevantGroups = this.monitoringGroups.filter(group =>
+    this.monitors = monitorConfigs.flatMap(([monitorType, MonitorClass]) => {
+      const groups = this.monitoringGroups.filter(group =>
         group.monitors.some(monitor => monitor.name === monitorType)
       );
-      if (relevantGroups.length > 0) {
-        this.logger.debug(`${monitorType} monitor initialized with ${relevantGroups.length} groups`);
-        return [new MonitorClass(this.logger, this.api, relevantGroups, this.incidentHandler, this.store)];
+      if (groups.length > 0) {
+        this.logger.debug(`${monitorType} monitor initialized with ${groups.length} groups`);
+        return [
+          new MonitorClass(this.logger, this.api, groups, this.incidentHandler, this.store, monitorType)
+        ];
       }
       return [];
     });
@@ -135,9 +138,9 @@ export class ChainWatcher {
     const block = await this.api.rpc.chain.getBlock(blockHash);
     const apiAt = await this.api.at(blockHash);
 
-    // Apply block handlers: process custom logic, usually storage calls
+    // Apply every block handlers: process custom logic, usually storage calls
     for (const monitor of this.monitors) {
-      await monitor.processBlock({ blockHash, blockNumber });
+      await monitor.processEveryBlock({ blockHash, blockNumber });
     }
     // Apply event handlers: process event payload
     await apiAt.query.system.events(async (records: EventRecord[]) => {

@@ -14,3 +14,15 @@ export enum MonitorType {
   BalanceDecrement = 'BalanceDecrement',
   BalanceThreshold = 'BalanceThreshold',
 }
+
+export enum MessageType {
+  Firing = 'Firing',
+  Resolved = 'Resolved',
+  OneTime = 'Event'
+}
+
+export enum MessengerType {
+  Matrix = 'matrix',
+  Slack = 'slack',
+  Telegram = 'telegram'
+}

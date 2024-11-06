@@ -1,126 +1,136 @@
 import '@polkadot/api-augment/polkadot';
 import { Option } from '@polkadot/types';
-import { BlockHandler, CallHandler, EventHandler } from '../decorators';
+import { EveryBlockHandler, CallHandler, EventHandler } from '../decorators';
 import { AbstractValidatorMonitor } from './abstract-validator-monitor';
 import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
-import { BlockHandlerParams, CallHandlerParams, EventHandlerParams, ValidatorSettings } from '../../interfaces';
-import { MonitorType } from '../../constants';
+import { EveryBlockHandlerParams, CallHandlerParams, EventHandlerParams } from '../../interfaces';
 
 export class ValidatorMonitor extends AbstractValidatorMonitor {
   
   @EventHandler('session.NewSession')
-  async handleNewEra({ blockHash, blockNumber }: BlockHandlerParams): Promise<void> {
+  async handleNewEra({ }: EventHandlerParams): Promise<void> {
     await this.updateCurrentEra();
     await this.updateCurrentEraValidators();
   }
   
   @EventHandler('staking.SlashReported')
-  async handleSlashReported({ eventRecord, blockHash, blockNumber }: EventHandlerParams): Promise<void> {
+  async handleSlashReported({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const validatorId = eventRecord.event.data[0].toString();
-    for (const { account, group } of this.getGroups(validatorId)) {
-      const message = this.formatMessage(
+    for (const { account, alerts } of this.getAccounts(validatorId)) {
+
+      const message = this.createMessage([
         `Validator ${account.name} has been slashed.`,
-        [`Event details: ${this.getEventLink(blockNumber, eventRecord.phase)}`]
-      );
-      await this.incidents.oneTimeIncident(message, group.alerts, blockNumber);
+        `Details: ${this.getEventLink(blockNumber, eventRecord.phase)}`
+      ]);
+
+      await this.incidents.oneTimeIncident(message, alerts, blockNumber);
     }
   }
   
   @EventHandler('staking.ValidatorPrefsSet')
-  async handleCommissionChanged({ eventRecord, blockHash, blockNumber }: EventHandlerParams): Promise<void> {
+  async handleCommissionChanged({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const stash = eventRecord.event.data[0].toString();
     const prefs = eventRecord.event.data[1] as PalletStakingValidatorPrefs;
-    for (const { account, group } of this.getGroups(stash)) {
-      const message = this.formatMessage(
+    for (const { account, alerts } of this.getAccounts(stash)) {
+
+      const message = this.createMessage([
         `New commission change detected for ${account.name}.`,
-        [
-          `New commission: ${prefs.commission}`,
-          `Event details: ${this.getEventLink(blockNumber, eventRecord.phase)}`
-        ]
-      );
-      await this.incidents.oneTimeIncident(message, group.alerts, blockNumber);
+        `Commission: ${prefs.commission}`,
+        `Details: ${this.getEventLink(blockNumber, eventRecord.phase)}`
+      ]);
+
+      await this.incidents.oneTimeIncident(message, alerts, blockNumber);
     }
   }
 
   @CallHandler(['staking.setPayee', 'staking.bond'])
   async handleDestinationChanged({ call, origin, blockHash, blockNumber }: CallHandlerParams): Promise<void> {
     const payee = (call.method === 'setPayee' ? call.args[0] : call.args[1]) as PalletStakingRewardDestination;
-    for (const { account, group } of this.getGroups(origin)) {
-      const message = this.formatMessage(
+    for (const { account, alerts } of this.getAccounts(origin)) {
+
+      const message = this.createMessage([
         `New destination change detected for ${account.name}.`,
-        [
-          `New destination: ${this.getDestinationString(payee)}`,
-          `Extrinsic details: ${await this.getExtrinsicLink(blockHash, call)}`
-        ]
-      );
-      await this.incidents.oneTimeIncident(message, group.alerts, blockNumber);
+        `Destination: ${this.getDestinationString(payee)}`,
+        `Details: ${await this.getExtrinsicLink(blockHash, call)}`
+      ]);
+
+      await this.incidents.oneTimeIncident(message, alerts, blockNumber);
     }
   }
 
-  @BlockHandler()
-  async handleCommissionUnexpected({ blockHash, blockNumber }: BlockHandlerParams): Promise<void> {
+  // TODO: Add Event handler (payout claimed), it should require expectedDestination != current.
+  @EveryBlockHandler()
+  async handleCommissionUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+
     const results = await this.api.queryMulti<PalletStakingValidatorPrefs[]>(
-      this.accounts.map(account => [this.api.query.staking.validators, account])
+      this.uniqueAddresses.map(address => [this.api.query.staking.validators, address])
     );
-    for (let i = 0; i < this.accounts.length; i++) {
-      for (const { account, group } of this.getGroups(this.accounts[i])) {
-        const settings: ValidatorSettings = account[MonitorType.Validator];
-        const currentCommission = results[i].commission.toNumber()
-        const expectedCommission = settings.commission;
-        const isFiring = currentCommission !== expectedCommission * 10000000;
-        const message = this.formatMessage(
-          `New commission change detected for ${account.name}.`,
-          [
-            `New commission: ${currentCommission}`,
-            `Expected commission: ${expectedCommission}`,
-            `Account details: ${this.getAccountLink(account.ss58)}`
-          ]
-        );
-        const key = `${account.ss58}:${group.name}:handleCommissionUnexpected`;
-        await this.incidents.ongoingIncident(message, group.alerts, blockNumber, key, isFiring);
+    for (let i = 0; i < this.uniqueAddresses.length; i++) {
+      const address = this.uniqueAddresses[i];
+      const prefs = results[i];
+      const commission = prefs.commission.toNumber() / 10000000;
+      for (const { account, alerts, groupId } of this.getAccounts(address)) {
+
+        const expectedCommission = account.settings.commission;
+        const isFiring = commission !== expectedCommission;
+  
+        const message = this.createMessage([
+          `Commission change detected for ${account.name}.`,
+          `Actual commission: ${commission}`,
+          `Expected commission: ${expectedCommission}`,
+          `Details: ${this.getAccountLink(account.ss58)}`
+        ]);
+  
+        const key = `${account.ss58}:${groupId}:handleCommissionUnexpected`;
+        await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
   }
   
-  @BlockHandler()
-  async handleDestinationUnexpected({ blockHash, blockNumber }: BlockHandlerParams): Promise<void> {
+  @EveryBlockHandler()
+  async handleDestinationUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {  
     const results = await this.api.queryMulti<Option<PalletStakingRewardDestination>[]>(
-      this.accounts.map(account => [this.api.query.staking.payee, account])
+      this.uniqueAddresses.map(address => [this.api.query.staking.payee, address])
     );
-    for (let i = 0; i < this.accounts.length; i++) {
-      for (const { account, group } of this.getGroups(this.accounts[i])) {
-        const settings: ValidatorSettings = account[MonitorType.Validator];
-        const currentDestination = results[i].isSome ? this.getDestinationString(results[i].unwrap()) : 'None';
-        const expectedDestination = settings.payee;
-        const isFiring = currentDestination !== expectedDestination;
-        const message = this.formatMessage(
-          `New destination change detected for ${account.name}.`,
-          [
-            `New destination: ${currentDestination}`,
-            `Expected destination: ${expectedDestination}`,
-            `Account details: ${this.getAccountLink(account.ss58)}`
-          ]
-        );
-        const key = `${account.ss58}:${group.name}:handleDestinationUnexpected`;
-        await this.incidents.ongoingIncident(message, group.alerts, blockNumber, key, isFiring);
+    for (let i = 0; i < this.uniqueAddresses.length; i++) {
+      const address = this.uniqueAddresses[i];
+      const payeeOption = results[i];
+      const destination = payeeOption.isSome ? this.getDestinationString(payeeOption.unwrap()) : 'None';
+      for (const { account, alerts, groupId } of this.accounts.get(address) || []) {
+        const expectedDestination = account.settings.payee;
+        
+        // Skip if there's no expected payee configured
+        if (!expectedDestination) continue;
+        const isFiring = destination !== expectedDestination;
+
+        const message = this.createMessage([
+          `Reward destination change detected for ${account.name}.`,
+          `Actual destination: ${destination}`,
+          `Expected destination: ${expectedDestination}`,
+          `Details: ${this.getAccountLink(account.ss58)}`
+        ]);
+
+        const key = `${account.ss58}:${groupId}:handleDestinationUnexpected`;
+        await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
   }
   
-  @BlockHandler()
-  async handleActiveSetPresense({ blockHash, blockNumber }: BlockHandlerParams): Promise<void> {
+  @EveryBlockHandler()
+  async handleActiveSetPresense({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     const validators = await this.getCurrentEraValidators();
-    for (const acc of this.accounts) {
-      for (const { account, group } of this.getGroups(acc)) {
+    for (const acc of this.uniqueAddresses) {
+      for (const { account, alerts, groupId } of this.getAccounts(acc)) {
         const isFiring = !(validators.has(account.ss58));
-        const message = this.formatMessage(
+
+        const message = this.createMessage([
           `Target ${account.name} is not present in the validation active set.`,
-          [`Era: ${this.currentEra}`]
-        );
-        const key = `${account.ss58}:${group.name}:handleValidatorActiveSetPresense`;
-        await this.incidents.ongoingIncident(message, group.alerts, blockNumber, key, isFiring);
+          `Era: ${this.currentEra}`
+        ]);
+
+        const key = `${account.ss58}:${groupId}:handleValidatorActiveSetPresense`;
+        await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
   }
-  
 }

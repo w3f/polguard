@@ -25,12 +25,12 @@ export function CallHandler(callNames: string | string[]) {
   };
 }
 
-export function BlockHandler() {
+export function EveryBlockHandler() {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    if (!target.constructor.prototype.blockHandlers) {
-      target.constructor.prototype.blockHandlers = new Set<string>();
+    if (!target.constructor.prototype.everyBlockHandlers) {
+      target.constructor.prototype.everyBlockHandlers = new Set<string>();
     }
-    target.constructor.prototype.blockHandlers.add(propertyKey);
+    target.constructor.prototype.everyBlockHandlers.add(propertyKey);
     return descriptor;
   };
 }

@@ -1,32 +1,36 @@
 import { ApiPromise } from '@polkadot/api';
 import { BlockHash, Phase } from '@polkadot/types/interfaces';
-import { EventRecord } from '@polkadot/types/interfaces/system';
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
 import { formatBalance } from '@polkadot/util';
-import { Monitor, MonitoringGroup, AccountId, AccountSettings, Logger, EventHandlerParams, CallHandlerParams, BlockHandlerParams } from '../interfaces';
+import { Monitor, MonitoringGroup, Logger, EventHandlerParams, CallHandlerParams, EveryBlockHandlerParams, Message, MonitorSettings, AccountSettings, ConfigAccountSettings, AlertSettings } from '../interfaces';
 import { IncidentHandler } from '../incident/incident-handler';
 import { ChainWatcherStore } from '../store/chain-watcher-store';
+import { MonitorType } from '../constants';
 
-export abstract class AbstractMonitor implements Monitor {
+export abstract class AbstractMonitor<T extends MonitorType> implements Monitor {
+  protected static monitorType: MonitorType;
   protected eventHandlers: Map<string, (params: EventHandlerParams) => Promise<void>>;
   protected callHandlers: Map<string, (params: CallHandlerParams) => Promise<void>>;
-  protected blockHandlers: Set<(params: BlockHandlerParams) => Promise<void>>;
-  protected accountGroups: Map<string, { account: AccountId; group: MonitoringGroup }[]> = new Map();
-  protected accounts: Array<string>;
+  protected everyBlockHandlers: Set<(params: EveryBlockHandlerParams) => Promise<void>>;
+  protected accounts: Map<string, { 
+    account: AccountSettings<T>; 
+    alerts: AlertSettings;
+    groupId: string;
+  }[]> = new Map();
+  protected uniqueAddresses: string[];
 
   constructor(
     protected logger: Logger,
     protected api: ApiPromise,
     protected groups: MonitoringGroup[],
     protected incidents: IncidentHandler,
-    protected store: ChainWatcherStore
+    protected store: ChainWatcherStore,
+    protected monitorType: T
   ) {
-    // Build accountGroups map for better account lookup
-    this.buildAccountGroups();
+    this.buildAccountMap();
     this.initializeHandlers();
-    // Get all unique accounts from all monitoring groups
-    this.accounts = Array.from(new Set(this.groups.flatMap(group => group.accounts.map(account => account.ss58))));
+    this.uniqueAddresses = Array.from(this.accounts.keys());
   }
 
   private initializeHandlers(): void {
@@ -50,29 +54,57 @@ export abstract class AbstractMonitor implements Monitor {
       }
     }
 
-    this.blockHandlers = new Set();
-    if (prototype.blockHandlers instanceof Set) {
-      for (const methodName of prototype.blockHandlers) {
+    this.everyBlockHandlers = new Set();
+    if (prototype.everyBlockHandlers instanceof Set) {
+      for (const methodName of prototype.everyBlockHandlers) {
         if (typeof this[methodName] === 'function') {
-          this.blockHandlers.add(this[methodName].bind(this));
+          this.everyBlockHandlers.add(this[methodName].bind(this));
         }
       }
     }
   }
 
-  private buildAccountGroups(): void {
+
+  /**
+   * Builds a map of monitor-specific account settings and associated alert settings.
+   * 
+   * This method processes all accounts from the monitoring groups and organizes them into a map
+   * where the key is the account's ss58 address and the value is an array of objects containing
+   * the account settings specific to this monitor type and the associated alert settings.
+   * 
+   * @private
+   */
+  private buildAccountMap(): void {
     for (const group of this.groups) {
-      for (const account of group.accounts) {
-        if (!this.accountGroups.has(account.ss58)) {
-          this.accountGroups.set(account.ss58, []);
+      for (const account of group.accounts as ConfigAccountSettings[]) {
+        if (!this.accounts.has(account.ss58)) {
+          this.accounts.set(account.ss58, []);
         }
-        this.accountGroups.get(account.ss58).push({ account, group });
+        const monitorSettings = account[this.monitorType];
+        if (monitorSettings) {
+          this.accounts.get(account.ss58).push({ 
+            account: {
+              ss58: account.ss58,
+              hex: account.hex,
+              name: account.name,
+              settings: monitorSettings as MonitorSettings<T>
+            },
+            alerts: group.alerts,
+            // TODO: Consider implementing a deterministic group id.
+            // This wouldn't work if two groups with the same name use the same account.
+            groupId: group.name
+          });
+        }
       }
     }
   }
 
-  protected getGroups(address: string): { account: AccountSettings; group: MonitoringGroup }[] {
-    return this.accountGroups.get(address) || [];
+  protected getAccounts(address: string): { 
+    account: AccountSettings<T>;
+    alerts: AlertSettings;
+    groupId: string;
+  }[] {
+    return this.accounts.get(address) || [];
   }
 
   async processEvent({ eventRecord, blockHash, blockNumber }: EventHandlerParams): Promise<void> {
@@ -92,8 +124,8 @@ export abstract class AbstractMonitor implements Monitor {
     }
   }
 
-  async processBlock({ blockHash, blockNumber }: BlockHandlerParams): Promise<void> {
-    for (const handler of this.blockHandlers) {
+  async processEveryBlock({ blockHash, blockNumber }: EveryBlockHandlerParams): Promise<void> {
+    for (const handler of this.everyBlockHandlers) {
       await handler({ blockHash, blockNumber });
     }
   }
@@ -107,11 +139,11 @@ export abstract class AbstractMonitor implements Monitor {
     }
     const index = phase.asApplyExtrinsic.toNumber();
     const network = this.getNetwork();
-    return `<a href="https://${network}.subscan.io/event?extrinsic=${blockNumber}-${index}">${network}.subscan.io</a>`;
+    return `https://${network}.subscan.io/event?extrinsic=${blockNumber}-${index}`;
   }
 
   protected getAccountLink(address: string): string {
-    return `<a href="https://${this.getNetwork()}.subscan.io/account/${address}">${this.getNetwork()}.subscan.io</a>`;
+    return `https://${this.getNetwork()}.subscan.io/account/${address}`;
   }
 
   protected async getExtrinsicLink(blockHash: BlockHash, call: CallBase<AnyTuple>): Promise<string> {
@@ -131,21 +163,16 @@ export abstract class AbstractMonitor implements Monitor {
     }
 
     const network = this.getNetwork();
-    const url = `https://${network}.subscan.io/extrinsic/${blockNumber}-${index}`;
-
-    return `<a href="${url}">${network}.subscan.io</a>`;
+    return `https://${network}.subscan.io/extrinsic/${blockNumber}-${index}`;
   }
 
   private getNetwork(): string {
     return this.api.runtimeVersion.specName.toString();
   }
 
-  protected formatMessage(title: string, details: string[]): string {
-    const formattedDetails = [
-      `<li>Network: ${this.getNetwork()}</li>`,
-      ...details.map(detail => `<li>${detail}</li>`)
-    ].join('');
-    return `<b>${title}</b><br/><ul style="list-style-type: none; padding-left: 0;">${formattedDetails}</ul>`;
+  protected createMessage(rows: string[]): Message {
+    rows.push(`Network: ${this.getNetwork()}`)
+    return {title: rows.shift(), details: rows}
   }
 
   protected formatBalance(amount: number | string | bigint): string {

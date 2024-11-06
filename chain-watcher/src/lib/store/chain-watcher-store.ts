@@ -101,7 +101,7 @@ export class ChainWatcherStore {
 }
 
 interface ActiveIncidentState {
-  incident: IncidentEvent;
+  incidentId: string;
   consecutiveFiringBlocks: number;
   consecutiveNormalBlocks: number;
   lastEmitted: number;

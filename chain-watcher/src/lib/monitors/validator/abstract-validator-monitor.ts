@@ -2,14 +2,15 @@ import { ApiPromise } from '@polkadot/api';
 import { Option } from '@polkadot/types';
 import { ActiveEraInfo } from '@polkadot/types/interfaces/staking';
 import { Vec } from '@polkadot/types/codec';
-import { AccountId, AccountId32 } from '@polkadot/types/interfaces/runtime';
+import { AccountId } from '@polkadot/types/interfaces/runtime';
 import { PalletStakingRewardDestination } from '@polkadot/types/lookup';
 import { Logger, MonitoringGroup } from '../../interfaces';
 import { IncidentHandler } from '../../incident/incident-handler';
 import { ChainWatcherStore } from '../../store/chain-watcher-store';
 import { AbstractMonitor } from '../abstract-monitor';
+import { MonitorType } from '@lib/constants';
 
-export abstract class AbstractValidatorMonitor extends AbstractMonitor {
+export abstract class AbstractValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
   protected currentEra: number | null = null;
   private currentValidators: Set<string> | null = null;
 
@@ -19,8 +20,9 @@ export abstract class AbstractValidatorMonitor extends AbstractMonitor {
     groups: MonitoringGroup[],
     incidentHandler: IncidentHandler,
     store: ChainWatcherStore,
+    monitorType: MonitorType.Validator
   ) {
-    super(logger, api, groups, incidentHandler, store);
+    super(logger, api, groups, incidentHandler, store, monitorType);
     this.initializeValidatorMonitor();
   }
 

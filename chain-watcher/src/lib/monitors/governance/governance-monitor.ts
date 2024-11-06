@@ -1,8 +1,9 @@
+import { MonitorType } from '@lib/constants';
 import { AbstractMonitor } from '../abstract-monitor';
 import { EventHandler } from '../decorators';
 import { EventHandlerParams } from '@lib/interfaces';
 
-export class GovernanceMonitor extends AbstractMonitor {
+export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
 
   @EventHandler('referenda.Submitted')
   async handleReferendaSubmitted({ eventRecord, blockHash, blockNumber }: EventHandlerParams): Promise<void> {

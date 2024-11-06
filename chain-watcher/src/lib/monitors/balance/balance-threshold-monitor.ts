@@ -1,26 +1,28 @@
-import { BalanceSettings } from '../../interfaces';
-import { BlockHandler } from '../decorators';
+import { EveryBlockHandlerParams } from '../../interfaces';
+import { EveryBlockHandler } from '../decorators';
 import { MonitorType } from '../../constants';
 import { AbstractBalanceMonitor } from './abstract-balance-monitor';
 
-export class BalanceThresholdMonitor extends AbstractBalanceMonitor {
+export class BalanceThresholdMonitor extends AbstractBalanceMonitor<MonitorType.BalanceThreshold> {
 
-  @BlockHandler()
-  async handleBalanceThreshold({ blockHash, blockNumber }): Promise<void> {
+  @EveryBlockHandler()
+  async handleBalanceThreshold({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     const currentBalances = await this.getBalances(blockNumber);
 
-    for (const [acc, currentBalance] of Object.entries(currentBalances)) {
-      for (const { account, group } of this.getGroups(acc)) {
-        const settings: BalanceSettings = account[MonitorType.BalanceThreshold];
+    for (const [address, currentBalance] of Object.entries(currentBalances)) {
+      for (const { account, alerts, groupId } of this.getAccounts(address)) {
+        if (account.settings.balanceThreshold !== undefined) {
+          const isFiring = currentBalance < account.settings.balanceThreshold;
 
-        if (settings && settings.balanceThreshold !== undefined) {
-          const isFiring = currentBalance < settings.balanceThreshold;
-          const message =
-            `Balance for account "${account.name}" is below threshold. ` +
-            `Current balance: ${currentBalance}, Threshold: ${settings.balanceThreshold}`;
+          const message = this.createMessage([
+            `Balance for account "${account.name}" is below threshold.`,
+            `Current balance: ${this.formatBalance(currentBalance)}`,
+            `Threshold: ${this.formatBalance(account.settings.balanceThreshold)}`,
+            `Details: ${this.getAccountLink(account.ss58)}`
+          ]);
 
-          const key = `${account}:${group.name}:handleBalanceThreshold`;
-          await this.incidents.ongoingIncident(message, group.alerts, blockNumber, key, isFiring);
+          const key = `${account.ss58}:${groupId}:handleBalanceThreshold`;
+          await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
         }
       }
     }

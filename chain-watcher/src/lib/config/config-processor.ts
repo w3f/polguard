@@ -5,7 +5,7 @@ import {
   MonitoringGroup,
   AccountId,
   MonitorConfig,
-  AccountSettings,
+  ConfigAccountSettings,
 } from '../interfaces';
 import { RawConfig, RawMonitoringGroup } from './interfaces';
 import { u8aToHex, hexToU8a, isHex } from '@polkadot/util';
@@ -85,7 +85,7 @@ export class MonitoringConfigProcessor {
     account: RawMonitoringGroup['accounts'][number],
     chain: Chain,
     monitors: MonitorConfig[],
-  ): AccountSettings {
+  ): ConfigAccountSettings {
     const accountId = this.transformAddress(account.address, account.name, chain);
     const { address, name, ...accountSettings } = account;
   
