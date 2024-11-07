@@ -3,7 +3,19 @@ import { BlockHash, Phase } from '@polkadot/types/interfaces';
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
 import { formatBalance } from '@polkadot/util';
-import { Monitor, MonitoringGroup, Logger, EventHandlerParams, CallHandlerParams, EveryBlockHandlerParams, Message, MonitorSettings, AccountSettings, ConfigAccountSettings, AlertSettings } from '../interfaces';
+import {
+  Monitor,
+  MonitoringGroup,
+  Logger,
+  EventHandlerParams,
+  CallHandlerParams,
+  EveryBlockHandlerParams,
+  Message,
+  MonitorSettings,
+  AccountSettings,
+  ConfigAccountSettings,
+  AlertSettings,
+} from '../interfaces';
 import { IncidentHandler } from '../incident/incident-handler';
 import { ChainWatcherStore } from '../store/chain-watcher-store';
 import { MonitorType } from '../constants';
@@ -13,11 +25,14 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
   protected eventHandlers: Map<string, (params: EventHandlerParams) => Promise<void>>;
   protected callHandlers: Map<string, (params: CallHandlerParams) => Promise<void>>;
   protected everyBlockHandlers: Set<(params: EveryBlockHandlerParams) => Promise<void>>;
-  protected accounts: Map<string, { 
-    account: AccountSettings<T>; 
-    alerts: AlertSettings;
-    groupId: string;
-  }[]> = new Map();
+  protected accounts: Map<
+    string,
+    {
+      account: AccountSettings<T>;
+      alerts: AlertSettings;
+      groupId: string;
+    }[]
+  > = new Map();
   protected uniqueAddresses: string[];
 
   constructor(
@@ -26,7 +41,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     protected groups: MonitoringGroup[],
     protected incidents: IncidentHandler,
     protected store: ChainWatcherStore,
-    protected monitorType: T
+    protected monitorType: T,
   ) {
     this.buildAccountMap();
     this.initializeHandlers();
@@ -35,7 +50,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
 
   private initializeHandlers(): void {
     const prototype = Object.getPrototypeOf(this);
-    
+
     this.eventHandlers = new Map();
     if (prototype.eventHandlers instanceof Map) {
       for (const [eventName, methodName] of prototype.eventHandlers) {
@@ -64,14 +79,13 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     }
   }
 
-
   /**
    * Builds a map of monitor-specific account settings and associated alert settings.
-   * 
+   *
    * This method processes all accounts from the monitoring groups and organizes them into a map
    * where the key is the account's ss58 address and the value is an array of objects containing
    * the account settings specific to this monitor type and the associated alert settings.
-   * 
+   *
    * @private
    */
   private buildAccountMap(): void {
@@ -82,24 +96,24 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
         }
         const monitorSettings = account[this.monitorType];
         if (monitorSettings) {
-          this.accounts.get(account.ss58).push({ 
+          this.accounts.get(account.ss58).push({
             account: {
               ss58: account.ss58,
               hex: account.hex,
               name: account.name,
-              settings: monitorSettings as MonitorSettings<T>
+              settings: monitorSettings as MonitorSettings<T>,
             },
             alerts: group.alerts,
             // TODO: Consider implementing a deterministic group id.
             // This wouldn't work if two groups with the same name use the same account.
-            groupId: group.name
+            groupId: group.name,
           });
         }
       }
     }
   }
 
-  protected getAccounts(address: string): { 
+  protected getAccounts(address: string): {
     account: AccountSettings<T>;
     alerts: AlertSettings;
     groupId: string;
@@ -132,9 +146,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
 
   protected getEventLink(blockNumber: number, phase: Phase): string {
     if (!phase.isApplyExtrinsic) {
-      this.logger.warn(
-        `Unable to generate event link: Phase is not ApplyExtrinsic in block ${blockNumber}`
-      );
+      this.logger.warn(`Unable to generate event link: Phase is not ApplyExtrinsic in block ${blockNumber}`);
       return '';
     }
     const index = phase.asApplyExtrinsic.toNumber();
@@ -149,15 +161,15 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
   protected async getExtrinsicLink(blockHash: BlockHash, call: CallBase<AnyTuple>): Promise<string> {
     const block = await this.api.rpc.chain.getBlock(blockHash);
     const blockNumber = block.block.header.number.toNumber();
-    
-    const index = block.block.extrinsics.findIndex(ext => 
-      ext.method.section === call.section && ext.method.method === call.method
+
+    const index = block.block.extrinsics.findIndex(
+      ext => ext.method.section === call.section && ext.method.method === call.method,
     );
 
     if (index === -1) {
       this.logger.warn(
         `Unable to generate extrinsic link: Extrinsic ${call.section}.${call.method} ` +
-        `not found in block ${blockNumber}`
+          `not found in block ${blockNumber}`,
       );
       return '';
     }
@@ -171,8 +183,8 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
   }
 
   protected createMessage(rows: string[]): Message {
-    rows.push(`Network: ${this.getNetwork()}`)
-    return {title: rows.shift(), details: rows}
+    rows.push(`Network: ${this.getNetwork()}`);
+    return { title: rows.shift(), details: rows };
   }
 
   protected formatBalance(amount: number | string | bigint): string {
@@ -183,5 +195,4 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
       forceUnit: '-',
     });
   }
-
 }

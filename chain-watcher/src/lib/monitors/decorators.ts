@@ -1,11 +1,10 @@
 export function EventHandler(eventNames: string | string[]) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor,
-  ) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     if (!target.constructor.prototype.eventHandlers) {
       target.constructor.prototype.eventHandlers = new Map<string, string>();
     }
     const names = Array.isArray(eventNames) ? eventNames : [eventNames];
-    names.forEach((name) => {
+    names.forEach(name => {
       target.constructor.prototype.eventHandlers.set(name, propertyKey);
     });
     return descriptor;
@@ -18,7 +17,7 @@ export function CallHandler(callNames: string | string[]) {
       target.constructor.prototype.callHandlers = new Map<string, string>();
     }
     const names = Array.isArray(callNames) ? callNames : [callNames];
-    names.forEach((name) => {
+    names.forEach(name => {
       target.constructor.prototype.callHandlers.set(name, propertyKey);
     });
     return descriptor;

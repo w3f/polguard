@@ -20,7 +20,7 @@ export abstract class AbstractValidatorMonitor extends AbstractMonitor<MonitorTy
     groups: MonitoringGroup[],
     incidentHandler: IncidentHandler,
     store: ChainWatcherStore,
-    monitorType: MonitorType.Validator
+    monitorType: MonitorType.Validator,
   ) {
     super(logger, api, groups, incidentHandler, store, monitorType);
     this.initializeValidatorMonitor();
@@ -49,9 +49,7 @@ export abstract class AbstractValidatorMonitor extends AbstractMonitor<MonitorTy
 
     if (!validators) {
       const validatorSet: Vec<AccountId> = await this.api.query.session.validators();
-      validators = new Set(
-        validatorSet.map((validator) => validator.toString())
-      );
+      validators = new Set(validatorSet.map(validator => validator.toString()));
       await this.store.setEraValidators(this.currentEra, validators);
     }
 

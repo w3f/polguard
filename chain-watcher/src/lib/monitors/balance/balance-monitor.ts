@@ -3,7 +3,9 @@ import { EveryBlockHandler } from '../decorators';
 import { MonitorType } from '../../constants';
 import { AbstractBalanceMonitor } from './abstract-balance-monitor';
 
-abstract class BalanceMonitor<T extends MonitorType.BalanceIncrement | MonitorType.BalanceDecrement> extends AbstractBalanceMonitor<T> {
+abstract class BalanceMonitor<
+  T extends MonitorType.BalanceIncrement | MonitorType.BalanceDecrement,
+> extends AbstractBalanceMonitor<T> {
   protected abstract isBalanceChangeFiring(currentBalance: bigint, previousBalance: bigint): boolean;
   protected abstract getChangeDescription(): string;
 
@@ -21,7 +23,7 @@ abstract class BalanceMonitor<T extends MonitorType.BalanceIncrement | MonitorTy
           `Balance ${this.getChangeDescription()} for account ${account.name}.`,
           `Previous balance: ${this.formatBalance(previousBalance)}`,
           `Actual balance: ${this.formatBalance(currentBalance)}`,
-          `Details: ${this.getAccountLink(account.ss58)}`
+          `Details: ${this.getAccountLink(account.ss58)}`,
         ]);
         const key = `${account.ss58}:${groupId}:handleBalanceChange`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);

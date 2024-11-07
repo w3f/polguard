@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -30,7 +30,9 @@ export class AppConfigService {
   private validateConfig(config: unknown): AppConfig {
     const schema = Joi.object({
       chain: Joi.object({
-        name: Joi.string().valid(...Object.values(Chain)).required(),
+        name: Joi.string()
+          .valid(...Object.values(Chain))
+          .required(),
         rpcs: Joi.array().items(Joi.string().uri()).min(1).required(),
         start_block: Joi.number().integer().min(1).optional(),
       }).required(),
@@ -38,27 +40,37 @@ export class AppConfigService {
       redis: Joi.object({
         url: Joi.string().uri().required(),
       }).required(),
-      monitoring_config_sources: Joi.array().items(Joi.object({
-        name: Joi.string().required(),
-        url: Joi.string().uri().required(),
-        branch: Joi.string().required(),
-        auth_token: Joi.string().optional()
-      })).required(),
+      monitoring_config_sources: Joi.array()
+        .items(
+          Joi.object({
+            name: Joi.string().required(),
+            url: Joi.string().uri().required(),
+            branch: Joi.string().required(),
+            auth_token: Joi.string().optional(),
+          }),
+        )
+        .required(),
       alerts: Joi.object({
         matrix: Joi.object({
-          targets: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required(),
+          targets: Joi.array()
+            .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
+            .min(1)
+            .required(),
           repeat_interval: Joi.number().optional(),
           acknowledgement: Joi.object({
             escalation: Joi.object({
               timeout: Joi.number().required(),
-              targets: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required()
-            }).optional()
-          }).optional()
-        }).required()
+              targets: Joi.array()
+                .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
+                .min(1)
+                .required(),
+            }).optional(),
+          }).optional(),
+        }).required(),
       }).required(),
       logging: Joi.object({
-        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info')
-      }).optional()
+        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
+      }).optional(),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -89,7 +101,7 @@ export class AppConfigService {
     return this.config.alerts;
   }
 
-  getRedisConfig(): { host: string, port: number, db: number } {
+  getRedisConfig(): { host: string; port: number; db: number } {
     const redisUrl = new URL(this.config.redis.url);
     return {
       host: redisUrl.hostname,
@@ -128,5 +140,5 @@ interface AppConfig {
   logging?: {
     level: string;
   };
-  alerts: AlertSettings
+  alerts: AlertSettings;
 }

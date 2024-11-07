@@ -9,20 +9,23 @@ export class EventEmitterModule {
   static forRootAsync(): DynamicModule {
     return {
       module: EventEmitterModule,
-      imports: [ConfigModule, RedisStreamsModule.registerAsync({
-        imports: [ConfigModule],
-        useFactory: async (configService: ConfigService) => {
-          const redisConfig = configService.getRedisConfig();
-          return {
-            host: redisConfig.host,
-            port: redisConfig.port,
-            streamName: 'incidents',
-            groupName: 'chain-watcher',
-            consumerName: 'chain-watcher',
-          };
-        },
-        inject: [ConfigService],
-      })],
+      imports: [
+        ConfigModule,
+        RedisStreamsModule.registerAsync({
+          imports: [ConfigModule],
+          useFactory: async (configService: ConfigService) => {
+            const redisConfig = configService.getRedisConfig();
+            return {
+              host: redisConfig.host,
+              port: redisConfig.port,
+              streamName: 'incidents',
+              groupName: 'chain-watcher',
+              consumerName: 'chain-watcher',
+            };
+          },
+          inject: [ConfigService],
+        }),
+      ],
       providers: [IncidentPublisherService],
       exports: [IncidentPublisherService],
     };

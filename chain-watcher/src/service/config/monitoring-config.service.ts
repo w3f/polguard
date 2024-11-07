@@ -12,9 +12,7 @@ export class MonitoringConfigService {
   private monitoringGroups: MonitoringGroup[] | null = null;
   private configsDir = path.join(process.cwd(), 'monitoring-configs');
 
-  constructor(
-    private appConfig: AppConfigService,
-  ) {}
+  constructor(private appConfig: AppConfigService) {}
 
   async initialize(): Promise<void> {
     await this.fetchConfigs();
@@ -26,7 +24,7 @@ export class MonitoringConfigService {
     if (this.monitoringGroups === null) {
       throw new Error('Monitoring configurations have not been initialized');
     }
-    return this.monitoringGroups.filter((group) => group.chain.includes(chain));
+    return this.monitoringGroups.filter(group => group.chain.includes(chain));
   }
 
   private async fetchConfigs(): Promise<void> {
@@ -43,7 +41,7 @@ export class MonitoringConfigService {
       if (source.auth_token) {
         const repoUrl = new URL(source.url);
         repoUrl.username = source.auth_token;
-        
+
         await git.clone(repoUrl.toString(), targetDir, ['--depth', '1', '-b', source.branch]);
       } else {
         await git.clone(source.url, targetDir, ['--depth', '1', '-b', source.branch]);
@@ -65,5 +63,4 @@ export class MonitoringConfigService {
     }
     return configFiles;
   }
-
 }

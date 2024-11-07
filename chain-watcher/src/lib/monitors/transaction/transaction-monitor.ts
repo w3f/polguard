@@ -9,7 +9,7 @@ abstract class TransactionMonitor<T extends MonitorType> extends AbstractMonitor
 
   @EventHandler('balances.Transfer')
   async handleBalancesTransfer({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
-    const [from, to, amount] = eventRecord.event.data.map((item) => item.toString());
+    const [from, to, amount] = eventRecord.event.data.map(item => item.toString());
     const address = this.getAddress(from, to);
 
     for (const { account, alerts } of this.getAccounts(address)) {
@@ -17,7 +17,7 @@ abstract class TransactionMonitor<T extends MonitorType> extends AbstractMonitor
 
       const message = this.createMessage([
         `New Transfer of ${this.formatBalance(amount)} ${this.getActionDescription()} account "${account.name}".`,
-        `Details: ${this.getEventLink(blockNumber, eventRecord.phase)}`
+        `Details: ${this.getEventLink(blockNumber, eventRecord.phase)}`,
       ]);
 
       await this.incidents.oneTimeIncident(message, alerts, blockNumber);
@@ -26,6 +26,7 @@ abstract class TransactionMonitor<T extends MonitorType> extends AbstractMonitor
 }
 
 export class TransactionIngressMonitor extends TransactionMonitor<MonitorType.TransactionIngress> {
+  // @typescript-eslint/no-unused-vars
   protected getAddress(from: string, to: string): string {
     return to;
   }
@@ -36,6 +37,7 @@ export class TransactionIngressMonitor extends TransactionMonitor<MonitorType.Tr
 }
 
 export class TransactionEgressMonitor extends TransactionMonitor<MonitorType.TransactionEgress> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected getAddress(from: string, to: string): string {
     return from;
   }

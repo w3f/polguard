@@ -1,10 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import {
-  Injectable,
-  OnModuleInit,
-  OnModuleDestroy,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
 import { IncidentHandler } from '@lib/incident/incident-handler';
 import { ChainWatcherStore } from '@lib/store/chain-watcher-store';
@@ -39,7 +34,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         this.api,
         this.incidentHandler,
         this.chainWatcherStore,
-        this.metricsService
+        this.metricsService,
       );
 
       this.logger.log('Starting ChainWatcher...');

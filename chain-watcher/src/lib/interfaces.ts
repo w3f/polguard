@@ -15,7 +15,14 @@ export interface Monitor {
 }
 
 export interface MonitorConstructor {
-  new(logger: Logger, api: ApiPromise, groups: MonitoringGroup[], incidentHandler: IncidentHandler, store: ChainWatcherStore, monitorType: MonitorType): Monitor;
+  new (
+    logger: Logger,
+    api: ApiPromise,
+    groups: MonitoringGroup[],
+    incidentHandler: IncidentHandler,
+    store: ChainWatcherStore,
+    monitorType: MonitorType,
+  ): Monitor;
 }
 
 export interface Logger {
@@ -37,7 +44,6 @@ export interface AccountId {
 export interface ConfigAccountSettings extends AccountId {
   [MonitorType: string]: any;
 }
-
 
 export interface AccountSettings<T extends MonitorType> extends AccountId {
   settings: MonitorSettings<T>;
@@ -72,9 +78,14 @@ export interface ValidatorSettings {
   payee?: string;
 }
 
-export interface GovernanceSettings {}
-
-export interface TransactionSettings {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GovernanceSettings {
+  // TODO: Implement governance-specific settings
+}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface TransactionSettings {
+  // TODO: Implement transaction-specific settings
+}
 
 export interface BalanceSettings {
   balanceThreshold?: bigint;
@@ -88,7 +99,7 @@ export type MonitorTypeSettings = {
   [MonitorType.BalanceIncrement]: BalanceSettings;
   [MonitorType.BalanceDecrement]: BalanceSettings;
   [MonitorType.BalanceThreshold]: BalanceSettings;
-}
+};
 
 export type MonitorSettings<T extends MonitorType> = MonitorTypeSettings[T];
 
@@ -113,7 +124,7 @@ export interface StorageClient {
 }
 
 export interface EventEmitterClient {
-  emit(event: string , payload: any): Promise<boolean>;
+  emit(event: string, payload: any): Promise<boolean>;
 }
 
 export interface CallHandlerParams {

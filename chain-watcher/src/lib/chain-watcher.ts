@@ -53,7 +53,6 @@ export class ChainWatcher {
     this.initializeMonitors();
   }
 
-
   private initializeMonitors(): void {
     const monitorConfigs: [MonitorType, MonitorConstructor][] = [
       [MonitorType.Governance, GovernanceMonitor],
@@ -64,16 +63,14 @@ export class ChainWatcher {
       [MonitorType.BalanceIncrement, BalanceIncrementMonitor],
       [MonitorType.BalanceThreshold, BalanceThresholdMonitor],
     ];
-    
+
     this.monitors = monitorConfigs.flatMap(([monitorType, MonitorClass]) => {
       const groups = this.monitoringGroups.filter(group =>
-        group.monitors.some(monitor => monitor.name === monitorType)
+        group.monitors.some(monitor => monitor.name === monitorType),
       );
       if (groups.length > 0) {
         this.logger.debug(`${monitorType} monitor initialized with ${groups.length} groups`);
-        return [
-          new MonitorClass(this.logger, this.api, groups, this.incidentHandler, this.store, monitorType)
-        ];
+        return [new MonitorClass(this.logger, this.api, groups, this.incidentHandler, this.store, monitorType)];
       }
       return [];
     });
@@ -89,7 +86,7 @@ export class ChainWatcher {
     const header = await this.api.rpc.chain.getHeader();
     this.latestBlockNumber = header.number.toNumber();
 
-    this.api.rpc.chain.subscribeFinalizedHeads((header) => {
+    this.api.rpc.chain.subscribeFinalizedHeads(header => {
       const blockNumber = header.number.toNumber();
       this.latestBlockNumber = blockNumber;
     });
@@ -117,9 +114,9 @@ export class ChainWatcher {
   }
 
   private async runBlockProcessing(startBlock?: number): Promise<void> {
-    this.logger.log(`Start processing from block: #${startBlock || "<NOT_PROVIDED>"}`);
-    let nextBlockToProcess = startBlock ? startBlock : await this.getLastProcessedBlock() + 1;
-  
+    this.logger.log(`Start processing from block: #${startBlock || '<NOT_PROVIDED>'}`);
+    let nextBlockToProcess = startBlock ? startBlock : (await this.getLastProcessedBlock()) + 1;
+
     while (this.isRunning) {
       if (nextBlockToProcess <= this.latestBlockNumber) {
         await this.processBlock(nextBlockToProcess);
@@ -147,7 +144,7 @@ export class ChainWatcher {
           await monitor.processEvent({ blockHash, blockNumber, eventRecord });
         }
       }
-    })
+    });
     // Apply call handlers: process call signature
     for (const extrinsic of block.block.extrinsics) {
       const origin = extrinsic.signer.toString();
@@ -159,14 +156,14 @@ export class ChainWatcher {
   }
 
   private async processCallTree(
-    blockHash: BlockHash, 
-    blockNumber: number, 
-    call: CallBase<AnyTuple>, 
-    origin: string
+    blockHash: BlockHash,
+    blockNumber: number,
+    call: CallBase<AnyTuple>,
+    origin: string,
   ): Promise<void> {
     // NOTE: This method processes calls with the original extrinsic signer as the origin.
-    // If the origin changes during execution (e.g., through the proxy pallet), 
-    // this change is not reflected in nested calls processed here. 
+    // If the origin changes during execution (e.g., through the proxy pallet),
+    // this change is not reflected in nested calls processed here.
     // Additional logic would be needed to track origin changes within the call tree if required.
 
     // TODO: Origin tracking, discover all the cases (proxy, etc.).
@@ -185,5 +182,4 @@ export class ChainWatcher {
       }
     }
   }
-
 }

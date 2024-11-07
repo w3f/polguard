@@ -67,8 +67,8 @@ export class MessageStyler {
 
   private static styleLinks(text: string, styleType: StyleType): string {
     const linkRegex = /(https?:\/\/[^\s]+)/g;
-    
-    return text.replace(linkRegex, (url) => {
+
+    return text.replace(linkRegex, url => {
       const domain = new URL(url).hostname;
       switch (styleType) {
         case 'html':

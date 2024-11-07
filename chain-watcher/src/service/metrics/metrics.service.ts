@@ -10,10 +10,10 @@ export class MetricsService implements OnModuleInit, ChainWatcherMetrics {
 
   constructor(
     private readonly network: Chain,
-    private readonly environment: string
+    private readonly environment: string,
   ) {
     this.registry = new Registry();
-    
+
     this.blockHeight = new Gauge({
       name: 'block_height',
       help: 'Current block height of the chain',
