@@ -31,6 +31,23 @@ jobs:
       - run:
           command: helm lint ./charts/monitoring-platform
 
+  buildImage: &buildImage
+    docker:
+      - image: web3f/ci-commons:v3
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          command: |
+            cd "${MODULE}"
+            /scripts/build-image.sh web3f/mp-"${MODULE}" . 
+
+  buildImageChainWatcher:
+    environment:
+      MODULE: chain-watcher
+    <<: *buildImage            
+
 workflows:
   version: 2
   test_and_publish:
@@ -47,3 +64,11 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - buildImageChainWatcher:
+          context: dockerhub-bot
+          requires:
+            - helmLint
+            - yarnLintChainWatcher
+          filters:
+            tags:
+              only: /.*/        
