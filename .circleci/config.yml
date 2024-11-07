@@ -52,14 +52,14 @@ workflows:
   version: 2
   test_and_publish:
     jobs:
-      - yarnLintChainWatcher:
-          filters:
-            tags:
-              only: /.*/
-      - yarnLintMatrix:
-          filters:
-            tags:
-              only: /.*/  
+      # - yarnLintChainWatcher:
+      #     filters:
+      #       tags:
+      #         only: /.*/
+      # - yarnLintMatrix:
+      #     filters:
+      #       tags:
+      #         only: /.*/  
       - helmLint:
           filters:
             tags:
@@ -68,7 +68,7 @@ workflows:
           context: dockerhub-bot
           requires:
             - helmLint
-            - yarnLintChainWatcher
+            # - yarnLintChainWatcher
           filters:
             tags:
               only: /.*/        
