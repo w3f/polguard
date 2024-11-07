@@ -9,6 +9,7 @@ import { ConfigService } from './config/config.service';
 import { IncidentHandler } from '@lib/incident/incident-handler';
 import { ChainWatcherStore } from '@lib/store/chain-watcher-store';
 import { ChainWatcher } from '@lib/chain-watcher';
+import { MetricsService } from './metrics/metrics.service';
 
 @Injectable()
 export class AppService implements OnModuleInit, OnModuleDestroy {
@@ -20,6 +21,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     private config: ConfigService,
     private chainWatcherStore: ChainWatcherStore,
     private incidentHandler: IncidentHandler,
+    private metricsService: MetricsService,
   ) {}
 
   async onModuleInit() {
@@ -37,6 +39,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         this.api,
         this.incidentHandler,
         this.chainWatcherStore,
+        this.metricsService
       );
 
       this.logger.log('Starting ChainWatcher...');
@@ -72,8 +75,6 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
   private async handleChainWatcherFailure(error: any) {
     this.logger.error('ChainWatcher failed:', error);
-
-    // TODO: Prometheus metrics
 
     try {
       await this.chainWatcher.stop();

@@ -3,9 +3,8 @@ import type { EventRecord } from '@polkadot/types/interfaces/system';
 import { AnyTuple } from '@polkadot/types/types';
 import { CallBase } from '@polkadot/types/types/calls';
 import { BlockHash } from '@polkadot/types/interfaces';
-import { TypeRegistry } from '@polkadot/types';
 
-import { Logger, Monitor, MonitorConstructor, MonitoringGroup } from './interfaces';
+import { ChainWatcherMetrics, Logger, Monitor, MonitorConstructor, MonitoringGroup } from './interfaces';
 import { MonitorType } from './constants';
 import { IncidentHandler } from './incident/incident-handler';
 import { GovernanceMonitor } from './monitors/governance/governance-monitor';
@@ -14,8 +13,6 @@ import { ValidatorMonitor } from './monitors/validator/validator-monitor';
 import { BalanceDecrementMonitor, BalanceIncrementMonitor } from './monitors/balance/balance-monitor';
 import { BalanceThresholdMonitor } from './monitors/balance/balance-threshold-monitor';
 import { ChainWatcherStore } from './store/chain-watcher-store';
-
-export const registry = new TypeRegistry()
 
 /**
  * ChainWatcher is the core class responsible for monitoring a blockchain.
@@ -50,7 +47,8 @@ export class ChainWatcher {
     private monitoringGroups: MonitoringGroup[],
     private api: ApiPromise,
     private incidentHandler: IncidentHandler,
-    private store: ChainWatcherStore
+    private store: ChainWatcherStore,
+    private metrics: ChainWatcherMetrics,
   ) {
     this.initializeMonitors();
   }
@@ -157,6 +155,7 @@ export class ChainWatcher {
     }
 
     await this.setLastProcessedBlock(blockNumber);
+    this.metrics.setBlockHeight(blockNumber);
   }
 
   private async processCallTree(

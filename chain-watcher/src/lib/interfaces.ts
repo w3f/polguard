@@ -138,3 +138,7 @@ export interface Message {
   title: string;
   details: string[];
 }
+
+export interface ChainWatcherMetrics {
+  setBlockHeight(height: number): void;
+}

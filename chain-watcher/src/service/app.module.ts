@@ -14,7 +14,7 @@ import { IncidentPublisherService } from './incident/incident-publisher.service'
 @Module({
   imports: [
     HealthModule,
-    MetricsModule,
+    MetricsModule.forRootAsync(),
     ConfigModule,
     StorageModule.forRootAsync(),
     EventEmitterModule.forRootAsync(),
