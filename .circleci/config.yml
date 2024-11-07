@@ -46,7 +46,12 @@ jobs:
   buildImageChainWatcher:
     environment:
       MODULE: chain-watcher
-    <<: *buildImage            
+    <<: *buildImage
+
+  buildImageMatrix:
+    environment:
+      MODULE: matrix
+    <<: *buildImage
 
 workflows:
   version: 2
@@ -71,4 +76,12 @@ workflows:
             # - yarnLintChainWatcher
           filters:
             tags:
-              only: /.*/        
+              only: /.*/
+      - buildImageMatrix:
+          context: dockerhub-bot
+          requires:
+            - helmLint
+            # - yarnLintMatrix
+          filters:
+            tags:
+              only: /.*/
