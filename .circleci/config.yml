@@ -63,6 +63,17 @@ jobs:
       MODULE: matrix
     <<: *buildImage
 
+  deployabilityTests:
+    docker:
+      - image: web3f/ci-commons:v3
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          description: run integration tests
+          command: |
+            /scripts/deployability-tests.sh kindest/node:v1.21.1    
+
 workflows:
   version: 2
   test_and_publish:
@@ -99,3 +110,10 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - deployabilityTests:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - buildImageChainWatcher  
+            - buildImageMatrix           
