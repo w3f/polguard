@@ -29,12 +29,19 @@ jobs:
     steps:
       - checkout
       - run:
-          command: helm lint ./charts/"${MODULE}"
+          command: |
+            cd ./charts/"${MODULE}"
+            helm lint 
 
   helmLintChainWatcher:
     environment:
       MODULE: chain-watcher
-    <<: *helmLint        
+    <<: *helmLint 
+
+  helmLintMatrix:
+    environment:
+      MODULE: matrix
+    <<: *helmLint          
 
   buildImage: &buildImage
     docker:
