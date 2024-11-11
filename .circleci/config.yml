@@ -63,7 +63,7 @@ jobs:
       MODULE: matrix
     <<: *buildImage
 
-  deployabilityTests:
+  integrationTests:
     docker:
       - image: web3f/ci-commons:v3
     steps:
