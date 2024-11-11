@@ -72,7 +72,7 @@ jobs:
       - run:
           description: run integration tests
           command: |
-            /scripts/deployability-tests.sh kindest/node:v1.21.1    
+            /scripts/integration-tests.sh kindest/node:v1.21.1    
 
 workflows:
   version: 2
@@ -110,7 +110,7 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - deployabilityTests:
+      - integrationTests:
           filters:
             tags:
               only: /.*/
