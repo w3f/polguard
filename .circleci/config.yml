@@ -29,9 +29,7 @@ jobs:
     steps:
       - checkout
       - run:
-          command: |
-            cd ./charts/"${MODULE}"
-            helm lint 
+          command: helm lint ./charts/"${MODULE}"
 
   helmLintChainWatcher:
     environment:
@@ -77,14 +75,18 @@ workflows:
       #     filters:
       #       tags:
       #         only: /.*/  
-      - helmLint:
+      - helmLintChainWatcher:
           filters:
             tags:
               only: /.*/
+      - helmLintMatrix:
+          filters:
+            tags:
+              only: /.*/        
       - buildImageChainWatcher:
           context: dockerhub-bot
           requires:
-            - helmLint
+            - helmLintChainWatcher
             # - yarnLintChainWatcher
           filters:
             tags:
@@ -92,7 +94,7 @@ workflows:
       - buildImageMatrix:
           context: dockerhub-bot
           requires:
-            - helmLint
+            - helmLintMatrix
             # - yarnLintMatrix
           filters:
             tags:
