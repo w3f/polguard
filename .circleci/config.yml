@@ -23,13 +23,18 @@ jobs:
       MODULE: matrix
     <<: *yarnLint
 
-  helmLint:
+  helmLint: &helmLint
     docker:
       - image: web3f/ci-commons:v3
     steps:
       - checkout
       - run:
-          command: helm lint ./charts/monitoring-platform
+          command: helm lint ./charts/"${MODULE}"
+
+  helmLintChainWatcher:
+    environment:
+      MODULE: chain-watcher
+    <<: *helmLint        
 
   buildImage: &buildImage
     docker:
