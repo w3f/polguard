@@ -1,0 +1,27 @@
+image:
+  repo: web3f/mp-matrix
+  tag: feature-ci
+
+httpPort: 3000
+
+resources: {}
+
+config:
+  environment: development
+
+  redis:
+    url: redis://redis-master:6379/0
+
+  matrix:
+    serverAddress: "https://matrix.web3.foundation"
+    userId: "@xxx:web3.foundation"
+    password: "xxx"
+    rooms:
+      # TestMonitoringPlatform room
+      - id: "!BabNKVNdOktKGafXzd:web3.foundation"
+    logging:
+      level: warn
+
+  logging:
+    level: info
+

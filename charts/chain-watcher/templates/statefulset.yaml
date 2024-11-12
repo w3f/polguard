@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  serviceName: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+      - name: {{ .Release.Name }}
+        image: {{ .Values.image.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.image.imagePullPolicy }}
+        # command: ["/bin/sh", "-c", "while true; do sleep 60; done"] #DEBUG
+        ports:
+        - name: http
+          containerPort: {{ .Values.httpPort }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.httpPort }}
+          failureThreshold: 6
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 60
+        volumeMounts:
+        - name: config
+          mountPath: /app/config/
+          # subPath: config.json
+          readOnly: true
+        - name: monitoring-config
+          mountPath: /app/monitoring-configs/
+          # subPath: monitoring.json
+          readOnly: true  
+      volumes:
+      - name: monitoring-config
+        configMap:
+          name: {{ .Release.Name }}-monitoring
+      - name: config
+        configMap:
+          name: {{ .Release.Name }}    

@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  serviceName: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      containers:
+      - name: {{ .Release.Name }}
+        image: {{ .Values.image.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.image.imagePullPolicy }}
+        # command: ["/bin/sh", "-c", "while true; do sleep 60; done"] #DEBUG
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.httpPort }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.httpPort }}
+          failureThreshold: 6
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 60
+        volumeMounts:
+        - name: store
+          mountPath: /app/matrix-storage
+        - name: config
+          mountPath: /app/config/
+          # subPath: config.json
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Release.Name }} 
+      {{ if eq .Values.environment "ci" }}
+      - name: data
+        emptyDir: {}
+      {{ else }}    
+  volumeClaimTemplates:
+  - metadata:
+      name: store
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Mi   
+      {{ end }}    

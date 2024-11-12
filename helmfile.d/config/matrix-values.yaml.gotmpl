@@ -1,0 +1,18 @@
+{{ if eq .Environment.Name "ci" }}
+image:
+  tag: {{ env "CIRCLE_SHA1" | default "kind" }}
+{{ else if eq .Environment.Name "local" }}
+image:
+  repo: localhost:5000/mp-chain-watcher
+  tag: latest
+{{ end }}
+
+config:
+  matrix:
+    userId: "{{ env "MATRIX_USER" }}"
+    password: "{{ env "MATRIX_PASS" }}"
+    serverAddress: "https://matrix.web3.foundation"
+    rooms:
+      - id: "!BabNKVNdOktKGafXzd:web3.foundation"
+    logging:
+      level: warn
