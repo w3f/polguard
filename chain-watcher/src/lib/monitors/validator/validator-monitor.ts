@@ -1,17 +1,11 @@
 import '@polkadot/api-augment/polkadot';
-import { Option } from '@polkadot/types';
-import { EveryBlockHandler, CallHandler, EventHandler } from '../decorators';
-import { AbstractValidatorMonitor } from './abstract-validator-monitor';
+import { EveryBlockHandler, CallHandler, EventHandler } from '../../decorators';
 import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
 import { EveryBlockHandlerParams, CallHandlerParams, EventHandlerParams } from '../../interfaces';
+import { AbstractMonitor } from '../abstract-monitor';
+import { MonitorType } from '@lib/constants';
 
-export class ValidatorMonitor extends AbstractValidatorMonitor {
-  @EventHandler('session.NewSession')
-  async handleNewEra({}: EventHandlerParams): Promise<void> {
-    await this.updateCurrentEra();
-    await this.updateCurrentEraValidators();
-  }
-
+export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
   @EventHandler('staking.SlashReported')
   async handleSlashReported({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const validatorId = eventRecord.event.data[0].toString();
@@ -41,13 +35,13 @@ export class ValidatorMonitor extends AbstractValidatorMonitor {
   }
 
   @CallHandler(['staking.setPayee', 'staking.bond'])
-  async handleDestinationChanged({ call, origin, blockHash, blockNumber }: CallHandlerParams): Promise<void> {
+  async handleDestinationChanged({ call, origin, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
     const payee = (call.method === 'setPayee' ? call.args[0] : call.args[1]) as PalletStakingRewardDestination;
     for (const { account, alerts } of this.getAccounts(origin)) {
       const message = this.createMessage([
         `New destination change detected for ${account.name}.`,
         `Destination: ${this.getDestinationString(payee)}`,
-        `Details: ${await this.getExtrinsicLink(blockHash, call)}`,
+        `Details: ${this.getExtrinsicLink(blockNumber, extrinsicIndex)}`,
       ]);
 
       await this.incidents.oneTimeIncident(message, alerts, blockNumber);
@@ -57,13 +51,13 @@ export class ValidatorMonitor extends AbstractValidatorMonitor {
   // TODO: Add Event handler (payout claimed), it should require expectedDestination != current.
   @EveryBlockHandler()
   async handleCommissionUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    const results = await this.api.queryMulti<PalletStakingValidatorPrefs[]>(
-      this.uniqueAddresses.map(address => [this.api.query.staking.validators, address]),
-    );
+    const commissions = await this.stateQuery.validatorCommissions(this.uniqueAddresses, blockNumber);
+    if (commissions === null) {
+      return;
+    }
     for (let i = 0; i < this.uniqueAddresses.length; i++) {
       const address = this.uniqueAddresses[i];
-      const prefs = results[i];
-      const commission = prefs.commission.toNumber() / 10000000;
+      const commission = commissions[address];
       for (const { account, alerts, groupId } of this.getAccounts(address)) {
         const expectedCommission = account.settings.commission;
         const isFiring = commission !== expectedCommission;
@@ -83,17 +77,13 @@ export class ValidatorMonitor extends AbstractValidatorMonitor {
 
   @EveryBlockHandler()
   async handleDestinationUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    const results = await this.api.queryMulti<Option<PalletStakingRewardDestination>[]>(
-      this.uniqueAddresses.map(address => [this.api.query.staking.payee, address]),
-    );
+    const payees = await this.stateQuery.payees(this.uniqueAddresses, blockNumber);
     for (let i = 0; i < this.uniqueAddresses.length; i++) {
       const address = this.uniqueAddresses[i];
-      const payeeOption = results[i];
-      const destination = payeeOption.isSome ? this.getDestinationString(payeeOption.unwrap()) : 'None';
+      const destination = payees[address] ? this.getDestinationString(payees[address]) : 'None';
       for (const { account, alerts, groupId } of this.accounts.get(address) || []) {
         const expectedDestination = account.settings.payee;
 
-        // Skip if there's no expected payee configured
         if (!expectedDestination) continue;
         const isFiring = destination !== expectedDestination;
 
@@ -112,19 +102,26 @@ export class ValidatorMonitor extends AbstractValidatorMonitor {
 
   @EveryBlockHandler()
   async handleActiveSetPresense({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    const validators = await this.getCurrentEraValidators();
+    const validators = await this.stateQuery.validators(blockNumber);
     for (const acc of this.uniqueAddresses) {
       for (const { account, alerts, groupId } of this.getAccounts(acc)) {
-        const isFiring = !validators.has(account.ss58);
+        const isFiring = !validators[account.ss58];
 
         const message = this.createMessage([
           `Target ${account.name} is not present in the validation active set.`,
-          `Era: ${this.currentEra}`,
+          `Era: ${await this.stateQuery.era(blockNumber)}`,
         ]);
 
         const key = `${account.ss58}:${groupId}:handleValidatorActiveSetPresense`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
+  }
+
+  protected getDestinationString(destination: PalletStakingRewardDestination): string {
+    if (destination.isAccount) {
+      return destination.asAccount.toString();
+    }
+    return destination.type;
   }
 }

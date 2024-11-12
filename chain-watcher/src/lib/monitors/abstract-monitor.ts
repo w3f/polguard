@@ -1,7 +1,4 @@
-import { ApiPromise } from '@polkadot/api';
-import { BlockHash, Phase } from '@polkadot/types/interfaces';
-import { CallBase } from '@polkadot/types/types/calls';
-import { AnyTuple } from '@polkadot/types/types';
+import { Phase } from '@polkadot/types/interfaces';
 import { formatBalance } from '@polkadot/util';
 import {
   Monitor,
@@ -15,9 +12,10 @@ import {
   AccountSettings,
   ConfigAccountSettings,
   AlertSettings,
+  ChainProperties,
+  StateQueryProvider,
 } from '../interfaces';
 import { IncidentHandler } from '../incident/incident-handler';
-import { ChainWatcherStore } from '../store/chain-watcher-store';
 import { MonitorType } from '../constants';
 
 export abstract class AbstractMonitor<T extends MonitorType> implements Monitor {
@@ -37,10 +35,10 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
 
   constructor(
     protected logger: Logger,
-    protected api: ApiPromise,
     protected groups: MonitoringGroup[],
     protected incidents: IncidentHandler,
-    protected store: ChainWatcherStore,
+    protected stateQuery: StateQueryProvider,
+    protected chainProps: ChainProperties,
     protected monitorType: T,
   ) {
     this.buildAccountMap();
@@ -130,11 +128,11 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     }
   }
 
-  async processCall({ call, origin, blockHash, blockNumber }: CallHandlerParams): Promise<void> {
+  async processCall({ call, origin, blockHash, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
     const callName = `${call.section}.${call.method}`;
     const handler = this.callHandlers.get(callName);
     if (handler) {
-      await handler({ call, origin, blockHash, blockNumber });
+      await handler({ call, origin, blockHash, blockNumber, extrinsicIndex });
     }
   }
 
@@ -150,47 +148,26 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
       return '';
     }
     const index = phase.asApplyExtrinsic.toNumber();
-    const network = this.getNetwork();
-    return `https://${network}.subscan.io/event?extrinsic=${blockNumber}-${index}`;
+    return `https://${this.chainProps.specName}.subscan.io/event?extrinsic=${blockNumber}-${index}`;
   }
 
   protected getAccountLink(address: string): string {
-    return `https://${this.getNetwork()}.subscan.io/account/${address}`;
+    return `https://${this.chainProps.specName}.subscan.io/account/${address}`;
   }
 
-  protected async getExtrinsicLink(blockHash: BlockHash, call: CallBase<AnyTuple>): Promise<string> {
-    const block = await this.api.rpc.chain.getBlock(blockHash);
-    const blockNumber = block.block.header.number.toNumber();
-
-    const index = block.block.extrinsics.findIndex(
-      ext => ext.method.section === call.section && ext.method.method === call.method,
-    );
-
-    if (index === -1) {
-      this.logger.warn(
-        `Unable to generate extrinsic link: Extrinsic ${call.section}.${call.method} ` +
-          `not found in block ${blockNumber}`,
-      );
-      return '';
-    }
-
-    const network = this.getNetwork();
-    return `https://${network}.subscan.io/extrinsic/${blockNumber}-${index}`;
-  }
-
-  private getNetwork(): string {
-    return this.api.runtimeVersion.specName.toString();
+  protected getExtrinsicLink(blockNumber: number, extrinsicIndex: number): string {
+    return `https://${this.chainProps.specName}.subscan.io/extrinsic/${blockNumber}-${extrinsicIndex}`;
   }
 
   protected createMessage(rows: string[]): Message {
-    rows.push(`Network: ${this.getNetwork()}`);
+    rows.push(`Network: ${this.chainProps.specName}`);
     return { title: rows.shift(), details: rows };
   }
 
   protected formatBalance(amount: number | string | bigint): string {
     return formatBalance(amount, {
-      decimals: this.api.registry.chainDecimals[0],
-      withUnit: this.api.registry.chainTokens[0],
+      decimals: this.chainProps.chainDecimals,
+      withUnit: this.chainProps.chainToken,
       withSi: true,
       forceUnit: '-',
     });

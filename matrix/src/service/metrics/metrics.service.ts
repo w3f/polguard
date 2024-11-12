@@ -13,8 +13,6 @@ export class MetricsService implements OnModuleInit {
     collectDefaultMetrics({ register: this.registry });
   }
 
-  // TODO: Add ChainWatcher metrics
-
   async getMetrics(): Promise<string> {
     return this.registry.metrics();
   }

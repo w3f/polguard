@@ -1,86 +1,46 @@
-import { StorageClient } from '../interfaces';
+import { DataStoreClient, ActiveIncidentState, KeyValueStorageClient } from '../interfaces';
+import { Logger } from '../interfaces';
 
 /**
- * ChainWatcherStore is responsible for managing persistent storage and event emission
- * for the Chain Watcher system. It uses Redis for data storage and pub/sub functionality.
- *
- * This class provides methods to:
- * - Store and retrieve account balances
- * - Store and retrieve validator active sets
- * - Store and retrieve the current era
- * - Track the last processed block
- * - Manage active incidents
- *
- * It acts as an abstraction layer over the Redis client, providing type-safe methods
+ * ChainWatcherStore acts as an abstraction layer over the Redis client, providing type-safe methods
  * for storing and retrieving data specific to the Chain Watcher's needs.
  */
-export class ChainWatcherStore {
+export class ChainWatcherStore implements DataStoreClient {
+  private static instance: ChainWatcherStore;
+  private readonly KEY_PREFIX = 'chain_watcher:';
   private readonly KEYS = {
     INCIDENT: 'incident',
-    ACCOUNT_BALANCES: 'account_balances',
-    VALIDATOR_ACTIVE_SET: 'validator_active_set',
     LAST_PROCESSED_BLOCK: 'last_processed_block',
-    CURRENT_ERA: 'current_era',
   };
 
-  constructor(private storageClient: StorageClient) {}
+  private constructor(
+    private client: KeyValueStorageClient,
+    private logger: Logger,
+  ) {}
 
-  private async set<T>(key: string, data: T, ttl?: number): Promise<void> {
-    const serializedData = JSON.stringify(data);
-    if (ttl) {
-      await this.storageClient.setex(key, ttl, serializedData);
-    } else {
-      await this.storageClient.set(key, serializedData);
+  public static getInstance(client: KeyValueStorageClient, logger: Logger): DataStoreClient {
+    if (!ChainWatcherStore.instance) {
+      ChainWatcherStore.instance = new ChainWatcherStore(client, logger);
     }
+    return ChainWatcherStore.instance;
   }
 
-  private async get<T>(key: string): Promise<T | null> {
-    const value = await this.storageClient.get(key);
-    return value ? JSON.parse(value) : null;
+  // KeyValueStorageClient methods
+  async get<T>(key: string): Promise<T | null> {
+    return this.client.get<T>(key);
   }
+  set = this.client.set.bind(this.client);
+  setex = this.client.setex.bind(this.client);
+  del = this.client.del.bind(this.client);
+  keys = this.client.keys.bind(this.client);
 
-  private async delete(key: string): Promise<void> {
-    await this.storageClient.del(key);
-  }
-
-  async getAccountBalances(block: number): Promise<Map<string, bigint>> {
-    const key = `${this.KEYS.ACCOUNT_BALANCES}:${block}`;
-    const data = await this.get<Record<string, string>>(key);
-    return new Map(Object.entries(data || {}).map(([account, balance]) => [account, BigInt(balance)]));
-  }
-
-  async setAccountBalances(block: number, balances: Map<string, bigint>, ttl: number = 300): Promise<void> {
-    const key = `${this.KEYS.ACCOUNT_BALANCES}:${block}`;
-    const data = Object.fromEntries(Array.from(balances, ([account, balance]) => [account, balance.toString()]));
-    await this.set(key, data, ttl);
-  }
-
-  async getEraValidators(era: number): Promise<Set<string> | null> {
-    const key = `${this.KEYS.VALIDATOR_ACTIVE_SET}:${era}`;
-    const validatorsArray = await this.get<string[]>(key);
-    const result = Array.isArray(validatorsArray) ? new Set(validatorsArray) : null;
-    return result;
-  }
-
-  async setEraValidators(era: number, validators: Set<string>, ttl: number = 2592000): Promise<void> {
-    const key = `${this.KEYS.VALIDATOR_ACTIVE_SET}:${era}`;
-    await this.set(key, Array.from(validators), ttl);
-  }
-
+  // PersistentStorage methods
   async getLastProcessedBlock(): Promise<number | null> {
     return this.get<number>(this.KEYS.LAST_PROCESSED_BLOCK);
   }
 
   async setLastProcessedBlock(block: number): Promise<void> {
     await this.set(this.KEYS.LAST_PROCESSED_BLOCK, block);
-  }
-
-  async getCurrentEra(): Promise<number | null> {
-    return this.get<number>(this.KEYS.CURRENT_ERA);
-  }
-
-  async setCurrentEra(era: number): Promise<void> {
-    await this.set(this.KEYS.CURRENT_ERA, era);
   }
 
   async getOngoingIncident(incidentId: string): Promise<ActiveIncidentState | null> {
@@ -92,13 +52,18 @@ export class ChainWatcherStore {
   }
 
   async deleteOngoingIncident(incidentId: string): Promise<void> {
-    await this.delete(`${this.KEYS.INCIDENT}:${incidentId}`);
+    await this.del(`${this.KEYS.INCIDENT}:${incidentId}`);
   }
-}
 
-interface ActiveIncidentState {
-  incidentId: string;
-  consecutiveFiringBlocks: number;
-  consecutiveNormalBlocks: number;
-  lastEmitted: number;
+  public async clearAll(): Promise<void> {
+    try {
+      const keys = await this.client.keys(`${this.KEY_PREFIX}*`);
+      if (keys.length > 0) {
+        await Promise.all(keys.map(key => this.client.del(key)));
+      }
+    } catch (error) {
+      this.logger.error(`Failed to clear all keys: ${error.message}`);
+      throw error;
+    }
+  }
 }

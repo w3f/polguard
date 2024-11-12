@@ -1,14 +1,15 @@
 import { EveryBlockHandlerParams } from '../../interfaces';
-import { EveryBlockHandler } from '../decorators';
+import { EveryBlockHandler } from '../../decorators';
 import { MonitorType } from '../../constants';
-import { AbstractBalanceMonitor } from './abstract-balance-monitor';
+import { AbstractMonitor } from '../abstract-monitor';
 
-export class BalanceThresholdMonitor extends AbstractBalanceMonitor<MonitorType.BalanceThreshold> {
+export class BalanceThresholdMonitor extends AbstractMonitor<MonitorType.BalanceThreshold> {
   @EveryBlockHandler()
   async handleBalanceThreshold({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    const currentBalances = await this.getBalances(blockNumber);
+    const currentBalances = await this.stateQuery.balances(this.uniqueAddresses, blockNumber);
 
-    for (const [address, currentBalance] of Object.entries(currentBalances)) {
+    for (const address in currentBalances) {
+      const currentBalance = currentBalances[address];
       for (const { account, alerts, groupId } of this.getAccounts(address)) {
         if (account.settings.balanceThreshold !== undefined) {
           const isFiring = currentBalance < account.settings.balanceThreshold;

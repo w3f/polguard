@@ -1,6 +1,6 @@
 import { AbstractMonitor } from '../abstract-monitor';
 import { EventHandlerParams } from '../../interfaces';
-import { EventHandler } from '../decorators';
+import { EventHandler } from '../../decorators';
 import { MonitorType } from '../../constants';
 
 abstract class TransactionMonitor<T extends MonitorType> extends AbstractMonitor<T> {
@@ -26,7 +26,7 @@ abstract class TransactionMonitor<T extends MonitorType> extends AbstractMonitor
 }
 
 export class TransactionIngressMonitor extends TransactionMonitor<MonitorType.TransactionIngress> {
-  // @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected getAddress(from: string, to: string): string {
     return to;
   }

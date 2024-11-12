@@ -1,21 +1,24 @@
 import { EveryBlockHandlerParams } from '../../interfaces';
-import { EveryBlockHandler } from '../decorators';
+import { EveryBlockHandler } from '../../decorators';
 import { MonitorType } from '../../constants';
-import { AbstractBalanceMonitor } from './abstract-balance-monitor';
+import { AbstractMonitor } from '../abstract-monitor';
 
 abstract class BalanceMonitor<
   T extends MonitorType.BalanceIncrement | MonitorType.BalanceDecrement,
-> extends AbstractBalanceMonitor<T> {
+> extends AbstractMonitor<T> {
   protected abstract isBalanceChangeFiring(currentBalance: bigint, previousBalance: bigint): boolean;
   protected abstract getChangeDescription(): string;
 
   @EveryBlockHandler()
   async handleBalanceChange({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    const currentBalances = await this.getBalances(blockNumber);
-    const previousBalances = await this.getBalances(blockNumber - 1);
+    const currentBalances = await this.stateQuery.balances(this.uniqueAddresses, blockNumber);
+    const previousBalances = await this.stateQuery.balances(this.uniqueAddresses, blockNumber - 1);
 
-    for (const [address, currentBalance] of currentBalances) {
+    for (const address in currentBalances) {
+      const currentBalance = currentBalances[address];
       const previousBalance = previousBalances[address];
+      if (previousBalance === undefined) continue;
+
       const isFiring = this.isBalanceChangeFiring(currentBalance, previousBalance);
       const matches = this.getAccounts(address);
       for (const { account, alerts, groupId } of matches) {

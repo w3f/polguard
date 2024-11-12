@@ -1,10 +1,11 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
-import { IncidentHandler } from '@lib/incident/incident-handler';
-import { ChainWatcherStore } from '@lib/store/chain-watcher-store';
 import { ChainWatcher } from '@lib/chain-watcher';
 import { MetricsService } from './metrics/metrics.service';
+import { ChainWatcherDependencies, createChainWatcher } from '@lib/chain-watcher-factory';
+import { StorageService } from './storage/storage.service';
+import { IncidentPublisherService } from './incident/incident-publisher.service';
 
 @Injectable()
 export class AppService implements OnModuleInit, OnModuleDestroy {
@@ -14,8 +15,8 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private config: ConfigService,
-    private chainWatcherStore: ChainWatcherStore,
-    private incidentHandler: IncidentHandler,
+    private storageService: StorageService,
+    private incidentPublisherService: IncidentPublisherService,
     private metricsService: MetricsService,
   ) {}
 
@@ -28,14 +29,15 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       // TODO: Implement reconnectable API
       this.api = await this.createApi(rpcUrls[0]);
 
-      this.chainWatcher = new ChainWatcher(
-        new Logger('ChainWatcher'),
-        groups,
-        this.api,
-        this.incidentHandler,
-        this.chainWatcherStore,
-        this.metricsService,
-      );
+      const dependencies: ChainWatcherDependencies = {
+        logger: new Logger('ChainWatcher'),
+        api: this.api,
+        storageClient: this.storageService,
+        eventEmitterClient: this.incidentPublisherService,
+        metricsClient: this.metricsService,
+      };
+
+      this.chainWatcher = await createChainWatcher(groups, dependencies);
 
       this.logger.log('Starting ChainWatcher...');
       const startBlock = this.config.getStartBlock();

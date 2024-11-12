@@ -1,8 +1,6 @@
-import { Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
-import { ChainWatcherStore } from '../store/chain-watcher-store';
-import { IncidentEvent, AlertSettings, EventEmitterClient, Message } from '../interfaces';
+import { Logger, IncidentEvent, AlertSettings, EventEmitterClient, Message, DataStoreClient } from '../interfaces';
 import { Chain, MessageType, MessengerType } from '../constants';
 import { MessageStyler } from './message-styler';
 
@@ -26,7 +24,7 @@ export class IncidentHandler {
 
   constructor(
     private logger: Logger,
-    private store: ChainWatcherStore,
+    private store: DataStoreClient,
     private eventEmitter: EventEmitterClient,
     private chain: Chain,
     private repeatInterval: number = 20000, // 20 sec

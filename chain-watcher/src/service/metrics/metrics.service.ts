@@ -1,10 +1,10 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Registry, collectDefaultMetrics, Gauge } from 'prom-client';
-import { ChainWatcherMetrics } from '@lib/interfaces';
+import { MetricsClient } from '@lib/interfaces';
 import { Chain } from '@lib/constants';
 
 @Injectable()
-export class MetricsService implements OnModuleInit, ChainWatcherMetrics {
+export class MetricsService implements OnModuleInit, MetricsClient {
   private readonly registry: Registry;
   private blockHeight: Gauge;
 

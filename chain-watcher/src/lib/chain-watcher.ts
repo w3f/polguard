@@ -4,7 +4,16 @@ import { AnyTuple } from '@polkadot/types/types';
 import { CallBase } from '@polkadot/types/types/calls';
 import { BlockHash } from '@polkadot/types/interfaces';
 
-import { ChainWatcherMetrics, Logger, Monitor, MonitorConstructor, MonitoringGroup } from './interfaces';
+import {
+  ChainProperties,
+  MetricsClient,
+  Logger,
+  Monitor,
+  MonitorConstructor,
+  MonitoringGroup,
+  StateQueryProvider,
+  DataStoreClient,
+} from './interfaces';
 import { MonitorType } from './constants';
 import { IncidentHandler } from './incident/incident-handler';
 import { GovernanceMonitor } from './monitors/governance/governance-monitor';
@@ -12,7 +21,6 @@ import { TransactionEgressMonitor, TransactionIngressMonitor } from './monitors/
 import { ValidatorMonitor } from './monitors/validator/validator-monitor';
 import { BalanceDecrementMonitor, BalanceIncrementMonitor } from './monitors/balance/balance-monitor';
 import { BalanceThresholdMonitor } from './monitors/balance/balance-threshold-monitor';
-import { ChainWatcherStore } from './store/chain-watcher-store';
 
 /**
  * ChainWatcher is the core class responsible for monitoring a blockchain.
@@ -46,9 +54,12 @@ export class ChainWatcher {
     private logger: Logger,
     private monitoringGroups: MonitoringGroup[],
     private api: ApiPromise,
-    private incidentHandler: IncidentHandler,
-    private store: ChainWatcherStore,
-    private metrics: ChainWatcherMetrics,
+    // TODO: interface for the incident handler
+    private incidents: IncidentHandler,
+    private store: DataStoreClient,
+    private metrics: MetricsClient,
+    private stateQuery: StateQueryProvider,
+    private chainProps: ChainProperties,
   ) {
     this.initializeMonitors();
   }
@@ -70,7 +81,7 @@ export class ChainWatcher {
       );
       if (groups.length > 0) {
         this.logger.debug(`${monitorType} monitor initialized with ${groups.length} groups`);
-        return [new MonitorClass(this.logger, this.api, groups, this.incidentHandler, this.store, monitorType)];
+        return [new MonitorClass(this.logger, groups, this.incidents, this.stateQuery, this.chainProps, monitorType)];
       }
       return [];
     });
@@ -137,6 +148,7 @@ export class ChainWatcher {
     for (const monitor of this.monitors) {
       await monitor.processEveryBlock({ blockHash, blockNumber });
     }
+
     // Apply event handlers: process event payload
     await apiAt.query.system.events(async (records: EventRecord[]) => {
       for (const eventRecord of records) {
@@ -145,10 +157,12 @@ export class ChainWatcher {
         }
       }
     });
+
     // Apply call handlers: process call signature
-    for (const extrinsic of block.block.extrinsics) {
+    for (let extrinsicIndex = 0; extrinsicIndex < block.block.extrinsics.length; extrinsicIndex++) {
+      const extrinsic = block.block.extrinsics[extrinsicIndex];
       const origin = extrinsic.signer.toString();
-      await this.processCallTree(blockHash, blockNumber, extrinsic.method, origin);
+      await this.processCallTree(blockHash, blockNumber, extrinsic.method, origin, extrinsicIndex);
     }
 
     await this.setLastProcessedBlock(blockNumber);
@@ -160,23 +174,21 @@ export class ChainWatcher {
     blockNumber: number,
     call: CallBase<AnyTuple>,
     origin: string,
+    extrinsicIndex: number,
   ): Promise<void> {
-    // NOTE: This method processes calls with the original extrinsic signer as the origin.
-    // If the origin changes during execution (e.g., through the proxy pallet),
-    // this change is not reflected in nested calls processed here.
-    // Additional logic would be needed to track origin changes within the call tree if required.
-
-    // TODO: Origin tracking, discover all the cases (proxy, etc.).
+    // Process the current call
     for (const monitor of this.monitors) {
-      await monitor.processCall({ blockHash, blockNumber, call, origin });
+      await monitor.processCall({ blockHash, blockNumber, call, origin, extrinsicIndex });
     }
+
+    // Process nested calls
     for (const arg of call.args) {
       if (arg && typeof arg === 'object' && 'callIndex' in arg) {
-        await this.processCallTree(blockHash, blockNumber, arg as CallBase<AnyTuple>, origin);
+        await this.processCallTree(blockHash, blockNumber, arg as CallBase<AnyTuple>, origin, extrinsicIndex);
       } else if (Array.isArray(arg)) {
         for (const subArg of arg) {
           if (subArg && typeof subArg === 'object' && 'callIndex' in subArg) {
-            await this.processCallTree(blockHash, blockNumber, subArg as CallBase<AnyTuple>, origin);
+            await this.processCallTree(blockHash, blockNumber, subArg as CallBase<AnyTuple>, origin, extrinsicIndex);
           }
         }
       }

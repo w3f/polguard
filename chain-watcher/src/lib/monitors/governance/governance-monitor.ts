@@ -1,6 +1,6 @@
 import { MonitorType } from '@lib/constants';
 import { AbstractMonitor } from '../abstract-monitor';
-import { EventHandler } from '../decorators';
+import { EventHandler } from '../../decorators';
 import { EventHandlerParams } from '@lib/interfaces';
 
 export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
