@@ -78,14 +78,14 @@ workflows:
   version: 2
   test_and_publish:
     jobs:
-      # - yarnLintChainWatcher:
-      #     filters:
-      #       tags:
-      #         only: /.*/
-      # - yarnLintMatrix:
-      #     filters:
-      #       tags:
-      #         only: /.*/  
+      - yarnLintChainWatcher:
+          filters:
+            tags:
+              only: /.*/
+      - yarnLintMatrix:
+          filters:
+            tags:
+              only: /.*/  
       - helmLintChainWatcher:
           filters:
             tags:
@@ -98,7 +98,7 @@ workflows:
           context: dockerhub-bot
           requires:
             - helmLintChainWatcher
-            # - yarnLintChainWatcher
+            - yarnLintChainWatcher
           filters:
             tags:
               only: /.*/
@@ -106,7 +106,7 @@ workflows:
           context: dockerhub-bot
           requires:
             - helmLintMatrix
-            # - yarnLintMatrix
+            - yarnLintMatrix
           filters:
             tags:
               only: /.*/
