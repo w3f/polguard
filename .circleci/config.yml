@@ -72,7 +72,7 @@ jobs:
       - run:
           description: run integration tests
           command: |
-            /scripts/integration-tests.sh kindest/node:node:v1.26.15   
+            /scripts/integration-tests.sh kindest/node:v1.26.15   
 
 workflows:
   version: 2

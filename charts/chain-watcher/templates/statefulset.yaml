@@ -31,7 +31,7 @@ spec:
           containerPort: {{ .Values.httpPort }}
         livenessProbe:
           httpGet:
-            path: /healthcheck
+            path: /health
             port: {{ .Values.httpPort }}
           failureThreshold: 6
           initialDelaySeconds: 30

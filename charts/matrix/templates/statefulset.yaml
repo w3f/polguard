@@ -33,14 +33,14 @@ spec:
         ports:
         - name: http
           containerPort: {{ .Values.httpPort }}
-        livenessProbe:
-          httpGet:
-            path: /healthcheck
-            port: {{ .Values.httpPort }}
-          failureThreshold: 6
-          initialDelaySeconds: 30
-          periodSeconds: 30
-          timeoutSeconds: 60
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: {{ .Values.httpPort }}
+        #   failureThreshold: 6
+        #   initialDelaySeconds: 30
+        #   periodSeconds: 30
+        #   timeoutSeconds: 60
         volumeMounts:
         - name: store
           mountPath: /app/matrix-storage
