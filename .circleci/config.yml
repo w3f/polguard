@@ -111,6 +111,7 @@ workflows:
             tags:
               only: /.*/
       - integrationTests:
+          context: ci-matrixbot
           filters:
             tags:
               only: /.*/

@@ -26,21 +26,21 @@ spec:
       - name: {{ .Release.Name }}
         image: {{ .Values.image.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.image.imagePullPolicy }}
-        command: ["/bin/sh", "-c", "while true; do sleep 60; done"] #DEBUG
+        # command: ["/bin/sh", "-c", "while true; do sleep 60; done"] #DEBUG
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}
         ports:
         - name: http
           containerPort: {{ .Values.httpPort }}
-        # livenessProbe:
-        #   httpGet:
-        #     path: /health
-        #     port: {{ .Values.httpPort }}
-        #   failureThreshold: 6
-        #   initialDelaySeconds: 30
-        #   periodSeconds: 30
-        #   timeoutSeconds: 60
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.httpPort }}
+          failureThreshold: 6
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 60
         volumeMounts:
         - name: store
           mountPath: /app/matrix-storage
