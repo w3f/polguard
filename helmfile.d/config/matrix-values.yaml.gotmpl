@@ -7,3 +7,12 @@ image:
   tag: latest
 {{ end }}
 
+config:
+  matrix:
+    userId: {{ env "MATRIX_USER" }}
+    password: {{ env "MATRIX_PASS" }}
+    serverAddress: "https://matrix.web3.foundation"
+    rooms:
+      - id: "!BabNKVNdOktKGafXzd:web3.foundation"
+    logging:
+      level: warn
