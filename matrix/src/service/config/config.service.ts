@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
-// @ts-ignore: Suppress ts(80003)
 import * as Joi from 'joi';
 import { MatrixConfig } from '@lib/interfaces';
 
@@ -36,25 +35,30 @@ export class ConfigService {
       matrix: Joi.object({
         serverAddress: Joi.string().uri().required(),
         logging: Joi.object({
-          level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error')
-        }).default({level:'warn'}),
+          level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error'),
+        }).default({ level: 'warn' }),
         userId: Joi.string().required(),
         password: Joi.string().required().messages({
-          'any.required': 'Matrix password is required. Provide it in the config file or set the MATRIX_PASSWORD environment variable.',
+          'any.required':
+            'Matrix password is required. Provide it in the config file or set the MATRIX_PASSWORD environment variable.',
         }),
-        rooms: Joi.array().items(
-          Joi.object({
-            id: Joi.string().pattern(/^[!#][A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/).required(),
-            acknowledgement: Joi.boolean().default(false).optional()
-          })
-        ).optional()
+        rooms: Joi.array()
+          .items(
+            Joi.object({
+              id: Joi.string()
+                .pattern(/^[!#][A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)
+                .required(),
+              acknowledgement: Joi.boolean().default(false).optional(),
+            }),
+          )
+          .optional(),
       }).required(),
       redis: Joi.object({
         url: Joi.string().uri().required(),
       }).required(),
       logging: Joi.object({
-        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info')
-      }).optional()
+        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
+      }).optional(),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -69,7 +73,7 @@ export class ConfigService {
     return this.config.matrix;
   }
 
-  getRedisConfig(): { host: string, port: number, db: number } {
+  getRedisConfig(): { host: string; port: number; db: number } {
     const redisUrl = new URL(this.config.redis.url);
     return {
       host: redisUrl.hostname,

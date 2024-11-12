@@ -2,12 +2,7 @@ import { Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
 import { ChainWatcherStore } from '../store/chain-watcher-store';
-import {
-  IncidentEvent,
-  AlertSettings,
-  EventEmitterClient,
-  Message,
-} from '../interfaces';
+import { IncidentEvent, AlertSettings, EventEmitterClient, Message } from '../interfaces';
 import { Chain, MessageType, MessengerType } from '../constants';
 import { MessageStyler } from './message-styler';
 
@@ -47,7 +42,7 @@ export class IncidentHandler {
     const incidentId = this.getIncidentId(incidentKey);
     let state = await this.store.getOngoingIncident(incidentId);
     if (!isFiring && !state) {
-      return
+      return;
     }
     if (!state) {
       state = {
@@ -64,8 +59,8 @@ export class IncidentHandler {
       state.consecutiveNormalBlocks = 0;
 
       if (state.consecutiveFiringBlocks >= this.THRESHOLD) {
-        const shouldEmit = state.lastEmitted === 0 || (currentTimestamp - state.lastEmitted >= this.repeatInterval);
-        
+        const shouldEmit = state.lastEmitted === 0 || currentTimestamp - state.lastEmitted >= this.repeatInterval;
+
         if (shouldEmit) {
           await this.emitIncident(incidentId, message, alerts, blockNumber, MessageType.Firing);
           state.lastEmitted = currentTimestamp;
@@ -84,11 +79,7 @@ export class IncidentHandler {
     await this.store.setOngoingIncident(incidentId, state);
   }
 
-  async oneTimeIncident(
-    message: Message,
-    alerts: AlertSettings,
-    blockNumber: number,
-  ): Promise<void> {
+  async oneTimeIncident(message: Message, alerts: AlertSettings, blockNumber: number): Promise<void> {
     const incidentId = this.getIncidentId();
     await this.emitIncident(incidentId, message, alerts, blockNumber, MessageType.OneTime);
   }
@@ -98,7 +89,7 @@ export class IncidentHandler {
     message: Message,
     alerts: AlertSettings,
     blockNumber: number,
-    messageType: MessageType
+    messageType: MessageType,
   ): Promise<void> {
     const styledMessage = MessageStyler.applyStyle(message, messageType, MessengerType.Matrix);
 
@@ -111,17 +102,14 @@ export class IncidentHandler {
     };
 
     this.logger.debug(`Emitting incident: ${JSON.stringify(incident)}`);
-    
+
     const eventName = messageType === MessageType.Resolved ? 'incident.resolved' : 'incident.created';
     await this.eventEmitter.emit(eventName, incident);
   }
 
   private getIncidentId(incidentKey?: string): string {
     if (incidentKey) {
-      return createHash('md5')
-        .update(incidentKey)
-        .digest('hex')
-        .substring(0, 16);
+      return createHash('md5').update(incidentKey).digest('hex').substring(0, 16);
     }
     return uuidv4().replace(/-/g, '').substring(0, 16);
   }

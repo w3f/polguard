@@ -7,9 +7,7 @@ import { MatrixClient } from '@lib/matrix-client';
 export class IncidentController {
   private logger: Logger = new Logger(IncidentController.name);
 
-  constructor(
-    private matrixClient: MatrixClient,
-  ) {}
+  constructor(private matrixClient: MatrixClient) {}
 
   @MessagePattern('incident.created')
   async handleIncidentEvent(event: IncidentEvent) {
@@ -24,8 +22,9 @@ export class IncidentController {
   }
 
   private async notifyMatrix(event: IncidentEvent) {
-    event.alerts.matrix.targets.forEach((roomId) => {
-      this.matrixClient.sendMessage(roomId, event.message)
+    event.alerts.matrix.targets.forEach(roomId => {
+      this.matrixClient
+        .sendMessage(roomId, event.message)
         .catch(error => this.logger.error(`Failed to send message to room ${roomId}: ${error.message}`));
     });
   }

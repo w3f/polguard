@@ -12,7 +12,7 @@ export class IncidentModule {
     return {
       module: IncidentModule,
       imports: [
-        ConfigModule, 
+        ConfigModule,
         AppModule,
         RedisStreamsModule.registerAsync({
           imports: [ConfigModule],

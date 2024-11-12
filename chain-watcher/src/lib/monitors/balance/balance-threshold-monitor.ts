@@ -4,7 +4,6 @@ import { MonitorType } from '../../constants';
 import { AbstractBalanceMonitor } from './abstract-balance-monitor';
 
 export class BalanceThresholdMonitor extends AbstractBalanceMonitor<MonitorType.BalanceThreshold> {
-
   @EveryBlockHandler()
   async handleBalanceThreshold({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     const currentBalances = await this.getBalances(blockNumber);
@@ -18,7 +17,7 @@ export class BalanceThresholdMonitor extends AbstractBalanceMonitor<MonitorType.
             `Balance for account "${account.name}" is below threshold.`,
             `Current balance: ${this.formatBalance(currentBalance)}`,
             `Threshold: ${this.formatBalance(account.settings.balanceThreshold)}`,
-            `Details: ${this.getAccountLink(account.ss58)}`
+            `Details: ${this.getAccountLink(account.ss58)}`,
           ]);
 
           const key = `${account.ss58}:${groupId}:handleBalanceThreshold`;

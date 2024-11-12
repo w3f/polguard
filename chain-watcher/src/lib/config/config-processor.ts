@@ -1,12 +1,7 @@
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 import { Chain, MonitorType } from '../constants';
-import {
-  MonitoringGroup,
-  AccountId,
-  MonitorConfig,
-  ConfigAccountSettings,
-} from '../interfaces';
+import { MonitoringGroup, AccountId, MonitorConfig, ConfigAccountSettings } from '../interfaces';
 import { RawConfig, RawMonitoringGroup } from './interfaces';
 import { u8aToHex, hexToU8a, isHex } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -40,9 +35,7 @@ export class MonitoringConfigProcessor {
   }
 
   private static extractGroupsApplyDefaults(rawConfigs: RawConfig[]): RawMonitoringGroup[] {
-    return rawConfigs.flatMap(config => 
-      config.groups.map(group => this.applyDefaultsToGroup(group, config.defaults))
-    );
+    return rawConfigs.flatMap(config => config.groups.map(group => this.applyDefaultsToGroup(group, config.defaults)));
   }
 
   private static applyDefaultsToGroup(group: RawMonitoringGroup, defaults: RawConfig['defaults']): RawMonitoringGroup {
@@ -55,9 +48,7 @@ export class MonitoringConfigProcessor {
   }
 
   private static transformGroups(groups: RawMonitoringGroup[]): MonitoringGroup[] {
-    return groups.flatMap(group => 
-      group.chains.map(chain => this.transformGroup(group, chain))
-    );
+    return groups.flatMap(group => group.chains.map(chain => this.transformGroup(group, chain)));
   }
 
   private static transformGroup(group: RawMonitoringGroup, chain: Chain): MonitoringGroup {
@@ -67,7 +58,7 @@ export class MonitoringConfigProcessor {
       chain,
       monitors: transformedMonitors,
       accounts: group.accounts.map(account => this.transformAccount(account, chain, transformedMonitors)),
-      alerts: group.alerts
+      alerts: group.alerts,
     };
   }
 
@@ -87,40 +78,39 @@ export class MonitoringConfigProcessor {
     monitors: MonitorConfig[],
   ): ConfigAccountSettings {
     const accountId = this.transformAddress(account.address, account.name, chain);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { address, name, ...accountSettings } = account;
-  
+
     // Collect all settings from monitors and group them by monitor type
     const monitorSettings = Object.fromEntries(
-      monitors
-        .filter(monitor => monitor.settings)
-        .map(monitor => [monitor.name, monitor.settings])
+      monitors.filter(monitor => monitor.settings).map(monitor => [monitor.name, monitor.settings]),
     );
-  
+
     // Merge monitor settings with account settings
     const mergedSettings = { ...monitorSettings };
-  
+
     // Identify which account settings belong to which monitor type
     Object.entries(accountSettings).forEach(([key, value]) => {
       for (const monitorType of Object.values(MonitorType)) {
         if (monitorSettingsSchemas[monitorType].describe().keys[key]) {
           mergedSettings[monitorType] = {
             ...mergedSettings[monitorType],
-            [key]: value
+            [key]: value,
           };
           delete accountSettings[key];
           break;
         }
       }
     });
-    return { ...accountId, ...mergedSettings};
+    return { ...accountId, ...mergedSettings };
   }
 
   private static transformAddress(address: string, name: string | undefined, chain: Chain): AccountId {
     const hex = this.addressToHex(address);
     const ss58 = this.hexToSs58(hex, chain);
-    return { 
+    return {
       name: name || `${ss58.slice(0, 4)}...${ss58.slice(-4)}`,
-      hex, 
+      hex,
       ss58,
     };
   }
@@ -131,7 +121,7 @@ export class MonitoringConfigProcessor {
     }
     try {
       return u8aToHex(decodeAddress(address));
-    } catch (error) {
+    } catch {
       throw new Error(`Invalid address format: ${address}`);
     }
   }

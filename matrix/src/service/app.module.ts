@@ -8,12 +8,7 @@ import { ConfigService } from './config/config.service';
 import { suppressConsole } from './console-suppressor';
 
 @Module({
-  imports: [
-    HealthModule,
-    MetricsModule,
-    ConfigModule,
-    IncidentModule.forRootAsync(),
-  ],
+  imports: [HealthModule, MetricsModule, ConfigModule, IncidentModule.forRootAsync()],
   providers: [
     Logger,
     {

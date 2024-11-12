@@ -1,16 +1,16 @@
-import { IncidentEvent, StorageClient } from '../interfaces';
+import { StorageClient } from '../interfaces';
 
 /**
  * ChainWatcherStore is responsible for managing persistent storage and event emission
  * for the Chain Watcher system. It uses Redis for data storage and pub/sub functionality.
- * 
+ *
  * This class provides methods to:
  * - Store and retrieve account balances
  * - Store and retrieve validator active sets
  * - Store and retrieve the current era
  * - Track the last processed block
  * - Manage active incidents
- * 
+ *
  * It acts as an abstraction layer over the Redis client, providing type-safe methods
  * for storing and retrieving data specific to the Chain Watcher's needs.
  */
@@ -46,16 +46,12 @@ export class ChainWatcherStore {
   async getAccountBalances(block: number): Promise<Map<string, bigint>> {
     const key = `${this.KEYS.ACCOUNT_BALANCES}:${block}`;
     const data = await this.get<Record<string, string>>(key);
-    return new Map(
-      Object.entries(data || {}).map(([account, balance]) => [account, BigInt(balance)])
-    );
+    return new Map(Object.entries(data || {}).map(([account, balance]) => [account, BigInt(balance)]));
   }
 
   async setAccountBalances(block: number, balances: Map<string, bigint>, ttl: number = 300): Promise<void> {
     const key = `${this.KEYS.ACCOUNT_BALANCES}:${block}`;
-    const data = Object.fromEntries(
-      Array.from(balances, ([account, balance]) => [account, balance.toString()])
-    );
+    const data = Object.fromEntries(Array.from(balances, ([account, balance]) => [account, balance.toString()]));
     await this.set(key, data, ttl);
   }
 
@@ -63,7 +59,7 @@ export class ChainWatcherStore {
     const key = `${this.KEYS.VALIDATOR_ACTIVE_SET}:${era}`;
     const validatorsArray = await this.get<string[]>(key);
     const result = Array.isArray(validatorsArray) ? new Set(validatorsArray) : null;
-    return result
+    return result;
   }
 
   async setEraValidators(era: number, validators: Set<string>, ttl: number = 2592000): Promise<void> {

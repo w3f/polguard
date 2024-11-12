@@ -5,12 +5,14 @@ import { Chain, MonitorType } from '../constants';
 
 const alertSchema = Joi.object({
   matrix: Joi.object({
-    targets: Joi.array().items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)).min(1).required(),
+    targets: Joi.array()
+      .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
+      .min(1)
+      .required(),
     repeat_interval: Joi.number().optional(),
-    acknowledgement: Joi.boolean().default(false).optional()
-  }).required()
+    acknowledgement: Joi.boolean().default(false).optional(),
+  }).required(),
 });
-
 
 export const monitorSettingsSchemas = {
   [MonitorType.Validator]: Joi.object({
@@ -32,27 +34,29 @@ export const monitorSettingsSchemas = {
 const createMonitorConfigSchema = (monitorType: MonitorType) => {
   return Joi.object({
     name: Joi.string().valid(monitorType).required(),
-  }).concat(monitorSettingsSchemas[monitorType] || Joi.object({}))
+  })
+    .concat(monitorSettingsSchemas[monitorType] || Joi.object({}))
     .unknown(true);
 };
 
 const monitorConfigSchema = Joi.alternatives().try(
-  ...Object.values(MonitorType).map(monitorType => createMonitorConfigSchema(monitorType))
+  ...Object.values(MonitorType).map(monitorType => createMonitorConfigSchema(monitorType)),
 );
 
-
 // Dynamically create the account schema based on monitor settings
-const createAccountSchema = (monitors) => {
+const createAccountSchema = monitors => {
   const baseSchema = {
     name: Joi.string().optional(),
-    address: Joi.string().pattern(/^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/).required(),
+    address: Joi.string()
+      .pattern(/^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/)
+      .required(),
   };
 
   const additionalFields = monitors.reduce((acc, monitor) => {
     if (monitor && monitor.name && monitorSettingsSchemas[monitor.name]) {
       const monitorSchema = monitorSettingsSchemas[monitor.name];
       const schemaKeys = monitorSchema.describe().keys;
-      
+
       Object.keys(schemaKeys).forEach(key => {
         if (!acc[key]) {
           acc[key] = monitorSchema.extract(key).optional();
@@ -67,23 +71,28 @@ const createAccountSchema = (monitors) => {
   return Joi.object(accountSchema).strict();
 };
 
-const createGroupSchema = (monitors) => Joi.object({
-  name: Joi.string().required(),
-  chains: Joi.array().items(Joi.string().valid(...Object.values(Chain))).optional(),
-  monitors: Joi.array().items(monitorConfigSchema).optional(),
-  accounts: Joi.array().items(createAccountSchema(monitors)).min(1).required(),
-  alerts: alertSchema.optional(),
-}).strict();
-
+const createGroupSchema = monitors =>
+  Joi.object({
+    name: Joi.string().required(),
+    chains: Joi.array()
+      .items(Joi.string().valid(...Object.values(Chain)))
+      .optional(),
+    monitors: Joi.array().items(monitorConfigSchema).optional(),
+    accounts: Joi.array().items(createAccountSchema(monitors)).min(1).required(),
+    alerts: alertSchema.optional(),
+  }).strict();
 
 const configSchema = Joi.object({
   version: Joi.string().required(),
   defaults: Joi.object({
-    chains: Joi.array().items(Joi.string().valid(...Object.values(Chain))).min(1).required(),
+    chains: Joi.array()
+      .items(Joi.string().valid(...Object.values(Chain)))
+      .min(1)
+      .required(),
     monitors: Joi.array().items(monitorConfigSchema).min(1).required(),
-    alerts: alertSchema.required()
+    alerts: alertSchema.required(),
   }).required(),
-  groups: Joi.array().items(Joi.object()).min(1).required()
+  groups: Joi.array().items(Joi.object()).min(1).required(),
 }).strict();
 
 export function validateConfig(config: any): void {
@@ -105,7 +114,6 @@ export function validateConfig(config: any): void {
   config.groups.forEach((group: any) => {
     validateGroup(group, config.defaults);
   });
-  
 }
 
 function validateGroup(group: any, defaults: any): void {
@@ -120,7 +128,7 @@ function validateGroup(group: any, defaults: any): void {
       if (account.commission === undefined && monitorCommission === undefined) {
         throw new Error(
           `Neither the Validator monitor nor account ${account.name || account.address} ` +
-          `in group ${group.name} has a commission specified`
+            `in group ${group.name} has a commission specified`,
         );
       }
     });
@@ -128,4 +136,3 @@ function validateGroup(group: any, defaults: any): void {
 
   // TODO: more cross-field validations
 }
-

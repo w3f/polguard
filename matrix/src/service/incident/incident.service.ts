@@ -9,10 +9,8 @@ export class IncidentService implements IncidentServiceInterface {
 
   async getNonAckedIncidentsForRoom(roomId: string): Promise<Incident[]> {
     try {
-      return await lastValueFrom(
-        this.client.send<Incident[]>('get_non_acked_incidents', { roomId })
-      );
-    } catch (error) {
+      return await lastValueFrom(this.client.send<Incident[]>('get_non_acked_incidents', { roomId }));
+    } catch {
       throw new Error('Failed to fetch non-acknowledged incidents');
     }
   }

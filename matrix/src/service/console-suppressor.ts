@@ -2,13 +2,13 @@ const originalConsole = { ...console };
 
 function suppressConsole() {
   const noop = () => {};
-  
+
   // Suppress all console methods
-  Object.keys(console).forEach((key) => {
+  Object.keys(console).forEach(key => {
     (console as any)[key] = noop;
   });
 
-  ['log', 'debug', 'info', 'warn', 'error'].forEach((method) => {
+  ['log', 'debug', 'info', 'warn', 'error'].forEach(method => {
     console[method] = noop;
   });
 
@@ -18,7 +18,7 @@ function suppressConsole() {
 }
 
 function restoreConsole() {
-  Object.keys(originalConsole).forEach((key) => {
+  Object.keys(originalConsole).forEach(key => {
     (console as any)[key] = originalConsole[key];
   });
 }

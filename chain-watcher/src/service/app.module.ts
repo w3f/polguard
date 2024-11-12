@@ -14,7 +14,7 @@ import { IncidentPublisherService } from './incident/incident-publisher.service'
 @Module({
   imports: [
     HealthModule,
-    MetricsModule,
+    MetricsModule.forRootAsync(),
     ConfigModule,
     StorageModule.forRootAsync(),
     EventEmitterModule.forRootAsync(),
@@ -29,7 +29,7 @@ import { IncidentPublisherService } from './incident/incident-publisher.service'
     },
     {
       provide: IncidentHandler,
-      useFactory: (store: ChainWatcherStore, configService: ConfigService, eventEmitter: IncidentPublisherService) => 
+      useFactory: (store: ChainWatcherStore, configService: ConfigService, eventEmitter: IncidentPublisherService) =>
         new IncidentHandler(new Logger(IncidentHandler.name), store, eventEmitter, configService.getChain()),
       inject: [ChainWatcherStore, ConfigService, IncidentPublisherService],
     },

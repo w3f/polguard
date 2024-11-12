@@ -18,11 +18,11 @@ export enum MonitorType {
 export enum MessageType {
   Firing = 'Firing',
   Resolved = 'Resolved',
-  OneTime = 'Event'
+  OneTime = 'Event',
 }
 
 export enum MessengerType {
   Matrix = 'matrix',
   Slack = 'slack',
-  Telegram = 'telegram'
+  Telegram = 'telegram',
 }

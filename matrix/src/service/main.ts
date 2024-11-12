@@ -11,7 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const redisConfig = configService.getRedisConfig();
-  
+
   const microservice = app.connectMicroservice<MicroserviceOptions>({
     strategy: new RedisStreamsServer({
       host: redisConfig.host,
@@ -30,7 +30,7 @@ async function bootstrap() {
   logger.log('Microservice is ready to consume events from Redis Streams');
 }
 
-bootstrap().catch((error) => {
+bootstrap().catch(error => {
   console.error('Unhandled error during bootstrap:', error);
   process.exit(1);
 });

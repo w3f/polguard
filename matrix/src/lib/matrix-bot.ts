@@ -1,4 +1,3 @@
-import { MatrixEvent, Room } from 'matrix-js-sdk';
 import { MatrixClient } from './matrix-client';
 import { MatrixConfig, Logger, IncidentServiceInterface } from './interfaces';
 
@@ -11,7 +10,7 @@ export class MatrixBot extends MatrixClient {
   }
 
   protected handleCommand(roomId: string, command: string) {
-    const [cmd, ...args] = command.slice(1).split(' ');
+    const cmd = command.slice(1).split(' ')[0];
 
     switch (cmd.toLowerCase()) {
       case 'help':
@@ -35,17 +34,12 @@ export class MatrixBot extends MatrixClient {
       if (incidents.length === 0) {
         await this.sendMessage(roomId, 'No pending incidents for this room.');
       } else {
-        const incidentList = incidents
-          .map((inc) => `- ID: ${inc.id}, Description: ...`)
-          .join('\n');
+        const incidentList = incidents.map(inc => `- ID: ${inc.id}, Description: ...`).join('\n');
         await this.sendMessage(roomId, `Pending incidents:\n${incidentList}`);
       }
     } catch (error) {
       this.logger.error(`Error fetching pending incidents: ${error.message}`);
-      await this.sendMessage(
-        roomId,
-        'An error occurred while fetching pending incidents. Please try again later.'
-      );
+      await this.sendMessage(roomId, 'An error occurred while fetching pending incidents. Please try again later.');
     }
   }
 }

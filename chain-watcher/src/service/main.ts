@@ -16,7 +16,7 @@ async function bootstrap() {
   logger.log('Microservice is ready to emit events');
 }
 
-bootstrap().catch((error) => {
+bootstrap().catch(error => {
   console.error('Unhandled error during bootstrap:', error);
   process.exit(1);
 });
