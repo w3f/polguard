@@ -24,6 +24,7 @@
     "test:lib": "jest --config src/lib/jest.config.json"
   },
   "dependencies": {
+    "@nestjs/axios": "^3.1.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/event-emitter": "^2.0.4",
@@ -32,6 +33,7 @@
     "@nestjs/terminus": "^10.2.3",
     "@polkadot/api": "^12.4.2",
     "@w3f/nest-redis-streams": "^1.0.0",
+    "axios": "^1.7.7",
     "ioredis": "^5.4.1",
     "joi": "^17.13.3",
     "js-yaml": "^4.1.0",
@@ -39,7 +41,6 @@
     "prom-client": "^15.1.3",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "simple-git": "^3.26.0",
     "uuid": "^11.0.1"
   },
   "devDependencies": {

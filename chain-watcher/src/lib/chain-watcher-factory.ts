@@ -23,8 +23,8 @@ export async function createChainWatcher(
   const chain: Chain = specNameToChain(chainProperties.specName);
 
   const store = ChainWatcherStore.getInstance(storageClient, logger);
+  const stateQueryProvider = createApiStateQueryProvider(api, storageClient);
   const incidentHandler = new IncidentHandler(logger, store, eventEmitterClient, chain);
-  const stateQueryProvider = createApiStateQueryProvider(api, store);
 
   return new ChainWatcher(
     logger,

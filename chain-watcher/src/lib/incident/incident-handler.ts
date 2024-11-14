@@ -21,13 +21,13 @@ import { MessageStyler } from './message-styler';
  */
 export class IncidentHandler {
   private readonly THRESHOLD = 3;
+  private readonly DEFAULT_REPEAT_INTERVAL = 24 * 3600 * 1000; // 24 hours
 
   constructor(
     private logger: Logger,
     private store: DataStoreClient,
     private eventEmitter: EventEmitterClient,
     private chain: Chain,
-    private repeatInterval: number = 20000, // 20 sec
   ) {}
 
   async ongoingIncident(
@@ -57,7 +57,8 @@ export class IncidentHandler {
       state.consecutiveNormalBlocks = 0;
 
       if (state.consecutiveFiringBlocks >= this.THRESHOLD) {
-        const shouldEmit = state.lastEmitted === 0 || currentTimestamp - state.lastEmitted >= this.repeatInterval;
+        const repeatInterval = alerts.repeatIntervalHours * 3600 * 1000 || this.DEFAULT_REPEAT_INTERVAL;
+        const shouldEmit = state.lastEmitted === 0 || currentTimestamp - state.lastEmitted >= repeatInterval;
 
         if (shouldEmit) {
           await this.emitIncident(incidentId, message, alerts, blockNumber, MessageType.Firing);

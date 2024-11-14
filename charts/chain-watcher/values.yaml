@@ -1,13 +1,13 @@
 image:
   repo: web3f/mp-chain-watcher
-  tag: feature-ci
+  tag: feature-config-service
 
 httpPort: 3000
 
 resources: {}
 
 config:
-  environment: development
+  environment: test
   redis:
     url: redis://redis-master:6379/0
   chain:
@@ -16,15 +16,10 @@ config:
     rpcs:
       - wss://polkadot-rpc.dwellir.com 
   monitoring_config_sources: []   
-  alerts:
-    matrix:
-      targets:
-        - "!BabNKVNdOktKGafXzd:web3.foundation" 
   logging:
     level: info    
 
 monitoringConfig:
-  version: "1.0"
 
   defaults:
     alerts:

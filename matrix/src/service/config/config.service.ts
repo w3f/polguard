@@ -31,7 +31,7 @@ export class ConfigService {
 
   private validateConfig(config: unknown): AppConfig {
     const schema = Joi.object({
-      environment: Joi.string().valid('development', 'production', 'test').required(),
+      environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
       matrix: Joi.object({
         serverAddress: Joi.string().uri().required(),
         logging: Joi.object({

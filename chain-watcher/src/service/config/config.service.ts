@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AlertSettings, MonitoringGroup } from '@lib/interfaces';
+import { MonitoringGroup } from '@lib/interfaces';
 import { AppConfigService } from './app-config.service';
 import { MonitoringConfigService } from './monitoring-config.service';
 import { Chain } from '@lib/constants';
@@ -26,10 +26,6 @@ export class ConfigService {
 
   getEnvironment(): string {
     return this.appConfig.getEnvironment();
-  }
-
-  getAppFailureAlertSettings(): AlertSettings {
-    return this.appConfig.getAppFailureAlertSettings();
   }
 
   getRedisConfig(): { host: string; port: number; db: number } {

@@ -1,7 +1,7 @@
 environments:
   ci:
   local:
-  staging:
+  test:
 
 repositories:
 - name: bitnami
@@ -10,6 +10,7 @@ repositories:
 releases:
 
 - name: redis
+  namespace: test
   chart: bitnami/redis
   version: ^20.2.1
   values:

@@ -1,7 +1,6 @@
-version: "1.0"
-
 defaults:
   alerts:
+    repeatIntervalHours: 2
     matrix:
       targets:
         - "!xyz987:matrix.org"

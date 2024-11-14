@@ -1,15 +1,12 @@
 import { Chain } from '../constants';
 
 export interface AlertSettings {
+  // TODO: Make matrix one of the enum values.
   matrix: {
     targets: string[];
-    acknowledgement?: {
-      escalation?: {
-        timeout: number;
-        targets: string[];
-      };
-    };
+    acknowledgement?: boolean;
   };
+  repeatIntervalHours?: number;
 }
 
 export interface IncidentEvent {

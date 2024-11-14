@@ -1,131 +1,110 @@
 import * as Joi from 'joi';
 import { Chain, MonitorType } from '../constants';
 
-// TODO: Refactor. Make the validation more robust and easier to read.
-
 const alertSchema = Joi.object({
   matrix: Joi.object({
     targets: Joi.array()
       .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
       .min(1)
       .required(),
-    repeat_interval: Joi.number().optional(),
     acknowledgement: Joi.boolean().default(false).optional(),
   }).required(),
+  repeatIntervalHours: Joi.number().optional(),
 });
 
-export const monitorSettingsSchemas = {
-  [MonitorType.Validator]: Joi.object({
-    commission: Joi.number().min(0).max(100).optional(),
-    payee: Joi.string().optional(),
+const monitorSpecificSchema = Joi.object({
+  commission: Joi.when('name', {
+    is: MonitorType.Validator,
+    then: Joi.number().min(0).max(100).optional(),
+    otherwise: Joi.forbidden(),
   }),
-  [MonitorType.Governance]: Joi.object({}),
-  [MonitorType.TransactionIngress]: Joi.object({}),
-  [MonitorType.TransactionEgress]: Joi.object({}),
-  [MonitorType.BalanceIncrement]: Joi.object({
-    balanceThreshold: Joi.string().pattern(/^\d+$/).optional(),
+  payee: Joi.when('name', {
+    is: MonitorType.Validator,
+    then: Joi.string().optional(),
+    otherwise: Joi.forbidden(),
   }),
-  [MonitorType.BalanceDecrement]: Joi.object({}),
-  [MonitorType.BalanceThreshold]: Joi.object({
-    balanceThreshold: Joi.string().pattern(/^\d+$/).optional(),
-  }),
-};
+  // TODO: Add other monitor-specific fields here
+}).unknown(true);
 
-const createMonitorConfigSchema = (monitorType: MonitorType) => {
-  return Joi.object({
-    name: Joi.string().valid(monitorType).required(),
-  })
-    .concat(monitorSettingsSchemas[monitorType] || Joi.object({}))
-    .unknown(true);
-};
+const monitorSchema = Joi.object({
+  name: Joi.string()
+    .valid(...Object.values(MonitorType))
+    .required(),
+}).concat(monitorSpecificSchema);
 
-const monitorConfigSchema = Joi.alternatives().try(
-  ...Object.values(MonitorType).map(monitorType => createMonitorConfigSchema(monitorType)),
+const addressPattern = /^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/;
+
+const accountSchema = Joi.object({
+  address: Joi.string().pattern(addressPattern).required(),
+  name: Joi.string().optional(),
+}).concat(
+  Joi.object(
+    Object.fromEntries(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      Object.entries(monitorSpecificSchema.describe().keys).map(([key, schema]) => [key, Joi.any().optional()]),
+    ),
+  ),
 );
 
-// Dynamically create the account schema based on monitor settings
-const createAccountSchema = monitors => {
-  const baseSchema = {
-    name: Joi.string().optional(),
-    address: Joi.string()
-      .pattern(/^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/)
-      .required(),
-  };
+const defaultsSchema = Joi.object({
+  chains: Joi.array()
+    .items(Joi.string().valid(...Object.values(Chain)))
+    .optional(),
+  monitors: Joi.array().items(monitorSchema).optional(),
+  alerts: alertSchema.optional(),
+});
 
-  const additionalFields = monitors.reduce((acc, monitor) => {
-    if (monitor && monitor.name && monitorSettingsSchemas[monitor.name]) {
-      const monitorSchema = monitorSettingsSchemas[monitor.name];
-      const schemaKeys = monitorSchema.describe().keys;
-
-      Object.keys(schemaKeys).forEach(key => {
-        if (!acc[key]) {
-          acc[key] = monitorSchema.extract(key).optional();
-        }
-      });
-    }
-    return acc;
-  }, {});
-
-  const accountSchema = { ...baseSchema, ...additionalFields };
-
-  return Joi.object(accountSchema).strict();
-};
-
-const createGroupSchema = monitors =>
-  Joi.object({
-    name: Joi.string().required(),
-    chains: Joi.array()
-      .items(Joi.string().valid(...Object.values(Chain)))
-      .optional(),
-    monitors: Joi.array().items(monitorConfigSchema).optional(),
-    accounts: Joi.array().items(createAccountSchema(monitors)).min(1).required(),
-    alerts: alertSchema.optional(),
-  }).strict();
+const groupSchema = Joi.object({
+  name: Joi.string().required(),
+  chains: Joi.array()
+    .items(Joi.string().valid(...Object.values(Chain)))
+    .optional(),
+  monitors: Joi.array().items(monitorSchema).optional(),
+  alerts: alertSchema.optional(),
+  accounts: Joi.array().items(accountSchema).min(1).required(),
+});
 
 const configSchema = Joi.object({
-  version: Joi.string().required(),
-  defaults: Joi.object({
-    chains: Joi.array()
-      .items(Joi.string().valid(...Object.values(Chain)))
-      .min(1)
-      .required(),
-    monitors: Joi.array().items(monitorConfigSchema).min(1).required(),
-    alerts: alertSchema.required(),
-  }).required(),
-  groups: Joi.array().items(Joi.object()).min(1).required(),
-}).strict();
+  defaults: defaultsSchema.optional(),
+  groups: Joi.array().items(groupSchema).min(1).required(),
+});
 
 export function validateConfig(config: any): void {
-  const { error: defaultsError } = configSchema.validate(config, { abortEarly: false });
-  if (defaultsError) {
-    throw new Error(`Configuration validation failed: ${defaultsError.message}`);
-  }
-
-  // Validate each group with its specific monitors
-  config.groups.forEach((group: any) => {
-    const groupSchema = createGroupSchema(group.monitors || config.defaults.monitors);
-    const { error: groupError } = groupSchema.validate(group, { abortEarly: false });
-    if (groupError) {
-      throw new Error(`Group "${group.name}" validation failed: ${groupError.message}`);
-    }
+  const { error: configError, value: validatedConfig } = configSchema.validate(config, {
+    abortEarly: false,
   });
 
-  // Cross-field validations
-  config.groups.forEach((group: any) => {
-    validateGroup(group, config.defaults);
+  if (configError) {
+    throw new Error(`Configuration validation failed: ${configError.message}`);
+  }
+
+  const defaults = validatedConfig.defaults || {};
+
+  validatedConfig.groups.forEach((group: any) => {
+    validateGroup(group, defaults);
   });
 }
 
 function validateGroup(group: any, defaults: any): void {
+  const requiredProps = [
+    { name: 'chains', check: (val: any) => val && val.length > 0 },
+    { name: 'monitors', check: (val: any) => val && val.length > 0 },
+    { name: 'alerts', check: (val: any) => val !== undefined },
+  ];
+
+  requiredProps.forEach(prop => {
+    const value = group[prop.name] || defaults[prop.name];
+    if (!prop.check(value)) {
+      throw new Error(`Group "${group.name}" must have ${prop.name} defined either in the group or in defaults`);
+    }
+  });
+
   const monitors = group.monitors || defaults.monitors;
   const hasValidatorMonitor = monitors.some((monitor: any) => monitor.name === MonitorType.Validator);
-
   if (hasValidatorMonitor) {
     const validatorMonitor = monitors.find((monitor: any) => monitor.name === MonitorType.Validator);
-    const monitorCommission = validatorMonitor.commission;
-
     group.accounts.forEach((account: any) => {
-      if (account.commission === undefined && monitorCommission === undefined) {
+      if (account.commission === undefined && validatorMonitor.commission === undefined) {
         throw new Error(
           `Neither the Validator monitor nor account ${account.name || account.address} ` +
             `in group ${group.name} has a commission specified`,
@@ -133,6 +112,4 @@ function validateGroup(group: any, defaults: any): void {
       }
     });
   }
-
-  // TODO: more cross-field validations
 }

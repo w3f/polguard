@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as Joi from 'joi';
 import { Chain } from '@lib/constants';
-import { AlertSettings } from '@lib/interfaces';
 
 @Injectable()
 export class AppConfigService {
@@ -36,7 +35,7 @@ export class AppConfigService {
         rpcs: Joi.array().items(Joi.string().uri()).min(1).required(),
         start_block: Joi.number().integer().min(1).optional(),
       }).required(),
-      environment: Joi.string().valid('development', 'production', 'test').required(),
+      environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
       redis: Joi.object({
         url: Joi.string().uri().required(),
       }).required(),
@@ -45,29 +44,10 @@ export class AppConfigService {
           Joi.object({
             name: Joi.string().required(),
             url: Joi.string().uri().required(),
-            branch: Joi.string().required(),
             auth_token: Joi.string().optional(),
           }),
         )
         .required(),
-      alerts: Joi.object({
-        matrix: Joi.object({
-          targets: Joi.array()
-            .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
-            .min(1)
-            .required(),
-          repeat_interval: Joi.number().optional(),
-          acknowledgement: Joi.object({
-            escalation: Joi.object({
-              timeout: Joi.number().required(),
-              targets: Joi.array()
-                .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
-                .min(1)
-                .required(),
-            }).optional(),
-          }).optional(),
-        }).required(),
-      }).required(),
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
       }).optional(),
@@ -97,10 +77,6 @@ export class AppConfigService {
     return this.config.environment;
   }
 
-  getAppFailureAlertSettings(): AlertSettings {
-    return this.config.alerts;
-  }
-
   getRedisConfig(): { host: string; port: number; db: number } {
     const redisUrl = new URL(this.config.redis.url);
     return {
@@ -122,7 +98,6 @@ export class AppConfigService {
 interface MonitoringConfigSource {
   name: string;
   url: string;
-  branch: string;
   auth_token?: string;
 }
 
@@ -140,5 +115,4 @@ interface AppConfig {
   logging?: {
     level: string;
   };
-  alerts: AlertSettings;
 }

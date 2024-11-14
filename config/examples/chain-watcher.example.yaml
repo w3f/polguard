@@ -17,10 +17,5 @@ monitoring_config_sources:
     branch: "main"
     auth_token: "your-gitlab-auth-token"  # Optional
 
-alerts:
-  matrix:
-    targets:
-      - "!BabNKVNdOktKGafXzd:web3.foundation"
-
 logging:
   level: info

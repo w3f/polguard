@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { SimpleGit, simpleGit } from 'simple-git';
 import * as fs from 'fs';
 import * as path from 'path';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
 import { MonitoringConfigProcessor } from '@lib/config/config-processor';
 import { MonitoringGroup } from '@lib/interfaces';
 import { AppConfigService } from './app-config.service';
@@ -12,7 +13,10 @@ export class MonitoringConfigService {
   private monitoringGroups: MonitoringGroup[] | null = null;
   private configsDir = path.join(process.cwd(), 'monitoring-configs');
 
-  constructor(private appConfig: AppConfigService) {}
+  constructor(
+    private httpService: HttpService,
+    private appConfig: AppConfigService,
+  ) {}
 
   async initialize(): Promise<void> {
     await this.fetchConfigs();
@@ -29,22 +33,21 @@ export class MonitoringConfigService {
 
   private async fetchConfigs(): Promise<void> {
     const sources = this.appConfig.getMonitoringConfigSources();
-
     if (!fs.existsSync(this.configsDir)) {
       fs.mkdirSync(this.configsDir, { recursive: true });
     }
 
     for (const source of sources) {
-      const git: SimpleGit = simpleGit();
-      const targetDir = path.join(this.configsDir, source.name);
+      try {
+        const headers: Record<string, string> = {
+          'PRIVATE-TOKEN': source.auth_token,
+        };
+        const response = await firstValueFrom(this.httpService.get(source.url, { headers }));
 
-      if (source.auth_token) {
-        const repoUrl = new URL(source.url);
-        repoUrl.username = source.auth_token;
-
-        await git.clone(repoUrl.toString(), targetDir, ['--depth', '1', '-b', source.branch]);
-      } else {
-        await git.clone(source.url, targetDir, ['--depth', '1', '-b', source.branch]);
+        const fileName = `${source.name}.yaml`;
+        fs.writeFileSync(path.join(this.configsDir, fileName), response.data);
+      } catch (error) {
+        console.error(`Failed to fetch file for: ${source.name}`, error);
       }
     }
   }

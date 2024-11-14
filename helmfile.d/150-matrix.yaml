@@ -1,7 +1,7 @@
 environments:
   ci:
   local:
-  staging:
+  test:
 
 repositories:
 - name: w3f
@@ -10,6 +10,7 @@ repositories:
 releases:
 
 - name: matrix
+  namespace: test
   chart: ../charts/matrix
   values:
   - ./config/matrix-values.yaml.gotmpl

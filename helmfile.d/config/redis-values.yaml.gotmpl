@@ -4,14 +4,13 @@ commonConfiguration: |-
   # Enable RDB persistence
   save "1 1"
 
+architecture: standalone
+
 auth:
   enabled: false
 
+{{ if eq .Environment.Name "ci" }}
 master:
   persistence:
     enabled: false
-
-replica:
-  replicaCount: 1 
-  persistence:
-    enabled: false
+{{ end }}

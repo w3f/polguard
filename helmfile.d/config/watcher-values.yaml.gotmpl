@@ -7,3 +7,25 @@ image:
   tag: latest
 {{ end }}
 
+{{ if eq .Environment.Name "test" }}
+monitoringConfig: null
+config:
+  environment: test
+  redis:
+    url: redis://redis-master:6379/0
+  chain:
+    name: Polkadot
+    start_block: 22904317
+    rpcs:
+      - wss://polkadot-rpc.dwellir.com 
+  monitoring_config_sources:
+  - name: "xxx"
+    url: "xxx"
+    auth_token: "xxx"  # Optional 
+  alerts:
+    matrix:
+      targets:
+        - "!BabNKVNdOktKGafXzd:web3.foundation" 
+  logging:
+    level: info 
+{{ end }}

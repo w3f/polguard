@@ -119,26 +119,26 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     return this.accounts.get(address) || [];
   }
 
-  async processEvent({ eventRecord, blockHash, blockNumber }: EventHandlerParams): Promise<void> {
+  async processEvent({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const { event } = eventRecord;
     const eventName = `${event.section}.${event.method}`;
     const handler = this.eventHandlers.get(eventName);
     if (handler) {
-      await handler({ eventRecord, blockHash, blockNumber });
+      await handler({ eventRecord, blockNumber });
     }
   }
 
-  async processCall({ call, origin, blockHash, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
+  async processCall({ call, origin, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
     const callName = `${call.section}.${call.method}`;
     const handler = this.callHandlers.get(callName);
     if (handler) {
-      await handler({ call, origin, blockHash, blockNumber, extrinsicIndex });
+      await handler({ call, origin, blockNumber, extrinsicIndex });
     }
   }
 
-  async processEveryBlock({ blockHash, blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  async processEveryBlock({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     for (const handler of this.everyBlockHandlers) {
-      await handler({ blockHash, blockNumber });
+      await handler({ blockNumber });
     }
   }
 

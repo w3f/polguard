@@ -5,7 +5,7 @@ import { MonitoringGroup, AccountId, MonitorConfig, ConfigAccountSettings } from
 import { RawConfig, RawMonitoringGroup } from './interfaces';
 import { u8aToHex, hexToU8a, isHex } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
-import { monitorSettingsSchemas, validateConfig } from './config-validator';
+import { validateConfig } from './config-validator';
 
 export class MonitoringConfigProcessor {
   private static chainPrefixMap = new Map<Chain, number>([
@@ -41,18 +41,18 @@ export class MonitoringConfigProcessor {
   private static applyDefaultsToGroup(group: RawMonitoringGroup, defaults: RawConfig['defaults']): RawMonitoringGroup {
     return {
       ...group,
-      chains: group.chains || defaults.chains,
-      monitors: group.monitors || defaults.monitors,
-      alerts: group.alerts || defaults.alerts,
+      chains: group.chains || defaults?.chains,
+      monitors: group.monitors || defaults?.monitors,
+      alerts: group.alerts || defaults?.alerts,
     };
   }
 
   private static transformGroups(groups: RawMonitoringGroup[]): MonitoringGroup[] {
-    return groups.flatMap(group => group.chains.map(chain => this.transformGroup(group, chain)));
+    return groups.flatMap(group => (group.chains || []).map(chain => this.transformGroup(group, chain)));
   }
 
   private static transformGroup(group: RawMonitoringGroup, chain: Chain): MonitoringGroup {
-    const transformedMonitors = this.transformMonitors(group.monitors);
+    const transformedMonitors = this.transformMonitors(group.monitors || []);
     return {
       name: group.name,
       chain,
@@ -81,27 +81,32 @@ export class MonitoringConfigProcessor {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { address, name, ...accountSettings } = account;
 
-    // Collect all settings from monitors and group them by monitor type
-    const monitorSettings = Object.fromEntries(
-      monitors.filter(monitor => monitor.settings).map(monitor => [monitor.name, monitor.settings]),
+    // Initialize mergedSettings with all MonitorTypes
+    const mergedSettings: Record<MonitorType, Record<string, any>> = Object.values(MonitorType).reduce(
+      (acc, monitorType) => {
+        acc[monitorType] = {};
+        return acc;
+      },
+      {} as Record<MonitorType, Record<string, any>>,
     );
 
-    // Merge monitor settings with account settings
-    const mergedSettings = { ...monitorSettings };
+    monitors.forEach(monitor => {
+      if (monitor.settings) {
+        mergedSettings[monitor.name] = { ...monitor.settings };
+      }
+    });
 
-    // Identify which account settings belong to which monitor type
+    // Override monitor settings with account-specific settings
     Object.entries(accountSettings).forEach(([key, value]) => {
       for (const monitorType of Object.values(MonitorType)) {
-        if (monitorSettingsSchemas[monitorType].describe().keys[key]) {
-          mergedSettings[monitorType] = {
-            ...mergedSettings[monitorType],
-            [key]: value,
-          };
+        if (mergedSettings[monitorType] && key in mergedSettings[monitorType]) {
+          mergedSettings[monitorType][key] = value;
           delete accountSettings[key];
           break;
         }
       }
     });
+
     return { ...accountId, ...mergedSettings };
   }
 

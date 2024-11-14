@@ -2,7 +2,6 @@ import { ApiPromise } from '@polkadot/api';
 import type { EventRecord } from '@polkadot/types/interfaces/system';
 import { AnyTuple } from '@polkadot/types/types';
 import { CallBase } from '@polkadot/types/types/calls';
-import { BlockHash } from '@polkadot/types/interfaces';
 
 import {
   ChainProperties,
@@ -146,14 +145,14 @@ export class ChainWatcher {
 
     // Apply every block handlers: process custom logic, usually storage calls
     for (const monitor of this.monitors) {
-      await monitor.processEveryBlock({ blockHash, blockNumber });
+      await monitor.processEveryBlock({ blockNumber });
     }
 
     // Apply event handlers: process event payload
     await apiAt.query.system.events(async (records: EventRecord[]) => {
       for (const eventRecord of records) {
         for (const monitor of this.monitors) {
-          await monitor.processEvent({ blockHash, blockNumber, eventRecord });
+          await monitor.processEvent({ blockNumber, eventRecord });
         }
       }
     });
@@ -162,7 +161,7 @@ export class ChainWatcher {
     for (let extrinsicIndex = 0; extrinsicIndex < block.block.extrinsics.length; extrinsicIndex++) {
       const extrinsic = block.block.extrinsics[extrinsicIndex];
       const origin = extrinsic.signer.toString();
-      await this.processCallTree(blockHash, blockNumber, extrinsic.method, origin, extrinsicIndex);
+      await this.processCallTree(blockNumber, extrinsic.method, origin, extrinsicIndex);
     }
 
     await this.setLastProcessedBlock(blockNumber);
@@ -170,7 +169,6 @@ export class ChainWatcher {
   }
 
   private async processCallTree(
-    blockHash: BlockHash,
     blockNumber: number,
     call: CallBase<AnyTuple>,
     origin: string,
@@ -178,17 +176,17 @@ export class ChainWatcher {
   ): Promise<void> {
     // Process the current call
     for (const monitor of this.monitors) {
-      await monitor.processCall({ blockHash, blockNumber, call, origin, extrinsicIndex });
+      await monitor.processCall({ blockNumber, call, origin, extrinsicIndex });
     }
 
     // Process nested calls
     for (const arg of call.args) {
       if (arg && typeof arg === 'object' && 'callIndex' in arg) {
-        await this.processCallTree(blockHash, blockNumber, arg as CallBase<AnyTuple>, origin, extrinsicIndex);
+        await this.processCallTree(blockNumber, arg as CallBase<AnyTuple>, origin, extrinsicIndex);
       } else if (Array.isArray(arg)) {
         for (const subArg of arg) {
           if (subArg && typeof subArg === 'object' && 'callIndex' in subArg) {
-            await this.processCallTree(blockHash, blockNumber, subArg as CallBase<AnyTuple>, origin, extrinsicIndex);
+            await this.processCallTree(blockNumber, subArg as CallBase<AnyTuple>, origin, extrinsicIndex);
           }
         }
       }

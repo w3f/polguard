@@ -40,16 +40,18 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /app/config/
-          # subPath: config.json
           readOnly: true
+        {{ if .Values.monitoringConfig }}  
         - name: monitoring-config
           mountPath: /app/monitoring-configs/
-          # subPath: monitoring.json
-          readOnly: true  
+          readOnly: false
+        {{ end }}  
       volumes:
+      {{ if .Values.monitoringConfig }}
       - name: monitoring-config
         configMap:
           name: {{ .Release.Name }}-monitoring
+      {{ end }}    
       - name: config
         configMap:
           name: {{ .Release.Name }}    

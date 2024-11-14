@@ -7,7 +7,7 @@ httpPort: 3000
 resources: {}
 
 config:
-  environment: development
+  environment: test
 
   redis:
     url: redis://redis-master:6379/0
