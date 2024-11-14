@@ -15,11 +15,15 @@ import {
 } from './interfaces';
 import { MonitorType } from './constants';
 import { IncidentHandler } from './incident/incident-handler';
-import { GovernanceMonitor } from './monitors/governance/governance-monitor';
-import { TransactionEgressMonitor, TransactionIngressMonitor } from './monitors/transaction/transaction-monitor';
-import { ValidatorMonitor } from './monitors/validator/validator-monitor';
-import { BalanceDecrementMonitor, BalanceIncrementMonitor } from './monitors/balance/balance-monitor';
-import { BalanceThresholdMonitor } from './monitors/balance/balance-threshold-monitor';
+import {
+  BalanceDecrementMonitor,
+  BalanceIncrementMonitor,
+  BalanceThresholdMonitor,
+  GovernanceMonitor,
+  TransactionEgressMonitor,
+  TransactionIngressMonitor,
+  ValidatorMonitor,
+} from './monitors';
 
 /**
  * ChainWatcher is the core class responsible for monitoring a blockchain.
