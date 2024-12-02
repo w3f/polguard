@@ -37,7 +37,7 @@ export function EveryBlockHandler() {
   };
 }
 
-const DEFAULT_TTL = 24 * 60 * 60;
+const DEFAULT_TTL = 60;
 
 export function createCachedQueryDecorator(cache: KeyValueStorageClient) {
   return function CachedQuery(ttlSeconds: number = DEFAULT_TTL) {

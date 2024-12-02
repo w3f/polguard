@@ -10,7 +10,9 @@ repositories:
 releases:
 
 - name: chain-watcher
+  {{ if eq .Environment.Name "test" }}
   namespace: test
+  {{ end }}
   chart: ../charts/chain-watcher
   values:
   - ./config/watcher-values.yaml.gotmpl

@@ -51,7 +51,7 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
       return activeEra.unwrapOrDefault().index.toNumber();
     }
 
-    @Cached(5 * 60)
+    @Cached()
     async balances(addresses: string[], blockNumber: number): Promise<Record<string, bigint>> {
       const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
       const accountInfos = await apiAt.query.system.account.multi(addresses);

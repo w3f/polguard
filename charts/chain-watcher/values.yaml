@@ -1,6 +1,6 @@
 image:
   repo: web3f/mp-chain-watcher
-  tag: feature-config-service
+  tag: master
 
 httpPort: 3000
 
@@ -12,7 +12,7 @@ config:
     url: redis://redis-master:6379/0
   chain:
     name: Polkadot
-    start_block: 22904317
+    # start_block: 22904317
     rpcs:
       - wss://polkadot-rpc.dwellir.com 
   monitoring_config_sources: []   

@@ -10,7 +10,9 @@ repositories:
 releases:
 
 - name: redis
+  {{ if eq .Environment.Name "test" }}
   namespace: test
+  {{ end }}
   chart: bitnami/redis
   version: ^20.2.1
   values:

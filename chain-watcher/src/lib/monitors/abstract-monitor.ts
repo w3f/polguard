@@ -159,7 +159,27 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     return `https://${this.chainProps.specName}.subscan.io/extrinsic/${blockNumber}-${extrinsicIndex}`;
   }
 
-  protected createMessage(rows: string[]): Message {
+  protected createMessage(
+    rows: string[],
+    options?: {
+      blockNumber: number;
+      phase?: Phase;
+      extrinsicIndex?: number;
+      address?: string;
+    },
+  ): Message {
+    if (options) {
+      rows.push(`Block: ${options.blockNumber}`);
+      if (options.phase !== undefined) {
+        rows.push(`Event: ${this.getEventLink(options.blockNumber, options.phase)}`);
+      } else if (options.extrinsicIndex !== undefined) {
+        rows.push(`Extrinsic: ${this.getExtrinsicLink(options.blockNumber, options.extrinsicIndex)}`);
+      }
+
+      if (options.address) {
+        rows.push(`Account: ${this.getAccountLink(options.address)}`);
+      }
+    }
     rows.push(`Network: ${this.chainProps.specName}`);
     return { title: rows.shift(), details: rows };
   }

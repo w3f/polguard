@@ -7,9 +7,9 @@ import { Logger } from '../interfaces';
  */
 export class ChainWatcherStore implements DataStoreClient {
   private static instance: ChainWatcherStore;
-  private readonly KEY_PREFIX = 'chain_watcher:';
+  private readonly KEY_PREFIX = 'cw:';
   private readonly KEYS = {
-    INCIDENT: 'incident',
+    INCIDENT: 'inc',
     LAST_PROCESSED_BLOCK: 'last_processed_block',
   };
 
@@ -27,20 +27,32 @@ export class ChainWatcherStore implements DataStoreClient {
 
   // KeyValueStorageClient methods
   async get<T>(key: string): Promise<T | null> {
-    return this.client.get<T>(key);
+    return this.client.get<T>(`${this.KEY_PREFIX}${key}`);
   }
-  set = this.client.set.bind(this.client);
-  setex = this.client.setex.bind(this.client);
-  del = this.client.del.bind(this.client);
-  keys = this.client.keys.bind(this.client);
+
+  async set(key: string, value: any): Promise<void> {
+    await this.client.set(`${this.KEY_PREFIX}${key}`, value);
+  }
+
+  async setex(key: string, seconds: number, value: any): Promise<void> {
+    await this.client.setex(`${this.KEY_PREFIX}${key}`, seconds, value);
+  }
+
+  async del(key: string): Promise<void> {
+    await this.client.del(`${this.KEY_PREFIX}${key}`);
+  }
+
+  async keys(pattern: string): Promise<string[]> {
+    return this.client.keys(`${this.KEY_PREFIX}${pattern}`);
+  }
 
   // PersistentStorage methods
   async getLastProcessedBlock(): Promise<number | null> {
-    return this.get<number>(this.KEYS.LAST_PROCESSED_BLOCK);
+    return this.get<number>(`${this.KEYS.LAST_PROCESSED_BLOCK}`);
   }
 
   async setLastProcessedBlock(block: number): Promise<void> {
-    await this.set(this.KEYS.LAST_PROCESSED_BLOCK, block);
+    await this.set(`${this.KEYS.LAST_PROCESSED_BLOCK}`, block);
   }
 
   async getOngoingIncident(incidentId: string): Promise<ActiveIncidentState | null> {

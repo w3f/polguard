@@ -7,6 +7,10 @@ image:
   tag: latest
 {{ end }}
 
+{{ if eq .Environment.Name "ci" }}
+resources: null
+{{ end }}
+
 config:
   matrix:
     userId: "{{ env "MATRIX_USER" }}"

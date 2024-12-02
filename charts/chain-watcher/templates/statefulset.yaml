@@ -21,6 +21,14 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
       containers:
       - name: {{ .Release.Name }}
         image: {{ .Values.image.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}
@@ -37,6 +45,10 @@ spec:
           initialDelaySeconds: 30
           periodSeconds: 30
           timeoutSeconds: 60
+        {{- with .Values.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}  
         volumeMounts:
         - name: config
           mountPath: /app/config/

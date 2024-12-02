@@ -10,7 +10,9 @@ repositories:
 releases:
 
 - name: matrix
+  {{ if eq .Environment.Name "test" }}
   namespace: test
+  {{ end }}
   chart: ../charts/matrix
   values:
   - ./config/matrix-values.yaml.gotmpl

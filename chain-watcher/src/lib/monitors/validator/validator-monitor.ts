@@ -10,10 +10,10 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
   async handleSlashReported({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const validatorId = eventRecord.event.data[0].toString();
     for (const { account, alerts } of this.getAccounts(validatorId)) {
-      const message = this.createMessage([
-        `Validator ${account.name} has been slashed.`,
-        `Details: ${this.getEventLink(blockNumber, eventRecord.phase)}`,
-      ]);
+      const message = this.createMessage([`Validator ${account.name} has been slashed.`], {
+        blockNumber,
+        phase: eventRecord.phase,
+      });
 
       await this.incidents.oneTimeIncident(message, alerts, blockNumber);
     }
@@ -24,11 +24,10 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     const stash = eventRecord.event.data[0].toString();
     const prefs = eventRecord.event.data[1] as PalletStakingValidatorPrefs;
     for (const { account, alerts } of this.getAccounts(stash)) {
-      const message = this.createMessage([
-        `New commission change detected for ${account.name}.`,
-        `Commission: ${prefs.commission}`,
-        `Details: ${this.getEventLink(blockNumber, eventRecord.phase)}`,
-      ]);
+      const message = this.createMessage(
+        [`New commission change detected for ${account.name}.`, `Commission: ${prefs.commission}`],
+        { blockNumber, phase: eventRecord.phase },
+      );
 
       await this.incidents.oneTimeIncident(message, alerts, blockNumber);
     }
@@ -38,11 +37,10 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
   async handleDestinationChanged({ call, origin, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
     const payee = (call.method === 'setPayee' ? call.args[0] : call.args[1]) as PalletStakingRewardDestination;
     for (const { account, alerts } of this.getAccounts(origin)) {
-      const message = this.createMessage([
-        `New destination change detected for ${account.name}.`,
-        `Destination: ${this.getDestinationString(payee)}`,
-        `Details: ${this.getExtrinsicLink(blockNumber, extrinsicIndex)}`,
-      ]);
+      const message = this.createMessage(
+        [`New destination change detected for ${account.name}.`, `Destination: ${this.getDestinationString(payee)}`],
+        { blockNumber, extrinsicIndex },
+      );
 
       await this.incidents.oneTimeIncident(message, alerts, blockNumber);
     }
@@ -62,12 +60,14 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
         const expectedCommission = account.settings.commission;
         const isFiring = commission !== expectedCommission;
 
-        const message = this.createMessage([
-          `Commission change detected for ${account.name}.`,
-          `Actual commission: ${commission}`,
-          `Expected commission: ${expectedCommission}`,
-          `Details: ${this.getAccountLink(account.ss58)}`,
-        ]);
+        const message = this.createMessage(
+          [
+            `Unexpected commission detected for ${account.name}.`,
+            `Actual commission: ${commission}`,
+            `Expected commission: ${expectedCommission}`,
+          ],
+          { address: account.ss58, blockNumber },
+        );
 
         const key = `${account.ss58}:${groupId}:handleCommissionUnexpected`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
@@ -87,12 +87,14 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
         if (!expectedDestination) continue;
         const isFiring = destination !== expectedDestination;
 
-        const message = this.createMessage([
-          `Reward destination change detected for ${account.name}.`,
-          `Actual destination: ${destination}`,
-          `Expected destination: ${expectedDestination}`,
-          `Details: ${this.getAccountLink(account.ss58)}`,
-        ]);
+        const message = this.createMessage(
+          [
+            `Unexpected reward destination detected for ${account.name}.`,
+            `Actual destination: ${destination}`,
+            `Expected destination: ${expectedDestination}`,
+          ],
+          { address: account.ss58, blockNumber },
+        );
 
         const key = `${account.ss58}:${groupId}:handleDestinationUnexpected`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);

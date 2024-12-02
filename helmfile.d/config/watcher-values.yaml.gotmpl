@@ -7,7 +7,14 @@ image:
   tag: latest
 {{ end }}
 
+{{ if eq .Environment.Name "ci" }}
+resources: null
+{{ end }}
+
 {{ if eq .Environment.Name "test" }}
+image:
+  tag: {{ env "IMAGE_TAG" }}
+  pullPolicy: Always
 monitoringConfig: null
 config:
   environment: test
@@ -15,17 +22,13 @@ config:
     url: redis://redis-master:6379/0
   chain:
     name: Polkadot
-    start_block: 22904317
+    start_block: 23527778
     rpcs:
       - wss://polkadot-rpc.dwellir.com 
   monitoring_config_sources:
-  - name: "xxx"
-    url: "xxx"
-    auth_token: "xxx"  # Optional 
-  alerts:
-    matrix:
-      targets:
-        - "!BabNKVNdOktKGafXzd:web3.foundation" 
+  - name: "gitlab"
+    url: "https://gitlab.w3f.tech/api/v4/projects/100/repository/files/accounts.yaml/raw?ref=feature/config-updates"
+    auth_token: "{{ env "GITLAB_TOKEN" }}"  # Optional 
   logging:
     level: info 
 {{ end }}

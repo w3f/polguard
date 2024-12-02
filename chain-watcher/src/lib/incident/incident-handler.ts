@@ -57,7 +57,12 @@ export class IncidentHandler {
       state.consecutiveNormalBlocks = 0;
 
       if (state.consecutiveFiringBlocks >= this.THRESHOLD) {
-        const repeatInterval = alerts.repeatIntervalHours * 3600 * 1000 || this.DEFAULT_REPEAT_INTERVAL;
+        let repeatInterval = this.DEFAULT_REPEAT_INTERVAL;
+
+        if (alerts.repeatIntervalHours !== undefined) {
+          repeatInterval = alerts.repeatIntervalHours * 3600 * 1000;
+        }
+
         const shouldEmit = state.lastEmitted === 0 || currentTimestamp - state.lastEmitted >= repeatInterval;
 
         if (shouldEmit) {
