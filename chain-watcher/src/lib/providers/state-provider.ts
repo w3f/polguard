@@ -33,7 +33,9 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
 
     @Cached()
     async validators(blockNumber: number): Promise<Record<string, boolean>> {
-      // TODO: Maybe getting validators only for the first block of era?
+      // TODO: Optimisation. Getting validators for every block is suboptimal.
+      // Validator set changes once per era:
+      // https://github.com/paritytech/polkadot-sdk/blob/8d4138f77106a6af49920ad84f3283f696f3f905/substrate/frame/session/src/lib.rs#L654
       const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
       const validatorSet = await apiAt.query.session.validators();
 

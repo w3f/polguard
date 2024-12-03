@@ -23,13 +23,13 @@ describe('ValidatorMonitor', () => {
     await test.testEvent(MonitorType.Validator, 'staking.SlashReported', 21561308, 1);
   });
 
-  it('should detect commission change event', async () => {
+  it.skip('should detect commission change event', async () => {
     test.addMockAccount('15KJFabioS7ieTiNCkKkLpgZ5JUyPhTBF6y128R7Z6Rsx3kq', MonitorType.Validator);
     await test.testEvent(MonitorType.Validator, 'staking.ValidatorPrefsSet', 23408195, 0);
     await test.testEvent(MonitorType.Validator, 'staking.ValidatorPrefsSet', 23408196, 1);
   });
 
-  it('should detect payee change call', async () => {
+  it.skip('should detect payee change call', async () => {
     test.addMockAccount('16B53xkLJwMhjZmetedubo8rnFi6ftX4aDx7ReNkvzJEGXkh', MonitorType.Validator);
     await test.testCall(MonitorType.Validator, 'staking.setPayee', 23407920, 0);
     await test.testCall(MonitorType.Validator, 'staking.setPayee', 23407921, 1);

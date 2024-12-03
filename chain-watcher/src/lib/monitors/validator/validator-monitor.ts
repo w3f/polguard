@@ -1,5 +1,5 @@
 import '@polkadot/api-augment/polkadot';
-import { EveryBlockHandler, CallHandler, EventHandler } from '../../decorators';
+import { EveryBlockHandler, EventHandler } from '../../decorators';
 import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
 import { EveryBlockHandlerParams, CallHandlerParams, EventHandlerParams } from '../../interfaces';
 import { AbstractMonitor } from '../abstract-monitor';
@@ -19,7 +19,10 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     }
   }
 
-  @EventHandler('staking.ValidatorPrefsSet')
+  // TODO: Granular control over handlers.
+  // Temporary commented out "Change" handlers (with unit tests)
+
+  // @EventHandler('staking.ValidatorPrefsSet')
   async handleCommissionChanged({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const stash = eventRecord.event.data[0].toString();
     const prefs = eventRecord.event.data[1] as PalletStakingValidatorPrefs;
@@ -33,7 +36,7 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     }
   }
 
-  @CallHandler(['staking.setPayee', 'staking.bond'])
+  // @CallHandler(['staking.setPayee', 'staking.bond'])
   async handleDestinationChanged({ call, origin, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
     const payee = (call.method === 'setPayee' ? call.args[0] : call.args[1]) as PalletStakingRewardDestination;
     for (const { account, alerts } of this.getAccounts(origin)) {

@@ -123,8 +123,9 @@ export class ChainWatcher {
     return startBlock;
   }
 
-  private async setLastProcessedBlock(block: number): Promise<void> {
-    await this.store.setLastProcessedBlock(block);
+  private async setLastProcessedBlock(blockNumber: number): Promise<void> {
+    await this.store.setLastProcessedBlock(blockNumber);
+    this.metrics.setBlockHeight(blockNumber);
   }
 
   private async runBlockProcessing(startBlock?: number): Promise<void> {
@@ -169,7 +170,6 @@ export class ChainWatcher {
     }
 
     await this.setLastProcessedBlock(blockNumber);
-    this.metrics.setBlockHeight(blockNumber);
   }
 
   private async processCallTree(
