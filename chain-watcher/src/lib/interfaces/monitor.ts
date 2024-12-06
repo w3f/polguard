@@ -1,7 +1,7 @@
 import { Logger, StateQueryProvider } from './utils';
 import { ChainProperties } from './chain';
 import { IncidentHandler } from '../incident/incident-handler';
-import { Chain, MonitorType } from '../constants';
+import { Chain, ComparisonType, MonitorType } from '../constants';
 import { AlertSettings } from './';
 import { ConfigAccountSettings } from './account';
 import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams } from './handlers';
@@ -25,6 +25,7 @@ export interface MonitorConstructor {
 
 export interface ValidatorSettings {
   commission: number;
+  commissionComparison: ComparisonType;
   payee?: string;
 }
 

@@ -26,3 +26,11 @@ export enum MessengerType {
   Slack = 'slack',
   Telegram = 'telegram',
 }
+
+export enum ComparisonType {
+  Equal = 'eq',
+  GreaterThan = 'gt',
+  LessThan = 'lt',
+  GreaterThanOrEqual = 'gte',
+  LessThanOrEqual = 'lte',
+}

@@ -3,7 +3,7 @@ import { EveryBlockHandler, EventHandler } from '../../decorators';
 import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
 import { EveryBlockHandlerParams, CallHandlerParams, EventHandlerParams } from '../../interfaces';
 import { AbstractMonitor } from '../abstract-monitor';
-import { MonitorType } from '@lib/constants';
+import { ComparisonType, MonitorType } from '@lib/constants';
 
 export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
   @EventHandler('staking.SlashReported')
@@ -61,13 +61,16 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
       const commission = commissions[address];
       for (const { account, alerts, groupId } of this.getAccounts(address)) {
         const expectedCommission = account.settings.commission;
-        const isFiring = commission !== expectedCommission;
-
+        const comparisonType = account.settings.commissionComparison;
+        const compareFunction = ValidatorMonitor.comparisonFunctions[comparisonType];
+        const isFiring = !compareFunction(commission, expectedCommission);
+  
         const message = this.createMessage(
           [
             `Unexpected commission detected for ${account.name}.`,
             `Actual commission: ${commission}`,
             `Expected commission: ${expectedCommission}`,
+            `Comparison type: ${ComparisonType[comparisonType]}`,
           ],
           { address: account.ss58, blockNumber },
         );

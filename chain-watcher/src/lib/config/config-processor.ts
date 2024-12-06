@@ -1,6 +1,23 @@
+/**
+ * Config Processor Module
+ * 
+ * This module is responsible for processing and transforming the raw,
+ * validated configuration data into a format that can be used by the
+ * monitoring system.
+ * 
+ * Key responsibilities:
+ * 1. Loading and parsing configuration files
+ * 2. Applying defaults and merging settings from different levels (global, group, account)
+ * 3. Transforming addresses into the required formats
+ * 4. Structuring the configuration data into the final format expected by the system
+ * 
+ * Unlike the config validator, this processor DOES modify and transform the configuration data.
+ * It applies defaults, merges settings, and restructures the data as needed.
+ */
+
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
-import { Chain, MonitorType } from '../constants';
+import { Chain, ComparisonType, MonitorType } from '../constants';
 import { MonitoringGroup, AccountId, MonitorConfig, ConfigAccountSettings } from '../interfaces';
 import { RawConfig, RawMonitoringGroup } from './interfaces';
 import { u8aToHex, hexToU8a, isHex } from '@polkadot/util';
@@ -72,6 +89,11 @@ export class MonitoringConfigProcessor {
     });
   }
 
+  /**
+   * Transforms a raw account configuration into a ConfigAccountSettings object.
+   * This process includes merging monitor settings, applying account-specific overrides,
+   * and setting default values for certain monitor types.
+   */
   private static transformAccount(
     account: RawMonitoringGroup['accounts'][number],
     chain: Chain,
@@ -81,33 +103,63 @@ export class MonitoringConfigProcessor {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { address, name, ...accountSettings } = account;
 
-    // Initialize mergedSettings with all MonitorTypes
-    const mergedSettings: Record<MonitorType, Record<string, any>> = Object.values(MonitorType).reduce(
-      (acc, monitorType) => {
-        acc[monitorType] = {};
-        return acc;
-      },
-      {} as Record<MonitorType, Record<string, any>>,
-    );
+    const mergedSettings = this.mergeMonitorSettings(monitors, accountSettings);
+    const settingsWithDefaults = this.applyDefaultSettings(mergedSettings);
 
+    return { ...accountId, ...settingsWithDefaults };
+  }
+
+  /**
+   * Merges monitor settings with account-specific settings.
+   * Account settings are prioritized over monitor settings.
+   * Initializes settings for all MonitorTypes, even if not present in the input.
+   */
+  private static mergeMonitorSettings(
+    monitors: MonitorConfig[],
+    accountSettings: Record<string, any>
+  ): Record<MonitorType, Record<string, any>> {
+    const mergedSettings = Object.values(MonitorType).reduce((acc, monitorType) => {
+      acc[monitorType] = {};
+      return acc;
+    }, {} as Record<MonitorType, Record<string, any>>);
+
+    // Apply monitor settings
     monitors.forEach(monitor => {
       if (monitor.settings) {
         mergedSettings[monitor.name] = { ...monitor.settings };
       }
     });
 
-    // Override monitor settings with account-specific settings
+    // Override with account-specific settings
     Object.entries(accountSettings).forEach(([key, value]) => {
       for (const monitorType of Object.values(MonitorType)) {
-        if (mergedSettings[monitorType] && key in mergedSettings[monitorType]) {
+        if (key in mergedSettings[monitorType]) {
           mergedSettings[monitorType][key] = value;
-          delete accountSettings[key];
           break;
         }
       }
     });
 
-    return { ...accountId, ...mergedSettings };
+    return mergedSettings;
+  }
+
+  /**
+   * Applies default settings to merged monitor settings.
+   * This is where monitor-specific defaults are set if they're not already defined.
+   */
+  private static applyDefaultSettings(
+    mergedSettings: Record<MonitorType, Record<string, any>>
+  ): Record<MonitorType, Record<string, any>> {
+    const settingsWithDefaults = { ...mergedSettings };
+
+    if (settingsWithDefaults[MonitorType.Validator]) {
+      settingsWithDefaults[MonitorType.Validator] = {
+        commissionComparison: ComparisonType.Equal,
+        ...settingsWithDefaults[MonitorType.Validator],
+      };
+    }
+
+    return settingsWithDefaults;
   }
 
   private static transformAddress(address: string, name: string | undefined, chain: Chain): AccountId {

@@ -1,5 +1,5 @@
 import { MonitorTestSuite } from './monitor-test-suite';
-import { MonitorType } from '@lib/constants';
+import { MonitorType, ComparisonType } from '@lib/constants';
 
 describe('ValidatorMonitor', () => {
   let test: MonitorTestSuite;
@@ -39,10 +39,10 @@ describe('ValidatorMonitor', () => {
   });
 
   it('should detect unexpected commission change', async () => {
-    test.addMockAccount('15Zx4M1W1caBHvwdQY6EjUDVoAv714eEBLcLCuE5A25RqiMH', MonitorType.Validator, { commission: 5 });
+    test.addMockAccount('15Zx4M1W1caBHvwdQY6EjUDVoAv714eEBLcLCuE5A25RqiMH', MonitorType.Validator, { commission: 5, commissionComparison: ComparisonType.Equal });
     await test.testEveryBlock(MonitorType.Validator, 'handleCommissionUnexpected', 23408564, 0);
     test.clearMockAccounts();
-    test.addMockAccount('15Zx4M1W1caBHvwdQY6EjUDVoAv714eEBLcLCuE5A25RqiMH', MonitorType.Validator, { commission: 7 });
+    test.addMockAccount('15Zx4M1W1caBHvwdQY6EjUDVoAv714eEBLcLCuE5A25RqiMH', MonitorType.Validator, { commission: 7, commissionComparison: ComparisonType.Equal });
     await test.testEveryBlock(MonitorType.Validator, 'handleCommissionUnexpected', 23408564, 1);
   });
 

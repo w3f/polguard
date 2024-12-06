@@ -1,5 +1,15 @@
+/**
+ * Config Validator Module
+ * 
+ * This module is responsible for validating the raw configuration data.
+ * 
+ * This validator ONLY performs validation and does NOT modify the configuration data.
+ * It checks the structure and values of the config but does not apply any defaults
+ * or transform the data in any way. Data transformation and default application
+ * are handled separately in the config processor module.
+ */
 import * as Joi from 'joi';
-import { Chain, MonitorType } from '../constants';
+import { Chain, ComparisonType, MonitorType } from '../constants';
 
 const alertSchema = Joi.object({
   matrix: Joi.object({
@@ -7,44 +17,33 @@ const alertSchema = Joi.object({
       .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
       .min(1)
       .required(),
-    acknowledgement: Joi.boolean().default(false).optional(),
+    acknowledgement: Joi.boolean().optional(),
   }).required(),
   repeatIntervalHours: Joi.number().optional(),
 });
 
-const monitorSpecificSchema = Joi.object({
-  commission: Joi.when('name', {
-    is: MonitorType.Validator,
-    then: Joi.number().min(0).max(100).optional(),
-    otherwise: Joi.forbidden(),
-  }),
-  payee: Joi.when('name', {
-    is: MonitorType.Validator,
-    then: Joi.string().optional(),
-    otherwise: Joi.forbidden(),
-  }),
-  // TODO: Add other monitor-specific fields here
-}).unknown(true);
+const validatorMonitorSchema = Joi.object({
+  commission: Joi.number().min(0).max(100),
+  commissionComparison: Joi.string().valid(...Object.values(ComparisonType)),
+  payee: Joi.string(),
+});
 
 const monitorSchema = Joi.object({
   name: Joi.string()
     .valid(...Object.values(MonitorType))
     .required(),
-}).concat(monitorSpecificSchema);
+}).when('.name', {
+  switch: [
+    { is: MonitorType.Validator, then: validatorMonitorSchema },
+  ],
+});
 
 const addressPattern = /^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/;
 
 const accountSchema = Joi.object({
   address: Joi.string().pattern(addressPattern).required(),
   name: Joi.string().optional(),
-}).concat(
-  Joi.object(
-    Object.fromEntries(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      Object.entries(monitorSpecificSchema.describe().keys).map(([key, schema]) => [key, Joi.any().optional()]),
-    ),
-  ),
-);
+}).concat(validatorMonitorSchema)
 
 const defaultsSchema = Joi.object({
   chains: Joi.array()

@@ -16,10 +16,17 @@ import {
   StateQueryProvider,
 } from '../interfaces';
 import { IncidentHandler } from '../incident/incident-handler';
-import { MonitorType } from '../constants';
+import { ComparisonType, MonitorType } from '../constants';
 
 export abstract class AbstractMonitor<T extends MonitorType> implements Monitor {
   protected static monitorType: MonitorType;
+  protected static readonly comparisonFunctions: Record<ComparisonType, (a: number, b: number) => boolean> = {
+    [ComparisonType.Equal]: (a, b) => a === b,
+    [ComparisonType.GreaterThan]: (a, b) => a > b,
+    [ComparisonType.LessThan]: (a, b) => a < b,
+    [ComparisonType.GreaterThanOrEqual]: (a, b) => a >= b,
+    [ComparisonType.LessThanOrEqual]: (a, b) => a <= b,
+  };
   protected eventHandlers: Map<string, (params: EventHandlerParams) => Promise<void>>;
   protected callHandlers: Map<string, (params: CallHandlerParams) => Promise<void>>;
   protected everyBlockHandlers: Set<(params: EveryBlockHandlerParams) => Promise<void>>;
