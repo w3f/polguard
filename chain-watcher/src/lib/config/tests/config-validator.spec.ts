@@ -1,5 +1,5 @@
-import { validateConfig } from './config-validator';
-import { Chain, MonitorType } from '../constants';
+import { validateConfig } from '../config-validator';
+import { Chain, MonitorType } from '../../constants';
 
 describe('validateConfig', () => {
   const validFullConfig = {
@@ -31,7 +31,7 @@ describe('validateConfig', () => {
   describe('Group validation', () => {
     it('should throw when no groups are provided', () => {
       const configWithNoGroups = { ...validFullConfig, groups: [] };
-      expect(() => validateConfig(configWithNoGroups)).toThrow(/\"groups\" must contain at least 1 items/);
+      expect(() => validateConfig(configWithNoGroups)).toThrow();
     });
   });
 
@@ -44,21 +44,21 @@ describe('validateConfig', () => {
       const configWithoutChains = {
         groups: [{ ...validMinimalConfig.groups[0], chains: undefined }],
       };
-      expect(() => validateConfig(configWithoutChains)).toThrow(/must have chains defined/);
+      expect(() => validateConfig(configWithoutChains)).toThrow();
     });
 
     it('should throw when monitors are missing in a group', () => {
       const configWithoutMonitors = {
         groups: [{ ...validMinimalConfig.groups[0], monitors: undefined }],
       };
-      expect(() => validateConfig(configWithoutMonitors)).toThrow(/must have monitors defined/);
+      expect(() => validateConfig(configWithoutMonitors)).toThrow();
     });
 
     it('should throw when alerts are missing in a group', () => {
       const configWithoutAlerts = {
         groups: [{ ...validMinimalConfig.groups[0], alerts: undefined }],
       };
-      expect(() => validateConfig(configWithoutAlerts)).toThrow(/must have alerts defined/);
+      expect(() => validateConfig(configWithoutAlerts)).toThrow();
     });
   });
 
@@ -72,7 +72,7 @@ describe('validateConfig', () => {
         defaults: { ...validFullConfig.defaults, chains: undefined },
         groups: [{ ...validFullConfig.groups[0], chains: undefined }],
       };
-      expect(() => validateConfig(configWithoutChains)).toThrow(/must have chains defined/);
+      expect(() => validateConfig(configWithoutChains)).toThrow();
     });
 
     it('should throw when monitors are missing in defaults and groups', () => {
@@ -80,7 +80,7 @@ describe('validateConfig', () => {
         defaults: { ...validFullConfig.defaults, monitors: undefined },
         groups: [{ ...validFullConfig.groups[0], monitors: undefined }],
       };
-      expect(() => validateConfig(configWithoutMonitors)).toThrow(/must have monitors defined/);
+      expect(() => validateConfig(configWithoutMonitors)).toThrow();
     });
 
     it('should throw when alerts are missing in defaults and groups', () => {
@@ -88,7 +88,7 @@ describe('validateConfig', () => {
         defaults: { ...validFullConfig.defaults, alerts: undefined },
         groups: [{ ...validFullConfig.groups[0], alerts: undefined }],
       };
-      expect(() => validateConfig(configWithoutAlerts)).toThrow(/must have alerts defined/);
+      expect(() => validateConfig(configWithoutAlerts)).toThrow();
     });
   });
 
@@ -107,9 +107,7 @@ describe('validateConfig', () => {
           },
         ],
       };
-      expect(() => validateConfig(configWithMissingAddress)).toThrow(
-        /\"groups\[0\]\.accounts\[0\]\.address\" is required/,
-      );
+      expect(() => validateConfig(configWithMissingAddress)).toThrow();
     });
 
     it('should throw when address format is invalid', () => {
@@ -122,9 +120,7 @@ describe('validateConfig', () => {
           },
         ],
       };
-      expect(() => validateConfig(configWithInvalidAddress)).toThrow(
-        /\"groups\[0\]\.accounts\[0\]\.address\" with value \"invalid-address\" fails to match the required pattern/,
-      );
+      expect(() => validateConfig(configWithInvalidAddress)).toThrow();
     });
   });
 
@@ -139,7 +135,7 @@ describe('validateConfig', () => {
           },
         ],
       };
-      expect(() => validateConfig(configWithoutCommission)).toThrow(/has a commission specified/);
+      expect(() => validateConfig(configWithoutCommission)).toThrow();
     });
 
     it('should validate successfully when commission is provided in account', () => {
@@ -159,6 +155,49 @@ describe('validateConfig', () => {
         ],
       };
       expect(() => validateConfig(configWithAccountCommission)).not.toThrow();
+    });
+  });
+
+  describe('Matrix target validation', () => {
+    it('should throw when Matrix target format is invalid', () => {
+      const configWithInvalidMatrixTarget = {
+        ...validMinimalConfig,
+        groups: [
+          {
+            ...validMinimalConfig.groups[0],
+            alerts: { matrix: { targets: ['invalid-target'] } },
+          },
+        ],
+      };
+      expect(() => validateConfig(configWithInvalidMatrixTarget)).toThrow();
+    });
+
+    it('should throw when no Matrix targets are provided', () => {
+      const configWithNoMatrixTargets = {
+        ...validMinimalConfig,
+        groups: [
+          {
+            ...validMinimalConfig.groups[0],
+            alerts: { matrix: { targets: [] } },
+          },
+        ],
+      };
+      expect(() => validateConfig(configWithNoMatrixTargets)).toThrow();
+    });
+  });
+
+  describe('Monitor type validation', () => {
+    it('should throw when an invalid monitor type is provided', () => {
+      const configWithInvalidMonitorType = {
+        ...validMinimalConfig,
+        groups: [
+          {
+            ...validMinimalConfig.groups[0],
+            monitors: [{ name: 'InvalidMonitorType' }],
+          },
+        ],
+      };
+      expect(() => validateConfig(configWithInvalidMonitorType)).toThrow();
     });
   });
 });

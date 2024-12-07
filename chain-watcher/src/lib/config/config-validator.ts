@@ -1,8 +1,8 @@
 /**
  * Config Validator Module
- * 
+ *
  * This module is responsible for validating the raw configuration data.
- * 
+ *
  * This validator ONLY performs validation and does NOT modify the configuration data.
  * It checks the structure and values of the config but does not apply any defaults
  * or transform the data in any way. Data transformation and default application
@@ -16,10 +16,14 @@ const alertSchema = Joi.object({
     targets: Joi.array()
       .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
       .min(1)
-      .required(),
-    acknowledgement: Joi.boolean().optional(),
+      .required()
+      .messages({
+        'array.min': 'At least one Matrix target is required',
+        'string.pattern.base': 'Invalid Matrix target format',
+      }),
+    acknowledgement: Joi.boolean(),
   }).required(),
-  repeatIntervalHours: Joi.number().optional(),
+  repeatIntervalHours: Joi.number(),
 });
 
 const validatorMonitorSchema = Joi.object({
@@ -28,22 +32,31 @@ const validatorMonitorSchema = Joi.object({
   payee: Joi.string(),
 });
 
+const balanceThresholdMonitorSchema = Joi.object({
+  balanceThreshold: Joi.number(),
+});
+
 const monitorSchema = Joi.object({
   name: Joi.string()
     .valid(...Object.values(MonitorType))
-    .required(),
+    .required()
+    .messages({
+      'any.only': 'Invalid monitor type',
+    }),
 }).when('.name', {
-  switch: [
-    { is: MonitorType.Validator, then: validatorMonitorSchema },
-  ],
+  switch: [{ is: MonitorType.Validator, then: validatorMonitorSchema }],
+}).when('.name', {
+  switch: [{ is: MonitorType.BalanceThreshold, then: balanceThresholdMonitorSchema }],
 });
 
 const addressPattern = /^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/;
 
 const accountSchema = Joi.object({
-  address: Joi.string().pattern(addressPattern).required(),
+  address: Joi.string().pattern(addressPattern).required().messages({
+    'string.pattern.base': 'Invalid address format',
+  }),
   name: Joi.string().optional(),
-}).concat(validatorMonitorSchema)
+}).concat(validatorMonitorSchema).concat(balanceThresholdMonitorSchema);
 
 const defaultsSchema = Joi.object({
   chains: Joi.array()
@@ -60,12 +73,16 @@ const groupSchema = Joi.object({
     .optional(),
   monitors: Joi.array().items(monitorSchema).optional(),
   alerts: alertSchema.optional(),
-  accounts: Joi.array().items(accountSchema).min(1).required(),
+  accounts: Joi.array().items(accountSchema).min(1).required().messages({
+    'array.min': 'At least one account is required in a group',
+  }),
 });
 
 const configSchema = Joi.object({
   defaults: defaultsSchema.optional(),
-  groups: Joi.array().items(groupSchema).min(1).required(),
+  groups: Joi.array().items(groupSchema).min(1).required().messages({
+    'array.min': 'At least one group is required in the configuration',
+  }),
 });
 
 export function validateConfig(config: any): void {
@@ -98,6 +115,10 @@ function validateGroup(group: any, defaults: any): void {
     }
   });
 
+  validateValidatorMonitor(group, defaults);
+}
+
+function validateValidatorMonitor(group: any, defaults: any): void {
   const monitors = group.monitors || defaults.monitors;
   const hasValidatorMonitor = monitors.some((monitor: any) => monitor.name === MonitorType.Validator);
   if (hasValidatorMonitor) {

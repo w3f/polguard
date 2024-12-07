@@ -64,7 +64,7 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
         const comparisonType = account.settings.commissionComparison;
         const compareFunction = ValidatorMonitor.comparisonFunctions[comparisonType];
         const isFiring = !compareFunction(commission, expectedCommission);
-  
+
         const message = this.createMessage(
           [
             `Unexpected commission detected for ${account.name}.`,

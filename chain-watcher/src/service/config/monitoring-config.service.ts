@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
-import { MonitoringConfigProcessor } from '@lib/config/config-processor';
+import { ConfigProcessor } from '@lib/config/config-processor';
 import { MonitoringGroup } from '@lib/interfaces';
 import { AppConfigService } from './app-config.service';
 import { Chain } from '@lib/constants';
@@ -21,7 +21,7 @@ export class MonitoringConfigService {
   async initialize(): Promise<void> {
     await this.fetchConfigs();
     const configFiles = this.findConfigFiles(this.configsDir);
-    this.monitoringGroups = MonitoringConfigProcessor.processConfigs(configFiles);
+    this.monitoringGroups = ConfigProcessor.processConfigs(configFiles);
   }
 
   getMonitoringGroups(chain: Chain): MonitoringGroup[] {
