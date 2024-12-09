@@ -6,10 +6,10 @@ import {
   MonitoringGroup,
   ChainProperties,
   ConfigAccountSettings,
-} from '../interfaces';
-import { IncidentHandler } from '../incident/incident-handler';
-import { Chain, MonitorType } from '../constants';
-import { createApiStateQueryProvider } from '../providers/state-provider';
+} from '@lib/interfaces';
+import { IncidentHandler } from '@lib/incident/incident-handler';
+import { Chain, MonitorType } from '@lib/constants';
+import { createApiStateQueryProvider } from '@lib/providers/state-provider';
 import { createMockLogger, createMockStore } from './mocks';
 import {
   BalanceDecrementMonitor,
@@ -19,7 +19,7 @@ import {
   TransactionEgressMonitor,
   TransactionIngressMonitor,
   ValidatorMonitor,
-} from '../monitors';
+} from '@lib/monitors';
 
 export class MonitorTestSuite {
   private api: ApiPromise;

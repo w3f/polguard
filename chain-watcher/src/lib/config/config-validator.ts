@@ -43,11 +43,13 @@ const monitorSchema = Joi.object({
     .messages({
       'any.only': 'Invalid monitor type',
     }),
-}).when('.name', {
-  switch: [{ is: MonitorType.Validator, then: validatorMonitorSchema }],
-}).when('.name', {
-  switch: [{ is: MonitorType.BalanceThreshold, then: balanceThresholdMonitorSchema }],
-});
+})
+  .when('.name', {
+    switch: [{ is: MonitorType.Validator, then: validatorMonitorSchema }],
+  })
+  .when('.name', {
+    switch: [{ is: MonitorType.BalanceThreshold, then: balanceThresholdMonitorSchema }],
+  });
 
 const addressPattern = /^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/;
 
@@ -56,7 +58,9 @@ const accountSchema = Joi.object({
     'string.pattern.base': 'Invalid address format',
   }),
   name: Joi.string().optional(),
-}).concat(validatorMonitorSchema).concat(balanceThresholdMonitorSchema);
+})
+  .concat(validatorMonitorSchema)
+  .concat(balanceThresholdMonitorSchema);
 
 const defaultsSchema = Joi.object({
   chains: Joi.array()

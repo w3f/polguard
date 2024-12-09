@@ -28,7 +28,7 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     const prefs = eventRecord.event.data[1] as PalletStakingValidatorPrefs;
     for (const { account, alerts } of this.getAccounts(stash)) {
       const message = this.createMessage(
-        [`New commission change detected for ${account.name}.`, `Commission: ${prefs.commission}`],
+        [`New commission change detected for ${this.formatAccountLink(account)}.`, `Commission: ${prefs.commission}`],
         { blockNumber, phase: eventRecord.phase },
       );
 
@@ -41,7 +41,10 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     const payee = (call.method === 'setPayee' ? call.args[0] : call.args[1]) as PalletStakingRewardDestination;
     for (const { account, alerts } of this.getAccounts(origin)) {
       const message = this.createMessage(
-        [`New destination change detected for ${account.name}.`, `Destination: ${this.getDestinationString(payee)}`],
+        [
+          `New destination change detected for ${this.formatAccountLink(account)}.`,
+          `Destination: ${this.getDestinationString(payee)}`,
+        ],
         { blockNumber, extrinsicIndex },
       );
 
@@ -67,12 +70,12 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
 
         const message = this.createMessage(
           [
-            `Unexpected commission detected for ${account.name}.`,
+            `Unexpected commission detected for ${this.formatAccountLink(account)}.`,
             `Actual commission: ${commission}`,
             `Expected commission: ${expectedCommission}`,
             `Comparison type: ${ComparisonType[comparisonType]}`,
           ],
-          { address: account.ss58, blockNumber },
+          { blockNumber },
         );
 
         const key = `${account.ss58}:${groupId}:handleCommissionUnexpected`;
@@ -95,11 +98,11 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
 
         const message = this.createMessage(
           [
-            `Unexpected reward destination detected for ${account.name}.`,
+            `Unexpected reward destination detected for ${this.formatAccountLink(account)}.`,
             `Actual destination: ${destination}`,
             `Expected destination: ${expectedDestination}`,
           ],
-          { address: account.ss58, blockNumber },
+          { blockNumber },
         );
 
         const key = `${account.ss58}:${groupId}:handleDestinationUnexpected`;
@@ -116,7 +119,7 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
         const isFiring = !validators[account.ss58];
 
         const message = this.createMessage([
-          `Target ${account.name} is not present in the validation active set.`,
+          `Target ${this.formatAccountLink(account)} is not present in the validation active set.`,
           `Era: ${await this.stateQuery.era(blockNumber)}`,
         ]);
 

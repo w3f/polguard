@@ -3,6 +3,11 @@ import { MessageType, MessengerType } from '../constants';
 
 type StyleType = 'html' | 'plain' | 'markdown';
 
+interface Link {
+  url: string;
+  title: string;
+}
+
 export class MessageStyler {
   static applyStyle(message: Message, messageType: MessageType, messengerType: MessengerType): string {
     let styleType: StyleType = 'plain';
@@ -29,14 +34,15 @@ export class MessageStyler {
   }
 
   private static styleTitle(prefix: string, title: string, color: string, styleType: StyleType): string {
+    const styledTitle = this.styleLinks(title, styleType);
     switch (styleType) {
       case 'html':
-        return `<b><font color="${color}">${prefix}</font>${title}</b>`;
+        return `<b><font color="${color}">${prefix}</font>${styledTitle}</b>`;
       case 'markdown':
-        return `**${prefix}${title}**`;
+        return `**${prefix}${styledTitle}**`;
       case 'plain':
       default:
-        return `${prefix}${title}`;
+        return `${prefix}${styledTitle}`;
     }
   }
 
@@ -66,19 +72,22 @@ export class MessageStyler {
   }
 
   private static styleLinks(text: string, styleType: StyleType): string {
-    const linkRegex = /(https?:\/\/[^\s]+)/g;
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
 
-    return text.replace(linkRegex, url => {
-      const domain = new URL(url).hostname;
-      switch (styleType) {
-        case 'html':
-          return `<a href="${url}">${domain}</a>`;
-        case 'markdown':
-          return `[${domain}](${url})`;
-        case 'plain':
-        default:
-          return `${domain} (${url})`;
-      }
+    return text.replace(linkRegex, (_, title, url) => {
+      return this.styleLink({ url, title }, styleType);
     });
+  }
+
+  private static styleLink(link: Link, styleType: StyleType): string {
+    switch (styleType) {
+      case 'html':
+        return `<a href="${link.url}">${link.title}</a>`;
+      case 'markdown':
+        return `[${link.title}](${link.url})`;
+      case 'plain':
+      default:
+        return `${link.title} (${link.url})`;
+    }
   }
 }

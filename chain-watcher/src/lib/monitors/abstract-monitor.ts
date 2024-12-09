@@ -14,6 +14,7 @@ import {
   AlertSettings,
   ChainProperties,
   StateQueryProvider,
+  AccountId,
 } from '../interfaces';
 import { IncidentHandler } from '../incident/incident-handler';
 import { ComparisonType, MonitorType } from '../constants';
@@ -166,6 +167,14 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     return `https://${this.chainProps.specName}.subscan.io/extrinsic/${blockNumber}-${extrinsicIndex}`;
   }
 
+  protected formatLink(title: string, url: string): string {
+    return `[${title}](${url})`;
+  }
+
+  protected formatAccountLink(account: AccountId): string {
+    return this.formatLink(account.name, this.getAccountLink(account.ss58));
+  }
+
   protected createMessage(
     rows: string[],
     options?: {
@@ -181,10 +190,6 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
         rows.push(`Event: ${this.getEventLink(options.blockNumber, options.phase)}`);
       } else if (options.extrinsicIndex !== undefined) {
         rows.push(`Extrinsic: ${this.getExtrinsicLink(options.blockNumber, options.extrinsicIndex)}`);
-      }
-
-      if (options.address) {
-        rows.push(`Account: ${this.getAccountLink(options.address)}`);
       }
     }
     rows.push(`Network: ${this.chainProps.specName}`);

@@ -10,7 +10,7 @@ describe('ConfigProcessor', () => {
     jest.clearAllMocks();
   });
 
-  const createMockConfig = (groupConfig) => {
+  const createMockConfig = groupConfig => {
     const mockConfig = { groups: [groupConfig] };
     const mockFileContents = yaml.dump(mockConfig);
     (fs.readFileSync as jest.Mock).mockReturnValue(mockFileContents);
@@ -26,7 +26,7 @@ describe('ConfigProcessor', () => {
           name: MonitorType.Validator,
           commission: 10,
           commissionComparison: ComparisonType.LessThanOrEqual,
-        }
+        },
       ],
       alerts: { matrix: { targets: ['!example:example.com'] } },
       accounts: [
@@ -34,7 +34,7 @@ describe('ConfigProcessor', () => {
           address: '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5',
           name: 'Alice',
           payee: '14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3',
-        }
+        },
       ],
     });
 
@@ -48,7 +48,7 @@ describe('ConfigProcessor', () => {
     expect(account.name).toBe('Alice');
     expect(account.ss58).toBe('15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5');
     expect(account.hex).toBe('0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d');
-    
+
     expect(account[MonitorType.Validator]).toEqual({
       commission: 10,
       commissionComparison: ComparisonType.LessThanOrEqual,
@@ -80,9 +80,9 @@ describe('ConfigProcessor', () => {
     expect(result).toHaveLength(1);
     const [{ accounts }] = result;
     const [account] = accounts;
-    expect(account[MonitorType.Validator]).toEqual({ 
+    expect(account[MonitorType.Validator]).toEqual({
       commission: 5,
-      commissionComparison: ComparisonType.Equal  // This is the default value
+      commissionComparison: ComparisonType.Equal, // This is the default value
     });
     expect(account[MonitorType.Governance]).toEqual({});
     expect(account[MonitorType.BalanceThreshold]).toEqual({ balanceThreshold: '2000000' });

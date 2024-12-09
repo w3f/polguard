@@ -52,6 +52,8 @@ describe('AddressTransformer', () => {
   });
 
   it('should throw an error for invalid address', () => {
-    expect(() => AddressTransformer.transform('invalid-address', 'Invalid', Chain.Polkadot)).toThrow('Invalid address format');
+    expect(() => AddressTransformer.transform('invalid-address', 'Invalid', Chain.Polkadot)).toThrow(
+      'Invalid address format',
+    );
   });
 });

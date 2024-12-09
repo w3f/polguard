@@ -50,7 +50,7 @@ export class AccountSettingsBuilder {
     // Initialize merged settings with empty objects for each MonitorType
     const mergedSettings = Object.values(MonitorType).reduce(
       (acc, monitorType) => ({ ...acc, [monitorType]: {} }),
-      {} as Record<MonitorType, Record<string, any>>
+      {} as Record<MonitorType, Record<string, any>>,
     );
 
     // Apply monitor configurations

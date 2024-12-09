@@ -4,7 +4,10 @@ import { MonitorType, ComparisonType } from '../../constants';
 describe('AccountSettingsBuilder', () => {
   it('should merge monitor configs with account settings', () => {
     const monitorConfigs = [
-      { name: MonitorType.Validator, settings: { commission: 10, commissionComparison: ComparisonType.LessThanOrEqual } },
+      {
+        name: MonitorType.Validator,
+        settings: { commission: 10, commissionComparison: ComparisonType.LessThanOrEqual },
+      },
       { name: MonitorType.BalanceThreshold, settings: { balanceThreshold: '1000000' } },
     ];
     const accountSettings = {
