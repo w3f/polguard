@@ -1,5 +1,16 @@
 version: 2
 
+commit_filters: &commit_filters
+  filters:
+    tags:
+      only: /.*/ 
+release_filters: &release_filters
+  filters:
+    branches:
+      ignore: /.*/
+    tags:
+      only: /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
+
 jobs:
 
   yarnLint: &yarnLint
@@ -74,47 +85,77 @@ jobs:
           command: |
             /scripts/integration-tests.sh kindest/node:v1.23.4   
 
+  publishImage: &publishImage
+    docker:
+      - image: web3f/ci-commons:v3
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          command: |
+            /scripts/publish-image.sh web3f/mp-"${MODULE}"
+
+  publishImageChainWatcher:
+    environment:
+      MODULE: chain-watcher
+    <<: *publishImage 
+
+  publishImageMatrix:
+    environment:
+      MODULE: matrix
+    <<: *publishImage            
+
+  publishChart:
+    docker:
+      - image: web3f/ci-commons:v3
+    steps:
+      - checkout
+      - run:
+          command: |
+            /scripts/publish-chart.sh            
+
 workflows:
   version: 2
   test_and_publish:
     jobs:
       - yarnLintChainWatcher:
-          filters:
-            tags:
-              only: /.*/
+          <<: *commit_filters
       - yarnLintMatrix:
-          filters:
-            tags:
-              only: /.*/  
+          <<: *commit_filters
       - helmLintChainWatcher:
-          filters:
-            tags:
-              only: /.*/
+          <<: *commit_filters
       - helmLintMatrix:
-          filters:
-            tags:
-              only: /.*/        
+          <<: *commit_filters    
       - buildImageChainWatcher:
           context: dockerhub-bot
           requires:
             - helmLintChainWatcher
             - yarnLintChainWatcher
-          filters:
-            tags:
-              only: /.*/
+          <<: *commit_filters
       - buildImageMatrix:
           context: dockerhub-bot
           requires:
             - helmLintMatrix
             - yarnLintMatrix
-          filters:
-            tags:
-              only: /.*/
+          <<: *commit_filters
       - integrationTests:
           context: ci-matrixbot
-          filters:
-            tags:
-              only: /.*/
+          <<: *commit_filters
           requires:
             - buildImageChainWatcher  
-            - buildImageMatrix           
+            - buildImageMatrix
+      - publishImageChainWatcher:
+          context: dockerhub-bot
+          <<: *release_filters
+          requires:
+            - integrationTests
+      - publishImageMatrix:
+          context: dockerhub-bot
+          <<: *release_filters
+          requires:
+            - integrationTests      
+      - publishChart:
+          context: github-bot
+          <<: *release_filters
+          requires:
+            - integrationTests                 

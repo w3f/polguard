@@ -6,6 +6,19 @@ httpPort: 3000
 
 resources: {}
 
+prometheusRules:
+  enabled: false
+  labels:
+    app: w3f
+    role: alert-rules #according to https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/alerting.md#prometheusrule-labelling
+  origin: clusterName
+
+serviceMonitor:
+  enabled: false
+  labels:
+    group: w3f
+    release: prometheus-operator
+
 config:
   environment: test
   redis:

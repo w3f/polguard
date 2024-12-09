@@ -3,6 +3,8 @@ import { Registry, collectDefaultMetrics, Gauge } from 'prom-client';
 import { MetricsClient } from '@lib/interfaces';
 import { Chain } from '@lib/constants';
 
+const prefix = "mp_chain_watcher_"
+
 @Injectable()
 export class MetricsService implements OnModuleInit, MetricsClient {
   private readonly registry: Registry;
@@ -15,7 +17,7 @@ export class MetricsService implements OnModuleInit, MetricsClient {
     this.registry = new Registry();
 
     this.blockHeight = new Gauge({
-      name: 'block_height',
+      name: `${prefix}block_height`,
       help: 'Current block height of the chain',
       labelNames: ['network', 'environment'],
       registers: [this.registry],
@@ -25,11 +27,11 @@ export class MetricsService implements OnModuleInit, MetricsClient {
   }
 
   onModuleInit() {
-    collectDefaultMetrics({ register: this.registry });
+    collectDefaultMetrics({ register: this.registry, prefix: prefix });
   }
 
   setBlockHeight(height: number): void {
-    this.blockHeight.set(height);
+    this.blockHeight.set({ network: this.network, environment: this.environment }, height);
   }
 
   async getMetrics(): Promise<string> {
