@@ -1,3 +1,5 @@
+import { MessengerType } from './constants';
+
 export interface MatrixConfig {
   serverAddress: string;
   userId: string;
@@ -15,15 +17,10 @@ export interface IncidentEvent {
 }
 
 export interface AlertSettings {
-  matrix: {
-    targets: string[];
-    acknowledgement?: {
-      escalation?: {
-        timeout: number;
-        targets: string[];
-      };
-    };
-  };
+  messengerType: MessengerType;
+  targets: string[];
+  acknowledgement?: boolean;
+  repeatIntervalHours?: number;
 }
 
 export interface Incident {

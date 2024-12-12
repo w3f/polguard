@@ -1,11 +1,9 @@
 defaults:
   alerts:
     repeatIntervalHours: 2
-    matrix:
-      targets:
-        - "!xyz987:matrix.org"
-      repeat_interval: 60  # for constantly firing incidents
-      acknowledgement: true
+    messengerType: matrix
+    targets:
+      - "!xyz987:matrix.org"
   chains:
     - Polkadot
   monitors:

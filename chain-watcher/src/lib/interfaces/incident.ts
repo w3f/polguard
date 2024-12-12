@@ -1,11 +1,9 @@
-import { Chain } from '../constants';
+import { Chain, MessengerType } from '../constants';
 
 export interface AlertSettings {
-  // TODO: Make matrix one of the enum values.
-  matrix: {
-    targets: string[];
-    acknowledgement?: boolean;
-  };
+  messengerType: MessengerType;
+  targets: string[];
+  acknowledgement?: boolean;
   repeatIntervalHours?: number;
 }
 
@@ -27,4 +25,15 @@ export interface ActiveIncidentState {
   consecutiveFiringBlocks: number;
   consecutiveNormalBlocks: number;
   lastEmitted: number;
+}
+
+export interface IncidentHandlerClient {
+  oneTimeIncident(message: Message, alerts: AlertSettings, blockNumber: number): Promise<void>;
+  ongoingIncident(
+    message: Message,
+    alerts: AlertSettings,
+    blockNumber: number,
+    key: string,
+    isFiring: boolean,
+  ): Promise<void>;
 }

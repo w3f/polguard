@@ -11,10 +11,5 @@ chain:
 
 monitoring_config_sources: []
 
-alerts:
-  matrix:
-    targets:
-      - "!BabNKVNdOktKGafXzd:web3.foundation"
-
 logging:
-  level: info
+  level: debug

@@ -16,12 +16,12 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "outDir": "./dist",
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "@service/*": ["service/*"],
-      "@lib/*": ["lib/*"]
+      "@service/*": ["src/service/*"],
+      "@lib/*": ["src/lib/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }

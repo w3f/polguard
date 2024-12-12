@@ -11,6 +11,11 @@ image:
 resources: null
 {{ end }}
 
+{{ if eq .Environment.Name "test" }}
+image:
+  tag: {{ env "IMAGE_TAG" }}
+  imagePullPolicy: Always
+{{ end }}
 config:
   matrix:
     userId: "{{ env "MATRIX_USER" }}"

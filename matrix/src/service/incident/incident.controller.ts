@@ -2,6 +2,7 @@ import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { IncidentEvent } from '@lib/interfaces';
 import { MatrixClient } from '@lib/matrix-client';
+import { MessengerType } from '@lib/constants';
 
 @Controller()
 export class IncidentController {
@@ -22,10 +23,32 @@ export class IncidentController {
   }
 
   private async notifyMatrix(event: IncidentEvent) {
-    event.alerts.matrix.targets.forEach(roomId => {
-      this.matrixClient
-        .sendMessage(roomId, event.message)
-        .catch(error => this.logger.error(`Failed to send message to room ${roomId}: ${error.message}`));
-    });
+    try {
+      if (!event.alerts.messengerType) {
+        throw new Error('Missing messenger type in alerts configuration');
+      }
+
+      if (event.alerts.messengerType !== MessengerType.Matrix) {
+        this.logger.debug('Skipping Matrix notification for non-Matrix messenger type');
+        return;
+      }
+
+      if (!Array.isArray(event.alerts.targets)) {
+        throw new Error('Invalid or missing targets array in alerts configuration');
+      }
+
+      const sendPromises = event.alerts.targets.map(roomId =>
+        this.matrixClient.sendMessage(roomId, event.message).catch(error => {
+          this.logger.error(`Failed to send message to room ${roomId}: ${error.message}`);
+          throw error;
+        }),
+      );
+
+      await Promise.all(sendPromises);
+    } catch (error) {
+      this.logger.error('Matrix notification failed:', error.message);
+      this.logger.error('Failed notification event:', JSON.stringify(event, null, 2));
+      throw error;
+    }
   }
 }

@@ -1,12 +1,15 @@
-import { validateConfig } from '../config-validator';
-import { Chain, MonitorType } from '../../constants';
+import { validateConfig } from '@lib/config/config-validator';
+import { Chain, MessengerType, MonitorType } from '@lib/constants';
 
 describe('validateConfig', () => {
   const validFullConfig = {
     defaults: {
       chains: [Chain.Polkadot],
       monitors: [{ name: MonitorType.Validator, commission: 10 }],
-      alerts: { matrix: { targets: ['!example:example.com'] } },
+      alerts: {
+        messengerType: MessengerType.Matrix,
+        targets: ['!example:example.com']
+      },
     },
     groups: [
       {
@@ -22,7 +25,10 @@ describe('validateConfig', () => {
         name: 'Test Group',
         chains: [Chain.Polkadot],
         monitors: [{ name: MonitorType.Validator, commission: 10 }],
-        alerts: { matrix: { targets: ['!example:example.com'] } },
+        alerts: {
+          messengerType: MessengerType.Matrix,
+          targets: ['!example:example.com']
+        },
         accounts: [{ address: '0x1234567890123456789012345678901234567890123456789012345678901234' }],
       },
     ],

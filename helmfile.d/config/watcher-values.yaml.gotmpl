@@ -14,7 +14,7 @@ resources: null
 {{ if eq .Environment.Name "test" }}
 image:
   tag: {{ env "IMAGE_TAG" }}
-  pullPolicy: Always
+  imagePullPolicy: Always
 monitoringConfig: null
 config:
   environment: test

@@ -3,7 +3,7 @@ import { EveryBlockHandler, EventHandler } from '../../decorators';
 import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
 import { EveryBlockHandlerParams, CallHandlerParams, EventHandlerParams } from '../../interfaces';
 import { AbstractMonitor } from '../abstract-monitor';
-import { ComparisonType, MonitorType } from '@lib/constants';
+import { MonitorType } from '@lib/constants';
 
 export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
   @EventHandler('staking.SlashReported')
@@ -73,7 +73,6 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
             `Unexpected commission detected for ${this.formatAccountLink(account)}.`,
             `Actual commission: ${commission}`,
             `Expected commission: ${expectedCommission}`,
-            `Comparison type: ${ComparisonType[comparisonType]}`,
           ],
           { blockNumber },
         );

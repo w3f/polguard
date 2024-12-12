@@ -1,5 +1,5 @@
-import { ConfigProcessor } from '../config-processor';
-import { Chain, MonitorType, ComparisonType } from '../../constants';
+import { ConfigProcessor } from '@lib/config/config-processor';
+import { Chain, MonitorType, ComparisonType, MessengerType } from '@lib/constants';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 
@@ -28,7 +28,10 @@ describe('ConfigProcessor', () => {
           commissionComparison: ComparisonType.LessThanOrEqual,
         },
       ],
-      alerts: { matrix: { targets: ['!example:example.com'] } },
+      alerts: {
+        messengerType: MessengerType.Matrix,
+        targets: ['!example:example.com']
+      },
       accounts: [
         {
           address: '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5',
@@ -61,7 +64,7 @@ describe('ConfigProcessor', () => {
       }
     });
 
-    expect(group.alerts).toEqual({ matrix: { targets: ['!example:example.com'] } });
+    expect(group.alerts).toEqual({ messengerType: MessengerType.Matrix, targets: ['!example:example.com']});
   });
 
   it('should process a config with multiple monitor types', () => {
@@ -73,7 +76,10 @@ describe('ConfigProcessor', () => {
         { name: MonitorType.Governance },
         { name: MonitorType.BalanceThreshold, balanceThreshold: '2000000' },
       ],
-      alerts: { matrix: { targets: ['!example:example.com'] } },
+      alerts: {
+        messengerType: MessengerType.Matrix,
+        targets: ['!example:example.com']
+      },
       accounts: [{ address: '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5' }],
     });
 

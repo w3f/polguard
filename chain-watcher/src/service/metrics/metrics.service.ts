@@ -3,7 +3,7 @@ import { Registry, collectDefaultMetrics, Gauge } from 'prom-client';
 import { MetricsClient } from '@lib/interfaces';
 import { Chain } from '@lib/constants';
 
-const prefix = "mp_chain_watcher_"
+const prefix = 'mp_chain_watcher_';
 
 @Injectable()
 export class MetricsService implements OnModuleInit, MetricsClient {

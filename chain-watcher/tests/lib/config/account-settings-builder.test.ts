@@ -1,5 +1,5 @@
-import { AccountSettingsBuilder } from '../account-settings-builder';
-import { MonitorType, ComparisonType } from '../../constants';
+import { AccountSettingsBuilder } from '@lib/config/account-settings-builder';
+import { MonitorType, ComparisonType } from '@lib/constants';
 
 describe('AccountSettingsBuilder', () => {
   it('should merge monitor configs with account settings', () => {

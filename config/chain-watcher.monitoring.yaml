@@ -1,18 +1,20 @@
 defaults:
   alerts:
-    matrix:
-      targets:
-        # TestMonitoringPlatform room
-        - "!BabNKVNdOktKGafXzd:web3.foundation"
+    # ~30 seconds between firing events
+    repeatIntervalHours: 0.0083
+    messengerType: matrix
+    targets:
+      # TestMonitoringPlatform room
+      - "!BabNKVNdOktKGafXzd:web3.foundation"
   chains:
     - Polkadot
   monitors:
-    - name: TransactionEgress
+    - name: Validator
+      commission: 5
+      payee: Stash
+      commissionComparison: lte
 
 groups:
-  - name: Test Group 1
+  - name: Test Group Validator 1
     accounts:
-      # Egress transaction: 22904327
-      - address: 12nr7GiDrYHzAYT9L8HdeXnMfWcBuYfAXpgfzf3upujeCciz
-      # Egress transaction: 22904328
-      - address: 1F5fhgHpekmLPSdbwESJRsWU5KJdhEFZuwBMTj1czBuvyzm
+      - address: 15tEXHHDjEv6VKR2MhpnfeJZnKQnTyMPVvGH51BJvBXNoCNK

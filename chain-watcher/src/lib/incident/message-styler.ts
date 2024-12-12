@@ -29,34 +29,33 @@ export class MessageStyler {
     const { prefix, color } = this.getPrefixAndColor(messageType);
     const title = this.styleTitle(prefix, message.title, color, styleType);
     const details = this.styleDetails(message.details, styleType);
-
     return `${title}\n${details}`;
   }
 
   private static styleTitle(prefix: string, title: string, color: string, styleType: StyleType): string {
-    const styledTitle = this.styleLinks(title, styleType);
+    const linkedTitle = this.styleLinks(title, styleType);
     switch (styleType) {
       case 'html':
-        return `<b><font color="${color}">${prefix}</font>${styledTitle}</b>`;
+        return `<b><font color="${color}">${prefix}</font>${linkedTitle}</b>`;
       case 'markdown':
-        return `**${prefix}${styledTitle}**`;
+        return `**${prefix}${linkedTitle}**`;
       case 'plain':
       default:
-        return `${prefix}${styledTitle}`;
+        return `${prefix}${linkedTitle}`;
     }
   }
 
   private static styleDetails(details: string[], styleType: StyleType): string {
-    const styledDetails = details.map(detail => this.styleLinks(detail, styleType));
+    const linkedDetails = details.map(detail => this.styleLinks(detail, styleType));
 
     switch (styleType) {
       case 'html':
-        return `<ul>${styledDetails.map(detail => `<li>${detail}</li>`).join('')}</ul>`;
+        return `<ul>${linkedDetails.map(detail => `<li>${detail}</li>`).join('')}</ul>`;
       case 'markdown':
-        return styledDetails.map(detail => `- ${detail}`).join('\n');
+        return linkedDetails.map(detail => `- ${detail}`).join('\n');
       case 'plain':
       default:
-        return styledDetails.join('\n');
+        return linkedDetails.join('\n');
     }
   }
 
@@ -72,7 +71,7 @@ export class MessageStyler {
   }
 
   private static styleLinks(text: string, styleType: StyleType): string {
-    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    const linkRegex = /\[((?:[^\[\]]|\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\])*)\]\(([^)]+)\)/g;
 
     return text.replace(linkRegex, (_, title, url) => {
       return this.styleLink({ url, title }, styleType);

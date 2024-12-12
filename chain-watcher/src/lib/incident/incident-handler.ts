@@ -1,6 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
-import { Logger, IncidentEvent, AlertSettings, EventEmitterClient, Message, DataStoreClient } from '../interfaces';
+import {
+  Logger,
+  IncidentEvent,
+  AlertSettings,
+  EventEmitterClient,
+  Message,
+  DataStoreClient,
+  IncidentHandlerClient,
+} from '../interfaces';
 import { Chain, MessageType, MessengerType } from '../constants';
 import { MessageStyler } from './message-styler';
 
@@ -19,7 +27,7 @@ import { MessageStyler } from './message-styler';
  * - An incident is resolved when it has not been firing for the same number of consecutive blocks.
  * - Unresolved incidents are re-emitted at a specified interval.
  */
-export class IncidentHandler {
+export class IncidentHandler implements IncidentHandlerClient {
   private readonly THRESHOLD = 3;
   private readonly DEFAULT_REPEAT_INTERVAL = 24 * 3600 * 1000; // 24 hours
 

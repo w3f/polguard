@@ -7,7 +7,7 @@ import { Logger } from '../interfaces';
  */
 export class ChainWatcherStore implements DataStoreClient {
   private static instance: ChainWatcherStore;
-  private readonly KEY_PREFIX = 'cw:';
+  private readonly KEY_PREFIX = 'Store:';
   private readonly KEYS = {
     INCIDENT: 'inc',
     LAST_PROCESSED_BLOCK: 'last_processed_block',

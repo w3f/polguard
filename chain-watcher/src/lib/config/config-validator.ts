@@ -9,20 +9,21 @@
  * are handled separately in the config processor module.
  */
 import * as Joi from 'joi';
-import { Chain, ComparisonType, MonitorType } from '../constants';
+import { Chain, ComparisonType, MessengerType, MonitorType } from '../constants';
 
 const alertSchema = Joi.object({
-  matrix: Joi.object({
-    targets: Joi.array()
-      .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
-      .min(1)
-      .required()
-      .messages({
-        'array.min': 'At least one Matrix target is required',
-        'string.pattern.base': 'Invalid Matrix target format',
-      }),
-    acknowledgement: Joi.boolean(),
-  }).required(),
+  messengerType: Joi.string().valid(...Object.values(MessengerType)),
+  targets: Joi.array()
+    // Pattern supports only Matrix rooms at the moment.
+    .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
+    .min(1)
+    .required()
+    .messages({
+      'array.min': 'At least one target is required',
+      'string.pattern.base': 'Invalid target format',
+    })
+    .required(),
+  acknowledgement: Joi.boolean(),
   repeatIntervalHours: Joi.number(),
 });
 
