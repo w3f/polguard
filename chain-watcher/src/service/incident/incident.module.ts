@@ -15,12 +15,13 @@ export class EventEmitterModule {
           imports: [ConfigModule],
           useFactory: async (configService: ConfigService) => {
             const redisConfig = configService.getRedisConfig();
+            const chain = configService.getChain();
             return {
               host: redisConfig.host,
               port: redisConfig.port,
               streamName: 'incidents',
-              groupName: 'chain-watcher',
-              consumerName: 'chain-watcher',
+              groupName: `chain-watcher-${chain}`,
+              consumerName: `chain-watcher-${chain}`,
             };
           },
           inject: [ConfigService],

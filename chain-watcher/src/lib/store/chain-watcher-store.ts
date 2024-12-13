@@ -1,3 +1,4 @@
+import { Chain } from '@lib/constants';
 import { DataStoreClient, ActiveIncidentState, KeyValueStorageClient } from '../interfaces';
 import { Logger } from '../interfaces';
 
@@ -7,7 +8,6 @@ import { Logger } from '../interfaces';
  */
 export class ChainWatcherStore implements DataStoreClient {
   private static instance: ChainWatcherStore;
-  private readonly KEY_PREFIX = 'Store:';
   private readonly KEYS = {
     INCIDENT: 'inc',
     LAST_PROCESSED_BLOCK: 'last_processed_block',
@@ -15,35 +15,36 @@ export class ChainWatcherStore implements DataStoreClient {
 
   private constructor(
     private client: KeyValueStorageClient,
+    private chain: Chain,
     private logger: Logger,
   ) {}
 
-  public static getInstance(client: KeyValueStorageClient, logger: Logger): DataStoreClient {
+  public static getInstance(client: KeyValueStorageClient, chain: Chain, logger: Logger): DataStoreClient {
     if (!ChainWatcherStore.instance) {
-      ChainWatcherStore.instance = new ChainWatcherStore(client, logger);
+      ChainWatcherStore.instance = new ChainWatcherStore(client, chain, logger);
     }
     return ChainWatcherStore.instance;
   }
 
   // KeyValueStorageClient methods
   async get<T>(key: string): Promise<T | null> {
-    return this.client.get<T>(`${this.KEY_PREFIX}${key}`);
+    return this.client.get<T>(`${this.chain}:${key}`);
   }
 
   async set(key: string, value: any): Promise<void> {
-    await this.client.set(`${this.KEY_PREFIX}${key}`, value);
+    await this.client.set(`${this.chain}:${key}`, value);
   }
 
   async setex(key: string, seconds: number, value: any): Promise<void> {
-    await this.client.setex(`${this.KEY_PREFIX}${key}`, seconds, value);
+    await this.client.setex(`${this.chain}:${key}`, seconds, value);
   }
 
   async del(key: string): Promise<void> {
-    await this.client.del(`${this.KEY_PREFIX}${key}`);
+    await this.client.del(`${this.chain}:${key}`);
   }
 
   async keys(pattern: string): Promise<string[]> {
-    return this.client.keys(`${this.KEY_PREFIX}${pattern}`);
+    return this.client.keys(`${this.chain}:${pattern}`);
   }
 
   // PersistentStorage methods
@@ -69,7 +70,7 @@ export class ChainWatcherStore implements DataStoreClient {
 
   public async clearAll(): Promise<void> {
     try {
-      const keys = await this.client.keys(`${this.KEY_PREFIX}*`);
+      const keys = await this.client.keys(`${this.chain}*`);
       if (keys.length > 0) {
         await Promise.all(keys.map(key => this.client.del(key)));
       }

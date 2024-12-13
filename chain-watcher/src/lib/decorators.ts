@@ -45,7 +45,7 @@ export function createCachedQueryDecorator(cache: KeyValueStorageClient) {
       const originalMethod = descriptor.value;
 
       descriptor.value = async function (...args: any[]) {
-        const cacheKey = createCacheKey('Cache', propertyKey, args);
+        const cacheKey = createCacheKey(target.constructor.name, propertyKey, args);
 
         const cachedResult = await cache.get<T>(cacheKey);
         if (cachedResult !== null) {

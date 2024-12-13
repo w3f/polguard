@@ -17,13 +17,17 @@ export async function createChainWatcher(
   groups: MonitoringGroup[],
   dependencies: ChainWatcherDependencies,
 ): Promise<ChainWatcher> {
-  const { logger, api, storageClient, eventEmitterClient, metricsClient } = dependencies;
+  const { logger, api, chain, storageClient, eventEmitterClient, metricsClient } = dependencies;
 
   const chainProperties: ChainProperties = await getChainProperties(api);
-  const chain: Chain = specNameToChain(chainProperties.specName);
-
-  const store = ChainWatcherStore.getInstance(storageClient, logger);
-  const stateQueryProvider = createApiStateQueryProvider(api, storageClient);
+  const chainRPC: Chain = specNameToChain(chainProperties.specName);
+  if (chain !== chainRPC) {
+    throw new Error(
+      `Chain mismatch: Config chain is "${chain}" but RPC endpoint returns "${chainRPC}". Please check your configuration.`,
+    );
+  }
+  const store = ChainWatcherStore.getInstance(storageClient, chain, logger);
+  const stateQueryProvider = createApiStateQueryProvider(api, store);
   const incidentHandler = new IncidentHandler(logger, store, eventEmitterClient, chain);
 
   return new ChainWatcher(
@@ -44,6 +48,7 @@ export interface ChainWatcherDependencies {
   storageClient: KeyValueStorageClient;
   eventEmitterClient: EventEmitterClient;
   metricsClient: MetricsClient;
+  chain: Chain;
 }
 
 async function getChainProperties(api: ApiPromise): Promise<ChainProperties> {

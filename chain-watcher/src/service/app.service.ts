@@ -35,6 +35,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         storageClient: this.storageService,
         eventEmitterClient: this.incidentPublisherService,
         metricsClient: this.metricsService,
+        chain,
       };
 
       this.chainWatcher = await createChainWatcher(groups, dependencies);
