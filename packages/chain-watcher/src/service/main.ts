@@ -7,6 +7,12 @@ async function bootstrap() {
   const logger = new Logger('Main');
   const app = await NestFactory.create(AppModule);
 
+  process.on('SIGTERM', async () => {
+    logger.log('SIGTERM signal received. Starting graceful shutdown...');
+    await app.close();
+    logger.log('Application closed');
+  });
+
   logger.debug('Application created, starting initialization...');
   await app.init();
   await app.listen(httpPort);

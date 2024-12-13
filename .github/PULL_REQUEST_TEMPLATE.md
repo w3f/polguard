@@ -1,7 +1,7 @@
 ## Changes
-- List the changes made in this PR.
+- List changes using present tense (example: "Add feature" not "Added feature")
 - 
 
 ## Checklist
-- [ ] Tests have been added/updated (if applicable).
-- [ ] Documentation has been updated (if applicable).
+- [ ] Add/update tests (if applicable)
+- [ ] Update documentation

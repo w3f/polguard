@@ -6,11 +6,15 @@
 
 The Monitoring Platform consists of three microservices:
 
-1. **ChainWatcher** - Monitoring service responsible for observing blockchain activities and generating incidents. [More details](./chain-watcher/README.md)
-2. **Matrix** - Notification service for sending alerts and updates to specified channels. [More details](./matrix/README.md)
-3. **Incident Management** - API gateway service for managing and coordinating incidents across the platform.
+1. **ChainWatcher** - Monitoring service responsible for observing blockchain activities and generating incidents. [More details](./packages/chain-watcher/README.md)
+2. **Matrix** - Notification service for sending alerts and updates to specified channels. [More details](./packages/matrix/README.md)
+3. **Incident Management** - API gateway service for managing and coordinating incidents across the platform. (Planned)
 
 All services are built with Nest.js, supporting both synchronous and asynchronous communication using Redis Streams.
+
+## Project Structure
+
+The project follows a microservices architecture with services organized in the `packages/` directory. For detailed information about project structure, architectural decisions, and development roadmap, see [DEVELOPMENT.md](./docs/DEVELOPMENT.md).
 
 ## Architecture Overview
 
@@ -41,6 +45,12 @@ flowchart LR
     style M stroke:#8cc68c,stroke-width:3px,font-weight:bold
     style IM stroke:#8c8cc6,stroke-width:3px,font-weight:bold
 ```
+
+## Documentation
+
+- [Development Notes](./docs/DEVELOPMENT.md) - Project structure, architectural decisions, and roadmap
+- [Chain Watcher](./packages/chain-watcher/README.md) - Chain monitoring service details
+- [Matrix](./packages/matrix/README.md) - Notification service details
 
 ## Links
 

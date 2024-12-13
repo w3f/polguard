@@ -12,7 +12,6 @@ release_filters: &release_filters
       only: /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
 
 jobs:
-
   yarnLint: &yarnLint
     docker:
       - image: web3f/node-dind:v3
@@ -20,7 +19,7 @@ jobs:
       - checkout
       - run:
           command: |
-            cd "${MODULE}"
+            cd packages/"${MODULE}"
             yarn
             yarn lint     
 
@@ -40,7 +39,7 @@ jobs:
     steps:
       - checkout
       - run:
-          command: helm lint ./charts/"${MODULE}"
+          command: helm lint ./deployment/charts/"${MODULE}"
 
   helmLintChainWatcher:
     environment:
@@ -61,7 +60,7 @@ jobs:
           docker_layer_caching: true
       - run:
           command: |
-            cd "${MODULE}"
+            cd packages/"${MODULE}"
             /scripts/build-image.sh web3f/mp-"${MODULE}" . 
 
   buildImageChainWatcher:

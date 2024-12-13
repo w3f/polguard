@@ -1,10 +1,10 @@
 services:
   chain-watcher:
     build:
-      context: ./chain-watcher
+      context: ../packages/chain-watcher
     volumes:
-      - ./config/chain-watcher.yaml:/app/config/config.yaml
-      - ./config/chain-watcher.monitoring.yaml:/app/monitoring-configs/config.yaml
+      - ./app-config/chain-watcher.yaml:/app/config/config.yaml
+      - ./app-config/chain-watcher.monitoring.yaml:/app/monitoring-configs/config.yaml
     ports:
       - "127.0.0.1:8080:3000"
     depends_on:
@@ -13,12 +13,12 @@ services:
   
   matrix:
     build:
-      context: ./matrix
+      context: ../packages/matrix
     environment:
       - MATRIX_PASSWORD
     volumes:
-      - ./config/matrix.yaml:/app/config/config.yaml
-      - ./matrix/matrix-storage:/app/matrix-storage/
+      - ./app-config/matrix.yaml:/app/config/config.yaml
+      - ../packages/matrix/matrix-storage:/app/matrix-storage/
     ports:
       - "127.0.0.1:8081:3000"
     depends_on:
