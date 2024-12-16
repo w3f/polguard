@@ -1,10 +1,12 @@
 image:
   repo: web3f/mp-matrix
-  tag: master
+  # tag: xy
 
 httpPort: 3000
 
 resources: {}
+
+# nameOverride: xy
 
 config:
   environment: test
