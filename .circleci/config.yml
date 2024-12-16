@@ -104,7 +104,9 @@ jobs:
       MODULE: matrix
     <<: *publishImage            
 
-  publishChart:
+  publishCharts:
+    environment:
+      HELM_CHARTS_SOURCE: /root/project/deployment/charts
     docker:
       - image: web3f/ci-commons:v3
     steps:
@@ -153,7 +155,7 @@ workflows:
           <<: *release_filters
           requires:
             - integrationTests      
-      - publishChart:
+      - publishCharts:
           context: github-bot
           <<: *release_filters
           requires:
