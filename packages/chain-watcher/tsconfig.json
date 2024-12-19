@@ -19,7 +19,11 @@
     "baseUrl": ".",
     "paths": {
       "@service/*": ["src/service/*"],
-      "@lib/*": ["src/lib/*"]
+      "@lib/*": ["src/lib/*"],
+      "@w3f/monitoring-config": ["../config/src"],
+      "@w3f/monitoring-config/*": ["../config/src/*"],
+      "@w3f/monitoring-types": ["../types/src"],
+      "@w3f/monitoring-types/*": ["../types/src/*"]
     }
   },
   "include": ["src/**/*", "tests/**/*"],

@@ -3,7 +3,7 @@ import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Joi from 'joi';
-import { Chain } from '@lib/constants';
+import { Chain } from '@w3f/monitoring-types';
 
 @Injectable()
 export class AppConfigService {

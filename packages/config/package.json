@@ -1,0 +1,51 @@
+{
+  "name": "@w3f/monitoring-config",
+  "version": "0.0.4",
+  "description": "Configuration processor for W3F monitoring platform. Handles YAML configuration loading, validation and transformation for blockchain monitoring setup",
+  "author": "W3F SecOps Team <devops@web3.foundation>",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rimraf dist && tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"
+  },
+  "dependencies": {
+    "@w3f/monitoring-types": "0.0.2",
+    "joi": "^17.13.3",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@swc/jest": "^0.2.29",
+    "@types/jest": "^29.5.2",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^8.42.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "jest": "^29.5.0",
+    "prettier": "^3.0.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.1.3"
+  }
+}

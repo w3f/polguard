@@ -8,10 +8,10 @@ import {
   EventEmitterClient,
   MetricsClient,
   MonitoringGroup,
-} from './interfaces';
+  Chain,
+} from '@w3f/monitoring-types';
 import { ChainWatcherStore } from './store/chain-watcher-store';
 import { IncidentHandler } from './incident/incident-handler';
-import { Chain } from './constants';
 
 export async function createChainWatcher(
   groups: MonitoringGroup[],

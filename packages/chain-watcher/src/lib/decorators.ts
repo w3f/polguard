@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { KeyValueStorageClient } from './interfaces';
+import { KeyValueStorageClient } from '@w3f/monitoring-types';
 
 export function EventHandler(eventNames: string | string[]) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {

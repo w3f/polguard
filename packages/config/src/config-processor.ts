@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
-import { Chain } from '../constants';
-import { MonitoringGroup, MonitorConfig, ConfigAccountSettings } from '../interfaces';
+import { MonitoringGroup, MonitorConfig, ConfigAccountSettings, Chain } from '@w3f/monitoring-types';
 import { RawConfig, RawMonitoringGroup } from './interfaces';
 import { validateConfig } from './config-validator';
 import { AddressTransformer } from './address-transformer';

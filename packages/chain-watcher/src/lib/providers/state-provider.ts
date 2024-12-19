@@ -1,6 +1,6 @@
 import { ApiPromise } from '@polkadot/api';
 import { PalletStakingRewardDestination } from '@polkadot/types/lookup';
-import { StateQueryProvider, KeyValueStorageClient } from '../interfaces';
+import { StateQueryProvider, KeyValueStorageClient } from '@w3f/monitoring-types';
 import { createCachedQueryDecorator } from '../decorators';
 
 export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueStorageClient) {

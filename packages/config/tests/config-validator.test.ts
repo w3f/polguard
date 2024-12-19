@@ -1,5 +1,5 @@
-import { validateConfig } from '@lib/config/config-validator';
-import { Chain, MessengerType, MonitorType } from '@lib/constants';
+import { validateConfig } from '../src/config-validator';
+import { Chain, MessengerType, MonitorType } from '@w3f/monitoring-types';
 
 describe('validateConfig', () => {
   const validFullConfig = {

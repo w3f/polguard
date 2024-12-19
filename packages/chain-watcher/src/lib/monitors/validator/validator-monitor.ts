@@ -1,9 +1,8 @@
 import '@polkadot/api-augment/polkadot';
 import { EveryBlockHandler, EventHandler } from '../../decorators';
 import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
-import { EveryBlockHandlerParams, CallHandlerParams, EventHandlerParams } from '../../interfaces';
+import { EveryBlockHandlerParams, CallHandlerParams, EventHandlerParams, MonitorType } from '@w3f/monitoring-types';
 import { AbstractMonitor } from '../abstract-monitor';
-import { MonitorType } from '@lib/constants';
 
 export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
   @EventHandler('staking.SlashReported')

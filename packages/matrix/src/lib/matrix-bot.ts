@@ -1,5 +1,6 @@
 import { MatrixClient } from './matrix-client';
-import { MatrixConfig, Logger, IncidentServiceInterface } from './interfaces';
+import { MatrixConfig, IncidentServiceInterface } from './interfaces';
+import { Logger } from '@w3f/monitoring-types';
 
 export class MatrixBot extends MatrixClient {
   private incidentService: IncidentServiceInterface;

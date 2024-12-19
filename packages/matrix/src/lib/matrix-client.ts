@@ -14,7 +14,8 @@ import { KnownMembership } from 'matrix-js-sdk/lib/@types/membership.js';
 import { logger as matrixLogger } from 'matrix-js-sdk/lib/logger';
 import { LocalStorageCryptoStore } from 'matrix-js-sdk/lib/crypto/store/localStorage-crypto-store';
 import { LocalStorage } from 'node-localstorage';
-import { MatrixConfig, Logger } from './interfaces';
+import { MatrixConfig } from './interfaces';
+import { Logger } from '@w3f/monitoring-types';
 
 export class MatrixClient {
   protected client: SDKMatrixClient;

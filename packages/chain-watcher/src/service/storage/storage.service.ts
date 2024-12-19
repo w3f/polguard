@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import Redis from 'ioredis';
-import { KeyValueStorageClient } from '@lib/interfaces';
+import { KeyValueStorageClient } from '@w3f/monitoring-types';
 
 @Injectable()
 export class StorageService implements KeyValueStorageClient {

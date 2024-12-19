@@ -1,4 +1,4 @@
-import { EventEmitterClient } from '@lib/interfaces';
+import { EventEmitterClient } from '@w3f/monitoring-types';
 import { Injectable } from '@nestjs/common';
 import { RedisStreamsClient } from '@w3f/nest-redis-streams';
 import { lastValueFrom } from 'rxjs';

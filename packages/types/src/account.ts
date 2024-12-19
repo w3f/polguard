@@ -1,4 +1,4 @@
-import { MonitorType } from '../constants';
+import { MonitorType } from './constants';
 import { MonitorSettings } from './monitor';
 
 export interface AccountId {

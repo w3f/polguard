@@ -1,8 +1,7 @@
 import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { IncidentEvent } from '@lib/interfaces';
+import { IncidentEvent, MessengerType } from '@w3f/monitoring-types';
 import { MatrixClient } from '@lib/matrix-client';
-import { MessengerType } from '@lib/constants';
 
 @Controller()
 export class IncidentController {

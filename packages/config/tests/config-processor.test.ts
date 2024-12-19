@@ -1,5 +1,5 @@
-import { ConfigProcessor } from '@lib/config/config-processor';
-import { Chain, MonitorType, ComparisonType, MessengerType } from '@lib/constants';
+import { ConfigProcessor } from '../src/config-processor';
+import { Chain, MonitorType, ComparisonType, MessengerType } from '@w3f/monitoring-types';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 

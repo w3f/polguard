@@ -1,6 +1,5 @@
 import { MessageStyler } from '@lib/incident/message-styler';
-import { Message } from '@lib/interfaces';
-import { MessageType, MessengerType } from '@lib/constants';
+import { Message, MessageType, MessengerType } from '@w3f/monitoring-types';
 
 describe('MessageStyler', () => {
   const createMessage = (title: string, details: string[] = []): Message => ({

@@ -1,6 +1,4 @@
-import { Chain } from '@lib/constants';
-import { DataStoreClient, ActiveIncidentState, KeyValueStorageClient } from '../interfaces';
-import { Logger } from '../interfaces';
+import { Chain, DataStoreClient, ActiveIncidentState, KeyValueStorageClient, Logger } from '@w3f/monitoring-types';
 
 /**
  * ChainWatcherStore acts as an abstraction layer over the Redis client, providing type-safe methods

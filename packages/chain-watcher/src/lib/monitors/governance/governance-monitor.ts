@@ -1,7 +1,6 @@
-import { MonitorType } from '@lib/constants';
+import { MonitorType, EventHandlerParams } from '@w3f/monitoring-types';
 import { AbstractMonitor } from '../abstract-monitor';
 import { EventHandler } from '../../decorators';
-import { EventHandlerParams } from '@lib/interfaces';
 
 export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
   @EventHandler('referenda.Submitted')

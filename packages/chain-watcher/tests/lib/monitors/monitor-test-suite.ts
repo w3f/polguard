@@ -4,8 +4,8 @@ import {
   ChainProperties,
   MonitoringGroup,
   AlertSettings,
-} from '@lib/interfaces';
-import { Chain, MonitorType, MessengerType } from '@lib/constants';
+  Chain, MonitorType, MessengerType
+} from '@w3f/monitoring-types';
 import { IncidentHandler } from '@lib/incident/incident-handler';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { Event, Phase } from '@polkadot/types/interfaces/system';

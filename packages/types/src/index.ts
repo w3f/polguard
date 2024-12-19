@@ -5,3 +5,4 @@ export * from './chain';
 export * from './handlers';
 export * from './utils';
 export * from './clients';
+export * from './constants';

@@ -8,8 +8,10 @@ import {
   Message,
   DataStoreClient,
   IncidentHandlerClient,
-} from '../interfaces';
-import { Chain, MessageType, MessengerType } from '../constants';
+  Chain,
+  MessageType,
+  MessengerType,
+} from '@w3f/monitoring-types';
 import { MessageStyler } from './message-styler';
 
 /**

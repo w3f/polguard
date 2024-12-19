@@ -1,7 +1,6 @@
 import { AbstractMonitor } from '../abstract-monitor';
-import { EventHandlerParams } from '../../interfaces';
+import { EventHandlerParams, MonitorType } from '@w3f/monitoring-types';
 import { EventHandler } from '../../decorators';
-import { MonitorType } from '../../constants';
 
 abstract class TransactionMonitor<T extends MonitorType> extends AbstractMonitor<T> {
   protected abstract getAddress(from: string, to: string): string;

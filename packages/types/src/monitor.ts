@@ -1,8 +1,7 @@
 import { Logger, StateQueryProvider } from './utils';
 import { ChainProperties } from './chain';
-import { IncidentHandler } from '../incident/incident-handler';
-import { Chain, ComparisonType, MonitorType } from '../constants';
-import { AlertSettings } from './';
+import { Chain, ComparisonType, MonitorType } from './constants';
+import { AlertSettings, IncidentHandlerClient } from './incident';
 import { ConfigAccountSettings } from './account';
 import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams } from './handlers';
 
@@ -16,7 +15,7 @@ export interface MonitorConstructor {
   new (
     logger: Logger,
     groups: MonitoringGroup[],
-    incidentHandler: IncidentHandler,
+    incidentHandler: IncidentHandlerClient,
     stateQuery: StateQueryProvider,
     chainProperties: ChainProperties,
     monitorType: MonitorType,

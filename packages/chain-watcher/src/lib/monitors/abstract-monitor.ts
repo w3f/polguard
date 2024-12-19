@@ -15,9 +15,10 @@ import {
   ChainProperties,
   StateQueryProvider,
   AccountId,
-} from '../interfaces';
-import { IncidentHandler } from '../incident/incident-handler';
-import { ComparisonType, MonitorType } from '../constants';
+  IncidentHandlerClient,
+  ComparisonType,
+  MonitorType,
+} from '@w3f/monitoring-types';
 
 export abstract class AbstractMonitor<T extends MonitorType> implements Monitor {
   protected static monitorType: MonitorType;
@@ -44,7 +45,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
   constructor(
     protected logger: Logger,
     protected groups: MonitoringGroup[],
-    protected incidents: IncidentHandler,
+    protected incidents: IncidentHandlerClient,
     protected stateQuery: StateQueryProvider,
     protected chainProps: ChainProperties,
     protected monitorType: T,

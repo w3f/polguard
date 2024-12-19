@@ -1,6 +1,6 @@
-# Configuration Module
+# Monitoring Configuration
 
-This directory contains the configuration processing and validation logic for the Chain Watcher application.
+This package contains the configuration processing and validation logic for the Chain Watcher application.
 
 ## Components
 

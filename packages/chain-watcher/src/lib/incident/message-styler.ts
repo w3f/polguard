@@ -1,5 +1,4 @@
-import { Message } from '../interfaces';
-import { MessageType, MessengerType } from '../constants';
+import { Message, MessageType, MessengerType } from '@w3f/monitoring-types';
 
 type StyleType = 'html' | 'plain' | 'markdown';
 

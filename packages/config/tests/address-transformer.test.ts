@@ -1,5 +1,5 @@
-import { AddressTransformer } from '@lib/config/address-transformer';
-import { Chain } from '@lib/constants';
+import { AddressTransformer } from '../src/address-transformer';
+import { Chain } from '@w3f/monitoring-types';
 
 describe('AddressTransformer', () => {
   const testCases = [

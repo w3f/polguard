@@ -1,5 +1,4 @@
-import { MonitorType, ComparisonType } from '../constants';
-import { MonitorConfig } from '../interfaces';
+import { MonitorType, ComparisonType, MonitorConfig } from '@w3f/monitoring-types';
 
 /**
  * Builds the final account monitor settings object used in the chain watcher.

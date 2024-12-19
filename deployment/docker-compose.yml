@@ -1,24 +1,25 @@
 services:
   chain-watcher:
     build:
-      context: ../packages/chain-watcher
+      context: ..
+      dockerfile: packages/chain-watcher/Dockerfile
     volumes:
-      - ./app-config/chain-watcher.yaml:/app/config/config.yaml
-      - ./app-config/chain-watcher.monitoring.yaml:/app/monitoring-configs/config.yaml
+      - ./app-config/chain-watcher.yaml:/app/packages/chain-watcher/config/config.yaml
+      - ./app-config/chain-watcher.monitoring.yaml:/app/packages/chain-watcher/monitoring-configs/config.yaml
     ports:
       - "127.0.0.1:8080:3000"
     depends_on:
       - redis
 
-  
   matrix:
     build:
-      context: ../packages/matrix
+      context: ..
+      dockerfile: packages/matrix/Dockerfile
     environment:
       - MATRIX_PASSWORD
     volumes:
-      - ./app-config/matrix.yaml:/app/config/config.yaml
-      - ../packages/matrix/matrix-storage:/app/matrix-storage/
+      - ./app-config/matrix.yaml:/app/packages/matrix/config/config.yaml
+      - ../packages/matrix/matrix-storage:/app/packages/matrix/matrix-storage/
     ports:
       - "127.0.0.1:8081:3000"
     depends_on:
@@ -30,8 +31,7 @@ services:
       - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes --save 1 1
-             # Append-Only File persistence, save the dataset every 1 second if at least 1 key changed.
+    command: redis-server --save 1 1
     environment:
       - REDIS_REPLICATION_MODE=master
     restart: always

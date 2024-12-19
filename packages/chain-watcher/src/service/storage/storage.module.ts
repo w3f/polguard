@@ -1,4 +1,4 @@
-import { Module, DynamicModule } from '@nestjs/common';
+import { Module, DynamicModule, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { StorageService } from './storage.service';
 import { ConfigModule } from '../config/config.module';
@@ -14,8 +14,15 @@ export class StorageModule {
         {
           provide: 'REDIS_CLIENT',
           useFactory: (configService: ConfigService) => {
+            const logger = new Logger('RedisClient');
             const redisConfig = configService.getRedisConfig();
-            return new Redis(redisConfig);
+            const client = new Redis(redisConfig);
+            client.on('error', error => {
+              logger.error(error);
+              process.exit(1);
+            });
+
+            return client;
           },
           inject: [ConfigService],
         },

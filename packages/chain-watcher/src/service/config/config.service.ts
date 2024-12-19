@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { MonitoringGroup } from '@lib/interfaces';
 import { AppConfigService } from './app-config.service';
 import { MonitoringConfigService } from './monitoring-config.service';
-import { Chain } from '@lib/constants';
+import { Chain, MonitoringGroup } from '@w3f/monitoring-types';
 
 @Injectable()
 export class ConfigService {

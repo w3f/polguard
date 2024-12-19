@@ -1,7 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Registry, collectDefaultMetrics, Gauge } from 'prom-client';
-import { MetricsClient } from '@lib/interfaces';
-import { Chain } from '@lib/constants';
+import { MetricsClient, Chain } from '@w3f/monitoring-types';
 
 const prefix = 'mp_chain_watcher_';
 

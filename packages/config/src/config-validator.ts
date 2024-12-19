@@ -9,7 +9,7 @@
  * are handled separately in the config processor module.
  */
 import * as Joi from 'joi';
-import { Chain, ComparisonType, MessengerType, MonitorType } from '../constants';
+import { Chain, ComparisonType, MessengerType, MonitorType } from '@w3f/monitoring-types';
 
 const alertSchema = Joi.object({
   messengerType: Joi.string().valid(...Object.values(MessengerType)),

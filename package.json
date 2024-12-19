@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "yarn install && yarn workspaces run build",
+    "lint": "yarn workspaces run lint",
+    "test": "yarn workspaces run test",
+    "test:watch": "yarn workspaces run test:watch",
+    "test:coverage": "yarn workspaces run test:coverage"
+  }
+}

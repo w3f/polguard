@@ -12,9 +12,9 @@ import {
   MonitoringGroup,
   StateQueryProvider,
   DataStoreClient,
-} from './interfaces';
-import { MonitorType } from './constants';
-import { IncidentHandler } from './incident/incident-handler';
+  MonitorType,
+  IncidentHandlerClient,
+} from '@w3f/monitoring-types';
 import {
   BalanceDecrementMonitor,
   BalanceIncrementMonitor,
@@ -57,8 +57,7 @@ export class ChainWatcher {
     private logger: Logger,
     private monitoringGroups: MonitoringGroup[],
     private api: ApiPromise,
-    // TODO: interface for the incident handler
-    private incidents: IncidentHandler,
+    private incidents: IncidentHandlerClient,
     private store: DataStoreClient,
     private metrics: MetricsClient,
     private stateQuery: StateQueryProvider,

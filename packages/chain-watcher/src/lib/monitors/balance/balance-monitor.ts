@@ -1,6 +1,5 @@
-import { EveryBlockHandlerParams } from '../../interfaces';
+import { EveryBlockHandlerParams, MonitorType } from '@w3f/monitoring-types';
 import { EveryBlockHandler } from '../../decorators';
-import { MonitorType } from '../../constants';
 import { AbstractMonitor } from '../abstract-monitor';
 
 abstract class BalanceMonitor<

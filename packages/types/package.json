@@ -1,0 +1,35 @@
+{
+  "name": "@w3f/monitoring-types",
+  "version": "0.0.2",
+  "description": "Common types, interfaces and constants for W3F monitoring services including chain watcher, matrix notifications and configuration",
+  "author": "W3F SecOps Team <devops@web3.foundation>",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"No tests required for types package\" && exit 0"
+  },
+  "dependencies": {
+    "@polkadot/types": "^12.4.2",
+    "@polkadot/api-augment": "^12.4.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.3"
+  }
+}

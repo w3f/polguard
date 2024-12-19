@@ -1,5 +1,4 @@
-import { Chain, MonitorType } from '../constants';
-import { AlertSettings } from '../interfaces';
+import { Chain, MonitorType, AlertSettings } from '@w3f/monitoring-types';
 
 export interface RawConfig {
   version: string;

@@ -1,3 +1,4 @@
+import '@polkadot/api-augment/polkadot';
 import { PalletStakingRewardDestination } from '@polkadot/types/lookup';
 
 export interface Logger {

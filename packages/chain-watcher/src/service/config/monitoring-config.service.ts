@@ -3,10 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
-import { ConfigProcessor } from '@lib/config/config-processor';
-import { MonitoringGroup } from '@lib/interfaces';
+import { ConfigProcessor } from '@w3f/monitoring-config';
+import { MonitoringGroup, Chain } from '@w3f/monitoring-types';
 import { AppConfigService } from './app-config.service';
-import { Chain } from '@lib/constants';
 
 @Injectable()
 export class MonitoringConfigService {

@@ -8,7 +8,6 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
-    "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
@@ -16,14 +15,10 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "outDir": "./dist",
-    "baseUrl": ".",
-    "paths": {
-      "@service/*": ["src/service/*"],
-      "@lib/*": ["src/lib/*"],
-      "@w3f/monitoring-types": ["../types/src"],
-      "@w3f/monitoring-types/*": ["../types/src/*"]
-    }
+    "rootDir": "./src",
+    "moduleResolution": "node",
+    "baseUrl": "./"
   },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests"]
 }

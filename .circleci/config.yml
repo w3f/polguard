@@ -19,9 +19,8 @@ jobs:
       - checkout
       - run:
           command: |
-            cd packages/"${MODULE}"
-            yarn
-            yarn lint     
+            yarn install
+            yarn workspace @w3f/monitoring-${MODULE} lint     
 
   yarnLintChainWatcher:
     environment:
@@ -60,8 +59,7 @@ jobs:
           docker_layer_caching: true
       - run:
           command: |
-            cd packages/"${MODULE}"
-            /scripts/build-image.sh web3f/mp-"${MODULE}" . 
+            /scripts/build-image.sh web3f/mp-"${MODULE}" . -f packages/"${MODULE}"/Dockerfile
 
   buildImageChainWatcher:
     environment:

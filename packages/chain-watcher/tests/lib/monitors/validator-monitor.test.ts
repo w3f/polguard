@@ -1,6 +1,6 @@
 import { MonitorTestSuite } from './monitor-test-suite';
 import { ValidatorMonitor } from '@lib/monitors/validator/validator-monitor';
-import { MonitorType, ComparisonType } from '@lib/constants';
+import { MonitorType, ComparisonType } from '@w3f/monitoring-types';
 
 describe('ValidatorMonitor', () => {
   let suite: MonitorTestSuite;
