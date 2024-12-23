@@ -81,6 +81,8 @@ const groupSchema = Joi.object({
   accounts: Joi.array().items(accountSchema).min(1).required().messages({
     'array.min': 'At least one account is required in a group',
   }),
+  // TODO: Remove or redesign, this key doesn't belong to monitoring
+  enablePayout: Joi.boolean(),
 });
 
 const configSchema = Joi.object({

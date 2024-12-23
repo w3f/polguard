@@ -16,6 +16,8 @@ export interface RawMonitoringGroup {
   monitors?: RawMonitorSettings[];
   alerts?: AlertSettings;
   accounts: RawAccountSettings[];
+  // TODO: Remove or redesign, this key doesn't belong to monitoring
+  enablePayout?: boolean;
 }
 
 export interface RawMonitorSettings {

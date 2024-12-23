@@ -60,6 +60,8 @@ export interface MonitoringGroup {
   monitors: MonitorConfig[];
   accounts: ConfigAccountSettings[];
   alerts: AlertSettings;
+  // TODO: Remove or redesign, this key doesn't belong to monitoring
+  enablePayout?: boolean;
 }
 
 export interface MonitorConfig {
