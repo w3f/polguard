@@ -1,15 +1,15 @@
-import { EveryBlockHandlerParams, MonitorType } from '@w3f/monitoring-types';
+import { Chain, EveryBlockHandlerParams, MonitorType, BalanceThresholdHandlerType as H } from '@w3f/monitoring-types';
 import { EveryBlockHandler } from '../../decorators';
 import { AbstractMonitor } from '../abstract-monitor';
 
 export class BalanceThresholdMonitor extends AbstractMonitor<MonitorType.BalanceThreshold> {
-  @EveryBlockHandler()
-  async handleBalanceThreshold({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
+  async balanceThreshold({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     const currentBalances = await this.stateQuery.balances(this.uniqueAddresses, blockNumber);
 
     for (const address in currentBalances) {
       const currentBalance = currentBalances[address];
-      for (const { account, alerts, groupId } of this.getAccounts(address)) {
+      for (const { account, alerts, groupId } of this.getAccounts(H.BalanceThreshold, address)) {
         if (account.settings.balanceThreshold !== undefined) {
           const isFiring = currentBalance < account.settings.balanceThreshold;
 

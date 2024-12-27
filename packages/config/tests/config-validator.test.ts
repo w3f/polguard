@@ -1,5 +1,5 @@
 import { validateConfig } from '../src/config-validator';
-import { Chain, MessengerType, MonitorType } from '@w3f/monitoring-types';
+import { Chain, MessengerType, MonitorType, ValidatorHandlerType, BalanceThresholdHandlerType } from '@w3f/monitoring-types';
 
 describe('validateConfig', () => {
   const validFullConfig = {
@@ -204,6 +204,111 @@ describe('validateConfig', () => {
         ],
       };
       expect(() => validateConfig(configWithInvalidMonitorType)).toThrow();
+    });
+  });
+
+  describe('Handler validation', () => {
+    it('should validate successful validator handler include config', () => {
+      const configWithHandlers = {
+        ...validMinimalConfig,
+        groups: [{
+          ...validMinimalConfig.groups[0],
+          monitors: [{
+            name: MonitorType.Validator,
+            commission: 10,
+            handlers: {
+              include: [ValidatorHandlerType.SlashReported, ValidatorHandlerType.CommissionChanged]
+            }
+          }]
+        }]
+      };
+      expect(() => validateConfig(configWithHandlers)).not.toThrow();
+    });
+
+    it('should validate successful validator handler exclude config', () => {
+      const configWithHandlers = {
+        ...validMinimalConfig,
+        groups: [{
+          ...validMinimalConfig.groups[0],
+          monitors: [{
+            name: MonitorType.Validator,
+            commission: 10,
+            handlers: {
+              exclude: [ValidatorHandlerType.SlashReported]
+            }
+          }]
+        }]
+      };
+      expect(() => validateConfig(configWithHandlers)).not.toThrow();
+    });
+
+    it('should throw when invalid validator handler type is provided in include', () => {
+      const configWithInvalidHandler = {
+        ...validMinimalConfig,
+        groups: [{
+          ...validMinimalConfig.groups[0],
+          monitors: [{
+            name: MonitorType.Validator,
+            commission: 10,
+            handlers: {
+              include: ['invalidHandler']
+            }
+          }]
+        }]
+      };
+      expect(() => validateConfig(configWithInvalidHandler)).toThrow();
+    });
+
+    it('should throw when both include and exclude are provided', () => {
+      const configWithBothIncludeExclude = {
+        ...validMinimalConfig,
+        groups: [{
+          ...validMinimalConfig.groups[0],
+          monitors: [{
+            name: MonitorType.Validator,
+            commission: 10,
+            handlers: {
+              include: [ValidatorHandlerType.SlashReported],
+              exclude: [ValidatorHandlerType.CommissionChanged]
+            }
+          }]
+        }]
+      };
+      expect(() => validateConfig(configWithBothIncludeExclude)).toThrow();
+    });
+
+    it('should throw when balance threshold handler is used with validator monitor', () => {
+      const configWithWrongHandlerType = {
+        ...validMinimalConfig,
+        groups: [{
+          ...validMinimalConfig.groups[0],
+          monitors: [{
+            name: MonitorType.Validator,
+            commission: 10,
+            handlers: {
+              include: [BalanceThresholdHandlerType.BalanceThreshold]
+            }
+          }]
+        }]
+      };
+      expect(() => validateConfig(configWithWrongHandlerType)).toThrow();
+    });
+
+    it('should validate handler config in account settings', () => {
+      const configWithAccountHandlers = {
+        ...validMinimalConfig,
+        groups: [{
+          ...validMinimalConfig.groups[0],
+          monitors: [{ name: MonitorType.Validator, commission: 10 }],
+          accounts: [{
+            address: '0x1234567890123456789012345678901234567890123456789012345678901234',
+            handlers: {
+              include: [ValidatorHandlerType.SlashReported]
+            }
+          }]
+        }]
+      };
+      expect(() => validateConfig(configWithAccountHandlers)).not.toThrow();
     });
   });
 });

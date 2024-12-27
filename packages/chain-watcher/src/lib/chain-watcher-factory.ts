@@ -20,10 +20,9 @@ export async function createChainWatcher(
   const { logger, api, chain, storageClient, eventEmitterClient, metricsClient } = dependencies;
 
   const chainProperties: ChainProperties = await getChainProperties(api);
-  const chainRPC: Chain = specNameToChain(chainProperties.specName);
-  if (chain !== chainRPC) {
+  if (chain !== chainProperties.chain) {
     throw new Error(
-      `Chain mismatch: Config chain is "${chain}" but RPC endpoint returns "${chainRPC}". Please check your configuration.`,
+      `Chain mismatch: Config chain is "${chain}" but RPC endpoint returns "${chainProperties.chain}". Please check your configuration.`,
     );
   }
   const store = ChainWatcherStore.getInstance(storageClient, chain, logger);
@@ -58,8 +57,12 @@ async function getChainProperties(api: ApiPromise): Promise<ChainProperties> {
     api.registry.chainTokens,
   ]);
 
+  const specName = api.runtimeVersion.specName.toString();
+  const chain = specNameToChain(specName);
+
   return {
-    specName: api.runtimeVersion.specName.toString(),
+    chain,
+    specName,
     chainDecimals: chainDecimals[0],
     chainToken: chainTokens[0],
     ss58Format: chainProperties.ss58Format.unwrapOr(42) as number,

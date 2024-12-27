@@ -1,14 +1,21 @@
 import '@polkadot/api-augment/polkadot';
-import { EveryBlockHandler, EventHandler } from '../../decorators';
+import { EveryBlockHandler, EventHandler, CallHandler } from '../../decorators';
 import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
-import { EveryBlockHandlerParams, CallHandlerParams, EventHandlerParams, MonitorType } from '@w3f/monitoring-types';
+import {
+  ValidatorHandlerType as H,
+  EveryBlockHandlerParams,
+  CallHandlerParams,
+  EventHandlerParams,
+  MonitorType,
+  Chain,
+} from '@w3f/monitoring-types';
 import { AbstractMonitor } from '../abstract-monitor';
 
 export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
-  @EventHandler('staking.SlashReported')
-  async handleSlashReported({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
+  @EventHandler('staking.SlashReported', [Chain.Polkadot, Chain.Kusama])
+  async slashReported({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const validatorId = eventRecord.event.data[0].toString();
-    for (const { account, alerts } of this.getAccounts(validatorId)) {
+    for (const { account, alerts } of this.getAccounts(H.SlashReported, validatorId)) {
       const message = this.createMessage([`Validator ${account.name} has been slashed.`], {
         blockNumber,
         phase: eventRecord.phase,
@@ -18,14 +25,11 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     }
   }
 
-  // TODO: Granular control over handlers.
-  // Temporary commented out "Change" handlers (with unit tests)
-
-  // @EventHandler('staking.ValidatorPrefsSet')
-  async handleCommissionChanged({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
+  @EventHandler('staking.ValidatorPrefsSet', [Chain.Polkadot, Chain.Kusama])
+  async commissionChanged({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const stash = eventRecord.event.data[0].toString();
     const prefs = eventRecord.event.data[1] as PalletStakingValidatorPrefs;
-    for (const { account, alerts } of this.getAccounts(stash)) {
+    for (const { account, alerts } of this.getAccounts(H.CommissionChanged, stash)) {
       const message = this.createMessage(
         [`New commission change detected for ${this.formatAccountLink(account)}.`, `Commission: ${prefs.commission}`],
         { blockNumber, phase: eventRecord.phase },
@@ -35,10 +39,10 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     }
   }
 
-  // @CallHandler(['staking.setPayee', 'staking.bond'])
-  async handleDestinationChanged({ call, origin, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
+  @CallHandler(['staking.setPayee', 'staking.bond'], [Chain.Polkadot, Chain.Kusama])
+  async destinationChanged({ call, origin, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
     const payee = (call.method === 'setPayee' ? call.args[0] : call.args[1]) as PalletStakingRewardDestination;
-    for (const { account, alerts } of this.getAccounts(origin)) {
+    for (const { account, alerts } of this.getAccounts(H.DestinationChanged, origin)) {
       const message = this.createMessage(
         [
           `New destination change detected for ${this.formatAccountLink(account)}.`,
@@ -52,8 +56,8 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
   }
 
   // TODO: Add Event handler (payout claimed), it should require expectedDestination != current.
-  @EveryBlockHandler()
-  async handleCommissionUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
+  async commissionUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     const commissions = await this.stateQuery.validatorCommissions(this.uniqueAddresses, blockNumber);
     if (commissions === null) {
       return;
@@ -61,7 +65,7 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     for (let i = 0; i < this.uniqueAddresses.length; i++) {
       const address = this.uniqueAddresses[i];
       const commission = commissions[address];
-      for (const { account, alerts, groupId } of this.getAccounts(address)) {
+      for (const { account, alerts, groupId } of this.getAccounts(H.CommissionUnexpected, address)) {
         const expectedCommission = account.settings.commission;
         const comparisonType = account.settings.commissionComparison;
         const compareFunction = ValidatorMonitor.comparisonFunctions[comparisonType];
@@ -82,13 +86,13 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     }
   }
 
-  @EveryBlockHandler()
-  async handleDestinationUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
+  async destinationUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     const payees = await this.stateQuery.payees(this.uniqueAddresses, blockNumber);
     for (let i = 0; i < this.uniqueAddresses.length; i++) {
       const address = this.uniqueAddresses[i];
       const destination = payees[address] ? this.getDestinationString(payees[address]) : 'None';
-      for (const { account, alerts, groupId } of this.accounts.get(address) || []) {
+      for (const { account, alerts, groupId } of this.getAccounts(H.DestinationChanged, address)) {
         const expectedDestination = account.settings.payee;
 
         if (!expectedDestination) continue;
@@ -109,11 +113,11 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     }
   }
 
-  @EveryBlockHandler()
-  async handleActiveSetPresense({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
+  async activeSetPresense({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     const validators = await this.stateQuery.validators(blockNumber);
     for (const acc of this.uniqueAddresses) {
-      for (const { account, alerts, groupId } of this.getAccounts(acc)) {
+      for (const { account, alerts, groupId } of this.getAccounts(H.ActiveSetPresence, acc)) {
         const isFiring = !validators[account.ss58];
 
         const message = this.createMessage([

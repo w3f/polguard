@@ -1,6 +1,6 @@
 import { Logger, StateQueryProvider } from './utils';
 import { ChainProperties } from './chain';
-import { Chain, ComparisonType, MonitorType } from './constants';
+import { Chain, ComparisonType, MonitorHandlerType, MonitorType, ValidatorHandlerType } from './constants';
 import { AlertSettings, IncidentHandlerClient } from './incident';
 import { ConfigAccountSettings } from './account';
 import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams } from './handlers';
@@ -22,24 +22,30 @@ export interface MonitorConstructor {
   ): Monitor;
 }
 
+type HandlerConfig<T> = {
+  include: T[];
+} | {
+  exclude: T[];
+};
+
 export interface ValidatorSettings {
   commission: number;
   commissionComparison: ComparisonType;
   payee?: string;
+  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Validator]>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GovernanceSettings {
-  // TODO: Implement governance-specific settings
+  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Governance]>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface TransactionSettings {
-  // TODO: Implement transaction-specific settings
+  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.TransactionIngress | MonitorType.TransactionEgress]>;
 }
 
 export interface BalanceSettings {
   balanceThreshold?: bigint;
+  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.BalanceIncrement | MonitorType.BalanceDecrement | MonitorType.BalanceThreshold]>;
 }
 
 export type MonitorTypeSettings = {

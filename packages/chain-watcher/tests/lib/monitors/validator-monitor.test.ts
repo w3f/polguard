@@ -19,6 +19,7 @@ describe('ValidatorMonitor', () => {
           commission: 10,
           commissionComparison: ComparisonType.Equal,
           payee: 'Staked',
+          // No handlers config means all handlers are enabled
         },
       }],
     })];
@@ -31,7 +32,7 @@ describe('ValidatorMonitor', () => {
       suite.mockChainProps,
       MonitorType.Validator
     );
-
+  
     suite.mockStateQuery.era.mockResolvedValue(100);
   });
 

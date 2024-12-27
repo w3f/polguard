@@ -9,7 +9,7 @@
  * are handled separately in the config processor module.
  */
 import * as Joi from 'joi';
-import { Chain, ComparisonType, MessengerType, MonitorType } from '@w3f/monitoring-types';
+import { Chain, ComparisonType, MessengerType, MonitorType, ValidatorHandlerType, BalanceThresholdHandlerType } from '@w3f/monitoring-types';
 
 const alertSchema = Joi.object({
   messengerType: Joi.string().valid(...Object.values(MessengerType)),
@@ -27,14 +27,37 @@ const alertSchema = Joi.object({
   repeatIntervalHours: Joi.number(),
 });
 
+function createHandlerSchema(handlerEnum: Record<string, string>, monitorName: string) {
+  return Joi.alternatives().try(
+    Joi.object({
+      include: Joi.array()
+        .items(Joi.string().valid(...Object.values(handlerEnum)))
+        .required()
+        .messages({
+          'any.only': `Invalid ${monitorName} handler type`,
+        })
+    }),
+    Joi.object({
+      exclude: Joi.array()
+        .items(Joi.string().valid(...Object.values(handlerEnum)))
+        .required()
+        .messages({
+          'any.only': `Invalid ${monitorName} handler type`,
+        })
+    })
+  );
+}
+
 const validatorMonitorSchema = Joi.object({
   commission: Joi.number().min(0).max(100),
   commissionComparison: Joi.string().valid(...Object.values(ComparisonType)),
   payee: Joi.string(),
+  handlers: createHandlerSchema(ValidatorHandlerType, 'Validator')
 });
 
 const balanceThresholdMonitorSchema = Joi.object({
   balanceThreshold: Joi.number(),
+  handlers: createHandlerSchema(BalanceThresholdHandlerType, 'BalanceThreshold')
 });
 
 const monitorSchema = Joi.object({
@@ -45,12 +68,12 @@ const monitorSchema = Joi.object({
       'any.only': 'Invalid monitor type',
     }),
 })
-  .when('.name', {
-    switch: [{ is: MonitorType.Validator, then: validatorMonitorSchema }],
-  })
-  .when('.name', {
-    switch: [{ is: MonitorType.BalanceThreshold, then: balanceThresholdMonitorSchema }],
-  });
+.when('.name', {
+  switch: [
+    { is: MonitorType.Validator, then: validatorMonitorSchema },
+    { is: MonitorType.BalanceThreshold, then: balanceThresholdMonitorSchema },
+  ]
+});
 
 const addressPattern = /^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/;
 

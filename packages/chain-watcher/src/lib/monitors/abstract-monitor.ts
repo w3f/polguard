@@ -18,7 +18,14 @@ import {
   IncidentHandlerClient,
   ComparisonType,
   MonitorType,
+  MonitorHandlerType,
 } from '@w3f/monitoring-types';
+
+type AccountConfig<T extends MonitorType> = {
+  account: AccountSettings<T>;
+  alerts: AlertSettings;
+  groupId: string;
+};
 
 export abstract class AbstractMonitor<T extends MonitorType> implements Monitor {
   protected static monitorType: MonitorType;
@@ -50,7 +57,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     protected chainProps: ChainProperties,
     protected monitorType: T,
   ) {
-    this.buildAccountMap();
+    this.buildAccountLookup();
     this.initializeHandlers();
     this.uniqueAddresses = Array.from(this.accounts.keys());
   }
@@ -60,42 +67,77 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
 
     this.eventHandlers = new Map();
     if (prototype.eventHandlers instanceof Map) {
-      for (const [eventName, methodName] of prototype.eventHandlers) {
-        if (typeof this[methodName] === 'function') {
-          this.eventHandlers.set(eventName, this[methodName].bind(this));
+      for (const [eventName, metadata] of prototype.eventHandlers) {
+        if (typeof this[metadata.method] === 'function' && metadata.chains.includes(this.chainProps.chain)) {
+          this.eventHandlers.set(eventName, this[metadata.method].bind(this));
         }
       }
     }
 
     this.callHandlers = new Map();
     if (prototype.callHandlers instanceof Map) {
-      for (const [callName, methodName] of prototype.callHandlers) {
-        if (typeof this[methodName] === 'function') {
-          this.callHandlers.set(callName, this[methodName].bind(this));
+      for (const [callName, metadata] of prototype.callHandlers) {
+        if (typeof this[metadata.method] === 'function' && metadata.chains.includes(this.chainProps.chain)) {
+          this.callHandlers.set(callName, this[metadata.method].bind(this));
         }
       }
     }
 
     this.everyBlockHandlers = new Set();
-    if (prototype.everyBlockHandlers instanceof Set) {
-      for (const methodName of prototype.everyBlockHandlers) {
-        if (typeof this[methodName] === 'function') {
-          this.everyBlockHandlers.add(this[methodName].bind(this));
+    if (prototype.everyBlockHandlers instanceof Map) {
+      for (const [, metadata] of prototype.everyBlockHandlers) {
+        if (typeof this[metadata.method] === 'function' && metadata.chains.includes(this.chainProps.chain)) {
+          this.everyBlockHandlers.add(this[metadata.method].bind(this));
         }
       }
     }
   }
 
   /**
-   * Builds a map of monitor-specific account settings and associated alert settings.
+   * Gets account configurations filtered by handler eligibility.
    *
-   * This method processes all accounts from the monitoring groups and organizes them into a map
-   * where the key is the account's ss58 address and the value is an array of objects containing
-   * the account settings specific to this monitor type and the associated alert settings.
+   * Each address can have multiple account configurations when same account is monitored
+   * by different groups with different settings. This method filters account configurations
+   * based on handler configuration:
    *
-   * @private
+   * - If no handlers configuration provided - all account configurations are returned
+   * - If include list is provided - only configurations that include the handler are returned
+   * - If exclude list is provided - only configurations that don't exclude the handler are returned
+   *
+   * @param handler - Handler type to check eligibility for
+   * @param address - Account address to get configurations for
+   * @returns Array of account configurations that are eligible for the handler
    */
-  private buildAccountMap(): void {
+  protected getAccounts(handler: MonitorHandlerType[T], address: string): AccountConfig<T>[] {
+    const accounts = this.accounts.get(address) || [];
+
+    return accounts.filter(account => {
+      const handlers = account.account.settings?.handlers;
+      if (!handlers) return true;
+
+      if ('include' in handlers) {
+        return (handlers.include as MonitorHandlerType[T][]).includes(handler);
+      }
+      return !(handlers.exclude as MonitorHandlerType[T][]).includes(handler);
+    });
+  }
+
+  /**
+   * Builds account lookup structures for the monitor.
+   *
+   * This method processes all accounts from the monitoring groups and creates two lookup structures:
+   * 1. Main account lookup - maps ss58 address to array of account configurations. Multiple configurations
+   *    for the same address are possible when same account is monitored by different groups with different
+   *    settings. Using Map for O(1) address lookups.
+   * 2. Handler eligibility lookup - maps ss58 address to set of enabled handlers based on include/exclude
+   *    configuration. Using Map for O(1) handler eligibility checks.
+   *
+   * Handler eligibility is determined by:
+   * - If no handlers config provided - all handlers are enabled
+   * - If include list provided - only listed handlers are enabled
+   * - If exclude list provided - all handlers except listed are enabled
+   */
+  private buildAccountLookup(): void {
     for (const group of this.groups) {
       for (const account of group.accounts as ConfigAccountSettings[]) {
         if (!this.accounts.has(account.ss58)) {
@@ -118,14 +160,6 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
         }
       }
     }
-  }
-
-  protected getAccounts(address: string): {
-    account: AccountSettings<T>;
-    alerts: AlertSettings;
-    groupId: string;
-  }[] {
-    return this.accounts.get(address) || [];
   }
 
   async processEvent({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
@@ -193,7 +227,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
         rows.push(`Extrinsic: ${this.getExtrinsicLink(options.blockNumber, options.extrinsicIndex)}`);
       }
     }
-    rows.push(`Network: ${this.chainProps.specName}`);
+    rows.push(`Network: ${this.chainProps.chain}`);
     return { title: rows.shift(), details: rows };
   }
 

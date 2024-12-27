@@ -1,38 +1,50 @@
 import { createHash } from 'crypto';
-import { KeyValueStorageClient } from '@w3f/monitoring-types';
+import { Chain, KeyValueStorageClient } from '@w3f/monitoring-types';
 
-export function EventHandler(eventNames: string | string[]) {
+type HandlerMetadata = {
+  method: string;
+  chains: Chain[];
+};
+
+export function EventHandler(eventNames: string | string[], chains: Chain[]) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     if (!target.constructor.prototype.eventHandlers) {
-      target.constructor.prototype.eventHandlers = new Map<string, string>();
+      target.constructor.prototype.eventHandlers = new Map<string, HandlerMetadata>();
     }
     const names = Array.isArray(eventNames) ? eventNames : [eventNames];
-    names.forEach(name => {
-      target.constructor.prototype.eventHandlers.set(name, propertyKey);
+    target.constructor.prototype.eventHandlers.set(names, {
+      method: propertyKey,
+      chains,
     });
     return descriptor;
   };
 }
 
-export function CallHandler(callNames: string | string[]) {
+export function CallHandler(callNames: string | string[], chains: Chain[]) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     if (!target.constructor.prototype.callHandlers) {
-      target.constructor.prototype.callHandlers = new Map<string, string>();
+      target.constructor.prototype.callHandlers = new Map<string, HandlerMetadata>();
     }
     const names = Array.isArray(callNames) ? callNames : [callNames];
     names.forEach(name => {
-      target.constructor.prototype.callHandlers.set(name, propertyKey);
+      target.constructor.prototype.callHandlers.set(name, {
+        method: propertyKey,
+        chains,
+      });
     });
     return descriptor;
   };
 }
 
-export function EveryBlockHandler() {
+export function EveryBlockHandler(chains: Chain[]) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     if (!target.constructor.prototype.everyBlockHandlers) {
-      target.constructor.prototype.everyBlockHandlers = new Set<string>();
+      target.constructor.prototype.everyBlockHandlers = new Map<string, HandlerMetadata>();
     }
-    target.constructor.prototype.everyBlockHandlers.add(propertyKey);
+    target.constructor.prototype.everyBlockHandlers.set(propertyKey, {
+      method: propertyKey,
+      chains,
+    });
     return descriptor;
   };
 }

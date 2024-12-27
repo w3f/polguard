@@ -1,4 +1,4 @@
-import { EveryBlockHandlerParams, MonitorType } from '@w3f/monitoring-types';
+import { Chain, EveryBlockHandlerParams, MonitorType, BalanceHandlerType as H } from '@w3f/monitoring-types';
 import { EveryBlockHandler } from '../../decorators';
 import { AbstractMonitor } from '../abstract-monitor';
 
@@ -8,7 +8,7 @@ abstract class BalanceMonitor<
   protected abstract isBalanceChangeFiring(currentBalance: bigint, previousBalance: bigint): boolean;
   protected abstract getChangeDescription(): string;
 
-  @EveryBlockHandler()
+  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
   async handleBalanceChange({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     const currentBalances = await this.stateQuery.balances(this.uniqueAddresses, blockNumber);
     const previousBalances = await this.stateQuery.balances(this.uniqueAddresses, blockNumber - 1);
@@ -19,7 +19,7 @@ abstract class BalanceMonitor<
       if (previousBalance === undefined) continue;
 
       const isFiring = this.isBalanceChangeFiring(currentBalance, previousBalance);
-      const matches = this.getAccounts(address);
+      const matches = this.getAccounts(H.ChangeBalance, address);
       for (const { account, alerts, groupId } of matches) {
         const message = this.createMessage([
           `Balance ${this.getChangeDescription()} for account ${account.name}.`,

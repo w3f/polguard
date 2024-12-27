@@ -4,7 +4,7 @@ import {
   ChainProperties,
   MonitoringGroup,
   AlertSettings,
-  Chain, MonitorType, MessengerType
+  Chain, MonitorType, MessengerType,
 } from '@w3f/monitoring-types';
 import { IncidentHandler } from '@lib/incident/incident-handler';
 import { EventRecord } from '@polkadot/types/interfaces';
@@ -51,6 +51,7 @@ export class MonitorTestSuite {
     };
 
     this.mockChainProps = {
+      chain: Chain.Polkadot,
       specName: 'polkadot',
       chainDecimals: 10,
       chainToken: 'DOT',

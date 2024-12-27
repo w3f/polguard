@@ -1,17 +1,19 @@
 import { AbstractMonitor } from '../abstract-monitor';
-import { EventHandlerParams, MonitorType } from '@w3f/monitoring-types';
+import { Chain, EventHandlerParams, MonitorType, TransactionHandlerType as H } from '@w3f/monitoring-types';
 import { EventHandler } from '../../decorators';
 
-abstract class TransactionMonitor<T extends MonitorType> extends AbstractMonitor<T> {
+abstract class TransactionMonitor<
+  T extends MonitorType.TransactionIngress | MonitorType.TransactionEgress,
+> extends AbstractMonitor<T> {
   protected abstract getAddress(from: string, to: string): string;
   protected abstract getActionDescription(): string;
 
-  @EventHandler('balances.Transfer')
-  async handleBalancesTransfer({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
+  @EventHandler('balances.Transfer', [Chain.Polkadot, Chain.Kusama])
+  async balancesTransfer({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const [from, to, amount] = eventRecord.event.data.map(item => item.toString());
     const address = this.getAddress(from, to);
 
-    for (const { account, alerts } of this.getAccounts(address)) {
+    for (const { account, alerts } of this.getAccounts(H.BalancesTransfer, address)) {
       this.logger.debug(`BalancesTransfer: ${from} -> ${to}: ${amount}`);
 
       const message = this.createMessage([
