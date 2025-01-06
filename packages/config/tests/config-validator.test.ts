@@ -1,11 +1,15 @@
 import { validateConfig } from '../src/config-validator';
-import { Chain, MessengerType, MonitorType, ValidatorHandlerType, BalanceThresholdHandlerType } from '@w3f/monitoring-types';
+import { Chain, MessengerType, MonitorType, StakingHandlerType, BalancesHandlerType, ComparisonType } from '@w3f/monitoring-types';
 
 describe('validateConfig', () => {
   const validFullConfig = {
     defaults: {
       chains: [Chain.Polkadot],
-      monitors: [{ name: MonitorType.Validator, commission: 10 }],
+      monitors: [{ 
+        name: MonitorType.Staking, 
+        commission: 10,
+        commissionComparison: ComparisonType.LessThanOrEqual,
+      }],
       alerts: {
         messengerType: MessengerType.Matrix,
         targets: ['!example:example.com']
@@ -14,7 +18,11 @@ describe('validateConfig', () => {
     groups: [
       {
         name: 'Test Group',
-        accounts: [{ address: '0x1234567890123456789012345678901234567890123456789012345678901234' }],
+        accounts: [{ 
+          address: '0x1234567890123456789012345678901234567890123456789012345678901234',
+          commission: 10,
+          commissionComparison: ComparisonType.LessThanOrEqual,
+        }],
       },
     ],
   };
@@ -24,12 +32,20 @@ describe('validateConfig', () => {
       {
         name: 'Test Group',
         chains: [Chain.Polkadot],
-        monitors: [{ name: MonitorType.Validator, commission: 10 }],
+        monitors: [{ 
+          name: MonitorType.Staking, 
+          commission: 10,
+          commissionComparison: ComparisonType.LessThanOrEqual,
+        }],
         alerts: {
           messengerType: MessengerType.Matrix,
           targets: ['!example:example.com']
         },
-        accounts: [{ address: '0x1234567890123456789012345678901234567890123456789012345678901234' }],
+        accounts: [{ 
+          address: '0x1234567890123456789012345678901234567890123456789012345678901234',
+          commission: 10,
+          commissionComparison: ComparisonType.LessThanOrEqual,
+        }],
       },
     ],
   };
@@ -130,39 +146,64 @@ describe('validateConfig', () => {
     });
   });
 
-  describe('Validator monitor validation', () => {
-    it('should throw when commission is missing for Validator monitor', () => {
+describe('Validator monitor validation', () => {
+    it('should throw when commission is missing from both monitor and account', () => {
       const configWithoutCommission = {
         ...validMinimalConfig,
         groups: [
           {
             ...validMinimalConfig.groups[0],
-            monitors: [{ name: MonitorType.Validator }],
+            monitors: [{ 
+              name: MonitorType.Staking,
+            }],
+            accounts: [{
+              address: '0x1234567890123456789012345678901234567890123456789012345678901234',
+            }]
           },
         ],
       };
       expect(() => validateConfig(configWithoutCommission)).toThrow();
     });
 
-    it('should validate successfully when commission is provided in account', () => {
-      const configWithAccountCommission = {
+    it('should validate successfully when commission is provided in monitor', () => {
+      const configWithMonitorCommission = {
         ...validMinimalConfig,
         groups: [
           {
             ...validMinimalConfig.groups[0],
-            monitors: [{ name: MonitorType.Validator }],
-            accounts: [
-              {
-                address: '0x1234567890123456789012345678901234567890123456789012345678901234',
-                commission: 5,
-              },
-            ],
+            monitors: [{ 
+              name: MonitorType.Staking,
+              commission: 10,
+            }],
+            accounts: [{
+              address: '0x1234567890123456789012345678901234567890123456789012345678901234',
+            }]
           },
         ],
       };
-      expect(() => validateConfig(configWithAccountCommission)).not.toThrow();
+      expect(() => validateConfig(configWithMonitorCommission)).not.toThrow();
     });
-  });
+
+    it('should validate successfully when commission is provided in both monitor and account', () => {
+      const configWithBothCommissions = {
+        ...validMinimalConfig,
+        groups: [
+          {
+            ...validMinimalConfig.groups[0],
+            monitors: [{ 
+              name: MonitorType.Staking,
+              commission: 10,
+            }],
+            accounts: [{
+              address: '0x1234567890123456789012345678901234567890123456789012345678901234',
+              commission: 5,
+            }]
+          },
+        ],
+      };
+      expect(() => validateConfig(configWithBothCommissions)).not.toThrow();
+    });
+});
 
   describe('Matrix target validation', () => {
     it('should throw when Matrix target format is invalid', () => {
@@ -214,10 +255,11 @@ describe('validateConfig', () => {
         groups: [{
           ...validMinimalConfig.groups[0],
           monitors: [{
-            name: MonitorType.Validator,
+            name: MonitorType.Staking,
             commission: 10,
+            commissionComparison: ComparisonType.LessThanOrEqual,
             handlers: {
-              include: [ValidatorHandlerType.SlashReported, ValidatorHandlerType.CommissionChanged]
+              include: [StakingHandlerType.SlashReported, StakingHandlerType.CommissionChanged]
             }
           }]
         }]
@@ -231,10 +273,10 @@ describe('validateConfig', () => {
         groups: [{
           ...validMinimalConfig.groups[0],
           monitors: [{
-            name: MonitorType.Validator,
+            name: MonitorType.Staking,
             commission: 10,
             handlers: {
-              exclude: [ValidatorHandlerType.SlashReported]
+              exclude: [StakingHandlerType.SlashReported]
             }
           }]
         }]
@@ -248,7 +290,7 @@ describe('validateConfig', () => {
         groups: [{
           ...validMinimalConfig.groups[0],
           monitors: [{
-            name: MonitorType.Validator,
+            name: MonitorType.Staking,
             commission: 10,
             handlers: {
               include: ['invalidHandler']
@@ -265,11 +307,11 @@ describe('validateConfig', () => {
         groups: [{
           ...validMinimalConfig.groups[0],
           monitors: [{
-            name: MonitorType.Validator,
+            name: MonitorType.Staking,
             commission: 10,
             handlers: {
-              include: [ValidatorHandlerType.SlashReported],
-              exclude: [ValidatorHandlerType.CommissionChanged]
+              include: [StakingHandlerType.SlashReported],
+              exclude: [StakingHandlerType.CommissionChanged]
             }
           }]
         }]
@@ -283,10 +325,10 @@ describe('validateConfig', () => {
         groups: [{
           ...validMinimalConfig.groups[0],
           monitors: [{
-            name: MonitorType.Validator,
+            name: MonitorType.Staking,
             commission: 10,
             handlers: {
-              include: [BalanceThresholdHandlerType.BalanceThreshold]
+              include: [BalancesHandlerType.BalanceThreshold]
             }
           }]
         }]
@@ -299,11 +341,17 @@ describe('validateConfig', () => {
         ...validMinimalConfig,
         groups: [{
           ...validMinimalConfig.groups[0],
-          monitors: [{ name: MonitorType.Validator, commission: 10 }],
+          monitors: [{ 
+            name: MonitorType.Staking, 
+            commission: 10,
+            commissionComparison: ComparisonType.LessThanOrEqual,
+          }],
           accounts: [{
             address: '0x1234567890123456789012345678901234567890123456789012345678901234',
+            commission: 10,
+            commissionComparison: ComparisonType.LessThanOrEqual,
             handlers: {
-              include: [ValidatorHandlerType.SlashReported]
+              include: [StakingHandlerType.SlashReported]
             }
           }]
         }]

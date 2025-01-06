@@ -26,7 +26,7 @@ export async function createChainWatcher(
     );
   }
   const store = ChainWatcherStore.getInstance(storageClient, chain, logger);
-  const stateQueryProvider = createApiStateQueryProvider(api, store);
+  const stateQueryProvider = createApiStateQueryProvider(api, store, logger);
   const incidentHandler = new IncidentHandler(logger, store, eventEmitterClient, chain);
 
   return new ChainWatcher(
@@ -75,6 +75,10 @@ function specNameToChain(specName: string): Chain {
       return Chain.Polkadot;
     case 'kusama':
       return Chain.Kusama;
+    case 'people-polkadot':
+      return Chain.PeoplePolkadot;
+    case 'people-kusama':
+      return Chain.PeopleKusama;
     default:
       throw new Error(`Unsupported chain: ${specName}`);
   }

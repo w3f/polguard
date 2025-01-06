@@ -9,7 +9,7 @@ import {
 import { IncidentHandler } from '@lib/incident/incident-handler';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { Event, Phase } from '@polkadot/types/interfaces/system';
-import { PalletStakingRewardDestination } from '@polkadot/types/lookup';
+import { AnyTuple, CallBase } from '@polkadot/types/types';
 
 export class MonitorTestSuite {
   mockLogger: jest.Mocked<Logger>;
@@ -43,11 +43,14 @@ export class MonitorTestSuite {
     jest.spyOn(this.mockIncidents, 'ongoingIncident').mockImplementation(jest.fn());
 
     this.mockStateQuery = {
-      validatorCommissions: jest.fn(),
-      payees: jest.fn(),
-      validators: jest.fn(),
-      era: jest.fn(),
-      balances: jest.fn(),
+      stakingValidatorsComission: jest.fn(),
+      stakingLedgerActive: jest.fn(),
+      stakingBonded: jest.fn(),
+      stakingPayee: jest.fn(),
+      stakingActiveEra: jest.fn(),
+      sessionValidators: jest.fn(),
+      systemAccountBalance: jest.fn(),
+      identityOf: jest.fn(),
     };
 
     this.mockChainProps = {
@@ -65,7 +68,7 @@ export class MonitorTestSuite {
       chain: Chain.Polkadot,
       alerts: this.createDefaultAlerts(),
       accounts: [],
-      monitors: [{ name: MonitorType.Validator }],
+      monitors: [{ name: MonitorType.Staking }],
       ...overrides,
     };
   }
@@ -106,16 +109,17 @@ export class MonitorTestSuite {
     return mockEventRecord;
   }
 
-  public createRewardDestination(type: 'Staked' | 'Stash' | 'Controller' | 'Account', account?: string) {
+  public createTestCall(
+    section: string,
+    method: string,
+    args: any[]
+  ) {
     return {
-      isStaked: type === 'Staked',
-      isStash: type === 'Stash',
-      isController: type === 'Controller',
-      isAccount: type === 'Account',
-      asAccount: () => account || '',
-      type: type,
-      toString: () => type,
-    } as unknown as PalletStakingRewardDestination;
+      section,
+      method,
+      args,
+      toHuman: () => ({ section, method, args }),
+    } as unknown as CallBase<AnyTuple>;
   }
 
   expectOngoingIncident(titleFragment: string, blockNumber: number, isFiring: boolean) {

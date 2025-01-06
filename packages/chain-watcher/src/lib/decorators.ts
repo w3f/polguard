@@ -12,9 +12,11 @@ export function EventHandler(eventNames: string | string[], chains: Chain[]) {
       target.constructor.prototype.eventHandlers = new Map<string, HandlerMetadata>();
     }
     const names = Array.isArray(eventNames) ? eventNames : [eventNames];
-    target.constructor.prototype.eventHandlers.set(names, {
-      method: propertyKey,
-      chains,
+    names.forEach(name => {
+      target.constructor.prototype.eventHandlers.set(name, {
+        method: propertyKey,
+        chains,
+      });
     });
     return descriptor;
   };

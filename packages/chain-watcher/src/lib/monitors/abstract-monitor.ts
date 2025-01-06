@@ -29,7 +29,10 @@ type AccountConfig<T extends MonitorType> = {
 
 export abstract class AbstractMonitor<T extends MonitorType> implements Monitor {
   protected static monitorType: MonitorType;
-  protected static readonly comparisonFunctions: Record<ComparisonType, (a: number, b: number) => boolean> = {
+  protected static readonly comparisonFunctions: Record<
+    ComparisonType,
+    <T extends number | bigint>(a: T, b: T) => boolean
+  > = {
     [ComparisonType.Equal]: (a, b) => a === b,
     [ComparisonType.GreaterThan]: (a, b) => a > b,
     [ComparisonType.LessThan]: (a, b) => a < b,

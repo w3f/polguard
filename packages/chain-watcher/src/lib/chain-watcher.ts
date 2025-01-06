@@ -15,15 +15,7 @@ import {
   MonitorType,
   IncidentHandlerClient,
 } from '@w3f/monitoring-types';
-import {
-  BalanceDecrementMonitor,
-  BalanceIncrementMonitor,
-  BalanceThresholdMonitor,
-  GovernanceMonitor,
-  TransactionEgressMonitor,
-  TransactionIngressMonitor,
-  ValidatorMonitor,
-} from './monitors';
+import { BalancesMonitor, GovernanceMonitor, StakingMonitor } from './monitors';
 
 /**
  * ChainWatcher is the core class responsible for monitoring a blockchain.
@@ -69,12 +61,8 @@ export class ChainWatcher {
   private initializeMonitors(): void {
     const monitorConfigs: [MonitorType, MonitorConstructor][] = [
       [MonitorType.Governance, GovernanceMonitor],
-      [MonitorType.Validator, ValidatorMonitor],
-      [MonitorType.TransactionIngress, TransactionIngressMonitor],
-      [MonitorType.TransactionEgress, TransactionEgressMonitor],
-      [MonitorType.BalanceDecrement, BalanceDecrementMonitor],
-      [MonitorType.BalanceIncrement, BalanceIncrementMonitor],
-      [MonitorType.BalanceThreshold, BalanceThresholdMonitor],
+      [MonitorType.Staking, StakingMonitor],
+      [MonitorType.Balances, BalancesMonitor],
     ];
 
     this.monitors = monitorConfigs.flatMap(([monitorType, MonitorClass]) => {

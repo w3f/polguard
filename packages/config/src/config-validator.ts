@@ -9,7 +9,7 @@
  * are handled separately in the config processor module.
  */
 import * as Joi from 'joi';
-import { Chain, ComparisonType, MessengerType, MonitorType, ValidatorHandlerType, BalanceThresholdHandlerType } from '@w3f/monitoring-types';
+import { Chain, ComparisonType, MessengerType, MonitorType, StakingHandlerType, IdentityHandlerType, BalancesHandlerType } from '@w3f/monitoring-types';
 
 const alertSchema = Joi.object({
   messengerType: Joi.string().valid(...Object.values(MessengerType)),
@@ -48,16 +48,34 @@ function createHandlerSchema(handlerEnum: Record<string, string>, monitorName: s
   );
 }
 
-const validatorMonitorSchema = Joi.object({
+/**
+ * Required fields can be provided either in monitor config or account settings,
+ * this is validated separately in monitor-specific validation functions.
+ * 
+ * For example:
+ * - Staking monitor requires 'commission' in either monitor or account config
+ * 
+ * See validateValidatorMonitor, etc. for these checks.
+ */
+const stakingMonitorSchema = Joi.object({
   commission: Joi.number().min(0).max(100),
+  selfStake: Joi.number(),
+  selfStakeComparison: Joi.string().valid(...Object.values(ComparisonType)),
   commissionComparison: Joi.string().valid(...Object.values(ComparisonType)),
   payee: Joi.string(),
-  handlers: createHandlerSchema(ValidatorHandlerType, 'Validator')
+  handlers: createHandlerSchema(StakingHandlerType, 'Staking')
 });
 
-const balanceThresholdMonitorSchema = Joi.object({
-  balanceThreshold: Joi.number(),
-  handlers: createHandlerSchema(BalanceThresholdHandlerType, 'BalanceThreshold')
+const identityMonitorSchema = Joi.object({
+  riot: Joi.string(),
+  email: Joi.string(),
+  handlers: createHandlerSchema(IdentityHandlerType, 'Identity')
+});
+
+const balancesMonitorSchema = Joi.object({
+  threshold: Joi.number(),
+  changeComparison: Joi.string().valid(...Object.values(ComparisonType)),
+  handlers: createHandlerSchema(BalancesHandlerType, 'Balances')
 });
 
 const monitorSchema = Joi.object({
@@ -70,8 +88,9 @@ const monitorSchema = Joi.object({
 })
 .when('.name', {
   switch: [
-    { is: MonitorType.Validator, then: validatorMonitorSchema },
-    { is: MonitorType.BalanceThreshold, then: balanceThresholdMonitorSchema },
+    { is: MonitorType.Staking, then: stakingMonitorSchema },
+    { is: MonitorType.Identity, then: identityMonitorSchema },
+    { is: MonitorType.Balances, then: balancesMonitorSchema },
   ]
 });
 
@@ -83,8 +102,9 @@ const accountSchema = Joi.object({
   }),
   name: Joi.string().optional(),
 })
-  .concat(validatorMonitorSchema)
-  .concat(balanceThresholdMonitorSchema);
+  .concat(stakingMonitorSchema)
+  .concat(identityMonitorSchema)
+  .concat(balancesMonitorSchema);
 
 const defaultsSchema = Joi.object({
   chains: Joi.array()
@@ -150,13 +170,13 @@ function validateGroup(group: any, defaults: any): void {
 
 function validateValidatorMonitor(group: any, defaults: any): void {
   const monitors = group.monitors || defaults.monitors;
-  const hasValidatorMonitor = monitors.some((monitor: any) => monitor.name === MonitorType.Validator);
+  const hasValidatorMonitor = monitors.some((monitor: any) => monitor.name === MonitorType.Staking);
   if (hasValidatorMonitor) {
-    const validatorMonitor = monitors.find((monitor: any) => monitor.name === MonitorType.Validator);
+    const validatorMonitor = monitors.find((monitor: any) => monitor.name === MonitorType.Staking);
     group.accounts.forEach((account: any) => {
       if (account.commission === undefined && validatorMonitor.commission === undefined) {
         throw new Error(
-          `Neither the Validator monitor nor account ${account.name || account.address} ` +
+          `Neither the Staking monitor nor account ${account.name || account.address} ` +
             `in group ${group.name} has a commission specified`,
         );
       }

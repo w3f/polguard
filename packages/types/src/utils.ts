@@ -1,5 +1,4 @@
-import '@polkadot/api-augment/polkadot';
-import { PalletStakingRewardDestination } from '@polkadot/types/lookup';
+import { IdentityInfo } from './state-provider';
 
 export interface Logger {
   log(message: string): void;
@@ -11,9 +10,12 @@ export interface Logger {
 }
 
 export interface StateQueryProvider {
-  validatorCommissions(addresses: string[], blockNumber: number): Promise<Record<string, number>>;
-  payees(addresses: string[], blockNumber: number): Promise<Record<string, PalletStakingRewardDestination>>;
-  validators(blockNumber: number): Promise<Record<string, boolean>>;
-  era(blockNumber: number): Promise<number>;
-  balances(addresses: string[], blockNumber: number): Promise<Record<string, bigint>>;
+  stakingValidatorsComission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>>;
+  stakingLedgerActive(addresses: string[], blockNumber: number): Promise<Record<string, bigint | null>>;
+  stakingBonded(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
+  stakingPayee(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
+  stakingActiveEra(blockNumber: number): Promise<number>;
+  sessionValidators(blockNumber: number): Promise<Record<string, boolean>>;
+  systemAccountBalance(addresses: string[], blockNumber: number): Promise<Record<string, bigint>>;
+  identityOf(addresses: string[], blockNumber: number): Promise<Record<string, IdentityInfo | null>>;
 }

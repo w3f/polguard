@@ -1,18 +1,17 @@
 export enum Chain {
   Polkadot = 'Polkadot',
   Kusama = 'Kusama',
+  PeoplePolkadot = 'PeoplePolkadot',
+  PeopleKusama = 'PeopleKusama',
   // Centrifuge is currently not supported
   Centrifuge = 'Centrifuge',
 }
 
 export enum MonitorType {
-  Validator = 'Validator',
+  Balances = 'Balances',
+  Identity = 'Identity',
+  Staking = 'Staking',
   Governance = 'Governance',
-  TransactionIngress = 'TransactionIngress',
-  TransactionEgress = 'TransactionEgress',
-  BalanceIncrement = 'BalanceIncrement',
-  BalanceDecrement = 'BalanceDecrement',
-  BalanceThreshold = 'BalanceThreshold',
 }
 
 export enum MessageType {
@@ -35,45 +34,28 @@ export enum ComparisonType {
   LessThanOrEqual = 'lte',
 }
 
-export enum ValidatorHandlerType {
+export enum StakingHandlerType {
   SlashReported = 'SlashReported',
   CommissionChanged = 'CommissionChanged',
   DestinationChanged = 'DestinationChanged',
   CommissionUnexpected = 'CommissionUnexpected',
   DestinationUnexpected = 'DestinationUnexpected',
-  ActiveSetPresence = 'ActiveSetPresence'
+  SelfStakeUnexpected = 'SelfStakeUnexpected',
+  ActiveSetPresence = 'ActiveSetPresence',
 }
 
-export enum BalanceThresholdHandlerType {
+export enum BalancesHandlerType {
+  BalanceChange = 'BalanceChange',
   BalanceThreshold = 'BalanceThreshold',
+  TransferIngress = 'TransferIngress',
+  TransferEgress = 'TransferEgress',
 }
 
-export enum BalanceHandlerType {
-  ChangeBalance = 'ChangeBalance',
+export enum IdentityHandlerType {
+  IdentityUnexpected = 'IdentityUnexpected',
 }
 
 export enum GovernanceHandlerType {
   ReferendaSubmitted = 'ReferendaSubmitted',
   ConvictionVoted = 'ConvictionVoted',
 }
-
-export enum TransactionHandlerType {
-  BalancesTransfer = 'BalancesTransfer',
-}
-
-export type MonitorHandlerType = {
-  [MonitorType.Validator]: ValidatorHandlerType;
-  [MonitorType.BalanceThreshold]: BalanceThresholdHandlerType;
-  [MonitorType.Governance]: GovernanceHandlerType;
-  [MonitorType.TransactionIngress]: TransactionHandlerType;
-  [MonitorType.TransactionEgress]: TransactionHandlerType;
-  [MonitorType.BalanceIncrement]: BalanceHandlerType;
-  [MonitorType.BalanceDecrement]: BalanceHandlerType;
-};
-
-export type HandlerType = 
-  | ValidatorHandlerType 
-  | BalanceThresholdHandlerType 
-  | BalanceHandlerType 
-  | GovernanceHandlerType 
-  | TransactionHandlerType;

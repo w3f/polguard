@@ -2,7 +2,7 @@ import '@polkadot/api-augment/polkadot';
 import { EveryBlockHandler, EventHandler, CallHandler } from '../../decorators';
 import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
 import {
-  ValidatorHandlerType as H,
+  StakingHandlerType as H,
   EveryBlockHandlerParams,
   CallHandlerParams,
   EventHandlerParams,
@@ -11,7 +11,7 @@ import {
 } from '@w3f/monitoring-types';
 import { AbstractMonitor } from '../abstract-monitor';
 
-export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
+export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
   @EventHandler('staking.SlashReported', [Chain.Polkadot, Chain.Kusama])
   async slashReported({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const validatorId = eventRecord.event.data[0].toString();
@@ -31,7 +31,7 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     const prefs = eventRecord.event.data[1] as PalletStakingValidatorPrefs;
     for (const { account, alerts } of this.getAccounts(H.CommissionChanged, stash)) {
       const message = this.createMessage(
-        [`New commission change detected for ${this.formatAccountLink(account)}.`, `Commission: ${prefs.commission}`],
+        [`Commission change detected for ${this.formatAccountLink(account)}.`, `Commission: ${prefs.commission}`],
         { blockNumber, phase: eventRecord.phase },
       );
 
@@ -42,12 +42,10 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
   @CallHandler(['staking.setPayee', 'staking.bond'], [Chain.Polkadot, Chain.Kusama])
   async destinationChanged({ call, origin, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
     const payee = (call.method === 'setPayee' ? call.args[0] : call.args[1]) as PalletStakingRewardDestination;
+    const destination = payee.isAccount ? payee.asAccount.toString() : payee.type;
     for (const { account, alerts } of this.getAccounts(H.DestinationChanged, origin)) {
       const message = this.createMessage(
-        [
-          `New destination change detected for ${this.formatAccountLink(account)}.`,
-          `Destination: ${this.getDestinationString(payee)}`,
-        ],
+        [`Destination change detected for ${this.formatAccountLink(account)}.`, `Destination: ${destination}`],
         { blockNumber, extrinsicIndex },
       );
 
@@ -55,32 +53,62 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
     }
   }
 
-  // TODO: Add Event handler (payout claimed), it should require expectedDestination != current.
   @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
   async commissionUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    const commissions = await this.stateQuery.validatorCommissions(this.uniqueAddresses, blockNumber);
-    if (commissions === null) {
-      return;
-    }
-    for (let i = 0; i < this.uniqueAddresses.length; i++) {
-      const address = this.uniqueAddresses[i];
+    const commissions = await this.stateQuery.stakingValidatorsComission(this.uniqueAddresses, blockNumber);
+    for (const address of this.uniqueAddresses) {
       const commission = commissions[address];
+      if (commission === null) continue;
+
       for (const { account, alerts, groupId } of this.getAccounts(H.CommissionUnexpected, address)) {
         const expectedCommission = account.settings.commission;
         const comparisonType = account.settings.commissionComparison;
-        const compareFunction = ValidatorMonitor.comparisonFunctions[comparisonType];
-        const isFiring = !compareFunction(commission, expectedCommission);
+        const compareFunc = StakingMonitor.comparisonFunctions[comparisonType];
+        const isFiring = !compareFunc(commission, expectedCommission);
 
         const message = this.createMessage(
           [
             `Unexpected commission detected for ${this.formatAccountLink(account)}.`,
-            `Actual commission: ${commission}`,
-            `Expected commission: ${expectedCommission}`,
+            `Expected "${expectedCommission}", got "${commission}"`,
           ],
           { blockNumber },
         );
 
-        const key = `${account.ss58}:${groupId}:handleCommissionUnexpected`;
+        const key = `${account.ss58}:${groupId}:commissionUnexpected`;
+        await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
+      }
+    }
+  }
+
+  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
+  async selfStakeUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+    const controllers = await this.stateQuery.stakingBonded(this.uniqueAddresses, blockNumber);
+    const controllerAddresses = Object.values(controllers).filter((addr): addr is string => addr !== null);
+    const ledgers = await this.stateQuery.stakingLedgerActive(controllerAddresses, blockNumber);
+
+    for (const address of this.uniqueAddresses) {
+      const controller = controllers[address];
+      if (!controller) continue;
+
+      const stake = ledgers[controller];
+      if (stake === null) continue;
+
+      for (const { account, alerts, groupId } of this.getAccounts(H.CommissionUnexpected, address)) {
+        const expectedStake = account.settings.selfStake;
+        // TODO: if not expectedStake? Is it required?
+        const comparisonType = account.settings.selfStakeComparison;
+        const compareFunc = StakingMonitor.comparisonFunctions[comparisonType];
+        const isFiring = !compareFunc(stake, expectedStake);
+
+        const message = this.createMessage(
+          [
+            `Unexpected self-stake detected for ${this.formatAccountLink(account)}.`,
+            `Expected "${this.formatBalance(expectedStake)}", got "${this.formatBalance(stake)}"`,
+          ],
+          { blockNumber },
+        );
+
+        const key = `${account.ss58}:${groupId}:selfStakeUnexpected`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
@@ -88,26 +116,26 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
 
   @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
   async destinationUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    const payees = await this.stateQuery.payees(this.uniqueAddresses, blockNumber);
-    for (let i = 0; i < this.uniqueAddresses.length; i++) {
-      const address = this.uniqueAddresses[i];
-      const destination = payees[address] ? this.getDestinationString(payees[address]) : 'None';
+    const payees = await this.stateQuery.stakingPayee(this.uniqueAddresses, blockNumber);
+    for (const address of this.uniqueAddresses) {
+      const destination = payees[address];
+      if (destination === null) continue;
+
       for (const { account, alerts, groupId } of this.getAccounts(H.DestinationChanged, address)) {
         const expectedDestination = account.settings.payee;
-
         if (!expectedDestination) continue;
+
         const isFiring = destination !== expectedDestination;
 
         const message = this.createMessage(
           [
             `Unexpected reward destination detected for ${this.formatAccountLink(account)}.`,
-            `Actual destination: ${destination}`,
-            `Expected destination: ${expectedDestination}`,
+            `Expected "${expectedDestination}", got "${destination}"`,
           ],
           { blockNumber },
         );
 
-        const key = `${account.ss58}:${groupId}:handleDestinationUnexpected`;
+        const key = `${account.ss58}:${groupId}:destinationUnexpected`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
@@ -115,26 +143,19 @@ export class ValidatorMonitor extends AbstractMonitor<MonitorType.Validator> {
 
   @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
   async activeSetPresense({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    const validators = await this.stateQuery.validators(blockNumber);
-    for (const acc of this.uniqueAddresses) {
-      for (const { account, alerts, groupId } of this.getAccounts(H.ActiveSetPresence, acc)) {
+    const validators = await this.stateQuery.sessionValidators(blockNumber);
+    for (const address of this.uniqueAddresses) {
+      for (const { account, alerts, groupId } of this.getAccounts(H.ActiveSetPresence, address)) {
         const isFiring = !validators[account.ss58];
 
         const message = this.createMessage([
           `Target ${this.formatAccountLink(account)} is not present in the validation active set.`,
-          `Era: ${await this.stateQuery.era(blockNumber)}`,
+          `Era: ${await this.stateQuery.stakingActiveEra(blockNumber)}`,
         ]);
 
-        const key = `${account.ss58}:${groupId}:handleValidatorActiveSetPresense`;
+        const key = `${account.ss58}:${groupId}:activeSetPresense`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
-  }
-
-  protected getDestinationString(destination: PalletStakingRewardDestination): string {
-    if (destination.isAccount) {
-      return destination.asAccount.toString();
-    }
-    return destination.type;
   }
 }

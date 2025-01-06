@@ -11,26 +11,32 @@ import { MonitorType, ComparisonType, MonitorConfig } from '@w3f/monitoring-type
  * Example usage:
  *
  * const monitorConfigs = [
- *   { name: MonitorType.Validator, settings: { commission: 10 } },
+ *   { name: MonitorType.Staking, settings: { commission: 10 } },
  *   { name: MonitorType.Governance, settings: {} }
  * ];
  *
  * const accountSettings = {
  *   commission: 5,
- *   payee: "5G16fa..."
+ *   selfStake: 1000n,
+ *   payee: "Staked"
  * };
  *
  * const result = AccountMonitorSettingsBuilder.buildSettings(monitorConfigs, accountSettings);
  *
  * // Result will contain:
  * // {
- * //   [MonitorType.Validator]: {
+ * //   [MonitorType.Staking]: {
  * //     commission: 5,
- * //     commissionComparison: ComparisonType.Equal,
- * //     payee: "5G16fa..."
+ * //     selfStake: 1000n,
+ * //     payee: "Staked",
+ * //     commissionComparison: ComparisonType.LessThanOrEqual,  // Default applied
+ * //     selfStakeComparison: ComparisonType.GreaterThanOrEqual // Default applied
  * //   },
- * //   [MonitorType.Governance]: {},
- * //   ... (other monitor types with their respective settings)
+ * //   [MonitorType.Governance]: {
+ * //     commission: 5,
+ * //     selfStake: 1000n,
+ * //     payee: "Staked"
+ * //   }
  * // }
  */
 export class AccountSettingsBuilder {
@@ -75,10 +81,11 @@ export class AccountSettingsBuilder {
   ): Record<MonitorType, Record<string, any>> {
     const settingsWithDefaults = { ...mergedSettings };
 
-    if (settingsWithDefaults[MonitorType.Validator]) {
-      settingsWithDefaults[MonitorType.Validator] = {
-        commissionComparison: ComparisonType.Equal,
-        ...settingsWithDefaults[MonitorType.Validator],
+    if (settingsWithDefaults[MonitorType.Staking]) {
+      settingsWithDefaults[MonitorType.Staking] = {
+        commissionComparison: ComparisonType.LessThanOrEqual,
+        selfStakeComparison: ComparisonType.GreaterThanOrEqual,
+        ...settingsWithDefaults[MonitorType.Staking],
       };
     }
 

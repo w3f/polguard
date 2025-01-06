@@ -1,9 +1,9 @@
 import { Logger, StateQueryProvider } from './utils';
 import { ChainProperties } from './chain';
-import { Chain, ComparisonType, MonitorHandlerType, MonitorType, ValidatorHandlerType } from './constants';
+import { Chain, ComparisonType, MonitorType } from './constants';
 import { AlertSettings, IncidentHandlerClient } from './incident';
 import { ConfigAccountSettings } from './account';
-import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams } from './handlers';
+import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams, MonitorHandlerType } from './handlers';
 
 export interface Monitor {
   processEveryBlock(params: EveryBlockHandlerParams): Promise<void>;
@@ -28,34 +28,36 @@ type HandlerConfig<T> = {
   exclude: T[];
 };
 
-export interface ValidatorSettings {
+export interface StakingSettings {
   commission: number;
   commissionComparison: ComparisonType;
+  selfStakeComparison: ComparisonType;
+  selfStake?: bigint;
   payee?: string;
-  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Validator]>;
+  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Staking]>;
 }
 
 export interface GovernanceSettings {
   handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Governance]>;
 }
 
-export interface TransactionSettings {
-  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.TransactionIngress | MonitorType.TransactionEgress]>;
+export interface BalancesSettings {
+  threshold?: bigint;
+  changeComparison: ComparisonType;
+  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Balances]>;
 }
 
-export interface BalanceSettings {
-  balanceThreshold?: bigint;
-  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.BalanceIncrement | MonitorType.BalanceDecrement | MonitorType.BalanceThreshold]>;
+export interface IdentitySettings {
+  riot?: string;
+  email?: string;
+  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Identity]>;
 }
 
 export type MonitorTypeSettings = {
-  [MonitorType.Validator]: ValidatorSettings;
+  [MonitorType.Staking]: StakingSettings;
   [MonitorType.Governance]: GovernanceSettings;
-  [MonitorType.TransactionIngress]: TransactionSettings;
-  [MonitorType.TransactionEgress]: TransactionSettings;
-  [MonitorType.BalanceIncrement]: BalanceSettings;
-  [MonitorType.BalanceDecrement]: BalanceSettings;
-  [MonitorType.BalanceThreshold]: BalanceSettings;
+  [MonitorType.Balances]: BalancesSettings;
+  [MonitorType.Identity]: IdentitySettings;
 };
 
 export type MonitorSettings<T extends MonitorType> = MonitorTypeSettings[T];

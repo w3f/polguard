@@ -6,3 +6,4 @@ export * from './handlers';
 export * from './utils';
 export * from './clients';
 export * from './constants';
+export * from './state-provider';

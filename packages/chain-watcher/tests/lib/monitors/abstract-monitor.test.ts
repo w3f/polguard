@@ -1,9 +1,9 @@
 import { AbstractMonitor } from '@lib/monitors/abstract-monitor';
-import { Chain, MonitorType, ValidatorHandlerType as H } from '@w3f/monitoring-types';
+import { Chain, MonitorType, StakingHandlerType as H } from '@w3f/monitoring-types';
 import { MonitorTestSuite } from './monitor-test-suite';
 import { EventHandler, CallHandler, EveryBlockHandler } from '@lib/decorators';
 
-class TestMonitor extends AbstractMonitor<MonitorType.Validator> {
+class TestMonitor extends AbstractMonitor<MonitorType.Staking> {
   @EventHandler('test.event', [Chain.Polkadot])
   async testEventHandler({ eventRecord, blockNumber }) {
     const address = eventRecord.event.data[0].toString();
@@ -42,7 +42,7 @@ describe('AbstractMonitor', () => {
         name: 'Test Account',
         ss58: TEST_ADDRESS,
         hex: '0x1234',
-        Validator: {
+        Staking: {
           commission: 10,
         },
       }],
@@ -54,7 +54,7 @@ describe('AbstractMonitor', () => {
       suite.mockIncidents,
       suite.mockStateQuery,
       suite.mockChainProps,
-      MonitorType.Validator
+      MonitorType.Staking
     );
   });
 
@@ -66,16 +66,27 @@ describe('AbstractMonitor', () => {
     });
 
     it('should not register handlers for unsupported chains', () => {
-      suite.mockChainProps.specName = 'kusama';
-      suite.mockChainProps.chain = Chain.Kusama;
+      const kusamaGroups = [suite.createMonitoringGroup({
+        chain: Chain.Kusama,
+        accounts: [{
+          name: 'Test Account',
+          ss58: TEST_ADDRESS,
+          hex: '0x1234',
+          Staking: {
+            commission: 10,
+          },
+        }],
+      })];
+
       monitor = new TestMonitor(
         suite.mockLogger,
-        [],
+        kusamaGroups,
         suite.mockIncidents,
         suite.mockStateQuery,
-        suite.mockChainProps,
-        MonitorType.Validator
+        { ...suite.mockChainProps, chain: Chain.Kusama },
+        MonitorType.Staking
       );
+      
       expect(monitor['eventHandlers'].size).toBe(0);
       expect(monitor['callHandlers'].size).toBe(0);
       expect(monitor['everyBlockHandlers'].size).toBe(0);
@@ -95,7 +106,7 @@ describe('AbstractMonitor', () => {
           name: 'Test Account',
           ss58: TEST_ADDRESS,
           hex: '0x1234',
-          Validator: {
+          Staking: {
             commission: 10,
             handlers: {
               include: [H.SlashReported]
@@ -110,7 +121,7 @@ describe('AbstractMonitor', () => {
         suite.mockIncidents,
         suite.mockStateQuery,
         suite.mockChainProps,
-        MonitorType.Validator
+        MonitorType.Staking
       );
 
       const event = suite.createTestEvent('test', 'event', [TEST_ADDRESS]);
@@ -131,7 +142,7 @@ describe('AbstractMonitor', () => {
           name: 'Test Account',
           ss58: TEST_ADDRESS,
           hex: '0x1234',
-          Validator: {
+          Staking: {
             commission: 10,
             handlers: {
               exclude: [H.SlashReported]
@@ -146,7 +157,7 @@ describe('AbstractMonitor', () => {
         suite.mockIncidents,
         suite.mockStateQuery,
         suite.mockChainProps,
-        MonitorType.Validator
+        MonitorType.Staking
       );
 
       const event = suite.createTestEvent('test', 'event', [TEST_ADDRESS]);
@@ -165,7 +176,7 @@ describe('AbstractMonitor', () => {
             name: 'Test Account 1',
             ss58: TEST_ADDRESS,
             hex: '0x1234',
-            Validator: {
+            Staking: {
               commission: 10,
               handlers: {
                 include: [H.SlashReported]
@@ -176,7 +187,7 @@ describe('AbstractMonitor', () => {
             name: 'Test Account 2',
             ss58: 'other-address',
             hex: '0x5678',
-            Validator: {
+            Staking: {
               commission: 10,
               handlers: {
                 exclude: [H.SlashReported]
@@ -192,18 +203,20 @@ describe('AbstractMonitor', () => {
         suite.mockIncidents,
         suite.mockStateQuery,
         suite.mockChainProps,
-        MonitorType.Validator
+        MonitorType.Staking
       );
-
-      // Test first account (should trigger incident)
+    
+      // First account has SlashReported in include list, should trigger incident
       const event1 = suite.createTestEvent('test', 'event', [TEST_ADDRESS]);
       await monitor.processEvent({ eventRecord: event1, blockNumber: TEST_BLOCK });
       expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalledTimes(1);
-
-      // Test second account (should not trigger incident)
+    
+      jest.clearAllMocks();
+    
+      // Second account has SlashReported in exclude list, should not trigger incident
       const event2 = suite.createTestEvent('test', 'event', ['other-address']);
       await monitor.processEvent({ eventRecord: event2, blockNumber: TEST_BLOCK });
-      expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalledTimes(1);
+      expect(suite.mockIncidents.oneTimeIncident).not.toHaveBeenCalled();
     });
   });
 });
