@@ -48,7 +48,7 @@ export interface BalancesSettings {
 }
 
 export interface IdentitySettings {
-  riot?: string;
+  matrix?: string;
   email?: string;
   handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Identity]>;
 }

@@ -38,6 +38,8 @@ export class AddressTransformer {
   private static chainPrefixMap = new Map<Chain, number>([
     [Chain.Polkadot, 0],
     [Chain.Kusama, 2],
+    [Chain.PeoplePolkadot, 0],
+    [Chain.PeopleKusama, 2],
   ]);
 
   static transform(address: string, name: string | undefined, chain: Chain): AccountId {

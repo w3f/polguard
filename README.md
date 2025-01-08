@@ -49,6 +49,7 @@ flowchart LR
 ## Documentation
 
 - [Development Notes](./docs/DEVELOPMENT.md) - Project structure, architectural decisions, and roadmap
+- [Publishing Guide](./docs/PUBLISHING.md) - Instructions for building and publishing packages
 - [Chain Watcher](./packages/chain-watcher/README.md) - Chain monitoring service details
 - [Matrix](./packages/matrix/README.md) - Notification service details
 
@@ -56,3 +57,22 @@ flowchart LR
 
 - [Project Timeline](https://docs.google.com/spreadsheets/d/1twBMKTNauqBwBL2ZccdGFIPfVOj8efJolkUCv-wWvgQ)
 - [Architecture Discussion](https://github.com/w3f/SecOps/issues/599)
+
+## Development Workflow
+
+When working with local changes:
+
+```bash
+# Build specific package
+yarn build:all
+
+# Or build specific package in case of changes
+yarn build:types
+yarn build:config
+yarn build:chain-watcher
+yarn build:matrix
+
+# Run services
+yarn start:chain-watcher:dev
+yarn start:matrix:dev
+```

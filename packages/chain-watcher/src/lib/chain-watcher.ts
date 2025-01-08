@@ -16,6 +16,7 @@ import {
   IncidentHandlerClient,
 } from '@w3f/monitoring-types';
 import { BalancesMonitor, GovernanceMonitor, StakingMonitor } from './monitors';
+import { IdentityMonitor } from './monitors/identity/identity-monitor';
 
 /**
  * ChainWatcher is the core class responsible for monitoring a blockchain.
@@ -63,6 +64,7 @@ export class ChainWatcher {
       [MonitorType.Governance, GovernanceMonitor],
       [MonitorType.Staking, StakingMonitor],
       [MonitorType.Balances, BalancesMonitor],
+      [MonitorType.Identity, IdentityMonitor],
     ];
 
     this.monitors = monitorConfigs.flatMap(([monitorType, MonitorClass]) => {

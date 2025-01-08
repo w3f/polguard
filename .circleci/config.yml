@@ -19,6 +19,7 @@ jobs:
       - checkout
       - run:
           command: |
+            corepack enable && corepack prepare yarn@4.6.0 --activate
             yarn install
             yarn workspace @w3f/monitoring-${MODULE} lint     
 

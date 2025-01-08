@@ -67,7 +67,7 @@ const stakingMonitorSchema = Joi.object({
 });
 
 const identityMonitorSchema = Joi.object({
-  riot: Joi.string(),
+  matrix: Joi.string(),
   email: Joi.string(),
   handlers: createHandlerSchema(IdentityHandlerType, 'Identity')
 });
@@ -165,16 +165,16 @@ function validateGroup(group: any, defaults: any): void {
     }
   });
 
-  validateValidatorMonitor(group, defaults);
+  validateMonitors(group, defaults);
 }
 
-function validateValidatorMonitor(group: any, defaults: any): void {
+function validateMonitors(group: any, defaults: any): void {
   const monitors = group.monitors || defaults.monitors;
-  const hasValidatorMonitor = monitors.some((monitor: any) => monitor.name === MonitorType.Staking);
-  if (hasValidatorMonitor) {
-    const validatorMonitor = monitors.find((monitor: any) => monitor.name === MonitorType.Staking);
+  const hasStakingMonitor = monitors.some((monitor: any) => monitor.name === MonitorType.Staking);
+  if (hasStakingMonitor) {
+    const stakingMonitor = monitors.find((monitor: any) => monitor.name === MonitorType.Staking);
     group.accounts.forEach((account: any) => {
-      if (account.commission === undefined && validatorMonitor.commission === undefined) {
+      if (account.commission === undefined && stakingMonitor.commission === undefined) {
         throw new Error(
           `Neither the Staking monitor nor account ${account.name || account.address} ` +
             `in group ${group.name} has a commission specified`,

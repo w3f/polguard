@@ -1,6 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
-import { Data } from '@polkadot/types';
-import { PalletIdentityLegacyIdentityInfo } from '@polkadot/types/lookup';
+import { Data, Struct } from '@polkadot/types';
+import type { Option } from '@polkadot/types-codec';
+import type { H160 } from '@polkadot/types/interfaces';
 import { StateQueryProvider, KeyValueStorageClient, IdentityInfo, Logger } from '@w3f/monitoring-types';
 import { createCachedQueryDecorator } from '../decorators';
 
@@ -134,29 +135,27 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
           this.logger.warn(`No identity found for address ${address} at block ${blockNumber}`);
           result[address] = null;
         } else {
-          result[address] = this.processIdentityInfo(identity.unwrap()[0].info);
+          result[address] = this.processIdentityInfo(identity.unwrap()[0].info as unknown as PeopleIdentityInfo);
         }
       });
 
       return result;
     }
 
-    processIdentityInfo(info: PalletIdentityLegacyIdentityInfo): IdentityInfo {
-      return {
-        email: this.extractDataString(info.email),
-        display: this.extractDataString(info.display),
-        web: this.extractDataString(info.web),
-        riot: this.extractDataString(info.riot),
-        twitter: this.extractDataString(info.twitter),
-        legal: this.extractDataString(info.legal),
-      };
+    processIdentityInfo(info: PeopleIdentityInfo): IdentityInfo {
+      const fields = ['display', 'legal', 'web', 'matrix', 'email', 'image', 'twitter', 'github', 'discord'] as const;
+
+      return fields.reduce((result, field) => {
+        result[field] = this.extractDataString(info[field]);
+        return result;
+      }, {} as IdentityInfo);
     }
 
     extractDataString(data: Data): string | undefined {
-      if (data.isRaw) {
-        return data.asRaw.toUtf8();
-      } else if (data.isNone) {
+      if (!data || data.isNone) {
         return undefined;
+      } else if (data.isRaw) {
+        return data.asRaw.toUtf8();
       } else if (data.isSha256) {
         return data.asSha256.toHex();
       }
@@ -165,4 +164,26 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
   }
 
   return new ApiStateQueryProvider(api, logger);
+}
+
+/**
+ * @description
+ * `PeopleIdentityInfo` is a custom type based on the legacy `PalletIdentityLegacyIdentityInfo`.
+ * Recent changes in the Polkadot runtime removed hardcoded fields for identity info,
+ * but this type is introduced to provide a representation for processing identity data
+ * retrieved via `api.query.identity.identityOf`.
+ *
+ * This is not an on-chain type, that's why polkadot.js doesn't expose it.
+ */
+interface PeopleIdentityInfo extends Struct {
+  display: Data;
+  legal: Data;
+  web: Data;
+  matrix: Data;
+  email: Data;
+  pgpFingerprint: Option<H160>;
+  image: Data;
+  twitter: Data;
+  github: Data;
+  discord: Data;
 }
