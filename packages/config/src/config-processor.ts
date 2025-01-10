@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
-import { MonitoringGroup, MonitorConfig, ConfigAccountSettings, Chain } from '@w3f/monitoring-types';
+import { MonitoringGroup, MonitorConfig, ConfigAccountSettings, Chain, getChainProperties } from '@w3f/monitoring-types';
 import { RawConfig, RawMonitoringGroup } from './interfaces';
 import { validateConfig } from './config-validator';
 import { AddressTransformer } from './address-transformer';
@@ -10,15 +10,54 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  * Processes configuration files and transforms them into structured monitoring groups.
  *
  * This class is responsible for:
- * 1. Loading and validating configuration files.
- * 2. Applying defaults from the default group if chains, monitors or alerts were not provided.
- * 3. Building account settings by merging monitor configs with account-specific settings.
- * 4. Producing final MonitoringGroup objects with fully processed accounts.
+ * 1. Loading and validating YAML configuration files:
+ *    - Ensures required fields are present
+ *    - Validates field formats and values
+ *    - Ensures Staking monitor has commission value
+ *    - Checks cross-field dependencies
+ * 
+ * 2. Applying defaults:
+ *    - Uses defaults.chains if group.chains not provided
+ *    - Uses defaults.monitors if group.monitors not provided
+ *    - Uses defaults.alerts if group.alerts not provided
+ *    - Applies default comparison types for monitors
  *
- * Example usage:
- *
- * const configFiles = ['config1.yaml', 'config2.yaml'];
- * const monitoringGroups = ConfigProcessor.processConfigs(configFiles);
+ * 3. Building final monitoring structure:
+ *    - Creates separate group for each chain configuration
+ *    - Transforms addresses to chain-specific SS58 format
+ *    - Merges monitor-level settings and account-level settings with priority to accounts
+ *    - Converts decimal balance strings to chain-specific BigInt values
+ * 
+ * Output example:
+ * [
+ *   {
+ *     name: "validators group",
+ *     chain: Chain.Polkadot,
+ *     monitors: [
+ *       {
+ *         name: MonitorType.Staking,
+ *         settings: { commission: 10, handlers: { include: ["CommissionChanged"] } }
+ *       }
+ *     ],
+ *     accounts: [
+ *       {
+ *         name: "5Grw...utQY",
+ *         hex: "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+ *         ss58: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+ *         Staking: {
+ *           commission: 5,
+ *           commissionComparison: ComparisonType.LessThanOrEqual,
+ *           selfStakeComparison: ComparisonType.GreaterThanOrEqual,
+ *           selfStake: 10005000000000n
+ *         }
+ *       }
+ *     ],
+ *     alerts: {
+ *       messengerType: "matrix",
+ *       targets: ["!room:matrix.org"]
+ *     },
+ *   }
+ * ]
  */
 export class ConfigProcessor {
   static processConfigs(configFiles: string[]): MonitoringGroup[] {
@@ -81,12 +120,11 @@ export class ConfigProcessor {
     chain: Chain,
     monitors: MonitorConfig[],
   ): ConfigAccountSettings {
-    const accountId = AddressTransformer.transform(account.address, account.name, chain);
+    const chainProps = getChainProperties(chain)
+    const accountId = AddressTransformer.transform(account.address, account.name, chainProps);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { address, name, ...accountSettings } = account;
-
-    const mergedSettings = AccountSettingsBuilder.buildSettings(monitors, accountSettings);
-
+    const mergedSettings = AccountSettingsBuilder.buildSettings(monitors, accountSettings, chainProps);
     return { ...accountId, ...mergedSettings };
   }
 }

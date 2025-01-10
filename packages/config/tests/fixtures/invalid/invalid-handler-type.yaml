@@ -1,0 +1,15 @@
+groups:
+  - name: invalid-handler-type
+    chains:
+      - Polkadot
+    alerts:
+      messengerType: matrix
+      targets: ['!room:matrix.org']
+    monitors:
+      - name: Staking
+        commission: 10
+        handlers:
+          include:
+            - InvalidHandlerType  # Invalid handler type
+    accounts:
+      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"

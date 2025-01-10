@@ -1,0 +1,17 @@
+groups:
+  - name: invalid-handlers
+    chains:
+      - Polkadot
+    alerts:
+      messengerType: matrix
+      targets: ['!room:matrix.org']
+    monitors:
+      - name: Staking
+        commission: 10
+        handlers:
+          include:
+            - CommissionChanged
+          exclude:           # Invalid: cannot have both include and exclude
+            - SlashReported
+    accounts:
+      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"

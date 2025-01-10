@@ -6,6 +6,7 @@ import { MetricsService } from './metrics/metrics.service';
 import { ChainWatcherDependencies, createChainWatcher } from '@lib/chain-watcher-factory';
 import { StorageService } from './storage/storage.service';
 import { IncidentPublisherService } from './incident/incident-publisher.service';
+import { getChainProperties } from '@w3f/monitoring-types';
 
 @Injectable()
 export class AppService implements OnModuleInit, OnModuleDestroy {
@@ -28,6 +29,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       const rpcUrls = this.config.getRPCs();
       // TODO: Implement reconnectable API
       this.api = await this.createApi(rpcUrls[0]);
+      const chainProps = getChainProperties(chain)
 
       const dependencies: ChainWatcherDependencies = {
         logger: new Logger('ChainWatcher'),
@@ -35,7 +37,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
         storageClient: this.storageService,
         eventEmitterClient: this.incidentPublisherService,
         metricsClient: this.metricsService,
-        chain,
+        chainProps,
       };
 
       this.chainWatcher = await createChainWatcher(groups, dependencies);

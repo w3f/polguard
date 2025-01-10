@@ -1,0 +1,9 @@
+# Missing required fields in both defaults and group
+defaults:
+  chains:
+    - Polkadot
+
+groups:
+  - name: missing-required
+    accounts:
+      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"

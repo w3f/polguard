@@ -1,0 +1,12 @@
+groups:
+  - name: minimal-validators
+    chains:
+      - Polkadot
+    alerts:
+      messengerType: matrix
+      targets: ['!minimal:matrix.org']
+    monitors:
+      - name: Staking
+        commission: 10
+    accounts:
+      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"

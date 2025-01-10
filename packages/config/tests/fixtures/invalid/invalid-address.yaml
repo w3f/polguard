@@ -1,0 +1,14 @@
+groups:
+  - name: invalid-addresses
+    chains:
+      - Polkadot
+    alerts:
+      messengerType: matrix
+      targets: ['!room:matrix.org']
+    monitors:
+      - name: Staking
+        commission: 10
+    accounts:
+      - address: "invalid-address"  # Invalid format
+      - address: "5GrwvaEF"        # Too short SS58
+      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQYYY"  # Invalid SS58

@@ -1,3 +1,5 @@
+import { ChainProperties } from '.';
+
 export enum Chain {
   Polkadot = 'Polkadot',
   Kusama = 'Kusama',
@@ -58,4 +60,50 @@ export enum IdentityHandlerType {
 export enum GovernanceHandlerType {
   ReferendaSubmitted = 'ReferendaSubmitted',
   ConvictionVoted = 'ConvictionVoted',
+}
+
+const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
+  [Chain.Polkadot]: {
+    chain: Chain.Polkadot,
+    specName: 'polkadot',
+    chainDecimals: 10,
+    chainToken: 'DOT',
+    ss58Format: 0,
+  },
+  [Chain.Kusama]: {
+    chain: Chain.Kusama,
+    specName: 'kusama',
+    chainDecimals: 12,
+    chainToken: 'KSM',
+    ss58Format: 2,
+  },
+  [Chain.PeoplePolkadot]: {
+    chain: Chain.PeoplePolkadot,
+    specName: 'people-polkadot',
+    chainDecimals: 10,
+    chainToken: 'DOT',
+    ss58Format: 0,
+  },
+  [Chain.PeopleKusama]: {
+    chain: Chain.PeopleKusama,
+    specName: 'people-kusama',
+    chainDecimals: 12,
+    chainToken: 'KSM',
+    ss58Format: 2,
+  },
+  [Chain.Centrifuge]: {
+    chain: Chain.Centrifuge,
+    specName: 'centrifuge',
+    chainDecimals: 18,
+    chainToken: 'CFG',
+    ss58Format: 36,
+  },
+} as const;
+
+export function getChainProperties(chain: Chain): ChainProperties {
+  const props = CHAIN_CONFIGS[chain];
+  if (!props) {
+    throw new Error(`Unsupported chain: ${chain}`);
+  }
+  return props;
 }

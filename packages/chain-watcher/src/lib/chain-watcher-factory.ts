@@ -17,17 +17,17 @@ export async function createChainWatcher(
   groups: MonitoringGroup[],
   dependencies: ChainWatcherDependencies,
 ): Promise<ChainWatcher> {
-  const { logger, api, chain, storageClient, eventEmitterClient, metricsClient } = dependencies;
+  const { logger, api, chainProps, storageClient, eventEmitterClient, metricsClient } = dependencies;
 
-  const chainProperties: ChainProperties = await getChainProperties(api);
-  if (chain !== chainProperties.chain) {
+  const specName = api.runtimeVersion.specName.toString();
+  if (chainProps.chain !== specNameToChain(specName)) {
     throw new Error(
-      `Chain mismatch: Config chain is "${chain}" but RPC endpoint returns "${chainProperties.chain}". Please check your configuration.`,
+      `Chain mismatch: Config chain is "${chainProps.chain}" but RPC endpoint returns "${specName}". Please check your configuration.`,
     );
   }
-  const store = ChainWatcherStore.getInstance(storageClient, chain, logger);
+  const store = ChainWatcherStore.getInstance(storageClient, chainProps.chain, logger);
   const stateQueryProvider = createApiStateQueryProvider(api, store, logger);
-  const incidentHandler = new IncidentHandler(logger, store, eventEmitterClient, chain);
+  const incidentHandler = new IncidentHandler(logger, store, eventEmitterClient, chainProps.chain);
 
   return new ChainWatcher(
     logger,
@@ -37,7 +37,7 @@ export async function createChainWatcher(
     store,
     metricsClient,
     stateQueryProvider,
-    chainProperties,
+    chainProps
   );
 }
 
@@ -47,26 +47,7 @@ export interface ChainWatcherDependencies {
   storageClient: KeyValueStorageClient;
   eventEmitterClient: EventEmitterClient;
   metricsClient: MetricsClient;
-  chain: Chain;
-}
-
-async function getChainProperties(api: ApiPromise): Promise<ChainProperties> {
-  const [chainProperties, chainDecimals, chainTokens] = await Promise.all([
-    api.rpc.system.properties(),
-    api.registry.chainDecimals,
-    api.registry.chainTokens,
-  ]);
-
-  const specName = api.runtimeVersion.specName.toString();
-  const chain = specNameToChain(specName);
-
-  return {
-    chain,
-    specName,
-    chainDecimals: chainDecimals[0],
-    chainToken: chainTokens[0],
-    ss58Format: chainProperties.ss58Format.unwrapOr(42) as number,
-  };
+  chainProps: ChainProperties
 }
 
 function specNameToChain(specName: string): Chain {

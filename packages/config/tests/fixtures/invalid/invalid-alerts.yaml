@@ -1,0 +1,12 @@
+groups:
+  - name: invalid-alerts
+    chains:
+      - Polkadot
+    alerts:
+      messengerType: invalid  # Invalid messenger type
+      targets: []            # Empty targets array
+    monitors:
+      - name: Staking
+        commission: 10
+    accounts:
+      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"

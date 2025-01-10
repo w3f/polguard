@@ -1,0 +1,56 @@
+defaults:
+  alerts:
+    messengerType: matrix
+    targets: ['!defaultroom:matrix.org']
+    acknowledgement: true
+    repeatIntervalHours: 24
+  chains:
+    - Polkadot
+    - Kusama
+  monitors:
+    - name: Staking
+      commission: 10
+      handlers:
+        include:
+          - CommissionChanged
+          - SlashReported
+
+groups:
+  - name: validators-default  # This group will be created for both Polkadot and Kusama
+    accounts:
+      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+        name: "Alice"
+        selfStake: "5000.25"
+      - address: "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+        name: "Bob-Hex"
+        commission: 5
+
+  - name: validators-custom
+    chains:
+      - Kusama  # This group only for Kusama
+    alerts:
+      messengerType: matrix
+      targets: ['!customroom:matrix.org']
+      acknowledgement: false
+      repeatIntervalHours: 12
+    monitors:
+      - name: Staking
+        commission: 7
+        handlers:
+          include:
+            - CommissionChanged
+            - DestinationChanged
+      - name: Balances
+        threshold: "500.75"
+      - name: Identity
+    accounts:
+      - address: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
+        name: "Bob"
+        # Staking settings
+        commission: 3
+        selfStake: "1000.5"
+        # Identity settings
+        matrix: "@validator:matrix.org"
+        email: "validator@email.com"
+        # Balances settings
+        threshold: "750.25"

@@ -1,0 +1,35 @@
+defaults:
+  alerts:
+    messengerType: matrix
+    targets: ['!multichain:matrix.org']
+    
+groups:
+  - name: polkadot-validators
+    chains:
+      - Polkadot
+    monitors:
+      - name: Staking
+        commission: 5
+      - name: Balances
+        threshold: "1000.0"
+    accounts:
+      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+        name: "Alice-Polkadot"
+      # Same hex address should transform to different SS58 formats per chain
+      - address: "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+        name: "Bob-Hex-Polkadot"
+        
+  - name: kusama-validators
+    chains:
+      - Kusama
+    monitors:
+      - name: Staking
+        commission: 10
+      - name: Balances
+        threshold: "10000.0"
+    accounts:
+      - address: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
+        name: "Alice-Kusama"
+      # Same hex address should transform to Kusama SS58 format
+      - address: "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+        name: "Bob-Hex-Kusama"

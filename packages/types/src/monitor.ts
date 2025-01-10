@@ -1,9 +1,8 @@
-import { Logger, StateQueryProvider } from './utils';
-import { ChainProperties } from './chain';
+import { ChainProperties, ConfigAccountSettings, Logger } from '.';
 import { Chain, ComparisonType, MonitorType } from './constants';
 import { AlertSettings, IncidentHandlerClient } from './incident';
-import { ConfigAccountSettings } from './account';
 import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams, MonitorHandlerType } from './handlers';
+import { StateQueryProvider } from './state-provider';
 
 export interface Monitor {
   processEveryBlock(params: EveryBlockHandlerParams): Promise<void>;

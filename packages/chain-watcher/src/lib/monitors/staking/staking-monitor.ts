@@ -95,7 +95,8 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
       for (const { account, alerts, groupId } of this.getAccounts(H.CommissionUnexpected, address)) {
         const expectedStake = account.settings.selfStake;
-        // TODO: if not expectedStake? Is it required?
+        if (expectedStake === null) continue;
+
         const comparisonType = account.settings.selfStakeComparison;
         const compareFunc = StakingMonitor.comparisonFunctions[comparisonType];
         const isFiring = !compareFunc(stake, expectedStake);
@@ -124,7 +125,6 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       for (const { account, alerts, groupId } of this.getAccounts(H.DestinationChanged, address)) {
         const expectedDestination = account.settings.payee;
         if (!expectedDestination) continue;
-
         const isFiring = destination !== expectedDestination;
 
         const message = this.createMessage(

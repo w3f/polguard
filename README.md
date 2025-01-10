@@ -12,10 +12,6 @@ The Monitoring Platform consists of three microservices:
 
 All services are built with Nest.js, supporting both synchronous and asynchronous communication using Redis Streams.
 
-## Project Structure
-
-The project follows a microservices architecture with services organized in the `packages/` directory. For detailed information about project structure, architectural decisions, and development roadmap, see [DEVELOPMENT.md](./docs/DEVELOPMENT.md).
-
 ## Architecture Overview
 
 ```mermaid
@@ -48,10 +44,10 @@ flowchart LR
 
 ## Documentation
 
-- [Development Notes](./docs/DEVELOPMENT.md) - Project structure, architectural decisions, and roadmap
-- [Publishing Guide](./docs/PUBLISHING.md) - Instructions for building and publishing packages
 - [Chain Watcher](./packages/chain-watcher/README.md) - Chain monitoring service details
 - [Matrix](./packages/matrix/README.md) - Notification service details
+- [Development Notes](./docs/DEVELOPMENT.md) - Project structure, architectural decisions, and roadmap
+- [Publishing Guide](./docs/PUBLISHING.md) - Instructions for building and publishing packages
 
 ## Links
 
@@ -63,7 +59,7 @@ flowchart LR
 When working with local changes:
 
 ```bash
-# Build specific package
+# Build all packages
 yarn build:all
 
 # Or build specific package in case of changes

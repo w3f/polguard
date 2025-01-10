@@ -1,0 +1,5 @@
+# Missing required groups field
+defaults:
+  alerts:
+    messengerType: matrix
+    targets: ['!room:matrix.org']

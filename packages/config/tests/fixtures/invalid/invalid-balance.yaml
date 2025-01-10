@@ -1,0 +1,13 @@
+groups:
+  - name: invalid-balances
+    chains:
+      - Polkadot
+    alerts:
+      messengerType: matrix
+      targets: ['!room:matrix.org']
+    monitors:
+      - name: Balances
+        threshold: "invalid.number"  # Invalid decimal format
+    accounts:
+      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+        selfStake: "1.2.3"          # Invalid decimal format

@@ -4,5 +4,5 @@
     "runAllTestsOnStartup": false
   },
   "jest.enable": true,
-  "jest.jestCommandLine": "yarn test"
+  "jest.jestCommandLine": "yarn test:all"
 }

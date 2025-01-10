@@ -11,6 +11,14 @@
 import * as Joi from 'joi';
 import { Chain, ComparisonType, MessengerType, MonitorType, StakingHandlerType, IdentityHandlerType, BalancesHandlerType } from '@w3f/monitoring-types';
 
+const decimalStringPattern = /^-?\d*\.?\d*$/;
+const decimalStringSchema = Joi.string()
+  .pattern(decimalStringPattern)
+  .messages({
+    'string.pattern.base': 'Invalid decimal format. Expected format: "123.456"'
+  });
+
+
 const alertSchema = Joi.object({
   messengerType: Joi.string().valid(...Object.values(MessengerType)),
   targets: Joi.array()
@@ -28,24 +36,25 @@ const alertSchema = Joi.object({
 });
 
 function createHandlerSchema(handlerEnum: Record<string, string>, monitorName: string) {
-  return Joi.alternatives().try(
-    Joi.object({
-      include: Joi.array()
-        .items(Joi.string().valid(...Object.values(handlerEnum)))
-        .required()
+  const handlerArraySchema = Joi.array()
+    .items(
+      Joi.string()
+        .valid(...Object.values(handlerEnum))
         .messages({
-          'any.only': `Invalid ${monitorName} handler type`,
+          'any.only': `Invalid ${monitorName} handler type. Must be one of: ${Object.values(handlerEnum).join(', ')}`
         })
-    }),
-    Joi.object({
-      exclude: Joi.array()
-        .items(Joi.string().valid(...Object.values(handlerEnum)))
-        .required()
-        .messages({
-          'any.only': `Invalid ${monitorName} handler type`,
-        })
+    );
+
+  return Joi.object()
+    .xor('include', 'exclude')
+    .messages({
+      'object.xor': `Invalid ${monitorName} handler configuration. Cannot have both include and exclude arrays.`
     })
-  );
+    .keys({
+      include: handlerArraySchema,
+      exclude: handlerArraySchema
+    })
+    .optional(); // Make the entire handlers object optional
 }
 
 /**
@@ -59,7 +68,7 @@ function createHandlerSchema(handlerEnum: Record<string, string>, monitorName: s
  */
 const stakingMonitorSchema = Joi.object({
   commission: Joi.number().min(0).max(100),
-  selfStake: Joi.number(),
+  selfStake: decimalStringSchema,
   selfStakeComparison: Joi.string().valid(...Object.values(ComparisonType)),
   commissionComparison: Joi.string().valid(...Object.values(ComparisonType)),
   payee: Joi.string(),
@@ -73,7 +82,7 @@ const identityMonitorSchema = Joi.object({
 });
 
 const balancesMonitorSchema = Joi.object({
-  threshold: Joi.number(),
+  threshold: decimalStringSchema,
   changeComparison: Joi.string().valid(...Object.values(ComparisonType)),
   handlers: createHandlerSchema(BalancesHandlerType, 'Balances')
 });

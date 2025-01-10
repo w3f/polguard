@@ -1,129 +1,189 @@
+import { encodeAddress } from '@polkadot/util-crypto';
+import { hexToU8a } from '@polkadot/util';
 import { ConfigProcessor } from '../src/config-processor';
-import { Chain, MonitorType, ComparisonType, MessengerType } from '@w3f/monitoring-types';
-import * as fs from 'fs';
-import * as yaml from 'js-yaml';
+import { MonitorType, Chain, StakingHandlerType, getChainProperties, ComparisonType } from '@w3f/monitoring-types';
+import path from 'path';
 
-jest.mock('fs');
+const FIXTURES_DIR = path.join(__dirname, 'fixtures');
+const TEST_HEX = '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
+const POLKADOT_SS58 = encodeAddress(hexToU8a(TEST_HEX), getChainProperties(Chain.Polkadot).ss58Format)
+const KUSAMA_SS58 = encodeAddress(hexToU8a(TEST_HEX), getChainProperties(Chain.Kusama).ss58Format)
 
 describe('ConfigProcessor', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  describe('Valid Configurations', () => {
+    it('should process full config with all features', () => {
+      const result = ConfigProcessor.processConfigs([
+        path.join(FIXTURES_DIR, 'valid/full-config.yaml')
+      ]);
+    
+      // Check groups distribution across chains
+      expect(result.length).toBe(3); // validators-default for both chains + validators-custom for Kusama
+      const polkadotGroups = result.filter(g => g.chain === Chain.Polkadot);
+      const kusamaGroups = result.filter(g => g.chain === Chain.Kusama);
+      expect(polkadotGroups.length).toBe(1); // validators-default only
+      expect(kusamaGroups.length).toBe(2); // validators-default and validators-custom    
+
+      // Test defaults inheritance
+      const defaultGroup = result.find(g => g.name === 'validators-default' && g.chain === Chain.Polkadot);
+      expect(defaultGroup).toBeDefined();
+      expect(defaultGroup?.alerts).toEqual({
+        messengerType: 'matrix',
+        targets: ['!defaultroom:matrix.org'],
+        acknowledgement: true,
+        repeatIntervalHours: 24
+      });
+
+      // Test address transformation
+      const hexAccount = defaultGroup?.accounts.find(a => a.name === 'Bob-Hex');
+      expect(hexAccount).toBeDefined();
+      expect(hexAccount?.hex).toBe(TEST_HEX);
+      expect(hexAccount?.ss58).toBe(POLKADOT_SS58);
+
+      // Test monitor settings merging and completeness
+      const customGroup = result.find(g => g.name === 'validators-custom' && g.chain === Chain.Kusama);
+      const bobAccount = customGroup?.accounts.find(a => a.name === 'Bob');
+      expect(bobAccount).toBeDefined();
+      
+      // Check Staking monitor settings
+      expect(bobAccount?.[MonitorType.Staking]).toEqual({
+        commission: 3, // Overridden from account
+        selfStake: 1000500000000000n, // Converted to BigInt
+        commissionComparison: ComparisonType.LessThanOrEqual, // Default
+        selfStakeComparison: ComparisonType.GreaterThanOrEqual, // Default
+        handlers: {
+          include: [
+            StakingHandlerType.CommissionChanged,
+            StakingHandlerType.DestinationChanged
+          ]
+        }
+      });
+
+      // Check Balances monitor settings
+      expect(bobAccount?.[MonitorType.Balances]).toEqual({
+        threshold: 750250000000000n // Converted to BigInt
+      });
+
+      // Check Identity monitor settings
+      expect(bobAccount?.[MonitorType.Identity]).toEqual({
+        matrix: '@validator:matrix.org',
+        email: 'validator@email.com'
+      });
+    });
+
+    it('should process minimal valid config', () => {
+      const result = ConfigProcessor.processConfigs([
+        path.join(FIXTURES_DIR, 'valid/minimal-config.yaml')
+      ]);
+    
+      expect(result.length).toBe(1);
+      const group = result[0];
+      expect(group.chain).toBe(Chain.Polkadot);
+      expect(group.accounts.length).toBe(1);
+      
+      const account = group.accounts[0];
+      const monitorKeys = Object.keys(account).filter(key => 
+        Object.values(MonitorType).includes(key as MonitorType)
+      );
+      
+      // Should only have Staking monitor
+      expect(monitorKeys).toEqual([MonitorType.Staking]);
+      
+      // Check Staking monitor settings
+      expect(account[MonitorType.Staking]).toEqual({
+        commission: 10,
+        commissionComparison: ComparisonType.LessThanOrEqual,
+        selfStakeComparison: ComparisonType.GreaterThanOrEqual
+      });
+    });
+
+    it('should handle same address across different chains', () => {
+      const result = ConfigProcessor.processConfigs([
+        path.join(FIXTURES_DIR, 'valid/multi-chain-config.yaml')
+      ]);
+
+      const polkadotGroup = result.find(g => g.chain === Chain.Polkadot);
+      const kusamaGroup = result.find(g => g.chain === Chain.Kusama);
+
+      const polkadotHexAccount = polkadotGroup?.accounts.find(a => a.name === 'Bob-Hex-Polkadot');
+      const kusamaHexAccount = kusamaGroup?.accounts.find(a => a.name === 'Bob-Hex-Kusama');
+
+      // Check address transformations
+      expect(polkadotHexAccount?.hex).toBe(TEST_HEX);
+      expect(kusamaHexAccount?.hex).toBe(TEST_HEX);
+      
+      expect(polkadotHexAccount?.ss58).toBe(POLKADOT_SS58);
+      expect(kusamaHexAccount?.ss58).toBe(KUSAMA_SS58);
+      expect(polkadotHexAccount?.ss58).not.toBe(kusamaHexAccount?.ss58);
+    });
   });
 
-  const createMockConfig = groupConfig => {
-    const mockConfig = { groups: [groupConfig] };
-    const mockFileContents = yaml.dump(mockConfig);
-    (fs.readFileSync as jest.Mock).mockReturnValue(mockFileContents);
-    return ConfigProcessor.processConfigs(['mock-config.yaml']);
-  };
-
-  it('should process a valid config with a validator monitor and payee', () => {
-    const result = createMockConfig({
-      name: 'Test Group',
-      chains: [Chain.Polkadot],
-      monitors: [
-        {
-          name: MonitorType.Staking,
-          commission: 10,
-          commissionComparison: ComparisonType.LessThanOrEqual,
-          selfStakeComparison: ComparisonType.GreaterThanOrEqual,
-        },
-      ],
-      alerts: {
-        messengerType: MessengerType.Matrix,
-        targets: ['!example:example.com']
-      },
-      accounts: [
-        {
-          address: '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5',
-          name: 'Alice',
-          payee: '14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3',
-        },
-      ],
+  describe('Invalid Configurations', () => {
+    it('should throw on invalid structure', () => {
+      expect(() => {
+        ConfigProcessor.processConfigs([
+          path.join(FIXTURES_DIR, 'invalid/invalid-structure.yaml')
+        ]);
+      }).toThrow(/groups/);
     });
 
-    expect(result).toHaveLength(1);
-    const [group] = result;
-    expect(group.name).toBe('Test Group');
-    expect(group.chain).toBe(Chain.Polkadot);
-    expect(group.accounts).toHaveLength(1);
-
-    const [account] = group.accounts;
-    expect(account.name).toBe('Alice');
-    expect(account.ss58).toBe('15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5');
-    expect(account.hex).toBe('0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d');
-
-    expect(account[MonitorType.Staking]).toEqual({
-      commission: 10,
-      commissionComparison: ComparisonType.LessThanOrEqual,
-      selfStakeComparison: ComparisonType.GreaterThanOrEqual,
-      payee: '14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3',
+    it('should throw on invalid address format', () => {
+      expect(() => {
+        ConfigProcessor.processConfigs([
+          path.join(FIXTURES_DIR, 'invalid/invalid-address.yaml')
+        ]);
+      }).toThrow(/Invalid address format/);
     });
 
-    Object.values(MonitorType).forEach(monitorType => {
-      if (monitorType !== MonitorType.Staking) {
-        expect(account[monitorType]).toEqual({});
-      }
+    it('should throw when staking monitor missing commission', () => {
+      expect(() => {
+        ConfigProcessor.processConfigs([
+          path.join(FIXTURES_DIR, 'invalid/invalid-monitor.yaml')
+        ]);
+      }).toThrow(/Neither the Staking monitor nor account.*has a commission specified/);
     });
 
-    expect(group.alerts).toEqual({ messengerType: MessengerType.Matrix, targets: ['!example:example.com']});
-  });
-
-  it('should process a config with multiple monitor types', () => {
-    const result = createMockConfig({
-      name: 'Multi-Monitor Group',
-      chains: [Chain.Polkadot],
-      monitors: [
-        { 
-          name: MonitorType.Staking, 
-          commission: 5,
-          commissionComparison: ComparisonType.LessThanOrEqual,
-          selfStakeComparison: ComparisonType.GreaterThanOrEqual,
-        },
-        { name: MonitorType.Governance },
-        { 
-          name: MonitorType.Balances, 
-          threshold: '2000000',
-          changeComparison: ComparisonType.LessThanOrEqual,
-        },
-      ],
-      alerts: {
-        messengerType: MessengerType.Matrix,
-        targets: ['!example:example.com']
-      },
-      accounts: [{ address: '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5' }],
+    it('should throw on invalid alert configuration', () => {
+      expect(() => {
+        ConfigProcessor.processConfigs([
+          path.join(FIXTURES_DIR, 'invalid/invalid-alerts.yaml')
+        ]);
+      }).toThrow(/messengerType/);
     });
 
-    expect(result).toHaveLength(1);
-    const [{ accounts }] = result;
-    const [account] = accounts;
-    expect(account[MonitorType.Staking]).toEqual({
-      commission: 5,
-      commissionComparison: ComparisonType.LessThanOrEqual,
-      selfStakeComparison: ComparisonType.GreaterThanOrEqual,
+    it('should throw on invalid balance format', () => {
+      expect(() => {
+        ConfigProcessor.processConfigs([
+          path.join(FIXTURES_DIR, 'invalid/invalid-balance.yaml')
+        ]);
+      }).toThrow(/Invalid decimal format/);
     });
-    expect(account[MonitorType.Governance]).toEqual({});
-    expect(account[MonitorType.Balances]).toEqual({ 
-      threshold: '2000000',
-      changeComparison: ComparisonType.LessThanOrEqual,
+
+    it('should throw when required defaults are missing', () => {
+      expect(() => {
+        ConfigProcessor.processConfigs([
+          path.join(FIXTURES_DIR, 'invalid/invalid-defaults.yaml')
+        ]);
+      }).toThrow(/must have (monitors|alerts) defined/);
     });
-  });
-
-  it('should throw an error for invalid config', () => {
-    const mockConfig = {
-      groups: [
-        {
-          name: 'Invalid Group',
-          chains: ['InvalidChain'],
-          monitors: [{ name: 'InvalidMonitor' }],
-          accounts: [{ address: 'invalid-address' }],
-        },
-      ],
-    };
-
-    const mockFileContents = yaml.dump(mockConfig);
-    (fs.readFileSync as jest.Mock).mockReturnValue(mockFileContents);
-
-    expect(() => ConfigProcessor.processConfigs(['mock-config.yaml'])).toThrow();
+  
+    describe('Invalid Configurations', () => {
+      describe('handler validation', () => {
+        it('should throw on having both include and exclude', () => {
+          expect(() => {
+            ConfigProcessor.processConfigs([
+              path.join(FIXTURES_DIR, 'invalid/invalid-handlers.yaml')
+            ]);
+          }).toThrow(/Cannot have both include and exclude arrays./);
+        });
+    
+        it('should throw on invalid handler type', () => {
+          expect(() => {
+            ConfigProcessor.processConfigs([
+              path.join(FIXTURES_DIR, 'invalid/invalid-handler-type.yaml')
+            ]);
+          }).toThrow(/Must be one of:/);
+        });
+      });
+    });
   });
 });

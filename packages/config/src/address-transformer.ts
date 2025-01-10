@@ -1,4 +1,4 @@
-import { Chain, AccountId } from '@w3f/monitoring-types';
+import { AccountId, ChainProperties } from '@w3f/monitoring-types';
 import { u8aToHex, hexToU8a, isHex } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 
@@ -35,16 +35,9 @@ import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
  * // }
  */
 export class AddressTransformer {
-  private static chainPrefixMap = new Map<Chain, number>([
-    [Chain.Polkadot, 0],
-    [Chain.Kusama, 2],
-    [Chain.PeoplePolkadot, 0],
-    [Chain.PeopleKusama, 2],
-  ]);
-
-  static transform(address: string, name: string | undefined, chain: Chain): AccountId {
+  static transform(address: string, name: string | undefined, chainProps: ChainProperties): AccountId {
     const hex = this.addressToHex(address);
-    const ss58 = this.hexToSS58(hex, chain);
+    const ss58 = encodeAddress(hexToU8a(hex), chainProps.ss58Format);
     return {
       name: name || `${ss58.slice(0, 4)}...${ss58.slice(-4)}`,
       hex,
@@ -63,16 +56,4 @@ export class AddressTransformer {
     }
   }
 
-  private static hexToSS58(hex: string, chain: Chain): string {
-    const chainPrefix = this.getChainPrefix(chain);
-    return encodeAddress(hexToU8a(hex), chainPrefix);
-  }
-
-  private static getChainPrefix(chain: Chain): number {
-    const prefix = this.chainPrefixMap.get(chain);
-    if (prefix === undefined) {
-      throw new Error(`Unsupported chain for SS58 prefix: ${chain}`);
-    }
-    return prefix;
-  }
 }
