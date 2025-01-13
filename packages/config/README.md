@@ -2,89 +2,68 @@
 
 This package contains the configuration processing and validation logic for the Chain Watcher application.
 
-## Components
+## Main Component
 
-### 1. Config Processor (`config-processor.ts`)
+### Config Processor (`config-processor.ts`)
 
-The Config Processor is responsible for loading, processing, and transforming raw configuration data into structured monitoring groups.
-
-Key features:
-- Loading and validating configuration files
-- Applying defaults from the default group if chains, monitors or alerts were not provided
-- Building account settings by merging monitor configs with account-specific settings
-- Producing final MonitoringGroup objects with fully processed accounts
-
-Usage:
-```typescript
-import { ConfigProcessor } from './config-processor';
-
-const configFiles = ['config1.yaml', 'config2.yaml'];
-const monitoringGroups = ConfigProcessor.processConfigs(configFiles);
-```
-
-### 2. Config Validator (`config-validator.ts`)
-
-The Config Validator ensures that the raw configuration data adheres to the expected structure and contains valid values.
-
-Key features:
-- Validating the overall structure of the configuration
-- Checking for required fields and correct data types
-- Ensuring that monitor-specific configurations are valid
-- Verifying that account addresses are in the correct format
-
-Usage:
-```typescript
-import { validateConfig } from './config-validator';
-
-try {
-  validateConfig(rawConfig);
-  console.log('Configuration is valid');
-} catch (error) {
-  console.error('Configuration validation failed:', error.message);
-}
-```
-
-### 3. Address Transformer (`address-transformer.ts`)
-
-The Address Transformer handles the conversion and normalization of blockchain addresses across different formats and chains.
-
-Key features:
-- Accepting either hex or SS58 address formats as input and ensuring both are in the output
-- Deriving a default name from the address if not provided
-- Recalculating the SS58 address for the specified chain, regardless of the input address's original chain
-
-Usage:
-```typescript
-import { AddressTransformer } from './address-transformer';
-import { Chain } from '../constants';
-
-const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-const result = AddressTransformer.transform(address, undefined, Chain.Polkadot);
-```
-
-### 4. Account Settings Builder (`account-settings-builder.ts`)
-
-The Account Settings Builder is responsible for constructing the final account settings object used in the chain watcher.
+Processes configuration files and transforms them into structured monitoring groups.
 
 Key responsibilities:
-- Combining account-specific settings with group-level monitor configurations
-- Applying default values for missing monitor settings
-- Constructing a final account settings object which includes each monitor type
+* Loading and validating YAML configuration files:
+  * Ensures required fields are present
+  * Validates field formats and values
+  * Checks cross-field dependencies
+* Applying defaults:
+  * Uses defaults.chains if group.chains not provided
+  * Uses defaults.monitors if group.monitors not provided
+  * Uses defaults.alerts if group.alerts not provided
+  * Applies default comparison types for monitors
+* Building final monitoring structure:
+  * Creates separate group for each chain configuration
+  * Transforms addresses to chain-specific SS58 format
+  * Merges monitor-level settings and account-level settings with priority to accounts
+  * Converts decimal balance strings to chain-specific BigInt values
 
-Usage:
+Example output:
 ```typescript
-import { AccountSettingsBuilder } from './account-settings-builder';
-
-const monitorConfigs = [/* ... */];
-const accountSettings = {/* ... */};
-const result = AccountSettingsBuilder.buildSettings(monitorConfigs, accountSettings);
+[
+  {
+    name: "validators group",
+    chain: Chain.Polkadot,
+    monitors: [
+      {
+        name: MonitorType.Staking,
+        settings: { commission: 10, handlers: { include: ["CommissionChanged"] } }
+      }
+    ],
+    accounts: [
+      {
+        name: "5Grw...utQY",
+        hex: "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+        ss58: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+        Staking: {
+          commission: 5,
+          commissionComparison: ComparisonType.LessThanOrEqual,
+          selfStakeComparison: ComparisonType.GreaterThanOrEqual,
+          selfStake: 10005000000000n
+        }
+      }
+    ],
+    alerts: {
+      messengerType: "matrix",
+      targets: ["!room:matrix.org"]
+    }
+  }
+]
 ```
 
-## Workflow
+## Supporting Components
 
-1. The Config Processor loads and validates the configuration files using the Config Validator.
-2. Raw configurations are transformed into structured monitoring groups.
-3. For each account in the groups:
-   - The Address Transformer normalizes the account address.
-   - The Account Settings Builder constructs the final settings object.
-4. The resulting MonitoringGroup objects are used throughout the Chain Watcher application.
+### Account Settings Builder (`account-settings-builder.ts`)
+Builds account monitor settings by combining monitor and account-level configurations, applying defaults, and converting decimal balances to BigInt values.
+
+### Config Validator (`config-validator.ts`)
+Performs validation of raw configuration data without modifying it. Ensures proper structure, required fields, and valid formats.
+
+### Address Transformer (`address-transformer.ts`)
+Handles blockchain address transformations between hex and SS58 formats, ensuring correct chain-specific encoding.

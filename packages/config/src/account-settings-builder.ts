@@ -60,6 +60,7 @@ export class AccountSettingsBuilder {
   private static getMonitorTypeKeys<T extends MonitorType>(
     monitorType: T
   ): (keyof MonitorTypeSettings[T])[] {
+    // TODO: Consider replacing hardcoded monitor type fields with a more maintainable solution.
     const settingsType = {
       [MonitorType.Staking]: ['commission', 'commissionComparison', 'selfStakeComparison', 'selfStake', 'payee', 'handlers'],
       [MonitorType.Balances]: ['threshold', 'changeComparison', 'handlers'],

@@ -3,6 +3,7 @@ import { IdentityHandlerType as H, EveryBlockHandlerParams, MonitorType, Chain }
 import { AbstractMonitor } from '../abstract-monitor';
 
 export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
+  // TODO: Add event handler
   @EveryBlockHandler([Chain.PeoplePolkadot, Chain.PeopleKusama])
   async identityUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     const identities = await this.stateQuery.identityOf(this.uniqueAddresses, blockNumber);

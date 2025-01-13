@@ -13,7 +13,6 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  * 1. Loading and validating YAML configuration files:
  *    - Ensures required fields are present
  *    - Validates field formats and values
- *    - Ensures Staking monitor has commission value
  *    - Checks cross-field dependencies
  * 
  * 2. Applying defaults:

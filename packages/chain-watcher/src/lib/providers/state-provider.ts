@@ -172,6 +172,7 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
  * Recent changes in the Polkadot runtime removed hardcoded fields for identity info,
  * but this type is introduced to provide a representation for processing identity data
  * retrieved via `api.query.identity.identityOf`.
+ * https://github.com/polkadot-js/api/blob/eab2f76884076ce045b641552e4f1db7ceee4e8a/packages/api-derive/src/accounts/identity.ts#L20
  *
  * This is not an on-chain type, that's why polkadot.js doesn't expose it.
  */

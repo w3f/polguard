@@ -82,6 +82,11 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
   @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
   async selfStakeUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+    // Note: stash–controller separation has largely been deprecated, the chain's storage layout
+    // still relies on the controller address for staking.ledger. Therefore, we must first call
+    // staking.bonded (to map from stash to controller) before querying staking.ledger to retrieve
+    // a validator's self-stake. This remains necessary for backward compatibility with the existing
+    // on-chain storage structure.
     const controllers = await this.stateQuery.stakingBonded(this.uniqueAddresses, blockNumber);
     const controllerAddresses = Object.values(controllers).filter((addr): addr is string => addr !== null);
     const ledgers = await this.stateQuery.stakingLedgerActive(controllerAddresses, blockNumber);

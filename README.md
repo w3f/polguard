@@ -4,13 +4,18 @@
 
 ## Overview
 
-The Monitoring Platform consists of three microservices:
+The platform consists of microservices and shared packages:
 
-1. **ChainWatcher** - Monitoring service responsible for observing blockchain activities and generating incidents. [More details](./packages/chain-watcher/README.md)
-2. **Matrix** - Notification service for sending alerts and updates to specified channels. [More details](./packages/matrix/README.md)
-3. **Incident Management** - API gateway service for managing and coordinating incidents across the platform. (Planned)
+### Microservices (Private)
+1. **@w3f/monitoring-chain-watcher** - Monitoring service responsible for observing blockchain activities and generating incidents. [More details](./packages/chain-watcher/README.md)
+2. **@w3f/monitoring-matrix** - Notification service for sending alerts and updates to specified channels. [More details](./packages/matrix/README.md)
+3. **@w3f/monitoring-incident-management** - _(Draft)_ API gateway service for managing and coordinating incidents across the platform. Basic project structure is set up, but the service is in early development stage. [More details](./packages/incident-management/README.md)
 
 All services are built with Nest.js, supporting both synchronous and asynchronous communication using Redis Streams.
+
+### Shared Packages (Public)
+1. **@w3f/monitoring-types** - Common types and interfaces used across the platform
+2. **@w3f/monitoring-config** - Configuration processing package, provides YAML configuration validation and transformation, chain-specific address formatting, and decimal balance conversion support. [More details](./packages/config/README.md)
 
 ## Architecture Overview
 
@@ -44,8 +49,9 @@ flowchart LR
 
 ## Documentation
 
-- [Chain Watcher](./packages/chain-watcher/README.md) - Chain monitoring service details
-- [Matrix](./packages/matrix/README.md) - Notification service details
+- [Chain Watcher service](./packages/chain-watcher/README.md)
+- [Matrix service](./packages/matrix/README.md)
+- [Config package](./packages/config/README.md)
 - [Development Notes](./docs/DEVELOPMENT.md) - Project structure, architectural decisions, and roadmap
 - [Publishing Guide](./docs/PUBLISHING.md) - Instructions for building and publishing packages
 
