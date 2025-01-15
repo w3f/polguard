@@ -17,6 +17,19 @@ All services are built with Nest.js, supporting both synchronous and asynchronou
 1. **@w3f/monitoring-types** - Common types and interfaces used across the platform
 2. **@w3f/monitoring-config** - Configuration processing package, provides YAML configuration validation and transformation, chain-specific address formatting, and decimal balance conversion support. [More details](./packages/config/README.md)
 
+## Documentation
+
+### User Documentation
+- [Monitors & Handlers Reference](./docs/MONITORS.md) - Comprehensive guide to available monitors and their handlers
+- [Configuration Guide](./docs/CONFIG.md) - Detailed instructions for creating YAML configuration files
+
+### Technical Documentation
+- [ChainWatcher service](./packages/chain-watcher/README.md)
+- [Matrix service](./packages/matrix/README.md)
+- [Config package](./packages/config/README.md)
+- [Development Notes](./docs/DEVELOPMENT.md) - Project structure, architectural decisions, and roadmap
+- [Publishing Guide](./docs/PUBLISHING.md) - Instructions for building and publishing packages
+
 ## Architecture Overview
 
 ```mermaid
@@ -47,18 +60,53 @@ flowchart LR
     style IM stroke:#8c8cc6,stroke-width:3px,font-weight:bold
 ```
 
-## Documentation
+## Quick Start
 
-- [Chain Watcher service](./packages/chain-watcher/README.md)
-- [Matrix service](./packages/matrix/README.md)
-- [Config package](./packages/config/README.md)
-- [Development Notes](./docs/DEVELOPMENT.md) - Project structure, architectural decisions, and roadmap
-- [Publishing Guide](./docs/PUBLISHING.md) - Instructions for building and publishing packages
+There are at least two ways to run the monitoring platform:
 
-## Links
+### 1. Running ChainWatcher only (development)
 
-- [Project Timeline](https://docs.google.com/spreadsheets/d/1twBMKTNauqBwBL2ZccdGFIPfVOj8efJolkUCv-wWvgQ)
-- [Architecture Discussion](https://github.com/w3f/SecOps/issues/599)
+This is the simplest way to start development or testing:
+
+1. Create your monitoring configuration:
+   - Create a YAML file following the [Configuration Guide](./docs/CONFIG.md)
+   - Place it in `packages/chain-watcher/monitoring-configs/`
+
+2. Set up application config:
+   - Create configuration file for the service
+   - Place it in `packages/chain-watcher/config/`
+
+3. Start Redis:
+   ```bash
+   cd deployment
+   docker-compose up redis
+   ```
+
+4. Run the Chain Watcher:
+   ```bash
+   yarn build:all # First time only
+   yarn start:chain-watcher:dev
+   ```
+
+### 2. Using docker-compose
+
+This approach runs all services with Redis streams and Matrix notifications:
+
+1. Set up configurations in `deployment/app-config/`:
+   - `chain-watcher.yaml` - ChainWatcher service configuration
+   - `chain-watcher.monitoring.yaml` - Monitoring configuration
+   - `matrix.yaml` - Matrix service configuration
+
+2. Set Matrix password:
+   ```bash
+   export MATRIX_PASSWORD=your_password
+   ```
+
+3. Start all services:
+   ```bash
+   cd deployment
+   docker-compose up
+   ```
 
 ## Development Workflow
 
@@ -78,3 +126,8 @@ yarn build:matrix
 yarn start:chain-watcher:dev
 yarn start:matrix:dev
 ```
+
+## Links
+
+- [Project Timeline](https://docs.google.com/spreadsheets/d/1twBMKTNauqBwBL2ZccdGFIPfVOj8efJolkUCv-wWvgQ)
+- [Architecture Discussion](https://github.com/w3f/SecOps/issues/599)

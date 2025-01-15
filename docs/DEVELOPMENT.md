@@ -12,7 +12,7 @@ and sent directly to Matrix service through message broker.
 
 ### Implementation Plan
 1. First Phase
-   - [ ] Create incident storage service with PostgreSQL
+   - [x] Create incident storage service with PostgreSQL
    - [ ] Implement basic REST API for incidents CRUD
    - [ ] Add endpoints for incident acknowledgement
    - [ ] Add query endpoint for non-acknowledged incidents
