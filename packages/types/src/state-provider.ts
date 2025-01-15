@@ -1,14 +1,8 @@
-export interface IdentityInfo {
-  display?: string,
-  legal?: string,
-  web?: string,
-  matrix?: string,
-  email?: string,
-  image?: string,
-  twitter?: string,
-  github?: string,
-  discord?: string,
-}
+import { IdentityField } from '.';
+
+export type IdentityInfo = {
+  [K in IdentityField]?: string;
+};
 
 export interface StateQueryProvider {
   stakingValidatorsComission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>>;

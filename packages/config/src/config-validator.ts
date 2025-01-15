@@ -9,7 +9,8 @@
  * are handled separately in the config processor module.
  */
 import * as Joi from 'joi';
-import { Chain, ComparisonType, MessengerType, MonitorType, StakingHandlerType, IdentityHandlerType, BalancesHandlerType } from '@w3f/monitoring-types';
+import { Chain, ComparisonType, MessengerType, MonitorType, StakingHandlerType, IdentityHandlerType,
+         BalancesHandlerType, IDENTITY_FIELDS } from '@w3f/monitoring-types';
 
 const decimalStringPattern = /^-?\d*\.?\d*$/;
 const decimalStringSchema = Joi.string()
@@ -76,8 +77,9 @@ const stakingMonitorSchema = Joi.object({
 });
 
 const identityMonitorSchema = Joi.object({
-  matrix: Joi.string(),
-  email: Joi.string(),
+  ...Object.fromEntries(
+    IDENTITY_FIELDS.map(field => [field, Joi.string()])
+  ),
   handlers: createHandlerSchema(IdentityHandlerType, 'Identity')
 });
 

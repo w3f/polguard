@@ -1,4 +1,4 @@
-import { ChainProperties, ConfigAccountSettings, Logger } from '.';
+import { ChainProperties, ConfigAccountSettings, Logger, IdentityField } from '.';
 import { Chain, ComparisonType, MonitorType } from './constants';
 import { AlertSettings, IncidentHandlerClient } from './incident';
 import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams, MonitorHandlerType } from './handlers';
@@ -46,11 +46,11 @@ export interface BalancesSettings {
   handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Balances]>;
 }
 
-export interface IdentitySettings {
-  matrix?: string;
-  email?: string;
+export type IdentitySettings = {
+  [K in IdentityField]?: string;
+} & {
   handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Identity]>;
-}
+};
 
 export type MonitorTypeSettings = {
   [MonitorType.Staking]: StakingSettings;

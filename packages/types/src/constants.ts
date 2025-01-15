@@ -44,6 +44,7 @@ export enum StakingHandlerType {
   DestinationUnexpected = 'DestinationUnexpected',
   SelfStakeUnexpected = 'SelfStakeUnexpected',
   ActiveSetPresence = 'ActiveSetPresence',
+  ValidatorIntentionMissing = 'ValidatorIntentionMissing',
 }
 
 export enum BalancesHandlerType {
@@ -55,6 +56,7 @@ export enum BalancesHandlerType {
 
 export enum IdentityHandlerType {
   IdentityUnexpected = 'IdentityUnexpected',
+  IdentityChanged = 'IdentityChanged',
 }
 
 export enum GovernanceHandlerType {
@@ -107,3 +109,17 @@ export function getChainProperties(chain: Chain): ChainProperties {
   }
   return props;
 }
+
+export const IDENTITY_FIELDS = [
+  'display',
+  'legal',
+  'web',
+  'matrix',
+  'email',
+  'image',
+  'twitter',
+  'github',
+  'discord'
+] as const;
+
+export type IdentityField = (typeof IDENTITY_FIELDS)[number];

@@ -35,16 +35,16 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
     @Cached()
     async stakingBonded(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
       const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
-      const controllers = await apiAt.query.staking.bonded.multi(addresses);
+      const bondedInfo = await apiAt.query.staking.bonded.multi(addresses);
       const result: Record<string, string | null> = {};
 
       addresses.forEach((address, index) => {
-        const controller = controllers[index].isSome ? controllers[index].unwrap().toString() : null;
+        const bondedAddress = bondedInfo[index].isSome ? bondedInfo[index].unwrap().toString() : null;
 
-        if (!controller) {
-          this.logger.warn(`No controller found for validator ${address} at block ${blockNumber}`);
+        if (!bondedAddress) {
+          this.logger.warn(`No bonded address found for validator ${address} at block ${blockNumber}`);
         }
-        result[address] = controller;
+        result[address] = bondedAddress;
       });
 
       return result;

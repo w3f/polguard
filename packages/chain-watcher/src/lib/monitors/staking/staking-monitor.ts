@@ -82,23 +82,21 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
   @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
   async selfStakeUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    // Note: stash–controller separation has largely been deprecated, the chain's storage layout
-    // still relies on the controller address for staking.ledger. Therefore, we must first call
-    // staking.bonded (to map from stash to controller) before querying staking.ledger to retrieve
-    // a validator's self-stake. This remains necessary for backward compatibility with the existing
-    // on-chain storage structure.
-    const controllers = await this.stateQuery.stakingBonded(this.uniqueAddresses, blockNumber);
-    const controllerAddresses = Object.values(controllers).filter((addr): addr is string => addr !== null);
-    const ledgers = await this.stateQuery.stakingLedgerActive(controllerAddresses, blockNumber);
-
+    // Note: The staking.ledger storage is still keyed by what was historically the controller address.
+    // Although stash-controller separation is deprecated and staking.bonded now returns the same address,
+    // we still need this two-step lookup process to access the ledger storage due to backward compatibility
+    // with the existing storage layout.
+    const bondedInfo = await this.stateQuery.stakingBonded(this.uniqueAddresses, blockNumber);
+    const bondedAddresses = Object.values(bondedInfo).filter((addr): addr is string => addr !== null);
+    const ledgers = await this.stateQuery.stakingLedgerActive(bondedAddresses, blockNumber);
     for (const address of this.uniqueAddresses) {
-      const controller = controllers[address];
-      if (!controller) continue;
+      const bondedAddress = bondedInfo[address];
+      if (!bondedAddress) continue;
 
-      const stake = ledgers[controller];
+      const stake = ledgers[bondedAddress];
       if (stake === null) continue;
 
-      for (const { account, alerts, groupId } of this.getAccounts(H.CommissionUnexpected, address)) {
+      for (const { account, alerts, groupId } of this.getAccounts(H.SelfStakeUnexpected, address)) {
         const expectedStake = account.settings.selfStake;
         if (expectedStake === null) continue;
 
@@ -115,6 +113,34 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
         );
 
         const key = `${account.ss58}:${groupId}:selfStakeUnexpected`;
+        await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
+      }
+    }
+  }
+
+  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
+  async validatorIntentionMissing({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+    const bondedInfo = await this.stateQuery.stakingBonded(this.uniqueAddresses, blockNumber);
+    const commissions = await this.stateQuery.stakingValidatorsComission(this.uniqueAddresses, blockNumber);
+
+    for (const address of this.uniqueAddresses) {
+      for (const { account, alerts, groupId } of this.getAccounts(H.ValidatorIntentionMissing, address)) {
+        const isBonded = bondedInfo[address] !== null;
+        const hasValidatorPrefs = commissions[address] !== null;
+
+        const isFiring = !isBonded || !hasValidatorPrefs;
+
+        const messageLines = [`Account ${this.formatAccountLink(account)} is not properly set up as validator.`];
+        if (!isBonded) {
+          messageLines.push('Account is not bonded.');
+        }
+        if (!hasValidatorPrefs) {
+          messageLines.push('No validator preferences (commission) set.');
+        }
+
+        const message = this.createMessage(messageLines, { blockNumber });
+
+        const key = `${account.ss58}:${groupId}:validatorIntentionMissing`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }

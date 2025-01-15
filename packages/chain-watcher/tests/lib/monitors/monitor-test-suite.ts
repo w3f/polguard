@@ -4,7 +4,10 @@ import {
   ChainProperties,
   MonitoringGroup,
   AlertSettings,
-  Chain, MonitorType, MessengerType,
+  Chain,
+  MonitorType,
+  MessengerType,
+  IdentityField,
 } from '@w3f/monitoring-types';
 import { IncidentHandler } from '@lib/incident/incident-handler';
 import { EventRecord } from '@polkadot/types/interfaces';
@@ -16,6 +19,8 @@ export class MonitorTestSuite {
   mockIncidents: jest.Mocked<IncidentHandler>;
   mockStateQuery: jest.Mocked<StateQueryProvider>;
   mockChainProps: ChainProperties;
+  protected currentBlock: number = 100;
+  protected defaultAddress: string = 'test-address';
 
   constructor() {
     this.setupMocks();
@@ -31,16 +36,10 @@ export class MonitorTestSuite {
       fatal: jest.fn(),
     };
 
-    const incidentHandler = new IncidentHandler(
-      this.mockLogger,
-      {} as any, // store
-      {} as any, // eventEmitter
-      Chain.Polkadot
-    );
-
-    this.mockIncidents = jest.mocked(incidentHandler);
-    jest.spyOn(this.mockIncidents, 'oneTimeIncident').mockImplementation(jest.fn());
-    jest.spyOn(this.mockIncidents, 'ongoingIncident').mockImplementation(jest.fn());
+    this.mockIncidents = {
+      oneTimeIncident: jest.fn().mockResolvedValue(undefined),
+      ongoingIncident: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<IncidentHandler>;
 
     this.mockStateQuery = {
       stakingValidatorsComission: jest.fn(),
@@ -77,6 +76,22 @@ export class MonitorTestSuite {
     return {
       messengerType: MessengerType.Matrix,
       targets: ['test-room-id']
+    };
+  }
+
+  createTestAccount(settings: any = {}) {
+    return {
+      name: 'Test Account',
+      ss58: this.defaultAddress,
+      hex: '0x1234',
+      ...settings,
+    };
+  }
+
+  createMonitorConfig(monitorType: MonitorType, chain: Chain = Chain.Polkadot) {
+    return {
+      ...this.mockChainProps,
+      chain,
     };
   }
 
@@ -122,9 +137,62 @@ export class MonitorTestSuite {
     } as unknown as CallBase<AnyTuple>;
   }
 
+  public mockIdentityState(address: string, identity: any) {
+    this.mockStateQuery.identityOf.mockResolvedValue({
+      [address]: identity,
+    });
+  }
+
+  public mockIdentityStateChange(address: string, previousIdentity: any, currentIdentity: any) {
+    this.mockStateQuery.identityOf
+      .mockImplementation((addresses: string[], blockNumber: number) => 
+        Promise.resolve({
+          [address]: blockNumber === this.currentBlock - 1 
+            ? previousIdentity 
+            : currentIdentity
+        })
+      );
+  }
+
+  public createTestIdentity(fields: Partial<Record<IdentityField, string>> = {}) {
+    return {
+      display: 'Test Display Name',
+      web: 'https://test.com',
+      email: 'test@example.com',
+      twitter: '@test',
+      ...fields,
+    };
+  }
+
+  public mockStakingState(address: string, {
+    commission = 10,
+    selfStake = BigInt(1000),
+    payee = 'Staked',
+    isValidator = true,
+    isBonded = true,
+  } = {}) {
+    this.mockStateQuery.stakingValidatorsComission.mockResolvedValue({
+      [address]: commission,
+    });
+    this.mockStateQuery.stakingLedgerActive.mockResolvedValue({
+      [address]: selfStake,
+    });
+    this.mockStateQuery.stakingPayee.mockResolvedValue({
+      [address]: payee,
+    });
+    this.mockStateQuery.stakingBonded.mockResolvedValue({
+      [address]: isBonded ? address : null,
+    });
+    this.mockStateQuery.sessionValidators.mockResolvedValue({
+      [address]: isValidator,
+    });
+  }
+
   expectOngoingIncident(titleFragment: string, blockNumber: number, isFiring: boolean) {
     expect(this.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
-      expect.objectContaining({ title: expect.stringContaining(titleFragment) }),
+      expect.objectContaining({ 
+        title: expect.stringContaining(titleFragment),
+      }),
       expect.any(Object),
       blockNumber,
       expect.any(String),
@@ -134,7 +202,9 @@ export class MonitorTestSuite {
 
   expectOneTimeIncident(titleFragment: string, blockNumber: number) {
     expect(this.mockIncidents.oneTimeIncident).toHaveBeenCalledWith(
-      expect.objectContaining({ title: expect.stringContaining(titleFragment) }),
+      expect.objectContaining({ 
+        title: expect.stringContaining(titleFragment),
+      }),
       expect.any(Object),
       blockNumber
     );

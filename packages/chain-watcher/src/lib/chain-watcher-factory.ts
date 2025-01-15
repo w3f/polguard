@@ -29,16 +29,7 @@ export async function createChainWatcher(
   const stateQueryProvider = createApiStateQueryProvider(api, store, logger);
   const incidentHandler = new IncidentHandler(logger, store, eventEmitterClient, chainProps.chain);
 
-  return new ChainWatcher(
-    logger,
-    groups,
-    api,
-    incidentHandler,
-    store,
-    metricsClient,
-    stateQueryProvider,
-    chainProps
-  );
+  return new ChainWatcher(logger, groups, api, incidentHandler, store, metricsClient, stateQueryProvider, chainProps);
 }
 
 export interface ChainWatcherDependencies {
@@ -47,7 +38,7 @@ export interface ChainWatcherDependencies {
   storageClient: KeyValueStorageClient;
   eventEmitterClient: EventEmitterClient;
   metricsClient: MetricsClient;
-  chainProps: ChainProperties
+  chainProps: ChainProperties;
 }
 
 function specNameToChain(specName: string): Chain {

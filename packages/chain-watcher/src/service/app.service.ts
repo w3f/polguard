@@ -29,7 +29,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       const rpcUrls = this.config.getRPCs();
       // TODO: Implement reconnectable API
       this.api = await this.createApi(rpcUrls[0]);
-      const chainProps = getChainProperties(chain)
+      const chainProps = getChainProperties(chain);
 
       const dependencies: ChainWatcherDependencies = {
         logger: new Logger('ChainWatcher'),
