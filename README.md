@@ -20,8 +20,8 @@ All services are built with Nest.js, supporting both synchronous and asynchronou
 ## Documentation
 
 ### User Documentation
+- [Configuration Guide](./docs/CONFIG_GUIDE.md) - Detailed instructions for creating YAML configuration files
 - [Monitors & Handlers Reference](./docs/MONITORS.md) - Comprehensive guide to available monitors and their handlers
-- [Configuration Guide](./docs/CONFIG.md) - Detailed instructions for creating YAML configuration files
 
 ### Technical Documentation
 - [ChainWatcher service](./packages/chain-watcher/README.md)
