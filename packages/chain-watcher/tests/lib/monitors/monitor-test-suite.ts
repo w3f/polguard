@@ -50,6 +50,7 @@ export class MonitorTestSuite {
       sessionValidators: jest.fn(),
       systemAccountBalance: jest.fn(),
       identityOf: jest.fn(),
+      identitySuperOf: jest.fn(),
     };
 
     this.mockChainProps = {
@@ -152,6 +153,20 @@ export class MonitorTestSuite {
             : currentIdentity
         })
       );
+  }
+
+  public mockIdentitySuperOf(mapping: Record<string, string | null>) {
+    this.mockStateQuery.identitySuperOf.mockResolvedValue(mapping);
+  }
+
+  public mockIdentityWithSuper(address: string, identity: any, parentAddress?: string) {
+    this.mockIdentitySuperOf({
+      [address]: parentAddress || null
+    });
+
+    this.mockStateQuery.identityOf.mockResolvedValue({
+      [parentAddress || address]: identity
+    });
   }
 
   public createTestIdentity(fields: Partial<Record<IdentityField, string>> = {}) {

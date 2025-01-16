@@ -327,7 +327,7 @@ describe('StakingMonitor', () => {
         await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
 
         const calls = suite.mockIncidents.ongoingIncident.mock.calls;
-        const validatorIntentionCall = calls.find(call => call[3].includes('validatorIntentionMissing'));
+        const validatorIntentionCall = calls.find(call => call[3].includes(H.ValidatorIntentionMissing));
         expect(validatorIntentionCall).toBeTruthy();
 
         const [message, , , , isFiring] = validatorIntentionCall;
@@ -344,7 +344,7 @@ describe('StakingMonitor', () => {
         await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
 
         const calls = suite.mockIncidents.ongoingIncident.mock.calls;
-        const validatorIntentionCall = calls.find(call => call[3].includes('validatorIntentionMissing'));
+        const validatorIntentionCall = calls.find(call => call[3].includes(H.ValidatorIntentionMissing));
         expect(validatorIntentionCall).toBeTruthy();
 
         const [message, , , , isFiring] = validatorIntentionCall;
@@ -357,7 +357,7 @@ describe('StakingMonitor', () => {
         await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
 
         const calls = suite.mockIncidents.ongoingIncident.mock.calls;
-        const validatorIntentionCall = calls.find(call => call[3].includes('validatorIntentionMissing'));
+        const validatorIntentionCall = calls.find(call => call[3].includes(H.ValidatorIntentionMissing));
         expect(validatorIntentionCall).toBeTruthy();
 
         const [, , , , isFiring] = validatorIntentionCall;

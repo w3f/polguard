@@ -62,17 +62,17 @@ flowchart LR
 
 ## Quick Start
 
-There are at least two ways to run the monitoring platform:
+There are two ways to run the monitoring platform:
 
-### 1. Running ChainWatcher only (development)
+### 1. Running Services Locally (with Node.js)
 
-This is the simplest way to start development or testing:
+This approach is recommended for development and testing:
 
 1. Create your monitoring configuration:
-   - Create a YAML file following the [Configuration Guide](./docs/CONFIG.md)
+   - Create a YAML file following the [Configuration Guide](./docs/CONFIG_GUIDE.md)
    - Place it in `packages/chain-watcher/monitoring-configs/`
 
-2. Set up application config:
+2. Set up application config for ChainWatcher:
    - Create configuration file for the service
    - Place it in `packages/chain-watcher/config/`
 
@@ -82,10 +82,20 @@ This is the simplest way to start development or testing:
    docker-compose up redis
    ```
 
-4. Run the Chain Watcher:
+4. Run ChainWatcher service:
    ```bash
    yarn build:all # First time only
    yarn start:chain-watcher:dev
+   ```
+
+5. Set up application config for Matrix:
+   - Create configuration file for the service
+   - Place it in `packages/matrix/config/`
+
+6. Run Matrix service:
+   ```bash
+   export MATRIX_PASSWORD=your_password
+   yarn start:matrix:dev
    ```
 
 ### 2. Using docker-compose

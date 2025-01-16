@@ -31,7 +31,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
           { blockNumber },
         );
 
-        const key = `${account.ss58}:${groupId}:balanceChange`;
+        const key = `${account.ss58}:${groupId}:${H.BalanceChange}`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
@@ -56,7 +56,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
           { blockNumber },
         );
 
-        const key = `${account.ss58}:${groupId}:balanceThreshold`;
+        const key = `${account.ss58}:${groupId}:${H.BalanceThreshold}`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }

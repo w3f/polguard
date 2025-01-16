@@ -135,6 +135,7 @@ The platform processes configuration in the following order:
 ## Handler Configuration
 
 ```yaml
+# If not specified, all handlers for the monitor will be active.
 handlers:
   include:  # Recommended: explicitly list desired handlers
     - CommissionChanged
@@ -143,5 +144,3 @@ handlers:
   exclude:  # Use with caution: includes all new handlers by default
     - DestinationChanged
 ```
-
-If not specified, all handlers for the monitor will be active.

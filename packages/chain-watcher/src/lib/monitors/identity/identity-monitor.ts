@@ -12,9 +12,13 @@ import { AbstractMonitor } from '../abstract-monitor';
 export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
   @EveryBlockHandler([Chain.PeoplePolkadot, Chain.PeopleKusama])
   async identityUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    const identities = await this.stateQuery.identityOf(this.uniqueAddresses, blockNumber);
+    const addressToParent = await this.getAddressToParent(blockNumber);
+    const parents = Array.from(new Set(addressToParent.values()));
+    const identities = await this.stateQuery.identityOf(parents, blockNumber);
+
     for (const address of this.uniqueAddresses) {
-      const identity = identities[address];
+      const parent = addressToParent.get(address);
+      const identity = identities[parent];
 
       for (const { account, alerts, groupId } of this.getAccounts(H.IdentityUnexpected, address)) {
         const mismatchedFields = IDENTITY_FIELDS.filter(field => {
@@ -32,7 +36,7 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
 
         const message = this.createMessage(messageLines, { blockNumber });
 
-        const key = `${account.ss58}:${groupId}:identityUnexpected`;
+        const key = `${account.ss58}:${groupId}:${H.IdentityUnexpected}`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
@@ -43,13 +47,17 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
     [Chain.PeoplePolkadot, Chain.PeopleKusama],
   )
   async identityChanged({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
-    const who = eventRecord.event.data[0].toString();
+    const parent = eventRecord.event.data[0].toString();
+    const addressToParent = await this.getAddressToParent(blockNumber);
+    const address = this.findAddressByParent(parent, addressToParent);
 
-    for (const { account, alerts } of this.getAccounts(H.IdentityChanged, who)) {
-      const previousIdentity = await this.stateQuery.identityOf([who], blockNumber - 1);
-      const currentIdentity = await this.stateQuery.identityOf([who], blockNumber);
-      const previous = previousIdentity[who];
-      const current = currentIdentity[who];
+    if (!address) return;
+
+    for (const { account, alerts } of this.getAccounts(H.IdentityChanged, address)) {
+      const previousIdentity = await this.stateQuery.identityOf([parent], blockNumber - 1);
+      const currentIdentity = await this.stateQuery.identityOf([parent], blockNumber);
+      const previous = previousIdentity[parent];
+      const current = currentIdentity[parent];
 
       const messageLines = [`Identity change detected for ${this.formatAccountLink(account)}.`];
 
@@ -74,5 +82,33 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
 
       await this.incidents.oneTimeIncident(message, alerts, blockNumber);
     }
+  }
+
+  /**
+   * The monitor receives a list of addresses to watch, but some accounts operate as sub-identities.
+   * In such cases, the identity information is stored under the parent account, not under the monitored address.
+   * This function creates a mapping from input addresses to their identity holders:
+   * - For regular identities: address -> address (self-mapping)
+   * - For sub-identities: address -> parent address
+   * This mapping is then used to correctly fetch and check identity information.
+   */
+  private async getAddressToParent(blockNumber: number): Promise<Map<string, string>> {
+    const superOf = await this.stateQuery.identitySuperOf(this.uniqueAddresses, blockNumber);
+    const mapping = new Map<string, string>();
+    
+    this.uniqueAddresses.forEach(address => {
+      mapping.set(address, superOf[address] || address);
+    });
+    
+    return mapping;
+  }
+
+  private findAddressByParent(parent: string, mapping: Map<string, string>): string | undefined {
+    for (const [address, parentAddress] of mapping) {
+      if (parentAddress === parent) {
+        return address;
+      }
+    }
+    return undefined;
   }
 }

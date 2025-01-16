@@ -36,6 +36,7 @@ describe('IdentityMonitor', () => {
     );
 
     // Setup default mock response
+    suite.mockIdentitySuperOf({ [TEST_ADDRESS]: null });
     suite.mockStateQuery.identityOf.mockResolvedValue({
       [TEST_ADDRESS]: DEFAULT_IDENTITY,
     });
@@ -95,8 +96,46 @@ describe('IdentityMonitor', () => {
         );
       });
 
+      it('should handle identity changes for sub-identities', async () => {
+        const PARENT_ADDRESS = 'parent-address';
+        suite.mockIdentitySuperOf({ [TEST_ADDRESS]: PARENT_ADDRESS });
+        
+        const event = suite.createTestEvent('identity', 'IdentitySet', [PARENT_ADDRESS]);
+        
+        suite.mockStateQuery.identityOf
+          .mockImplementation((addresses: string[], blockNumber: number) => 
+            Promise.resolve({
+              [PARENT_ADDRESS]: blockNumber === TEST_BLOCK - 1 
+                ? DEFAULT_IDENTITY
+                : { ...DEFAULT_IDENTITY, display: 'New Display Name' }
+            })
+          );
+
+        await monitor.processEvent({ eventRecord: event, blockNumber: TEST_BLOCK });
+
+        expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: expect.stringContaining('Identity change detected'),
+            details: expect.arrayContaining([
+              expect.stringContaining('display: "Test Display Name" → "New Display Name"')
+            ])
+          }),
+          expect.any(Object),
+          TEST_BLOCK
+        );
+      });
+
       it('should not create incident when non-monitored account changes identity', async () => {
         const event = suite.createTestEvent('identity', 'IdentitySet', ['non-monitored-address']);
+        await monitor.processEvent({ eventRecord: event, blockNumber: TEST_BLOCK });
+        expect(suite.mockIncidents.oneTimeIncident).not.toHaveBeenCalled();
+      });
+
+      it('should not create incident when parent of non-monitored account changes identity', async () => {
+        const PARENT_ADDRESS = 'parent-address';
+        suite.mockIdentitySuperOf({ 'non-monitored-address': PARENT_ADDRESS });
+        
+        const event = suite.createTestEvent('identity', 'IdentitySet', [PARENT_ADDRESS]);
         await monitor.processEvent({ eventRecord: event, blockNumber: TEST_BLOCK });
         expect(suite.mockIncidents.oneTimeIncident).not.toHaveBeenCalled();
       });
@@ -108,6 +147,33 @@ describe('IdentityMonitor', () => {
       it('should create ongoing incident when identity fields mismatch', async () => {
         suite.mockStateQuery.identityOf.mockResolvedValue({
           [TEST_ADDRESS]: {
+            ...DEFAULT_IDENTITY,
+            display: 'Wrong Display Name',
+          },
+        });
+
+        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+
+        expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: expect.stringContaining('Unexpected identity fields'),
+            details: expect.arrayContaining([
+              expect.stringContaining('display: expected "Test Display Name", got "Wrong Display Name"')
+            ])
+          }),
+          expect.any(Object),
+          TEST_BLOCK,
+          expect.any(String),
+          true
+        );
+      });
+
+      it('should check parent identity for sub-identities', async () => {
+        const PARENT_ADDRESS = 'parent-address';
+        suite.mockIdentitySuperOf({ [TEST_ADDRESS]: PARENT_ADDRESS });
+        
+        suite.mockStateQuery.identityOf.mockResolvedValue({
+          [PARENT_ADDRESS]: {
             ...DEFAULT_IDENTITY,
             display: 'Wrong Display Name',
           },
@@ -182,6 +248,8 @@ describe('IdentityMonitor', () => {
           { ...suite.mockChainProps, chain: Chain.PeoplePolkadot },
           MonitorType.Identity
         );
+
+        suite.mockIdentitySuperOf({ [TEST_ADDRESS]: null });
 
         await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
 

@@ -22,7 +22,7 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
 
       addresses.forEach((address, index) => {
         if (prefs[index].isEmpty) {
-          this.logger.warn(`Account ${address} has no validator preferences set but is configured for monitoring.`);
+          this.logger.debug(`Account ${address} has no validator preferences set but is configured for monitoring.`);
           result[address] = null;
         } else {
           result[address] = prefs[index].commission.toNumber() / 10_000_000;
@@ -42,7 +42,7 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
         const bondedAddress = bondedInfo[index].isSome ? bondedInfo[index].unwrap().toString() : null;
 
         if (!bondedAddress) {
-          this.logger.warn(`No bonded address found for validator ${address} at block ${blockNumber}`);
+          this.logger.debug(`No bonded address found for validator ${address} at block ${blockNumber}`);
         }
         result[address] = bondedAddress;
       });
@@ -58,7 +58,7 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
 
       addresses.forEach((address, index) => {
         if (ledgers[index].isNone) {
-          this.logger.warn(`No staking ledger found for controller ${address} at block ${blockNumber}`);
+          this.logger.debug(`No staking ledger found for controller ${address} at block ${blockNumber}`);
           result[address] = null;
         } else {
           result[address] = ledgers[index].unwrap().active.toBigInt();
@@ -77,7 +77,7 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
       addresses.forEach((address, index) => {
         const payee = payees[index];
         if (payee.isEmpty) {
-          this.logger.warn(
+          this.logger.debug(
             `Account ${address} has no payee set (not bonded for staking) ` +
               `at block ${blockNumber} but is configured for monitoring.`,
           );
@@ -132,13 +132,28 @@ export function createApiStateQueryProvider(api: ApiPromise, client: KeyValueSto
       addresses.forEach((address, index) => {
         const identity = identities[index];
         if (identity.isNone) {
-          this.logger.warn(`No identity found for address ${address} at block ${blockNumber}`);
+          this.logger.debug(`No identity found for address ${address} at block ${blockNumber}`);
           result[address] = null;
         } else {
           result[address] = this.processIdentityInfo(identity.unwrap()[0].info as unknown as PeopleIdentityInfo);
         }
       });
 
+      return result;
+    }
+
+    @Cached()
+    async identitySuperOf(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
+      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const result: Record<string, string | null> = {};
+    
+      const superIds = await apiAt.query.identity.superOf.multi(addresses);
+      
+      addresses.forEach((address, index) => {
+        const superOf = superIds[index];
+        result[address] = superOf.isSome ? superOf.unwrap()[0].toString() : null;
+      });
+    
       return result;
     }
 

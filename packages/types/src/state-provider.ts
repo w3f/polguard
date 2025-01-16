@@ -13,4 +13,5 @@ export interface StateQueryProvider {
   sessionValidators(blockNumber: number): Promise<Record<string, boolean>>;
   systemAccountBalance(addresses: string[], blockNumber: number): Promise<Record<string, bigint>>;
   identityOf(addresses: string[], blockNumber: number): Promise<Record<string, IdentityInfo | null>>;
+  identitySuperOf(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
 }

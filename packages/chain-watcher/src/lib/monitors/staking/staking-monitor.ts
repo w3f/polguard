@@ -74,7 +74,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
           { blockNumber },
         );
 
-        const key = `${account.ss58}:${groupId}:commissionUnexpected`;
+        const key = `${account.ss58}:${groupId}:${H.CommissionUnexpected}`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
@@ -98,7 +98,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
       for (const { account, alerts, groupId } of this.getAccounts(H.SelfStakeUnexpected, address)) {
         const expectedStake = account.settings.selfStake;
-        if (expectedStake === null) continue;
+        if (!expectedStake) continue;
 
         const comparisonType = account.settings.selfStakeComparison;
         const compareFunc = StakingMonitor.comparisonFunctions[comparisonType];
@@ -112,7 +112,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
           { blockNumber },
         );
 
-        const key = `${account.ss58}:${groupId}:selfStakeUnexpected`;
+        const key = `${account.ss58}:${groupId}:${H.SelfStakeUnexpected}`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
@@ -140,7 +140,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
         const message = this.createMessage(messageLines, { blockNumber });
 
-        const key = `${account.ss58}:${groupId}:validatorIntentionMissing`;
+        const key = `${account.ss58}:${groupId}:${H.ValidatorIntentionMissing}`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
@@ -166,7 +166,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
           { blockNumber },
         );
 
-        const key = `${account.ss58}:${groupId}:destinationUnexpected`;
+        const key = `${account.ss58}:${groupId}:${H.DestinationChanged}`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
@@ -184,7 +184,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
           `Era: ${await this.stateQuery.stakingActiveEra(blockNumber)}`,
         ]);
 
-        const key = `${account.ss58}:${groupId}:activeSetPresense`;
+        const key = `${account.ss58}:${groupId}:${H.ActiveSetPresence}`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }
