@@ -176,7 +176,7 @@ describe('StakingMonitor', () => {
           expect.objectContaining({
             title: expect.stringContaining('Unexpected commission'),
             details: expect.arrayContaining([
-              expect.stringContaining('Expected "10", got "20"'),
+              expect.stringContaining('Expected 10, got 20'),
             ]),
           }),
           expect.any(Object),

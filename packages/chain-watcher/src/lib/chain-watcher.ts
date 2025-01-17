@@ -69,7 +69,8 @@ export class ChainWatcher {
 
     this.monitors = monitorConfigs.flatMap(([monitorType, MonitorClass]) => {
       const groups = this.monitoringGroups.filter(group =>
-        group.monitors.some(monitor => monitor.name === monitorType),
+        group.chain === this.chainProps.chain && 
+        group.monitors.some(monitor => monitor.name === monitorType)
       );
       if (groups.length > 0) {
         this.logger.debug(`${monitorType} monitor initialized with ${groups.length} groups`);

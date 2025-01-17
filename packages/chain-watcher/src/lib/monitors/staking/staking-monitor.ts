@@ -69,7 +69,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
         const message = this.createMessage(
           [
             `Unexpected commission detected for ${this.formatAccountLink(account)}.`,
-            `Expected "${expectedCommission}", got "${commission}"`,
+            `Expected ${expectedCommission}, got ${commission}`,
           ],
           { blockNumber },
         );
@@ -107,7 +107,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
         const message = this.createMessage(
           [
             `Unexpected self-stake detected for ${this.formatAccountLink(account)}.`,
-            `Expected "${this.formatBalance(expectedStake)}", got "${this.formatBalance(stake)}"`,
+            `Expected ${this.formatBalance(expectedStake)}, got ${this.formatBalance(stake)}`,
           ],
           { blockNumber },
         );
@@ -153,7 +153,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const destination = payees[address];
       if (destination === null) continue;
 
-      for (const { account, alerts, groupId } of this.getAccounts(H.DestinationChanged, address)) {
+      for (const { account, alerts, groupId } of this.getAccounts(H.DestinationUnexpected, address)) {
         const expectedDestination = account.settings.payee;
         if (!expectedDestination) continue;
         const isFiring = destination !== expectedDestination;
@@ -166,7 +166,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
           { blockNumber },
         );
 
-        const key = `${account.ss58}:${groupId}:${H.DestinationChanged}`;
+        const key = `${account.ss58}:${groupId}:${H.DestinationUnexpected}`;
         await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
       }
     }

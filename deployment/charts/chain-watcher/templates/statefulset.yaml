@@ -51,11 +51,11 @@ spec:
         {{- end }}  
         volumeMounts:
         - name: config
-          mountPath: /app/config/
+          mountPath: /app/packages/chain-watcher/config/
           readOnly: true
         {{ if .Values.monitoringConfig }}  
         - name: monitoring-config
-          mountPath: /app/monitoring-configs/
+          mountPath: /app/packages/chain-watcher/monitoring-configs/
           readOnly: false
         {{ end }}  
       volumes:

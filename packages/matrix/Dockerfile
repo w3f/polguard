@@ -51,4 +51,4 @@ RUN mkdir -p packages/matrix/config
 
 WORKDIR /app/packages/matrix
 
-CMD ["node", "dist/service/main"]
+CMD ["node", "dist/matrix/src/service/main"]

@@ -56,4 +56,4 @@ RUN mkdir -p packages/chain-watcher/config
 
 WORKDIR /app/packages/chain-watcher
 
-CMD ["node", "dist/service/main"]
+CMD ["node", "dist/chain-watcher/src/service/main"]

@@ -57,7 +57,7 @@ spec:
         - name: store
           mountPath: /app/matrix-storage
         - name: config
-          mountPath: /app/config/
+          mountPath: /app/packages/matrix/config/
           # subPath: config.json
           readOnly: true
       volumes:
