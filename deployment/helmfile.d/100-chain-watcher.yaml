@@ -16,3 +16,11 @@ releases:
   chart: ../charts/chain-watcher
   values:
   - ./config/watcher-values.yaml.gotmpl
+
+- name: chain-watcher-people
+  {{ if eq .Environment.Name "test" }}
+  namespace: test
+  {{ end }}
+  chart: ../charts/chain-watcher
+  values:
+  - ./config/watcher-people-values.yaml.gotmpl
