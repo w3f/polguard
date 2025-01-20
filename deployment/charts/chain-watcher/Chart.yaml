@@ -1,5 +1,5 @@
 description: Monitoring Platform - Chain Watcher
 name: mp-chain-watcher
-version: v0.0.2
-appVersion: v0.0.2
+version: v0.0.3
+appVersion: v0.0.3
 apiVersion: v2
