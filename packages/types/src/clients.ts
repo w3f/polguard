@@ -16,6 +16,9 @@ export interface EventEmitterClient {
 
 export interface MetricsClient {
   setBlockHeight(height: number): void;
+  setMonitoredAccountsCount(count: number): void;
+  setMonitorsCount(count: number): void;
+  setMonitorGroupsCount(count: number): void;
 }
 
 export interface KeyValueStorageClient {

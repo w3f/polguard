@@ -66,18 +66,40 @@ export class ChainWatcher {
       [MonitorType.Balances, BalancesMonitor],
       [MonitorType.Identity, IdentityMonitor],
     ];
-
+  
+    let totalAccounts = 0;
+    let totalGroups = 0;
+  
     this.monitors = monitorConfigs.flatMap(([monitorType, MonitorClass]) => {
       const groups = this.monitoringGroups.filter(group =>
         group.chain === this.chainProps.chain && 
         group.monitors.some(monitor => monitor.name === monitorType)
       );
+  
       if (groups.length > 0) {
-        this.logger.debug(`${monitorType} monitor initialized with ${groups.length} groups`);
+        const monitorAccounts = groups.reduce((acc, group) => 
+          acc + (group.accounts?.length || 0), 0
+        );
+        
+        this.logger.debug(
+          `${monitorType} monitor initialized with ${groups.length} groups and ${monitorAccounts} accounts`
+        );
+        
+        totalGroups += groups.length;
+        totalAccounts += monitorAccounts;
+  
         return [new MonitorClass(this.logger, groups, this.incidents, this.stateQuery, this.chainProps, monitorType)];
       }
       return [];
     });
+  
+    if (this.monitors.length === 0) {
+      throw new Error('No monitors were initialized.');
+    }
+  
+    this.metrics.setMonitoredAccountsCount(totalAccounts);
+    this.metrics.setMonitorGroupsCount(totalGroups);
+    this.metrics.setMonitorsCount(this.monitors.length);
   }
 
   async start(startBlock?: number): Promise<void> {

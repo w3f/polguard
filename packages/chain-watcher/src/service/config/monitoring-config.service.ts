@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import { firstValueFrom } from 'rxjs';
@@ -15,12 +15,22 @@ export class MonitoringConfigService {
   constructor(
     private httpService: HttpService,
     private appConfig: AppConfigService,
+    private readonly logger: Logger,
   ) {}
 
+  /**
+   * Initializes monitoring configuration by fetching and processing config files.
+   * @throws Error if configuration initialization fails (config fetch or processing error)
+   */
   async initialize(): Promise<void> {
-    await this.fetchConfigs();
-    const configFiles = this.findConfigFiles(this.configsDir);
-    this.monitoringGroups = ConfigProcessor.processConfigs(configFiles);
+    try {
+      await this.fetchConfigs();
+      const configFiles = this.findConfigFiles(this.configsDir);
+      this.monitoringGroups = ConfigProcessor.processConfigs(configFiles);
+    } catch (error) {
+      this.logger.error('Failed to initialize monitoring configuration:', error);
+      throw new Error('Monitoring configuration initialization failed.');
+    }
   }
 
   getMonitoringGroups(chain: Chain): MonitoringGroup[] {
@@ -37,17 +47,14 @@ export class MonitoringConfigService {
     }
 
     for (const source of sources) {
-      try {
-        const headers: Record<string, string> = {
-          'PRIVATE-TOKEN': source.auth_token,
-        };
-        const response = await firstValueFrom(this.httpService.get(source.url, { headers }));
-
-        const fileName = `${source.name}.yaml`;
-        fs.writeFileSync(path.join(this.configsDir, fileName), response.data);
-      } catch (error) {
-        console.error(`Failed to fetch file for: ${source.name}`, error);
-      }
+      const headers: Record<string, string> = {
+        'PRIVATE-TOKEN': source.auth_token,
+      };
+      const response = await firstValueFrom(this.httpService.get(source.url, { headers }));
+      const fileName = `${source.name}.yaml`;
+      const filePath = path.join(this.configsDir, fileName);
+      
+      fs.writeFileSync(filePath, response.data);
     }
   }
 

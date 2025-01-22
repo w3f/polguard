@@ -223,9 +223,8 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     },
   ): Message {
     if (options) {
-      // TODO: Refactor this. Decrement by two since IncidentHandler.THRESHOLD = 3
-      const block = options.blockNumber - 2
-      rows.push(`Block: ${block}`);
+      // TODO: Refactor this. Because of IncidentHandler.THRESHOLD for block handlers we have blockNumber += 2 here
+      rows.push(`Block: ${options.blockNumber}`);
       if (options.phase !== undefined) {
         rows.push(`Event: ${this.getEventLink(options.blockNumber, options.phase)}`);
       } else if (options.extrinsicIndex !== undefined) {

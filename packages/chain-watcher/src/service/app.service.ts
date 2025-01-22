@@ -61,7 +61,7 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   async onModuleDestroy() {
     try {
       this.logger.log('Stopping ChainWatcher...');
-      await this.chainWatcher.stop();
+      await this.chainWatcher?.stop();
       this.logger.log('ChainWatcher stopped.');
       if (this.api) {
         await this.api.disconnect();
@@ -73,21 +73,23 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * Handles critical failures in ChainWatcher that make the application unusable.
+   * Unlike regular shutdown (onModuleDestroy), this handles unrecoverable errors where:
+   * 1. The application cannot function without ChainWatcher
+   * 2. The error is not recoverable (e.g., invalid configuration, failed initialization)
+   * 3. Immediate termination is required to prevent undefined behavior
+   * 
+   * @param error The error that caused the failure
+   */
   private async handleChainWatcherFailure(error: any) {
     this.logger.error('ChainWatcher failed:', error);
-
     try {
-      await this.chainWatcher.stop();
+      await this.chainWatcher?.stop();
       this.logger.log('ChainWatcher stopped after failure.');
-      if (this.api) {
-        await this.api.disconnect();
-        this.logger.log('API disconnected after failure.');
-      }
     } catch (stopError) {
       this.logger.error('Error during failure shutdown:', stopError);
     }
-
-    this.logger.error('Exiting process due to ChainWatcher failure');
     process.exit(1);
   }
 }
