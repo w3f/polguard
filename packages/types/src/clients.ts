@@ -21,22 +21,26 @@ export interface MetricsClient {
   setMonitorGroupsCount(count: number): void;
 }
 
+/** Base interface for key-value storage operations */
 export interface KeyValueStorageClient {
+  get<T>(key: string): Promise<T | null>;
   set(key: string, value: any): Promise<void>;
   setex(key: string, seconds: number, value: any): Promise<void>;
-  get<T>(key: string): Promise<T | null>;
   del(key: string): Promise<void>;
   keys(pattern: string): Promise<string[]>;
 }
 
-export interface PersistentStorageClient {
-  getLastProcessedBlock(): Promise<number | null>;
-  setLastProcessedBlock(block: number): Promise<void>;
+/** Main data store interface combining key-value operations with specific monitoring functionality */
+export interface DataStoreClient extends KeyValueStorageClient {
+  // Incident management
   getOngoingIncident(incidentId: string): Promise<ActiveIncidentState | null>;
   setOngoingIncident(incidentId: string, state: ActiveIncidentState): Promise<void>;
   deleteOngoingIncident(incidentId: string): Promise<void>;
-}
 
-export interface DataStoreClient extends PersistentStorageClient, KeyValueStorageClient {
+  // Processing state management
+  getLastProcessed(key: string): Promise<number | null>;
+  setLastProcessed(key: string, value: number): Promise<void>;
+
+  // Utility methods
   clearAll(): Promise<void>;
 }

@@ -8,7 +8,7 @@ run_tests() {
     echo Running tests...
 
     wait_pod_ready redis-master
-    wait_pod_ready chain-watcher
+    wait_pod_ready watcher
     wait_pod_ready matrix
 }
 

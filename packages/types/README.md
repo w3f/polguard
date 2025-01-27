@@ -1,7 +1,7 @@
 # @w3f/monitoring-types
 
 Common types, interfaces and constants used across W3F monitoring packages:
-- @w3f/monitoring-chain-watcher
+- @w3f/monitoring-watcher
 - @w3f/monitoring-matrix
 - @w3f/monitoring-config
 

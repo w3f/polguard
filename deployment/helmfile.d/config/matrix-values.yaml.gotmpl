@@ -3,7 +3,7 @@ image:
   tag: {{ env "CIRCLE_SHA1" | default "kind" }}
 {{ else if eq .Environment.Name "local" }}
 image:
-  repo: localhost:5000/mp-chain-watcher
+  repo: localhost:5000/mp-watcher
   tag: latest
 {{ end }}
 

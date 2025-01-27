@@ -1,11 +1,11 @@
 services:
-  chain-watcher:
+  watcher:
     build:
       context: ..
-      dockerfile: packages/chain-watcher/Dockerfile
+      dockerfile: packages/watcher/Dockerfile
     volumes:
-      - ./app-config/chain-watcher.yaml:/app/packages/chain-watcher/config/config.yaml
-      - ./app-config/chain-watcher.monitoring.yaml:/app/packages/chain-watcher/monitoring-configs/config.yaml
+      - ./app-config/watcher.yaml:/app/packages/watcher/config/config.yaml
+      - ./app-config/watcher.monitoring.yaml:/app/packages/watcher/monitoring-configs/config.yaml
     ports:
       - "127.0.0.1:8080:3000"
     depends_on:

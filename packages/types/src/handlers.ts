@@ -3,6 +3,11 @@ import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
 import { BalancesHandlerType, GovernanceHandlerType, IdentityHandlerType, MonitorType, StakingHandlerType } from './constants';
 
+
+export type HandlerFunction<T> = (params: T) => Promise<void>;
+export type EventHandlerFunction = HandlerFunction<EventHandlerParams>;
+export type CallHandlerFunction = HandlerFunction<CallHandlerParams>;
+export type BlockHandlerFunction = HandlerFunction<EveryBlockHandlerParams>;
 export interface CallHandlerParams {
   call: CallBase<AnyTuple>;
   origin: string;
@@ -31,3 +36,5 @@ export type HandlerType =
   | BalancesHandlerType 
   | GovernanceHandlerType 
   | IdentityHandlerType;
+
+export type HandlerExecutionType = 'triggered' | 'periodic';

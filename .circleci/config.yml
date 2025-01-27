@@ -23,9 +23,9 @@ jobs:
             yarn install
             yarn workspace @w3f/monitoring-${MODULE} lint     
 
-  yarnLintChainWatcher:
+  yarnLintWatcher:
     environment:
-      MODULE: chain-watcher
+      MODULE: watcher
     <<: *yarnLint
 
   yarnLintMatrix:
@@ -41,9 +41,9 @@ jobs:
       - run:
           command: helm lint ./deployment/charts/"${MODULE}"
 
-  helmLintChainWatcher:
+  helmLintWatcher:
     environment:
-      MODULE: chain-watcher
+      MODULE: watcher
     <<: *helmLint 
 
   helmLintMatrix:
@@ -62,9 +62,9 @@ jobs:
           command: |
             /scripts/build-image.sh web3f/mp-"${MODULE}" . -f packages/"${MODULE}"/Dockerfile
 
-  buildImageChainWatcher:
+  buildImageWatcher:
     environment:
-      MODULE: chain-watcher
+      MODULE: watcher
     <<: *buildImage
 
   buildImageMatrix:
@@ -93,9 +93,9 @@ jobs:
           command: |
             /scripts/publish-image.sh web3f/mp-"${MODULE}"
 
-  publishImageChainWatcher:
+  publishImageWatcher:
     environment:
-      MODULE: chain-watcher
+      MODULE: watcher
     <<: *publishImage 
 
   publishImageMatrix:
@@ -118,19 +118,19 @@ workflows:
   version: 2
   test_and_publish:
     jobs:
-      - yarnLintChainWatcher:
+      - yarnLintWatcher:
           <<: *commit_filters
       - yarnLintMatrix:
           <<: *commit_filters
-      - helmLintChainWatcher:
+      - helmLintWatcher:
           <<: *commit_filters
       - helmLintMatrix:
           <<: *commit_filters    
-      - buildImageChainWatcher:
+      - buildImageWatcher:
           context: dockerhub-bot
           requires:
-            - helmLintChainWatcher
-            - yarnLintChainWatcher
+            - helmLintWatcher
+            - yarnLintWatcher
           <<: *commit_filters
       - buildImageMatrix:
           context: dockerhub-bot
@@ -142,9 +142,9 @@ workflows:
           context: ci-matrixbot
           <<: *commit_filters
           requires:
-            - buildImageChainWatcher  
+            - buildImageWatcher  
             - buildImageMatrix
-      - publishImageChainWatcher:
+      - publishImageWatcher:
           context: dockerhub-bot
           <<: *release_filters
           requires:

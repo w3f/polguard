@@ -2,24 +2,42 @@ import { ChainProperties, ConfigAccountSettings, Logger, IdentityField } from '.
 import { Chain, ComparisonType, MonitorType } from './constants';
 import { AlertSettings, IncidentHandlerClient } from './incident';
 import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams, MonitorHandlerType } from './handlers';
-import { StateQueryProvider } from './state-provider';
+import { DataProvider } from './data-provider';
 
-export interface Monitor {
+/**
+ * Base monitor interface that all monitors must implement
+ */
+export interface Monitor<T extends MonitorType> {
+  // Common monitor methods could go here if needed
+}
+
+/**
+ * Chain-specific monitor interface
+ */
+export interface ChainMonitor<T extends MonitorType> extends Monitor<T> {
   processEveryBlock(params: EveryBlockHandlerParams): Promise<void>;
   processEvent(params: EventHandlerParams): Promise<void>;
   processCall(params: CallHandlerParams): Promise<void>;
 }
 
-export interface MonitorConstructor {
-  new (
-    logger: Logger,
-    groups: MonitoringGroup[],
-    incidentHandler: IncidentHandlerClient,
-    stateQuery: StateQueryProvider,
-    chainProperties: ChainProperties,
-    monitorType: MonitorType,
-  ): Monitor;
-}
+/**
+ * Constructor type for monitors
+ * @typeParam T - Type of monitor (e.g., Staking, Identity)
+ * @typeParam M - Specific monitor implementation (e.g., ChainMonitor, TelemetryMonitor)
+ * @typeParam D - Type of data provider used by the monitor
+ */
+export type MonitorConstructor<
+  T extends MonitorType,
+  M extends Monitor<T>,
+  D extends DataProvider
+> = new (
+  logger: Logger,
+  groups: MonitoringGroup[],
+  incidents: IncidentHandlerClient,
+  chainProps: ChainProperties,
+  provider: D,
+  monitorType: T
+) => M;
 
 type HandlerConfig<T> = {
   include: T[];

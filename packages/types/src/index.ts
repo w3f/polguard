@@ -37,4 +37,4 @@ export * from './incident';
 export * from './handlers';
 export * from './clients';
 export * from './constants';
-export * from './state-provider';
+export * from './data-provider';

@@ -9,7 +9,7 @@ Public packages:
 - `@w3f/monitoring-config`
 
 Private packages:
-- `@w3f/monitoring-chain-watcher`
+- `@w3f/monitoring-watcher`
 - `@w3f/monitoring-matrix`
 
 ## Publishing Workflow

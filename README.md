@@ -7,15 +7,18 @@
 The platform consists of microservices and shared packages:
 
 ### Microservices (Private)
-1. **@w3f/monitoring-chain-watcher** - Monitoring service responsible for observing blockchain activities and generating incidents. [More details](./packages/chain-watcher/README.md)
+1. **@w3f/monitoring-watcher** - Monitoring service with:
+   - Chain monitoring: observes blockchain activities and generates incidents
+   - Telemetry monitoring: _(Coming Soon)_ observes node metrics
+   [More details](./packages/watcher/README.md)
 2. **@w3f/monitoring-matrix** - Notification service for sending alerts and updates to specified channels. [More details](./packages/matrix/README.md)
-3. **@w3f/monitoring-incident-management** - _(Draft)_ API gateway service for managing and coordinating incidents across the platform. Basic project structure is set up, but the service is in early development stage. [More details](./packages/incident-management/README.md)
+3. **@w3f/monitoring-incident-management** - _(Draft)_ API gateway service for managing and coordinating incidents across the platform. [More details](./packages/incident-management/README.md)
 
 All services are built with Nest.js, supporting both synchronous and asynchronous communication using Redis Streams.
 
 ### Shared Packages (Public)
 1. **@w3f/monitoring-types** - Common types and interfaces used across the platform
-2. **@w3f/monitoring-config** - Configuration processing package, provides YAML configuration validation and transformation, chain-specific address formatting, and decimal balance conversion support. [More details](./packages/config/README.md)
+2. **@w3f/monitoring-config** - Configuration processing package, provides YAML configuration validation and transformation. [More details](./packages/config/README.md)
 
 ## Documentation
 
@@ -24,7 +27,7 @@ All services are built with Nest.js, supporting both synchronous and asynchronou
 - [Monitors & Handlers Reference](./docs/MONITORS.md) - Comprehensive guide to available monitors and their handlers
 
 ### Technical Documentation
-- [ChainWatcher service](./packages/chain-watcher/README.md)
+- [Watcher service](./packages/watcher/README.md)
 - [Matrix service](./packages/matrix/README.md)
 - [Config package](./packages/config/README.md)
 - [Development Notes](./docs/DEVELOPMENT.md) - Project structure, architectural decisions, and roadmap
@@ -34,7 +37,11 @@ All services are built with Nest.js, supporting both synchronous and asynchronou
 
 ```mermaid
 flowchart LR
-    CW[1 - ChainWatcher]
+    subgraph W[1 - Watcher]
+        CW[Chain Watcher]
+        TW[Telemetry Watcher]
+        style TW stroke-dasharray: 5 5
+    end
     M[2 - Matrix]
     IM[3 - Incident Management]
     RS[(Redis Streams)]
@@ -42,6 +49,7 @@ flowchart LR
     DB[(PostgreSQL)]
 
     CW --> RKV
+    TW -.-> RKV
     M --> |HTTP sync| IM
     RS --> |async| M
     RS --> |async| IM
@@ -52,13 +60,21 @@ flowchart LR
     end
     CW --> IC
     CW --> IR
+    TW -.-> IC
+    TW -.-> IR
     IC --> RS
     IR --> RS
 
-    style CW stroke:#c68c8c,stroke-width:3px,font-weight:bold
+    style W stroke:#c68c8c,stroke-width:3px,font-weight:bold
     style M stroke:#8cc68c,stroke-width:3px,font-weight:bold
     style IM stroke:#8c8cc6,stroke-width:3px,font-weight:bold
 ```
+
+The platform uses:
+- Redis Streams for asynchronous event processing
+- Redis Key/Value for caching and state management
+- PostgreSQL for incident history and management
+- Matrix for alert notifications
 
 ## Quick Start
 
@@ -70,11 +86,11 @@ This approach is recommended for development and testing:
 
 1. Create your monitoring configuration:
    - Create a YAML file following the [Configuration Guide](./docs/CONFIG_GUIDE.md)
-   - Place it in `packages/chain-watcher/monitoring-configs/`
+   - Place it in `packages/watcher/monitoring-configs/`
 
-2. Set up application config for ChainWatcher:
+2. Set up application config for Watcher:
    - Create configuration file for the service
-   - Place it in `packages/chain-watcher/config/`
+   - Place it in `packages/watcher/config/`
 
 3. Start Redis:
    ```bash
@@ -82,10 +98,10 @@ This approach is recommended for development and testing:
    docker-compose up redis
    ```
 
-4. Run ChainWatcher service:
+4. Run Watcher service:
    ```bash
    yarn build:all # First time only
-   yarn start:chain-watcher:dev
+   yarn start:watcher:dev
    ```
 
 5. Set up application config for Matrix:
@@ -103,8 +119,8 @@ This approach is recommended for development and testing:
 This approach runs all services with Redis streams and Matrix notifications:
 
 1. Set up configurations in `deployment/app-config/`:
-   - `chain-watcher.yaml` - ChainWatcher service configuration
-   - `chain-watcher.monitoring.yaml` - Monitoring configuration
+   - `watcher.yaml` - Watcher service configuration
+   - `watcher.monitoring.yaml` - Monitoring configuration
    - `matrix.yaml` - Matrix service configuration
 
 2. Set Matrix password:
@@ -129,11 +145,11 @@ yarn build:all
 # Or build specific package in case of changes
 yarn build:types
 yarn build:config
-yarn build:chain-watcher
+yarn build:watcher
 yarn build:matrix
 
 # Run services
-yarn start:chain-watcher:dev
+yarn start:watcher:dev
 yarn start:matrix:dev
 ```
 

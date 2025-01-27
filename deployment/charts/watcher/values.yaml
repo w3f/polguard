@@ -1,0 +1,57 @@
+image:
+  repo: web3f/mp-watcher
+  # tag: xy
+
+httpPort: 3000
+
+resources: {}
+
+# nameOverride: xy
+
+prometheusRules:
+  enabled: false
+  labels:
+    app: w3f
+    role: alert-rules #according to https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/alerting.md#prometheusrule-labelling
+  origin: clusterName
+
+serviceMonitor:
+  enabled: false
+  labels:
+    group: w3f
+    release: prometheus-operator
+
+config:
+  environment: test
+  redis:
+    url: redis://redis-master:6379/0
+  chain:
+    name: Polkadot
+    # start_block: 22904317
+    rpcs:
+      - wss://polkadot-rpc.dwellir.com 
+  monitoring_config_sources: []   
+  logging:
+    level: info    
+
+monitoringConfig:
+
+  defaults:
+    alerts:
+      matrix:
+        targets:
+          # TestMonitoringPlatform room
+          - "!BabNKVNdOktKGafXzd:web3.foundation"
+    chains:
+      - Polkadot
+    monitors:
+      - name: TransactionEgress
+
+  groups:
+    - name: Test Group 1
+      accounts:
+        # Egress transaction: 22904327
+        - address: 12nr7GiDrYHzAYT9L8HdeXnMfWcBuYfAXpgfzf3upujeCciz
+        # Egress transaction: 22904328
+        - address: 1F5fhgHpekmLPSdbwESJRsWU5KJdhEFZuwBMTj1czBuvyzm
+
