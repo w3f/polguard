@@ -25,6 +25,20 @@ services:
     depends_on:
       - redis
 
+  telemetry:
+    build:
+      context: ..
+      dockerfile: packages/telemetry/Dockerfile
+    environment:
+      - IPINFO_TOKEN
+    volumes:
+      - ./app-config/telemetry.yaml:/app/packages/telemetry/config/config.yaml
+      - ./app-config/telemetry.monitoring.yaml:/app/packages/telemetry/monitoring-configs/config.yaml
+    ports:
+      - "127.0.0.1:8082:3000"
+    depends_on:
+      - redis
+
   redis:
     image: redis:alpine
     ports:

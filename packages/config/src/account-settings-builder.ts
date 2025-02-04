@@ -65,6 +65,7 @@ export class AccountSettingsBuilder {
       [MonitorType.Staking]: ['commission', 'commissionComparison', 'selfStakeComparison', 'selfStake', 'payee', 'handlers'],
       [MonitorType.Balances]: ['threshold', 'changeComparison', 'handlers'],
       [MonitorType.Identity]: ['matrix', 'email', 'handlers'],
+      [MonitorType.Telemetry]: ['handlers'],
       [MonitorType.Governance]: ['handlers']
     };
     return settingsType[monitorType] as (keyof MonitorTypeSettings[T])[];

@@ -1,0 +1,12 @@
+environment: development
+
+redis:
+  url: redis://redis:6379/0
+
+ipinfo:
+  cache_ttl: 43200 # 12 hours
+
+monitoring_config_sources: []
+
+logging:
+  level: debug

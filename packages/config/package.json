@@ -1,6 +1,6 @@
 {
   "name": "@w3f/monitoring-config",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Configuration processor for W3F monitoring platform. Handles YAML configuration loading, validation and transformation for blockchain monitoring setup",
   "author": "W3F SecOps Team <devops@web3.foundation>",
   "license": "MIT",
@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@w3f/monitoring-types": "workspace:*",
+    "axios": "^1.7.7",
     "joi": "^17.13.3",
     "js-yaml": "^4.1.0"
   },

@@ -10,7 +10,7 @@
  */
 import * as Joi from 'joi';
 import { Chain, ComparisonType, MessengerType, MonitorType, StakingHandlerType, IdentityHandlerType,
-         BalancesHandlerType, IDENTITY_FIELDS } from '@w3f/monitoring-types';
+         BalancesHandlerType, TelemetryHandlerType, IDENTITY_FIELDS } from '@w3f/monitoring-types';
 
 const decimalStringPattern = /^-?\d*\.?\d*$/;
 const decimalStringSchema = Joi.string()
@@ -89,6 +89,10 @@ const balancesMonitorSchema = Joi.object({
   handlers: createHandlerSchema(BalancesHandlerType, 'Balances')
 });
 
+const telemetryMonitorSchema = Joi.object({
+  handlers: createHandlerSchema(TelemetryHandlerType, 'Telemetry')
+});
+
 const monitorSchema = Joi.object({
   name: Joi.string()
     .valid(...Object.values(MonitorType))
@@ -102,6 +106,7 @@ const monitorSchema = Joi.object({
     { is: MonitorType.Staking, then: stakingMonitorSchema },
     { is: MonitorType.Identity, then: identityMonitorSchema },
     { is: MonitorType.Balances, then: balancesMonitorSchema },
+    { is: MonitorType.Telemetry, then: telemetryMonitorSchema },
   ]
 });
 
@@ -115,7 +120,8 @@ const accountSchema = Joi.object({
 })
   .concat(stakingMonitorSchema)
   .concat(identityMonitorSchema)
-  .concat(balancesMonitorSchema);
+  .concat(balancesMonitorSchema)
+  .concat(telemetryMonitorSchema);
 
 const defaultsSchema = Joi.object({
   chains: Joi.array()

@@ -46,7 +46,6 @@ export class ConfigService {
       }).optional(),
     });
 
-
     const { error, value } = schema.validate(config, { abortEarly: false });
     if (error) {
       throw new Error(`Configuration validation failed: ${error.message}`);

@@ -1,0 +1,25 @@
+defaults:
+  alerts:
+    messengerType: matrix
+    targets:
+      # TestMonitoringPlatform room
+      - "!BabNKVNdOktKGafXzd:web3.foundation"
+
+groups:
+  - name: Polkadot Telemetry
+    chains:
+      - Polkadot
+    monitors:
+      - name: Telemetry
+    accounts:
+      - name: NCTRPC
+        address: 5DRPpjyfqTx9qv2ijaZ9SiVp2g1obkyh8rC7bqeeYwQ8Tyfa
+
+  - name: Kusama Telemetry
+    chains:
+      - Kusama
+    monitors:
+      - name: Telemetry
+    accounts:
+      - name: Blockshard
+        address: 5DRPpjyfqTx9qv2ijaZ9SiVp2g1obkyh8rC7bqeeYwQ8Tyfa

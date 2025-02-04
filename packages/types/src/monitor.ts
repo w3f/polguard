@@ -70,11 +70,16 @@ export type IdentitySettings = {
   handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Identity]>;
 };
 
+export interface TelemetrySettings {
+  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Telemetry]>;
+}
+
 export type MonitorTypeSettings = {
   [MonitorType.Staking]: StakingSettings;
   [MonitorType.Governance]: GovernanceSettings;
   [MonitorType.Balances]: BalancesSettings;
   [MonitorType.Identity]: IdentitySettings;
+  [MonitorType.Telemetry]: TelemetrySettings;
 };
 
 export type MonitorSettings<T extends MonitorType> = MonitorTypeSettings[T];

@@ -17,5 +17,4 @@ export class IncidentController {
   async handleIncidentResolvedEvent(event: IncidentEvent) {
     this.logger.log('Received incident resolved event');
   }
-
 }

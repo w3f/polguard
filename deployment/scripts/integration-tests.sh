@@ -10,6 +10,7 @@ run_tests() {
     wait_pod_ready redis-master
     wait_pod_ready watcher
     wait_pod_ready matrix
+    wait_pod_ready telemetry
 }
 
 main(){

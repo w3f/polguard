@@ -1,0 +1,24 @@
+image:
+  repo: web3f/mp-telemetry
+  # tag: xy
+
+httpPort: 3000
+
+resources: {}
+
+# nameOverride: xy
+
+config:
+  environment: test
+
+  redis:
+    url: redis://redis-master:6379/0
+
+  ipinfo:
+    token: "xxx"
+    cache_ttl: 43200
+
+  monitoring_config_sources: []
+
+  logging:
+    level: info

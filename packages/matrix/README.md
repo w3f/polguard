@@ -1,30 +1,66 @@
 # Matrix Service
 
-## Architecture Overview
+A service that handles incident notifications and interactions through Matrix chat rooms.
 
-The following diagram illustrates the high-level architecture and connections between different components of the Matrix service:
+## Architecture
 
-```mermaid
-flowchart RL
-    subgraph NestClasses["Nest.js /service"]
-        A[NestMicroservice<br><br>Main entry point. Initializes components, coordinates services]
-        B[ConfigService<br><br>Validates config]
-        C[IncidentController<br><br>Listens to Redis streams, handles incident events]
-        D[IncidentService<br><br>Communicates with Incident Management service]
-        E[HealthController<br><br>Provides health check endpoint]
-        F[MetricsController<br><br>Exposes Prometheus metrics]
-    end
+The service is split into two main parts:
 
-    subgraph MatrixClasses["Matrix /lib"]
-        H[MatrixClient<br><br>Base Matrix client. Handles common Matrix operations]
-        I[MatrixBot<br><br>Extends MatrixClient. Handles specific features<br>e.g., incident acknowledgment]
-    end
+### Core business logic (lib/)
+- `matrix-client.ts`: Base Matrix client handling common operations
+  - Room management
+  - Message sending
+  - Authentication and connection
 
-    B --> A
-    C --> A
-    D --> C
-    E --> A
-    F --> A
-    H --> I
-    I ==> A
+- `matrix-bot.ts`: Extended Matrix client with specific features
+  - Message handling
+  - Basic incident acknowledgment (draft)
+  - Syncs with incident management service for acknowledgment status (draft)
+
+### Service layer (service/)
+- NestJS-specific code
+- Components:
+  - Incident handling: Processes events from Redis streams
+  - Configuration: Validates and processes service config
+
+## Development
+
+```bash
+# Install dependencies
+yarn
+
+# Start in development mode
+yarn start:dev
+
+# Run tests
+yarn test
+
+# Build
+yarn build
+
+# Start in production mode
+yarn start:prod
 ```
+
+## Configuration
+
+The service requires a configuration file with:
+
+```yaml
+serverAddress: "https://matrix.org"  # Matrix homeserver URL
+userId: "@bot:matrix.org"            # Bot user ID
+password: "your-password"            # Bot password
+logging:
+  level: info                        # Logging level (trace, debug, info, warn, error)
+rooms:                               # Rooms to join and monitor
+  - id: "!roomid:matrix.org"
+    acknowledgement: true            # Whether room supports incident acknowledgment
+```
+
+## API
+
+### GET /health
+Returns 200 OK if service is healthy
+
+### GET /metrics
+Returns Prometheus metrics with default Node.js metrics

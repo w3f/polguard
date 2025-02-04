@@ -11,49 +11,34 @@ release_filters: &release_filters
     tags:
       only: /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
 
+defaults: &defaults
+  docker:
+    - image: web3f/ci-commons:v3
+
+node_defaults: &node_defaults
+  docker:
+    - image: web3f/node-dind:v3
+
 jobs:
   yarnLint: &yarnLint
-    docker:
-      - image: web3f/node-dind:v3
+    <<: *node_defaults
     steps:
       - checkout
       - run:
           command: |
             corepack enable && corepack prepare yarn@4.6.0 --activate
             yarn install
-            yarn workspace @w3f/monitoring-${MODULE} lint     
-
-  yarnLintWatcher:
-    environment:
-      MODULE: watcher
-    <<: *yarnLint
-
-  yarnLintMatrix:
-    environment:
-      MODULE: matrix
-    <<: *yarnLint
+            yarn workspace @w3f/monitoring-${PACKAGE_NAME} lint     
 
   helmLint: &helmLint
-    docker:
-      - image: web3f/ci-commons:v3
+    <<: *defaults
     steps:
       - checkout
       - run:
           command: helm lint ./deployment/charts/"${MODULE}"
 
-  helmLintWatcher:
-    environment:
-      MODULE: watcher
-    <<: *helmLint 
-
-  helmLintMatrix:
-    environment:
-      MODULE: matrix
-    <<: *helmLint          
-
   buildImage: &buildImage
-    docker:
-      - image: web3f/ci-commons:v3
+    <<: *defaults
     steps:
       - checkout
       - setup_remote_docker:
@@ -62,19 +47,74 @@ jobs:
           command: |
             /scripts/build-image.sh web3f/mp-"${MODULE}" . -f packages/"${MODULE}"/Dockerfile
 
-  buildImageWatcher:
-    environment:
+  publishImage: &publishImage
+    <<: *defaults
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          command: |
+            /scripts/publish-image.sh web3f/mp-"${MODULE}"
+
+  # Watcher jobs
+  yarnLintWatcher: &watcher_job
+    environment: &watcher_env
       MODULE: watcher
+      PACKAGE_NAME: watcher
+    <<: *yarnLint
+
+  helmLintWatcher:
+    environment: *watcher_env
+    <<: *helmLint 
+
+  buildImageWatcher:
+    environment: *watcher_env
     <<: *buildImage
+
+  publishImageWatcher:
+    environment: *watcher_env
+    <<: *publishImage 
+
+  # Matrix jobs
+  yarnLintMatrix: &matrix_job
+    environment: &matrix_env
+      MODULE: matrix
+      PACKAGE_NAME: matrix
+    <<: *yarnLint
+
+  helmLintMatrix:
+    environment: *matrix_env
+    <<: *helmLint          
 
   buildImageMatrix:
-    environment:
-      MODULE: matrix
+    environment: *matrix_env
     <<: *buildImage
 
+  publishImageMatrix:
+    environment: *matrix_env
+    <<: *publishImage            
+
+  # Telemetry jobs
+  yarnLintTelemetry: &telemetry_job
+    environment: &telemetry_env
+      MODULE: telemetry
+      PACKAGE_NAME: telemetry-exporter
+    <<: *yarnLint
+
+  helmLintTelemetry:
+    environment: *telemetry_env
+    <<: *helmLint          
+
+  buildImageTelemetry:
+    environment: *telemetry_env
+    <<: *buildImage
+
+  publishImageTelemetry:
+    environment: *telemetry_env
+    <<: *publishImage            
+
   integrationTests:
-    docker:
-      - image: web3f/ci-commons:v3
+    <<: *defaults
     steps:
       - checkout
       - setup_remote_docker
@@ -83,31 +123,10 @@ jobs:
           command: |
             /scripts/integration-tests.sh kindest/node:v1.23.4   
 
-  publishImage: &publishImage
-    docker:
-      - image: web3f/ci-commons:v3
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          command: |
-            /scripts/publish-image.sh web3f/mp-"${MODULE}"
-
-  publishImageWatcher:
-    environment:
-      MODULE: watcher
-    <<: *publishImage 
-
-  publishImageMatrix:
-    environment:
-      MODULE: matrix
-    <<: *publishImage            
-
   publishCharts:
+    <<: *defaults
     environment:
       HELM_CHARTS_SOURCE: /root/project/deployment/charts
-    docker:
-      - image: web3f/ci-commons:v3
     steps:
       - checkout
       - run:
@@ -118,44 +137,52 @@ workflows:
   version: 2
   test_and_publish:
     jobs:
-      - yarnLintWatcher:
+      # Lint jobs
+      - yarnLintWatcher: &commit_job
           <<: *commit_filters
-      - yarnLintMatrix:
-          <<: *commit_filters
-      - helmLintWatcher:
-          <<: *commit_filters
-      - helmLintMatrix:
-          <<: *commit_filters    
-      - buildImageWatcher:
+      - yarnLintMatrix: *commit_job
+      - yarnLintTelemetry: *commit_job
+      - helmLintWatcher: *commit_job
+      - helmLintMatrix: *commit_job    
+      - helmLintTelemetry: *commit_job    
+
+      # Build jobs
+      - buildImageWatcher: &build_job
           context: dockerhub-bot
           requires:
             - helmLintWatcher
             - yarnLintWatcher
           <<: *commit_filters
       - buildImageMatrix:
-          context: dockerhub-bot
+          <<: *build_job
           requires:
             - helmLintMatrix
             - yarnLintMatrix
-          <<: *commit_filters
+      - buildImageTelemetry:
+          <<: *build_job
+          requires:
+            - helmLintTelemetry
+            - yarnLintTelemetry
+
+      # Integration tests
       - integrationTests:
           context: ci-matrixbot
           <<: *commit_filters
           requires:
             - buildImageWatcher  
             - buildImageMatrix
-      - publishImageWatcher:
+            - buildImageTelemetry
+
+      # Publish jobs
+      - publishImageWatcher: &publish_job
           context: dockerhub-bot
           <<: *release_filters
           requires:
             - integrationTests
-      - publishImageMatrix:
-          context: dockerhub-bot
-          <<: *release_filters
-          requires:
-            - integrationTests      
+      - publishImageMatrix: *publish_job
+      - publishImageTelemetry: *publish_job
       - publishCharts:
           context: github-bot
           <<: *release_filters
           requires:
-            - integrationTests                 
+            - integrationTests

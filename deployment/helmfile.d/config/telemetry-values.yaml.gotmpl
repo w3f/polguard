@@ -1,0 +1,28 @@
+{{ if eq .Environment.Name "ci" }}
+image:
+  tag: {{ env "CIRCLE_SHA1" | default "kind" }}
+{{ else if eq .Environment.Name "local" }}
+image:
+  repo: localhost:5000/mp-telemetry
+  tag: latest
+{{ end }}
+
+{{ if eq .Environment.Name "ci" }}
+resources: null
+{{ end }}
+
+{{ if eq .Environment.Name "test" }}
+image:
+  tag: {{ env "IMAGE_TAG" }}
+  imagePullPolicy: Always
+{{ end }}
+
+config:
+  redis:
+    url: redis://{{ .Release.Name }}-redis-master:6379/0
+  ipinfo:
+    token: "{{ env "IPINFO_TOKEN" }}"
+    cache_ttl: 43200
+  monitoring_config_sources: []
+  logging:
+    level: debug

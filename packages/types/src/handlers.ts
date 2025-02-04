@@ -1,7 +1,7 @@
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
-import { BalancesHandlerType, GovernanceHandlerType, IdentityHandlerType, MonitorType, StakingHandlerType } from './constants';
+import { BalancesHandlerType, GovernanceHandlerType, IdentityHandlerType, MonitorType, StakingHandlerType, TelemetryHandlerType } from './constants';
 
 
 export type HandlerFunction<T> = (params: T) => Promise<void>;
@@ -29,12 +29,14 @@ export type MonitorHandlerType = {
   [MonitorType.Identity]: IdentityHandlerType;
   [MonitorType.Staking]: StakingHandlerType;
   [MonitorType.Governance]: GovernanceHandlerType;
+  [MonitorType.Telemetry]: TelemetryHandlerType;
 };
 
 export type HandlerType = 
   | StakingHandlerType 
   | BalancesHandlerType 
   | GovernanceHandlerType 
-  | IdentityHandlerType;
+  | IdentityHandlerType
+  | TelemetryHandlerType;
 
 export type HandlerExecutionType = 'triggered' | 'periodic';

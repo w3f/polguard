@@ -14,6 +14,7 @@ export enum MonitorType {
   Identity = 'Identity',
   Staking = 'Staking',
   Governance = 'Governance',
+  Telemetry = 'Telemetry',
 }
 
 export enum MessageType {
@@ -57,6 +58,14 @@ export enum BalancesHandlerType {
 export enum IdentityHandlerType {
   IdentityUnexpected = 'IdentityUnexpected',
   IdentityChanged = 'IdentityChanged',
+}
+
+export enum TelemetryHandlerType {
+  LocationUnexpected = 'LocationUnexpected',
+  ProviderUnexpected = 'ProviderUnexpected',
+  VersionOutdated = 'VersionOutdated',
+  HardwareUnexpected = 'HardwareUnexpected',
+  TelemetryMissing = 'TelemetryMissing',
 }
 
 export enum GovernanceHandlerType {
