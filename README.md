@@ -13,13 +13,15 @@ The platform consists of microservices and shared packages:
    [More details](./packages/watcher/README.md)
 2. **@w3f/monitoring-matrix** - Notification service for sending alerts and updates to specified channels. [More details](./packages/matrix/README.md)
 3. **@w3f/monitoring-incident-management** - _(Draft)_ API gateway service for managing and coordinating incidents across the platform. [More details](./packages/incident-management/README.md)
-4. **@w3f/monitoring-telemetry-exporter** - REST API service providing telemetry data for nodes specified in monitoring configuration. [More details](./packages/telemetry/README.md)
 
 All services are built with Nest.js, supporting both synchronous and asynchronous communication using Redis Streams.
 
 ### Shared Packages (Public)
 1. **@w3f/monitoring-types** - Common types and interfaces used across the platform
 2. **@w3f/monitoring-config** - Configuration processing package, provides YAML configuration validation and transformation. [More details](./packages/config/README.md)
+
+### External Dependencies
+1. **@w3f/telemetry-exporter** - REST API service providing telemetry data for nodes specified in monitoring configuration. [More details](https://github.com/w3f/telemetry-exporter/README.md)
 
 ## Documentation
 
@@ -30,7 +32,6 @@ All services are built with Nest.js, supporting both synchronous and asynchronou
 ### Technical Documentation
 - [Watcher service](./packages/watcher/README.md)
 - [Matrix service](./packages/matrix/README.md)
-- [Telemetry Exporter service](./packages/telemetry/README.md)
 - [Config package](./packages/config/README.md)
 - [Development Notes](./docs/DEVELOPMENT.md) - Project structure, architectural decisions, and roadmap
 - [Publishing Guide](./docs/PUBLISHING.md) - Instructions for building and publishing packages
@@ -42,11 +43,11 @@ flowchart LR
     subgraph TE[Telemetry Exporter]
         TEAPI[REST API]
     end
-    subgraph W[Watcher]
+    subgraph W[1.Watcher.]
         TW[Telemetry]
         CW[Chain]
     end
-    subgraph IM[Incident Management]
+    subgraph IM[3.Incident Management.]
         IMAPI[REST API]
     end
 
@@ -65,7 +66,7 @@ flowchart LR
     IR --> |flow| RS
     RS --> |flow| Matrix
     RS --> |flow| IM
-    Matrix --> IMAPI
+    Matrix[2.Matrix.] --> IMAPI
     Matrix --> U3((Users))
     
     config[/config.yaml/] -.-> W
@@ -83,7 +84,6 @@ flowchart LR
     style W stroke:#ff7e7e,stroke-width:4px,font-weight:bold
     style Matrix stroke:#ff7e7e,stroke-width:4px,font-weight:bold
     style IM stroke:#ff7e7e,stroke-width:4px,font-weight:bold
-    style TE stroke:#ff7e7e,stroke-width:4px,font-weight:bold
     style RPC stroke:#999999,stroke-width:1px
     style TB stroke:#999999,stroke-width:1px
 ```
@@ -140,8 +140,6 @@ This approach runs all services with Redis streams and Matrix notifications:
    - `watcher.yaml` - Watcher service configuration
    - `watcher.monitoring.yaml` - Monitoring configuration
    - `matrix.yaml` - Matrix service configuration
-   - `telemetry.yaml` - Telemetry exporter configuration
-   - `telemetry.monitoring.yaml` - Monitoring configuration
 
 2. Set Matrix password:
    ```bash
@@ -167,12 +165,10 @@ yarn build:types
 yarn build:config
 yarn build:watcher
 yarn build:matrix
-yarn build:telemetry
 
 # Run services
 yarn start:watcher:dev
 yarn start:matrix:dev
-yarn start:telemetry:dev
 ```
 
 ## Links

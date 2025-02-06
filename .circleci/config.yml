@@ -28,7 +28,7 @@ jobs:
           command: |
             corepack enable && corepack prepare yarn@4.6.0 --activate
             yarn install
-            yarn workspace @w3f/monitoring-${PACKAGE_NAME} lint     
+            yarn workspace @w3f/monitoring-${MODULE} lint     
 
   helmLint: &helmLint
     <<: *defaults
@@ -60,7 +60,6 @@ jobs:
   yarnLintWatcher: &watcher_job
     environment: &watcher_env
       MODULE: watcher
-      PACKAGE_NAME: watcher
     <<: *yarnLint
 
   helmLintWatcher:
@@ -79,7 +78,6 @@ jobs:
   yarnLintMatrix: &matrix_job
     environment: &matrix_env
       MODULE: matrix
-      PACKAGE_NAME: matrix
     <<: *yarnLint
 
   helmLintMatrix:
@@ -92,26 +90,7 @@ jobs:
 
   publishImageMatrix:
     environment: *matrix_env
-    <<: *publishImage            
-
-  # Telemetry jobs
-  yarnLintTelemetry: &telemetry_job
-    environment: &telemetry_env
-      MODULE: telemetry
-      PACKAGE_NAME: telemetry-exporter
-    <<: *yarnLint
-
-  helmLintTelemetry:
-    environment: *telemetry_env
-    <<: *helmLint          
-
-  buildImageTelemetry:
-    environment: *telemetry_env
-    <<: *buildImage
-
-  publishImageTelemetry:
-    environment: *telemetry_env
-    <<: *publishImage            
+    <<: *publishImage                   
 
   integrationTests:
     <<: *defaults
@@ -141,10 +120,8 @@ workflows:
       - yarnLintWatcher: &commit_job
           <<: *commit_filters
       - yarnLintMatrix: *commit_job
-      - yarnLintTelemetry: *commit_job
       - helmLintWatcher: *commit_job
-      - helmLintMatrix: *commit_job    
-      - helmLintTelemetry: *commit_job    
+      - helmLintMatrix: *commit_job     
 
       # Build jobs
       - buildImageWatcher: &build_job
@@ -158,11 +135,6 @@ workflows:
           requires:
             - helmLintMatrix
             - yarnLintMatrix
-      - buildImageTelemetry:
-          <<: *build_job
-          requires:
-            - helmLintTelemetry
-            - yarnLintTelemetry
 
       # Integration tests
       - integrationTests:
@@ -171,7 +143,6 @@ workflows:
           requires:
             - buildImageWatcher  
             - buildImageMatrix
-            - buildImageTelemetry
 
       # Publish jobs
       - publishImageWatcher: &publish_job
@@ -180,7 +151,6 @@ workflows:
           requires:
             - integrationTests
       - publishImageMatrix: *publish_job
-      - publishImageTelemetry: *publish_job
       - publishCharts:
           context: github-bot
           <<: *release_filters
