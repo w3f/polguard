@@ -22,7 +22,7 @@ export class ConfigService {
     try {
       this.monitoringGroups = await ConfigFetcher.fetchAndProcessConfigs(
         this.config.monitoring_config_sources,
-        this.configsDir
+        this.configsDir,
       );
       this.logger.log(`Loaded ${this.monitoringGroups.length} monitoring groups`);
     } catch (error) {

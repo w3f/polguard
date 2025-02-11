@@ -10,12 +10,12 @@ export interface ChainProperties {
 }
 
 export interface Logger {
-  log(message: string): void;
-  error(message: string): void;
-  warn(message: string): void;
-  debug(message: string): void;
-  verbose(message: string): void;
-  fatal(message: string): void;
+  log(message: string, ...args: any[]): void;
+  error(message: string, ...args: any[]): void;
+  warn(message: string, ...args: any[]): void;
+  debug(message: string, ...args: any[]): void;
+  verbose(message: string, ...args: any[]): void;
+  fatal(message: string, ...args: any[]): void;
 }
 
 export interface AccountId {

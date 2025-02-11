@@ -55,7 +55,7 @@ export class StakingMonitor extends AbstractChainMonitor<MonitorType.Staking> {
 
   @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
   async commissionUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
-    const commissions = await this.provider.stakingValidatorsComission(this.uniqueAddresses, blockNumber);
+    const commissions = await this.provider.stakingValidatorsCommission(this.uniqueAddresses, blockNumber);
     for (const address of this.uniqueAddresses) {
       const commission = commissions[address];
       if (commission === null) continue;
@@ -121,7 +121,7 @@ export class StakingMonitor extends AbstractChainMonitor<MonitorType.Staking> {
   @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
   async validatorIntentionMissing({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
     const bondedInfo = await this.provider.stakingBonded(this.uniqueAddresses, blockNumber);
-    const commissions = await this.provider.stakingValidatorsComission(this.uniqueAddresses, blockNumber);
+    const commissions = await this.provider.stakingValidatorsCommission(this.uniqueAddresses, blockNumber);
 
     for (const address of this.uniqueAddresses) {
       for (const { account, alerts, groupId } of this.getAccounts(H.ValidatorIntentionMissing, address)) {

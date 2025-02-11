@@ -9,7 +9,8 @@ export interface DataProvider {}
 export interface TelemetryDataProvider extends DataProvider {}
 
 export interface ChainDataProvider extends DataProvider {
-  stakingValidatorsComission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>>;
+  stakingValidators(blockNumber: number): Promise<Set<string>>;
+  stakingValidatorsCommission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>>;
   stakingLedgerActive(addresses: string[], blockNumber: number): Promise<Record<string, bigint | null>>;
   stakingBonded(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
   stakingPayee(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;

@@ -23,15 +23,33 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       public logger: Logger,
     ) {}
 
+    /**
+     * Helper method to work around ValueQuery behavior in stakingValidatorsCommission.
+     * Since staking.validators uses ValueQuery, it returns default value (0) for non-existent keys.
+     * This method gets all existing keys to distinguish between:
+     * - Validators that don't exist (not in storage)
+     * - Validators that exist with 0 commission (in storage with value 0)
+     *
+     * TODO: This seems suboptimal, find out better ways of dealing with ValueQuery storage
+     */
     @Cached()
-    async stakingValidatorsComission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>> {
+    async stakingValidators(blockNumber: number): Promise<Set<string>> {
       const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const keys = await apiAt.query.staking.validators.keys();
+      const validatorAddresses = keys.map(key => key.args[0].toString());
+      return new Set(validatorAddresses);
+    }
+
+    @Cached()
+    async stakingValidatorsCommission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>> {
+      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const validatorAddresses = await this.stakingValidators(blockNumber);
       const prefs = await apiAt.query.staking.validators.multi(addresses);
       const result: Record<string, number | null> = {};
 
       addresses.forEach((address, index) => {
-        if (prefs[index].isEmpty) {
-          this.logger.debug(`Account ${address} has no validator preferences set but is configured for monitoring.`);
+        if (!validatorAddresses.has(address)) {
+          this.logger.debug(`Account ${address} is not in validator set at block ${blockNumber}`);
           result[address] = null;
         } else {
           result[address] = prefs[index].commission.toNumber() / 10_000_000;
@@ -85,7 +103,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
       addresses.forEach((address, index) => {
         const payee = payees[index];
-        if (payee.isEmpty) {
+        if (payee.isNone) {
           this.logger.debug(
             `Account ${address} has no payee set (not bonded for staking) ` +
               `at block ${blockNumber} but is configured for monitoring.`,

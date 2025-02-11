@@ -42,7 +42,8 @@ export class MonitorTestSuite {
     } as unknown as jest.Mocked<IncidentHandler>;
 
     this.mockProvider = {
-      stakingValidatorsComission: jest.fn(),
+      stakingValidators: jest.fn(),
+      stakingValidatorsCommission: jest.fn(),
       stakingLedgerActive: jest.fn(),
       stakingBonded: jest.fn(),
       stakingPayee: jest.fn(),
@@ -186,7 +187,7 @@ export class MonitorTestSuite {
     isValidator = true,
     isBonded = true,
   } = {}) {
-    this.mockProvider.stakingValidatorsComission.mockResolvedValue({
+    this.mockProvider.stakingValidatorsCommission.mockResolvedValue({
       [address]: commission,
     });
     this.mockProvider.stakingLedgerActive.mockResolvedValue({
