@@ -5,7 +5,7 @@ import {
   BalancesHandlerType as H,
   EventHandlerParams,
 } from '@w3f/monitoring-types';
-import { EventHandler, EveryBlockHandler } from '../../chain-decorators';
+import { EventHandler, EveryBlockHandler } from '../../../common/decorators';
 import { AbstractChainMonitor } from '../abstract-chain-monitor';
 
 export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> {
@@ -32,7 +32,7 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
         );
 
         const key = `${account.ss58}:${groupId}:${H.BalanceChange}`;
-        await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
+        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
       }
     }
   }
@@ -57,7 +57,7 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
         );
 
         const key = `${account.ss58}:${groupId}:${H.BalanceThreshold}`;
-        await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
+        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
       }
     }
   }

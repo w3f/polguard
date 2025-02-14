@@ -20,16 +20,17 @@ config:
   environment: test
   redis:
     url: redis://redis-master:6379/0
-  chain:
-    name: Kusama
-    start_block: 26685508
-    rpcs:
-      # - wss://polkadot-rpc.dwellir.com
-      - wss://rpc-kusama.luckyfriday.io
+  watcherType: Telemetry
+  chain: Polkadot
+  telemetryConfig:
+    endpoint: https://telemetry-exporter.w3f.community/feed/filtered
+    basicAuth:
+      username: api
+      password: "{{ env "TELEMETRY_PASSWORD" }}"
   monitoring_config_sources:
   - name: "gitlab"
-    url: "https://gitlab.w3f.tech/api/v4/projects/99/repository/files/accounts.yaml/raw?ref=feature/add-identity-monitor"
-    auth_token: "{{ env "GITLAB_TOKEN" }}"  # Optional 
+    url: "https://gitlab.w3f.tech/api/v4/projects/99/repository/files/accounts.yaml/raw?ref=feature/telemetry-test"
+    auth_token: "{{ env "GITLAB_TOKEN" }}"  # Optional  
   logging:
-    level: info 
+    level: debug 
 {{ end }}

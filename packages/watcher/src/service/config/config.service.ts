@@ -3,7 +3,7 @@ import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Joi from 'joi';
-import { Chain, MonitoringGroup } from '@w3f/monitoring-types';
+import { Chain, MonitoringGroup, WatcherType } from '@w3f/monitoring-types';
 import { ConfigFetcher } from '@w3f/monitoring-config';
 
 @Injectable()
@@ -43,14 +43,28 @@ export class ConfigService {
   }
 
   private validateConfig(config: unknown): Config {
+    const chainConfigSchema = Joi.object({
+      rpcs: Joi.array().items(Joi.string().uri()).min(1).required(),
+      start_block: Joi.number().integer().min(1).optional(),
+    });
+
+    const telemetryConfigSchema = Joi.object({
+      endpoint: Joi.string().uri().required(),
+      basicAuth: Joi.object({
+        username: Joi.string().required(),
+        password: Joi.string().required(),
+      }).optional(),
+    });
+
     const schema = Joi.object({
-      chain: Joi.object({
-        name: Joi.string()
-          .valid(...Object.values(Chain))
-          .required(),
-        rpcs: Joi.array().items(Joi.string().uri()).min(1).required(),
-        start_block: Joi.number().integer().min(1).optional(),
-      }).required(),
+      chain: Joi.string()
+        .valid(...Object.values(Chain))
+        .required(),
+      chainConfig: Joi.alternatives().conditional('watcherType', {
+        is: WatcherType.Chain,
+        then: chainConfigSchema.required(),
+        otherwise: chainConfigSchema.optional(),
+      }),
       environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
       redis: Joi.object({
         url: Joi.string().uri().required(),
@@ -67,6 +81,14 @@ export class ConfigService {
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
       }).optional(),
+      telemetryConfig: Joi.alternatives().conditional('watcherType', {
+        is: WatcherType.Telemetry,
+        then: telemetryConfigSchema.required(),
+        otherwise: telemetryConfigSchema.optional(),
+      }),
+      watcherType: Joi.string()
+        .valid(...Object.values(WatcherType))
+        .required(),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -78,15 +100,11 @@ export class ConfigService {
   }
 
   getChain(): Chain {
-    return this.config.chain.name;
+    return this.config.chain;
   }
 
-  getRPCs(): string[] {
-    return this.config.chain.rpcs;
-  }
-
-  getStartBlock(): number | null {
-    return this.config.chain.start_block;
+  getChainConfig(): ChainConfig | null {
+    return this.config.chainConfig || null;
   }
 
   getEnvironment(): string {
@@ -112,14 +130,24 @@ export class ConfigService {
     }
     return this.monitoringGroups.filter(group => group.chain.includes(chain));
   }
+
+  getTelemetryConfig(): TelemetryConfig | null {
+    return this.config.telemetryConfig || null;
+  }
+
+  getWatcherType(): WatcherType {
+    return this.config.watcherType;
+  }
+}
+
+interface ChainConfig {
+  rpcs: string[];
+  start_block?: number;
 }
 
 interface Config {
-  chain: {
-    name: Chain;
-    rpcs: string[];
-    start_block?: number;
-  };
+  chain: Chain;
+  watcherType: WatcherType;
   environment: string;
   redis: {
     url: string;
@@ -131,5 +159,15 @@ interface Config {
   }[];
   logging?: {
     level: string;
+  };
+  chainConfig?: ChainConfig;
+  telemetryConfig?: TelemetryConfig;
+}
+
+interface TelemetryConfig {
+  endpoint: string;
+  basicAuth?: {
+    username: string;
+    password?: string;
   };
 }

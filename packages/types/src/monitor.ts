@@ -1,7 +1,7 @@
 import { ChainProperties, ConfigAccountSettings, Logger, IdentityField } from '.';
-import { Chain, ComparisonType, MonitorType } from './constants';
+import { Chain, ComparisonType, MonitorType, PolkadotClientImpl } from './constants';
 import { AlertSettings, IncidentHandlerClient } from './incident';
-import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams, MonitorHandlerType } from './handlers';
+import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams, MonitorHandlerType, TelemetryHandlerParams } from './handlers';
 import { DataProvider } from './data-provider';
 
 /**
@@ -9,6 +9,13 @@ import { DataProvider } from './data-provider';
  */
 export interface Monitor<T extends MonitorType> {
   // Common monitor methods could go here if needed
+}
+
+/**
+ * Telemetry-specific monitor interface
+ */
+export interface TelemetryMonitor<T extends MonitorType> extends Monitor<T> {
+  processTelemetry(params: TelemetryHandlerParams): Promise<void>;
 }
 
 /**
@@ -70,8 +77,23 @@ export type IdentitySettings = {
   handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Identity]>;
 };
 
+interface HardwareSettings {
+  cpu?: string;
+  minMemoryGB?: number;
+  minCores?: number;
+}
+
+interface LocationSettings {
+  sanctionedCountries?: string[];
+  sanctionedRegions?: string[];
+}
+
 export interface TelemetrySettings {
   handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Telemetry]>;
+  hardware?: HardwareSettings;
+  clientVersion?: Partial<Record<PolkadotClientImpl, string>>;
+  provider?: string;
+  location?: LocationSettings;
 }
 
 export type MonitorTypeSettings = {

@@ -8,7 +8,6 @@ import {
   EventEmitterClient,
   MetricsClient,
   MonitoringGroup,
-  Chain,
   MonitorType,
   ChainDataProvider,
   MonitorConstructor,
@@ -26,9 +25,9 @@ export async function createChainWatcher(
   const { logger, api, chainProps, storageClient, eventEmitterClient, metricsClient } = dependencies;
 
   const specName = api.runtimeVersion.specName.toString();
-  if (chainProps.chain !== specNameToChain(specName)) {
+  if (specName !== chainProps.specName) {
     throw new Error(
-      `Chain mismatch: Config chain is "${chainProps.chain}" but RPC endpoint returns "${specName}". Please check your configuration.`,
+      `Chain mismatch: Config chain is "${chainProps.specName}" but RPC endpoint returns "${specName}". Please check your configuration.`,
     );
   }
 
@@ -64,19 +63,4 @@ export interface ChainWatcherDependencies {
   eventEmitterClient: EventEmitterClient;
   metricsClient: MetricsClient;
   chainProps: ChainProperties;
-}
-
-function specNameToChain(specName: string): Chain {
-  switch (specName.toLowerCase()) {
-    case 'polkadot':
-      return Chain.Polkadot;
-    case 'kusama':
-      return Chain.Kusama;
-    case 'people-polkadot':
-      return Chain.PeoplePolkadot;
-    case 'people-kusama':
-      return Chain.PeopleKusama;
-    default:
-      throw new Error(`Unsupported chain: ${specName}`);
-  }
 }

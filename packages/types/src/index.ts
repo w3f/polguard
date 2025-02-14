@@ -38,3 +38,4 @@ export * from './handlers';
 export * from './clients';
 export * from './constants';
 export * from './data-provider';
+export * from './telemetry';

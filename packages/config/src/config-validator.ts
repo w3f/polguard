@@ -10,7 +10,7 @@
  */
 import * as Joi from 'joi';
 import { Chain, ComparisonType, MessengerType, MonitorType, StakingHandlerType, IdentityHandlerType,
-         BalancesHandlerType, TelemetryHandlerType, IDENTITY_FIELDS } from '@w3f/monitoring-types';
+         BalancesHandlerType, TelemetryHandlerType, IDENTITY_FIELDS, PolkadotClientImpl } from '@w3f/monitoring-types';
 
 const decimalStringPattern = /^-?\d*\.?\d*$/;
 const decimalStringSchema = Joi.string()
@@ -89,8 +89,26 @@ const balancesMonitorSchema = Joi.object({
   handlers: createHandlerSchema(BalancesHandlerType, 'Balances')
 });
 
+const hardwareSchema = Joi.object({
+  cpu: Joi.string().required(),
+  minMemoryGB: Joi.number().min(0).required(),
+  minCores: Joi.number().min(1).required()
+});
+
+const locationSchema = Joi.object({
+  sanctionedCountries: Joi.array().items(Joi.string()).required(),
+  sanctionedRegions: Joi.array().items(Joi.string()).required()
+});
+
 const telemetryMonitorSchema = Joi.object({
-  handlers: createHandlerSchema(TelemetryHandlerType, 'Telemetry')
+  handlers: createHandlerSchema(TelemetryHandlerType, 'Telemetry'),
+  hardware: hardwareSchema.optional(),
+  clientVersion: Joi.object().pattern(
+    Joi.string().valid(...Object.values(PolkadotClientImpl)),
+    Joi.string()
+  ).optional(),
+  provider: Joi.string().optional(),
+  location: locationSchema.optional()
 });
 
 const monitorSchema = Joi.object({

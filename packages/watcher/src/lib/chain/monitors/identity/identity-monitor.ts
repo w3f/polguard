@@ -1,4 +1,4 @@
-import { EventHandler, EveryBlockHandler } from '../../chain-decorators';
+import { EventHandler, EveryBlockHandler } from '../../../common/decorators';
 import {
   IdentityHandlerType as H,
   EveryBlockHandlerParams,
@@ -37,7 +37,7 @@ export class IdentityMonitor extends AbstractChainMonitor<MonitorType.Identity> 
         const message = this.createMessage(messageLines, { blockNumber });
 
         const key = `${account.ss58}:${groupId}:${H.IdentityUnexpected}`;
-        await this.incidents.ongoingIncident(message, alerts, blockNumber, key, isFiring);
+        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
       }
     }
   }

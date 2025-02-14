@@ -20,6 +20,7 @@ spec:
         app: {{ include "app.name" . }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
     {{- with .Values.affinity }}
       affinity:
@@ -34,6 +35,9 @@ spec:
         image: {{ .Values.image.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.image.imagePullPolicy }}
         # command: ["/bin/sh", "-c", "while true; do sleep 60; done"] #DEBUG
+        envFrom:
+        - secretRef:
+            name: {{ include "app.name" . }}
         ports:
         - name: http
           containerPort: {{ .Values.httpPort }}

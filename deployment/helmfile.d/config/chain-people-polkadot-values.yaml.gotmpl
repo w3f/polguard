@@ -20,15 +20,16 @@ config:
   environment: test
   redis:
     url: redis://redis-master:6379/0
-  chain:
-    name: PeopleKusama
-    start_block: 2621577
+  watcherType: Chain
+  chain: PeoplePolkadot
+  chainConfig:
+    start_block: 1479120
     rpcs:
-      - wss://rpc-people-kusama.luckyfriday.io
+      - wss://rpc-people-polkadot.luckyfriday.io
   monitoring_config_sources:
   - name: "gitlab"
-    url: "https://gitlab.w3f.tech/api/v4/projects/99/repository/files/accounts.yaml/raw?ref=feature/add-identity-monitor"
+    url: "https://gitlab.w3f.tech/api/v4/projects/99/repository/files/accounts.yaml/raw?ref=main"
     auth_token: "{{ env "GITLAB_TOKEN" }}"
   logging:
-    level: info 
+    level: debug 
 {{ end }}

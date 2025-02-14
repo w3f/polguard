@@ -210,9 +210,9 @@ export class MonitorTestSuite {
         title: expect.stringContaining(titleFragment),
       }),
       expect.any(Object),
-      blockNumber,
       expect.any(String),
-      isFiring
+      isFiring,
+      blockNumber
     );
   }
 

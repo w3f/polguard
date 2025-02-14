@@ -1,7 +1,7 @@
 import { AbstractChainMonitor } from '@lib/chain/monitors/abstract-chain-monitor';
 import { Chain, MonitorType, StakingHandlerType as H } from '@w3f/monitoring-types';
 import { MonitorTestSuite } from './monitor-test-suite';
-import { EventHandler, CallHandler, EveryBlockHandler } from '@lib/chain/chain-decorators';
+import { EventHandler, CallHandler, EveryBlockHandler } from '@lib/common/decorators';
 
 class TestChainMonitor extends AbstractChainMonitor<MonitorType.Staking> {
   @EventHandler('test.event', [Chain.Polkadot])
@@ -22,8 +22,9 @@ class TestChainMonitor extends AbstractChainMonitor<MonitorType.Staking> {
   @EveryBlockHandler([Chain.Polkadot])
   async testBlockHandler({ blockNumber }) {
     for (const address of this.uniqueAddresses) {
-      for (const { account, alerts } of this.getAccounts(H.CommissionUnexpected, address)) {
-        await this.incidents.oneTimeIncident({ title: 'test', details: [] }, alerts, blockNumber);
+      for (const { account, alerts, groupId } of this.getAccounts(H.CommissionUnexpected, address)) {
+        const key = `${account.ss58}:${groupId}:${H.CommissionUnexpected}`;
+        await this.incidents.ongoingIncident({ title: 'test', details: [] }, alerts, key, true, blockNumber);
       }
     }
   }
@@ -146,7 +147,7 @@ describe('AbstractChainMonitor', () => {
 
       // This handler should be filtered out
       await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
-      expect(suite.mockIncidents.oneTimeIncident).not.toHaveBeenCalled();
+      expect(suite.mockIncidents.ongoingIncident).not.toHaveBeenCalled();
     });
 
     it('should filter handlers based on exclude list', async () => {
@@ -179,7 +180,7 @@ describe('AbstractChainMonitor', () => {
 
       // This handler should not be filtered out
       await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
-      expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalled();
+      expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalled();
     });
 
     it('should handle multiple accounts with different handler configs', async () => {

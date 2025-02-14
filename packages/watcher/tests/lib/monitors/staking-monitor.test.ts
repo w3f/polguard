@@ -180,9 +180,9 @@ describe('StakingMonitor', () => {
             ]),
           }),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          true
+          true,
+          TEST_BLOCK
         );
       });
 
@@ -197,9 +197,9 @@ describe('StakingMonitor', () => {
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
           expect.any(Object),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          false
+          false,
+          TEST_BLOCK
         );
       });
     });
@@ -222,9 +222,9 @@ describe('StakingMonitor', () => {
             ]),
           }),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          true
+          true,
+          TEST_BLOCK
         );
       });
 
@@ -239,9 +239,9 @@ describe('StakingMonitor', () => {
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
           expect.any(Object),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          false
+          false,
+          TEST_BLOCK
         );
       });
     });
@@ -263,9 +263,9 @@ describe('StakingMonitor', () => {
             ]),
           }),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          true
+          true,
+          TEST_BLOCK
         );
       });
 
@@ -275,9 +275,9 @@ describe('StakingMonitor', () => {
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
           expect.any(Object),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          false
+          false,
+          TEST_BLOCK
         );
       });
     });
@@ -299,9 +299,9 @@ describe('StakingMonitor', () => {
             ]),
           }),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          true
+          true,
+          TEST_BLOCK
         );
       });
 
@@ -311,9 +311,9 @@ describe('StakingMonitor', () => {
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
           expect.any(Object),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          false
+          false,
+          TEST_BLOCK
         );
       });
     });
@@ -327,10 +327,10 @@ describe('StakingMonitor', () => {
         await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
 
         const calls = suite.mockIncidents.ongoingIncident.mock.calls;
-        const validatorIntentionCall = calls.find(call => call[3].includes(H.ValidatorIntentionMissing));
+        const validatorIntentionCall = calls.find(call => call[2].includes(H.ValidatorIntentionMissing));
         expect(validatorIntentionCall).toBeTruthy();
 
-        const [message, , , , isFiring] = validatorIntentionCall;
+        const [message, , , isFiring] = validatorIntentionCall;
         expect(message.title).toContain('not properly set up as validator');
         expect(message.details).toContain('Account is not bonded.');
         expect(isFiring).toBe(true);
@@ -344,10 +344,10 @@ describe('StakingMonitor', () => {
         await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
 
         const calls = suite.mockIncidents.ongoingIncident.mock.calls;
-        const validatorIntentionCall = calls.find(call => call[3].includes(H.ValidatorIntentionMissing));
+        const validatorIntentionCall = calls.find(call => call[2].includes(H.ValidatorIntentionMissing));
         expect(validatorIntentionCall).toBeTruthy();
 
-        const [message, , , , isFiring] = validatorIntentionCall;
+        const [message, , , isFiring] = validatorIntentionCall;
         expect(message.title).toContain('not properly set up as validator');
         expect(message.details).toContain('No validator preferences (commission) set.');
         expect(isFiring).toBe(true);
@@ -357,13 +357,12 @@ describe('StakingMonitor', () => {
         await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
 
         const calls = suite.mockIncidents.ongoingIncident.mock.calls;
-        const validatorIntentionCall = calls.find(call => call[3].includes(H.ValidatorIntentionMissing));
+        const validatorIntentionCall = calls.find(call => call[2].includes(H.ValidatorIntentionMissing));
         expect(validatorIntentionCall).toBeTruthy();
 
-        const [, , , , isFiring] = validatorIntentionCall;
+        const [, , , isFiring] = validatorIntentionCall;
         expect(isFiring).toBe(false);
       });
     });
-
   });
 });

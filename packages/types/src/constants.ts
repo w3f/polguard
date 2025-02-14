@@ -1,5 +1,10 @@
 import { ChainProperties } from '.';
 
+export enum WatcherType {
+  Chain = 'Chain',
+  Telemetry = 'Telemetry',
+}
+
 export enum Chain {
   Polkadot = 'Polkadot',
   Kusama = 'Kusama',
@@ -73,7 +78,7 @@ export enum GovernanceHandlerType {
   ConvictionVoted = 'ConvictionVoted',
 }
 
-const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
+export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   [Chain.Polkadot]: {
     chain: Chain.Polkadot,
     specName: 'polkadot',
@@ -117,6 +122,11 @@ export function getChainProperties(chain: Chain): ChainProperties {
     throw new Error(`Unsupported chain: ${chain}`);
   }
   return props;
+}
+
+export enum PolkadotClientImpl {
+  ParityPolkadot = 'Parity Polkadot',
+  KagomeNode = 'Kagome Node'
 }
 
 export const IDENTITY_FIELDS = [

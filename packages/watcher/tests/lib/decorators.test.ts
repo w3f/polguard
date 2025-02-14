@@ -1,4 +1,4 @@
-import { EventHandler, CallHandler, EveryBlockHandler } from '@lib/chain/chain-decorators';
+import { EventHandler, CallHandler, EveryBlockHandler } from '@lib/common/decorators';
 import { Chain } from '@w3f/monitoring-types';
 
 describe('Decorators', () => {

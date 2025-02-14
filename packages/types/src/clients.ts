@@ -1,14 +1,19 @@
 /**
- * This module defines interfaces for external client dependencies used in the ChainWatcher.
+ * This module defines interfaces for external client dependencies used in the Watchers.
  * These interfaces abstract the implementation details of various external services.
  *
  * - EventEmitterClient: Represents a client for emitting events (e.g., Redis Streams)
  * - MetricsClient: Represents a client for recording metrics (e.g., Prometheus)
  * - KeyValueStorageClient: Represents a client for caching and storing data (e.g., Redis)
- *
+ * - TelemetryClient: Represents a client for fetching telemetry data from nodes
  */
 
+import { TelemetryData } from './telemetry';
 import { ActiveIncidentState } from './incident';
+
+export interface TelemetryClient {
+  getTelemetry(): Promise<TelemetryData>;
+}
 
 export interface EventEmitterClient {
   emit(event: string, payload: any): Promise<boolean>;

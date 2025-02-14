@@ -31,9 +31,9 @@ type AccountConfig<T extends MonitorType> = {
  * 3. Filtering accounts based on handler eligibility
  *
  * @typeParam T - Type of monitor (e.g., Staking, Identity, Telemetry)
- * @typeParam D - Type of data provider used by this monitor
+ * @typeParam D - Type of data provider used by this monitor (optional)
  */
-export abstract class AbstractMonitor<T extends MonitorType, D extends DataProvider> {
+export abstract class AbstractMonitor<T extends MonitorType, D extends DataProvider = never> {
   /** Maps handler names to their execution collections (Map for triggered, Set for periodic) */
   protected handlers: Map<string, Map<string, HandlerFunction<any>> | Set<HandlerFunction<any>>> = new Map();
 
@@ -122,8 +122,7 @@ export abstract class AbstractMonitor<T extends MonitorType, D extends DataProvi
    *
    * Example for telemetry monitor:
    * {
-   *   todo: { type: 'triggered' },    // todo
-   *   todo: { type: 'periodic' }      // todo
+   *   telemetryHandlers: { type: 'periodic' }  // Execute on every telemetry fetch
    * }
    *
    * @returns Record mapping handler collection names to their execution types
@@ -160,6 +159,24 @@ export abstract class AbstractMonitor<T extends MonitorType, D extends DataProvi
   }
 
   /**
+   * Helper method to iterate through all accounts for a given handler type.
+   * Simplifies common pattern of iterating through unique addresses and their accounts.
+   *
+   * @param handlerType - Type of handler to get accounts for
+   * @param callback - Function to execute for each account
+   */
+  protected async forEachAccount(
+    handlerType: MonitorHandlerType[T],
+    callback: (params: { account: AccountSettings<T>; alerts: AlertSettings; groupId: string }) => Promise<void>,
+  ): Promise<void> {
+    for (const address of this.uniqueAddresses) {
+      for (const accountInfo of this.getAccounts(handlerType, address)) {
+        await callback(accountInfo);
+      }
+    }
+  }
+
+  /**
    * Builds account lookup structure for the monitor.
    *
    * This method processes all accounts from the monitoring groups and creates a lookup map
@@ -191,19 +208,16 @@ export abstract class AbstractMonitor<T extends MonitorType, D extends DataProvi
         if (!this.accounts.has(account.ss58)) {
           this.accounts.set(account.ss58, []);
         }
-        const monitorSettings = account[this.monitorType];
-        if (monitorSettings) {
-          this.accounts.get(account.ss58).push({
-            account: {
-              ss58: account.ss58,
-              hex: account.hex,
-              name: account.name,
-              settings: monitorSettings as MonitorSettings<T>,
-            },
-            alerts: group.alerts,
-            groupId: group.name,
-          });
-        }
+        this.accounts.get(account.ss58).push({
+          account: {
+            ss58: account.ss58,
+            hex: account.hex,
+            name: account.name,
+            settings: account[this.monitorType] as MonitorSettings<T>,
+          },
+          alerts: group.alerts,
+          groupId: group.name,
+        });
       }
     }
   }

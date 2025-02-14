@@ -162,9 +162,9 @@ describe('IdentityMonitor', () => {
             ])
           }),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          true
+          true,
+          TEST_BLOCK
         );
       });
 
@@ -189,9 +189,9 @@ describe('IdentityMonitor', () => {
             ])
           }),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          true
+          true,
+          TEST_BLOCK
         );
       });
 
@@ -211,9 +211,9 @@ describe('IdentityMonitor', () => {
             ])
           }),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          true
+          true,
+          TEST_BLOCK
         );
       });
 
@@ -223,9 +223,9 @@ describe('IdentityMonitor', () => {
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
           expect.any(Object),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          false
+          false,
+          TEST_BLOCK
         );
       });
       
@@ -261,9 +261,9 @@ describe('IdentityMonitor', () => {
             ])
           }),
           expect.any(Object),
-          TEST_BLOCK,
           expect.any(String),
-          false
+          false,
+          TEST_BLOCK
         );
       });
     });

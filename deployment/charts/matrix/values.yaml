@@ -2,6 +2,7 @@ image:
   repo: web3f/mp-matrix
   # tag: xy
 
+# TODO: Make port configurable for the services, changing port here will cause an issue
 httpPort: 3000
 
 resources: {}

@@ -65,7 +65,7 @@ export class AccountSettingsBuilder {
       [MonitorType.Staking]: ['commission', 'commissionComparison', 'selfStakeComparison', 'selfStake', 'payee', 'handlers'],
       [MonitorType.Balances]: ['threshold', 'changeComparison', 'handlers'],
       [MonitorType.Identity]: ['matrix', 'email', 'handlers'],
-      [MonitorType.Telemetry]: ['handlers'],
+      [MonitorType.Telemetry]: ['handlers', 'hardware', 'clientVersion', 'provider', 'location'],
       [MonitorType.Governance]: ['handlers']
     };
     return settingsType[monitorType] as (keyof MonitorTypeSettings[T])[];
@@ -82,35 +82,35 @@ export class AccountSettingsBuilder {
   }
 
   private static mergeSettings(
-  monitorConfigs: MonitorConfig[],
-  accountSettings: Record<string, any>,
-): Record<MonitorType, Record<string, any>> {
-  const mergedSettings = {} as Record<MonitorType, Record<string, any>>;
+    monitorConfigs: MonitorConfig[],
+    accountSettings: Record<string, any>,
+  ): Record<MonitorType, Record<string, any>> {
+    const mergedSettings = {} as Record<MonitorType, Record<string, any>>;
 
-  monitorConfigs.forEach(monitor => {
-    // Initialize settings object
-    mergedSettings[monitor.name] = {};
-    
-    // Get monitor settings without the handlers
-    const { handlers, ...monitorSettings } = monitor.settings || {};
-    
-    // Get relevant account settings
-    const relevantKeys = this.getMonitorTypeKeys(monitor.name);
-    
-    const relevantAccountSettings = Object.entries(accountSettings)
-      .filter(([key]) => relevantKeys.includes(key as any))
-      .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+    monitorConfigs.forEach(monitor => {
+      // Initialize settings object
+      mergedSettings[monitor.name] = {};
+      
+      // Get monitor settings without the handlers
+      const { handlers, ...monitorSettings } = monitor.settings || {};
+      
+      // Get relevant account settings
+      const relevantKeys = this.getMonitorTypeKeys(monitor.name);
+      
+      const relevantAccountSettings = Object.entries(accountSettings)
+        .filter(([key]) => relevantKeys.includes(key as any))
+        .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
 
-    // Merge in order
-    mergedSettings[monitor.name] = {
-      ...monitorSettings,
-      ...relevantAccountSettings,
-      ...(handlers && { handlers })
-    };
-  });
+      // Merge in order
+      mergedSettings[monitor.name] = {
+        ...monitorSettings,
+        ...relevantAccountSettings,
+        ...(handlers && { handlers })
+      };
+    });
 
-  return mergedSettings;
-}
+    return mergedSettings;
+  }
 
   private static applyDefaultSettings(
     mergedSettings: Record<MonitorType, Record<string, any>>,

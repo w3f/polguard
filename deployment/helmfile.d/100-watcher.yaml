@@ -9,18 +9,26 @@ repositories:
 
 releases:
 
-- name: watcher
+- name: chain-watcher-polkadot
   {{ if eq .Environment.Name "test" }}
   namespace: test
   {{ end }}
   chart: ../charts/watcher
   values:
-  - ./config/watcher-values.yaml.gotmpl
+  - ./config/chain-polkadot-values.yaml.gotmpl
 
-- name: watcher-people
+- name: telemetry-watcher-polkadot
   {{ if eq .Environment.Name "test" }}
   namespace: test
   {{ end }}
   chart: ../charts/watcher
   values:
-  - ./config/watcher-people-values.yaml.gotmpl
+  - ./config/telemetry-polkadot-values.yaml.gotmpl
+
+- name: chain-watcher-people-polkadot
+  {{ if eq .Environment.Name "test" }}
+  namespace: test
+  {{ end }}
+  chart: ../charts/watcher
+  values:
+  - ./config/chain-people-polkadot-values.yaml.gotmpl

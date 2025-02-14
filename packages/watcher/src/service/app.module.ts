@@ -5,6 +5,7 @@ import { MetricsModule } from './metrics/metrics.module';
 import { ConfigModule } from './config/config.module';
 import { StorageModule } from './storage/storage.module';
 import { EventEmitterModule } from './incident/incident.module';
+import { TelemetryModule } from './telemetry/telemetry.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { EventEmitterModule } from './incident/incident.module';
     ConfigModule,
     StorageModule.forRootAsync(),
     EventEmitterModule.forRootAsync(),
+    TelemetryModule.forRootAsync(),
   ],
   providers: [Logger, AppService],
 })

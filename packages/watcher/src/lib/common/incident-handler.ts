@@ -43,9 +43,9 @@ export class IncidentHandler implements IncidentHandlerClient {
   async ongoingIncident(
     message: Message,
     alerts: AlertSettings,
-    blockNumber: number,
     incidentKey: string,
     isFiring: boolean,
+    blockNumber?: number,
   ): Promise<void> {
     const incidentId = this.getIncidentId(incidentKey);
     let state = await this.store.getOngoingIncident(incidentId);
@@ -76,7 +76,7 @@ export class IncidentHandler implements IncidentHandlerClient {
         const shouldEmit = state.lastEmitted === 0 || currentTimestamp - state.lastEmitted >= repeatInterval;
 
         if (shouldEmit) {
-          await this.emitIncident(incidentId, message, alerts, blockNumber, MessageType.Firing);
+          await this.emitIncident(incidentId, message, alerts, MessageType.Firing, blockNumber);
           state.lastEmitted = currentTimestamp;
         }
       }
@@ -85,7 +85,7 @@ export class IncidentHandler implements IncidentHandlerClient {
       state.consecutiveFiringBlocks = 0;
 
       if (state.consecutiveNormalBlocks >= this.THRESHOLD) {
-        await this.emitIncident(incidentId, message, alerts, blockNumber, MessageType.Resolved);
+        await this.emitIncident(incidentId, message, alerts, MessageType.Resolved, blockNumber);
         await this.store.deleteOngoingIncident(incidentId);
         return;
       }
@@ -93,26 +93,27 @@ export class IncidentHandler implements IncidentHandlerClient {
     await this.store.setOngoingIncident(incidentId, state);
   }
 
-  async oneTimeIncident(message: Message, alerts: AlertSettings, blockNumber: number): Promise<void> {
+  async oneTimeIncident(message: Message, alerts: AlertSettings, blockNumber?: number): Promise<void> {
     const incidentId = this.getIncidentId();
-    await this.emitIncident(incidentId, message, alerts, blockNumber, MessageType.OneTime);
+    await this.emitIncident(incidentId, message, alerts, MessageType.OneTime, blockNumber);
   }
 
   private async emitIncident(
     id: string,
     message: Message,
     alerts: AlertSettings,
-    blockNumber: number,
     messageType: MessageType,
+    blockNumber?: number,
   ): Promise<void> {
     const styledMessage = MessageStyler.applyStyle(message, messageType, MessengerType.Matrix);
 
     const incident: IncidentEvent = {
       id,
-      blockNumber,
       chain: this.chain,
       message: styledMessage,
       alerts,
+      blockNumber,
+      timestamp: Date.now(),
     };
 
     this.logger.debug(`Emitting incident: ${JSON.stringify(incident)}`);

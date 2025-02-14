@@ -1,6 +1,6 @@
 import { MonitorType, EventHandlerParams, Chain } from '@w3f/monitoring-types';
 import { AbstractChainMonitor } from '../abstract-chain-monitor';
-import { EventHandler } from '../../chain-decorators';
+import { EventHandler } from '../../../common/decorators';
 
 export class GovernanceMonitor extends AbstractChainMonitor<MonitorType.Governance> {
   @EventHandler('referenda.Submitted', [Chain.Polkadot, Chain.Kusama])

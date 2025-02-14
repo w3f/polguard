@@ -9,10 +9,11 @@ export interface AlertSettings {
 
 export interface IncidentEvent {
   id: string;
-  blockNumber: number;
   chain: Chain;
   message: string;
   alerts: AlertSettings;
+  timestamp: number;
+  blockNumber?: number;
 }
 
 export interface Message {
@@ -28,12 +29,16 @@ export interface ActiveIncidentState {
 }
 
 export interface IncidentHandlerClient {
-  oneTimeIncident(message: Message, alerts: AlertSettings, blockNumber: number): Promise<void>;
+  oneTimeIncident(
+    message: Message, 
+    alerts: AlertSettings, 
+    blockNumber?: number
+  ): Promise<void>;
   ongoingIncident(
     message: Message,
     alerts: AlertSettings,
-    blockNumber: number,
     key: string,
     isFiring: boolean,
+    blockNumber?: number
   ): Promise<void>;
 }

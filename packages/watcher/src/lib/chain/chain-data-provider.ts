@@ -41,7 +41,10 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
     }
 
     @Cached()
-    async stakingValidatorsCommission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>> {
+    async stakingValidatorsCommission(
+      addresses: string[],
+      blockNumber: number,
+    ): Promise<Record<string, number | null>> {
       const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
       const validatorAddresses = await this.stakingValidators(blockNumber);
       const prefs = await apiAt.query.staking.validators.multi(addresses);

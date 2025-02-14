@@ -1,0 +1,35 @@
+{{ if eq .Environment.Name "ci" }}
+image:
+  tag: {{ env "CIRCLE_SHA1" | default "kind" }}
+{{ else if eq .Environment.Name "local" }}
+image:
+  repo: localhost:5000/mp-watcher
+  tag: latest
+{{ end }}
+
+{{ if eq .Environment.Name "ci" }}
+resources: null
+{{ end }}
+
+{{ if eq .Environment.Name "test" }}
+image:
+  tag: {{ env "IMAGE_TAG" }}
+  imagePullPolicy: Always
+monitoringConfig: null
+config:
+  environment: test
+  redis:
+    url: redis://redis-master:6379/0
+  watcherType: Chain
+  chain: Polkadot
+  chainConfig:
+    start_block: 24703912
+    rpcs:
+      - wss://rpc-polkadot.luckyfriday.io
+  monitoring_config_sources:
+  - name: "gitlab"
+    url: "https://gitlab.w3f.tech/api/v4/projects/99/repository/files/accounts.yaml/raw?ref=main"
+    auth_token: "{{ env "GITLAB_TOKEN" }}"  # Optional 
+  logging:
+    level: debug 
+{{ end }}

@@ -6,7 +6,7 @@ export type IdentityInfo = {
 
 export interface DataProvider {}
 
-export interface TelemetryDataProvider extends DataProvider {}
+export type NoProvider = DataProvider;
 
 export interface ChainDataProvider extends DataProvider {
   stakingValidators(blockNumber: number): Promise<Set<string>>;
