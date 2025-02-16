@@ -2,86 +2,58 @@
 
 ## Architecture Overview
 
-The following diagram illustrates the high-level architecture and connections between different components of the system:
+The watcher package implements monitoring functionality for both on-chain and off-chain data through a hierarchical class structure.
 
-```mermaid
-flowchart RL
-    subgraph NestClasses["Nest.js /service"]
-        A[NestMicroservice<br><br>Main entry point. Initializes components, coordinates services]
-        B[ConfigService<br><br>Provides unified config interface]
-        C[AppConfigService<br><br>Validates config]
-        D[MonitoringConfigService<br><br>Retrieves, validates and transforms configs]
-        E[StorageService<br><br>Implements KeyValueStorageClient interface, provides Redis operations]
-        F[HealthController<br><br>Provides health check endpoint]
-        G[MetricsController<br><br>Exposes Prometheus metrics]
-        I[IncidentPublisherService<br><br>Implements EventEmitterClient interface, publishes incidents to Redis Stream]
-    end
+### Class Hierarchy
 
-    subgraph WatcherClasses["Watcher /lib"]
-        subgraph Common["Common"]
-            K[AbstractWatcher<br><br>Base class for watchers. Defines monitor initialization and lifecycle management]
-            L[AbstractMonitor<br><br>Base class for monitors. Defines handler management and account lookups]
-            M[Store<br><br>Provides namespaced storage for caching and persistence]
-            N[IncidentHandler<br><br>Manages incidents state and emission]
-        end
-
-        subgraph Chain["Chain"]
-            O[ChainWatcher<br><br>Processes blocks, events, and calls]
-            P[AbstractChainMonitor<br><br>Base class for chain monitors]
-            Q[ChainMonitors<br><br>Specific implementations:<br>- StakingMonitor<br>- GovernanceMonitor<br>- IdentityMonitor<br>- BalancesMonitor]
-            R[ChainDataProvider<br><br>Provides cached chain state queries]
-        end
-
-        subgraph Telemetry["Telemetry (TODO)"]
-            S[TelemetryWatcher<br><br>Processes telemetry updates]
-            T[TelemetryMonitor<br><br>Monitors node metrics]
-        end
-    end
-
-    D --> B
-    C --> B
-    B --> A
-    E --> A
-    F --> A
-    G --> A
-    I --> A
-
-    K --> A
-    O --> K
-    S -.-> K
-    L --> K
-    P --> L
-    Q --> P
-    T -.-> L
-    M --> K
-    N --> K
-    R --> O
-```
-
-### Connection Types
-- Solid line (`-->`) : Direct dependency/method calls
-- Dotted line (`-.->`) : Planned/future components
-
-### Components Overview
-
-#### Common Infrastructure
-- **AbstractWatcher**: Generic base for all watchers, handles monitor initialization and lifecycle
-- **AbstractMonitor**: Generic base for all monitors, provides handler management and account lookups
-- **Store**: Key-value storage for caching and persistence
-- **IncidentHandler**: Manages and emits monitoring incidents
+#### Base Classes (Common)
+- **AbstractWatcher**: Base class for all watchers
+  - Handles monitor initialization and lifecycle management
+  - Extended by ChainWatcher and TelemetryWatcher
+- **AbstractMonitor**: Base class for all monitors
+  - Provides handler management and account lookups
+  - Extended by chain and telemetry monitors
+- **Store**: Provides namespaced storage operations
+- **IncidentHandler**: Manages incidents state and emission
 
 #### Chain Monitoring
-- **ChainWatcher**: Processes blockchain data (blocks, events, calls)
-- **AbstractChainMonitor**: Base for chain-specific monitors
-- **Chain Monitors**: Specific implementations for different monitoring needs
-- **ChainDataProvider**: Cached access to chain state
+- **ChainWatcher** (extends AbstractWatcher)
+  - Processes blocks, events, and calls
+  - Uses ChainDataProvider for cached chain state
+- **AbstractChainMonitor** (extends AbstractMonitor)
+  - Base for chain-specific monitors
+  - Implemented by:
+    - **StakingMonitor**: Commission rates, self-stake amounts, reward destination, active set presence
+    - **IdentityMonitor**: On-chain identity fields, registration status
+    - **BalancesMonitor**: Account balances, transfers, thresholds
+    - **GovernanceMonitor**: Governance participation (planned)
 
-#### Telemetry Monitoring (Planned)
-- **TelemetryWatcher**: Will process node telemetry data
-- **TelemetryMonitor**: Will monitor node metrics
+#### Telemetry Monitoring
+- **TelemetryWatcher** (extends AbstractWatcher)
+  - Processes telemetry updates
+  - Manages telemetry data collection
+- **AbstractTelemetryMonitor** (extends AbstractMonitor)
+  - Base for telemetry-specific monitoring
+  - Implemented by **TelemetryMonitor**:
+    - Hardware requirements (CPU, memory, cores)
+    - Location restrictions (countries, regions)
+    - Cloud provider verification
+    - Client version compliance
+    - IP spoofing detection
+    - Telemetry data availability
+
+### Service Layer (Nest.js)
+- **NestMicroservice**: Main entry point
+- **ConfigService**: Configuration interface
+- **AppConfigService**: Config validation
+- **MonitoringConfigService**: Config processing
+- **StorageService**: Redis operations
+- **HealthController**: Health checks
+- **MetricsController**: Prometheus metrics
+- **IncidentPublisherService**: Redis Stream publishing
 
 ### Data Flow
-1. Watcher initializes with appropriate configuration and dependencies
+1. Watcher initializes with configuration and dependencies
 2. Monitors are created based on configuration
 3. Chain/Telemetry data is processed through respective watchers
 4. Incidents are managed and emitted through IncidentHandler

@@ -65,7 +65,16 @@ export class AccountSettingsBuilder {
       [MonitorType.Staking]: ['commission', 'commissionComparison', 'selfStakeComparison', 'selfStake', 'payee', 'handlers'],
       [MonitorType.Balances]: ['threshold', 'changeComparison', 'handlers'],
       [MonitorType.Identity]: ['matrix', 'email', 'handlers'],
-      [MonitorType.Telemetry]: ['handlers', 'hardware', 'clientVersion', 'provider', 'location'],
+      [MonitorType.Telemetry]: [
+        'handlers',
+        'cpu',
+        'minMemoryGB',
+        'minCores',
+        'clientVersion',
+        'provider',
+        'sanctionedCountries',
+        'sanctionedRegions'
+      ],
       [MonitorType.Governance]: ['handlers']
     };
     return settingsType[monitorType] as (keyof MonitorTypeSettings[T])[];

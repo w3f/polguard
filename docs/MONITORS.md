@@ -4,10 +4,11 @@ This document describes all available monitors and their handlers in the monitor
 
 ## Overview
 
-The platform currently supports four types of monitors:
+The platform currently supports five types of monitors:
 - Balances Monitor - tracks account balance changes and transfers
 - Identity Monitor - verifies on-chain identity information
 - Staking Monitor - monitors validator-specific parameters and status
+- Telemetry Monitor - verifies node telemetry data and requirements
 - Governance Monitor - (coming soon) will track governance participation
 
 ## Balances Monitor
@@ -106,4 +107,47 @@ Triggers when validator changes commission.
 
 #### DestinationChanged
 Triggers when validator changes reward destination.
+- No specific settings required
+
+## Telemetry Monitor
+
+Monitors node telemetry data and verifies hardware/software requirements.
+
+### Block Handlers
+
+#### HardwareUnexpected
+Verifies node hardware meets requirements.
+- **Settings**:
+  - `cpu`: Expected CPU model
+  - `minMemoryGB`: Minimum required memory in GB
+  - `minCores`: Minimum required CPU cores
+
+#### LocationUnexpected
+Checks if node is running in allowed regions.
+- **Settings**:
+  - `sanctionedCountries`: List of disallowed countries
+  - `sanctionedRegions`: List of disallowed regions
+
+#### ProviderUnexpected
+Verifies node is running on expected cloud provider.
+- **Settings**:
+  - `provider`: Expected cloud provider name
+
+#### VersionOutdated
+Checks if node is running expected client version.
+- **Settings**:
+  - `clientVersion`: Map of client implementations to expected versions
+  Example:
+  ```yaml
+  clientVersion:
+    "Parity Polkadot": "v1.0.0"
+    "Kagome Node": "v1.0.0"
+  ```
+
+#### IpSpoofing
+Detects potential IP address spoofing.
+- No specific settings required
+
+#### TelemetryMissing
+Alerts when node telemetry data is unavailable.
 - No specific settings required

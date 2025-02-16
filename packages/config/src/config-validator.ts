@@ -89,26 +89,18 @@ const balancesMonitorSchema = Joi.object({
   handlers: createHandlerSchema(BalancesHandlerType, 'Balances')
 });
 
-const hardwareSchema = Joi.object({
-  cpu: Joi.string().required(),
-  minMemoryGB: Joi.number().min(0).required(),
-  minCores: Joi.number().min(1).required()
-});
-
-const locationSchema = Joi.object({
-  sanctionedCountries: Joi.array().items(Joi.string()).required(),
-  sanctionedRegions: Joi.array().items(Joi.string()).required()
-});
-
 const telemetryMonitorSchema = Joi.object({
   handlers: createHandlerSchema(TelemetryHandlerType, 'Telemetry'),
-  hardware: hardwareSchema.optional(),
+  cpu: Joi.string(),
+  minMemoryGB: Joi.number().min(1),
+  minCores: Joi.number().min(1),
   clientVersion: Joi.object().pattern(
     Joi.string().valid(...Object.values(PolkadotClientImpl)),
     Joi.string()
-  ).optional(),
-  provider: Joi.string().optional(),
-  location: locationSchema.optional()
+  ),
+  provider: Joi.string(),
+  sanctionedCountries: Joi.array().items(Joi.string()),
+  sanctionedRegions: Joi.array().items(Joi.string())
 });
 
 const monitorSchema = Joi.object({

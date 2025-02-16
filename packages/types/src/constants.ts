@@ -71,6 +71,7 @@ export enum TelemetryHandlerType {
   VersionOutdated = 'VersionOutdated',
   HardwareUnexpected = 'HardwareUnexpected',
   TelemetryMissing = 'TelemetryMissing',
+  IpSpoofing = 'IpSpoofing'
 }
 
 export enum GovernanceHandlerType {

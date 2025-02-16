@@ -77,23 +77,15 @@ export type IdentitySettings = {
   handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Identity]>;
 };
 
-interface HardwareSettings {
+export interface TelemetrySettings {
+  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Telemetry]>;
   cpu?: string;
   minMemoryGB?: number;
   minCores?: number;
-}
-
-interface LocationSettings {
-  sanctionedCountries?: string[];
-  sanctionedRegions?: string[];
-}
-
-export interface TelemetrySettings {
-  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Telemetry]>;
-  hardware?: HardwareSettings;
   clientVersion?: Partial<Record<PolkadotClientImpl, string>>;
   provider?: string;
-  location?: LocationSettings;
+  sanctionedCountries?: string[];
+  sanctionedRegions?: string[];
 }
 
 export type MonitorTypeSettings = {

@@ -95,11 +95,23 @@ export interface IpInfoResponse {
   updatedAt?: string;  // ISO UTC timestamp
 }
 
+export interface PeerAddress {
+  multiaddr: string;
+  lastSeen: string; // ISO UTC timestamp
+}
+
+export interface PeerDiscovery {
+  peerId: string;
+  addresses: PeerAddress[];
+  updatedAt: string; // ISO UTC timestamp
+}
+
 export interface NodeInfo extends BaseNodeInfo {
   ipinfo?: IpInfoResponse;
   config?: {
     stash: string;
   };
+  peerDiscovery?: PeerDiscovery;
 }
 
 export type Nodes = Record<string, NodeInfo[]>;

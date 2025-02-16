@@ -6,11 +6,12 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async locationUnexpected({ data }: TelemetryHandlerParams): Promise<void> {
     await this.forEachNode(H.LocationUnexpected, data, async ({ node, account, alerts, groupId }) => {
-      if (!account.settings.location) return;
+      const { sanctionedCountries, sanctionedRegions } = account.settings;
+      if (!sanctionedCountries && !sanctionedRegions) return;
 
       const isSanctioned =
-        account.settings.location.sanctionedCountries.includes(node.ipinfo?.country) ||
-        account.settings.location.sanctionedRegions.includes(node.ipinfo?.region);
+        (sanctionedCountries?.includes(node.ipinfo?.country) || false) ||
+        (sanctionedRegions?.includes(node.ipinfo?.region) || false);
 
       const message = this.createMessage([
         `${account.name} node detected in sanctioned location.`,
@@ -64,30 +65,74 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async hardwareUnexpected({ data }: TelemetryHandlerParams): Promise<void> {
     await this.forEachNode(H.HardwareUnexpected, data, async ({ node, account, alerts, groupId }) => {
-      if (!account.settings.hardware) return;
+      const { cpu, minMemoryGB, minCores } = account.settings;
+      if (!cpu && !minMemoryGB && !minCores) return;
 
       const systemInfo = node.systemInfo!;
       const memoryGB = systemInfo.memory / (1024 * 1024 * 1024);
+      const issues: string[] = [];
+      let isFiring = false;
 
-      const isCpuMismatch = systemInfo.cpu !== account.settings.hardware.cpu;
-      const isMemoryInsufficient = memoryGB < account.settings.hardware.minMemoryGB;
-      const isCoresInsufficient = systemInfo.coreCount < account.settings.hardware.minCores;
-      const isFiring = isCpuMismatch || isMemoryInsufficient || isCoresInsufficient;
+      if (cpu) {
+        const isCpuMismatch = systemInfo.cpu !== cpu;
+        if (isCpuMismatch) {
+          issues.push(`Expected CPU "${cpu}", got "${systemInfo.cpu}"`);
+          isFiring = true;
+        }
+      }
+
+      if (minMemoryGB) {
+        const isMemoryInsufficient = memoryGB < minMemoryGB;
+        if (isMemoryInsufficient) {
+          issues.push(`Expected memory "${minMemoryGB}GB", got "${memoryGB.toFixed(2)}GB"`);
+          isFiring = true;
+        }
+      }
+
+      if (minCores) {
+        const isCoresInsufficient = systemInfo.coreCount < minCores;
+        if (isCoresInsufficient) {
+          issues.push(`Expected cores "${minCores}", got "${systemInfo.coreCount}"`);
+          isFiring = true;
+        }
+      }
 
       const message = this.createMessage(
         [
           `${account.name} node hardware requirements not met.`,
-          isCpuMismatch ? `Expected CPU "${account.settings.hardware.cpu}", got "${systemInfo.cpu}"` : null,
-          isMemoryInsufficient
-            ? `Expected memory "${account.settings.hardware.minMemoryGB}GB", got "${memoryGB.toFixed(2)}GB"`
-            : null,
-          isCoresInsufficient
-            ? `Expected cores "${account.settings.hardware.minCores}", got "${systemInfo.coreCount}"`
-            : null,
-        ].filter(Boolean),
+          ...issues
+        ]
       );
 
       const key = `${account.ss58}:${groupId}:${node.id}:${H.HardwareUnexpected}`;
+      await this.incidents.ongoingIncident(message, alerts, key, isFiring);
+    });
+  }
+
+  @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
+  async ipSpoofing({ data }: TelemetryHandlerParams): Promise<void> {
+    await this.forEachNode(H.IpSpoofing, data, async ({ node, account, alerts, groupId }) => {
+      const reportedIp = node?.networkInfo?.ip;
+      if (!reportedIp || !node.peerDiscovery?.addresses) return;
+
+      const ipv4Regex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
+      const discoveredIps = node.peerDiscovery.addresses
+        .map(addr => {
+          const match = addr.multiaddr.match(ipv4Regex);
+          return match ? match[0] : null;
+        })
+        .filter(Boolean);
+
+      const ipVerified = discoveredIps.includes(reportedIp);
+      const isFiring = !ipVerified;
+
+      const message = this.createMessage([
+        `${account.name} node potential IP spoofing detected.`,
+        `Reported IP "${reportedIp}" not found in peer discovery addresses.`,
+        `Discovered IPs: ${discoveredIps.join(', ')}`
+      ]);
+
+      const key = `${account.ss58}:${groupId}:${node.id}:${H.IpSpoofing}`;
       await this.incidents.ongoingIncident(message, alerts, key, isFiring);
     });
   }

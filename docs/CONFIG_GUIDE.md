@@ -72,6 +72,15 @@ groups:
       - name: Balances
         threshold: "500.75"  # Balance values always as strings with decimals
       - name: Identity
+      - name: Telemetry
+        cpu: "AMD Ryzen"
+        minMemoryGB: 32
+        minCores: 4
+        provider: "AWS"
+        sanctionedCountries: ["Country1"]
+        sanctionedRegions: ["Region1"]
+        clientVersion:
+          Polkadot: "v1.0.0"
     
     accounts:  # Required: at least one account
       - address: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"  # Required: SS58 or hex format
@@ -81,6 +90,10 @@ groups:
         selfStake: "1000.5"
         threshold: "750.25"
         matrix: "@validator:matrix.org"
+        # Telemetry settings (override group settings)
+        cpu: "Intel Xeon"
+        minMemoryGB: 64
+        sanctionedCountries: ["Country2"]
 ```
 
 ## Value Formats & Validation
