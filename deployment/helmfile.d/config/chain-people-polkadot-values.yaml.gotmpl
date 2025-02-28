@@ -23,13 +23,13 @@ config:
   watcherType: Chain
   chain: PeoplePolkadot
   chainConfig:
-    start_block: 1479120
+    startBlock: 1565685
     rpcs:
       - wss://rpc-people-polkadot.luckyfriday.io
-  monitoring_config_sources:
+  monitoringConfigSources:
   - name: "gitlab"
-    url: "https://gitlab.w3f.tech/api/v4/projects/99/repository/files/accounts.yaml/raw?ref=main"
-    auth_token: "{{ env "GITLAB_TOKEN" }}"
+    url: "https://gitlab.w3f.tech/api/v4/projects/99/repository/files/accounts.yaml/raw?ref=feature/telemetry-test"
+    authToken: "{{ env "GITLAB_TOKEN" }}"
   logging:
     level: debug 
 {{ end }}

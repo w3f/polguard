@@ -9,6 +9,8 @@ import {
   MonitorType,
   MonitorConstructor,
   DataProvider,
+  ActiveIncidentState,
+  AlertFiringThresholds,
 } from '@w3f/monitoring-types';
 
 /**
@@ -42,6 +44,7 @@ export abstract class AbstractWatcher<T extends MonitorType, M extends Monitor<T
     protected chainProps: ChainProperties,
     protected provider: D,
     protected monitorConfigs: [T, MonitorConstructor<T, M, D>][],
+    protected firingThresholds?: AlertFiringThresholds,
   ) {
     this.initializeMonitors();
   }
@@ -78,7 +81,7 @@ export abstract class AbstractWatcher<T extends MonitorType, M extends Monitor<T
 
         this.logger.debug(`Creating monitor ${MonitorClass.name} with ${monitorAccounts} accounts`);
 
-        return [new MonitorClass(this.logger, groups, this.incidents, this.chainProps, this.provider, monitorType)];
+        return [new MonitorClass(this.logger, groups, this.incidents, this.chainProps, this.provider, monitorType, this.firingThresholds)];
       }
       return [];
     });
@@ -135,4 +138,12 @@ export abstract class AbstractWatcher<T extends MonitorType, M extends Monitor<T
    * Cleans up watcher-specific resources, usually API connections
    */
   protected abstract stopWatching(): Promise<void>;
+
+  /**
+   * Returns all ongoing incidents across all monitors
+   * @returns Promise<ActiveIncidentState[]> List of active incidents
+   */
+  async getAllOngoingIncidents(): Promise<ActiveIncidentState[]> {
+    return this.store.getAllOngoingIncidents();
+  }
 }

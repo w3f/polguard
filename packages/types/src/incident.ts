@@ -22,10 +22,12 @@ export interface Message {
 }
 
 export interface ActiveIncidentState {
-  incidentId: string;
-  consecutiveFiringBlocks: number;
-  consecutiveNormalBlocks: number;
+  incidentKey: string;
+  consecutiveFiring: number;
+  consecutiveNormal: number;
   lastEmitted: number;
+  lastEmittedISOTime: string;
+  message: Message;
 }
 
 export interface IncidentHandlerClient {
@@ -39,6 +41,7 @@ export interface IncidentHandlerClient {
     alerts: AlertSettings,
     key: string,
     isFiring: boolean,
-    blockNumber?: number
+    blockNumber?: number,
+    threshold?: number,
   ): Promise<void>;
 }

@@ -81,7 +81,7 @@ export interface IpInfoPrivacy {
   service: string;
 }
 
-export interface IpInfoResponse {
+export interface GeoLocationMetadata {
   ip: string;
   hostname?: string;
   city?: string;
@@ -100,18 +100,18 @@ export interface PeerAddress {
   lastSeen: string; // ISO UTC timestamp
 }
 
-export interface PeerDiscovery {
+export interface PeerDiscoveryMetadata {
   peerId: string;
   addresses: PeerAddress[];
   updatedAt: string; // ISO UTC timestamp
 }
 
 export interface NodeInfo extends BaseNodeInfo {
-  ipinfo?: IpInfoResponse;
+  geoLocation?: GeoLocationMetadata;
+  peerDiscovery?: PeerDiscoveryMetadata;
   config?: {
     stash: string;
   };
-  peerDiscovery?: PeerDiscovery;
 }
 
 export type Nodes = Record<string, NodeInfo[]>;

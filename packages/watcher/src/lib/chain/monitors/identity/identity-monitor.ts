@@ -84,6 +84,56 @@ export class IdentityMonitor extends AbstractChainMonitor<MonitorType.Identity> 
     }
   }
 
+  @EveryBlockHandler([Chain.PeoplePolkadot, Chain.PeopleKusama])
+  async identityMissing({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+    const addressToParent = await this.getAddressToParent(blockNumber);
+    const parents = Array.from(new Set(addressToParent.values()));
+    const identities = await this.provider.identityOf(parents, blockNumber);
+
+    for (const address of this.uniqueAddresses) {
+      const parent = addressToParent.get(address);
+      const identity = identities[parent];
+      const isFiring = !identity;
+
+      for (const { account, alerts, groupId } of this.getAccounts(H.IdentityMissing, address)) {
+        const messageLines = [`Identity is missing for ${this.formatAccountLink(account)}.`];
+
+        const message = this.createMessage(messageLines, { blockNumber });
+        const key = `${account.ss58}:${groupId}:${H.IdentityMissing}`;
+        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+      }
+    }
+  }
+
+  @EveryBlockHandler([Chain.PeoplePolkadot, Chain.PeopleKusama])
+  async identityFieldsMissing({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+    // TODO: Make requiredFields configurable
+    const requiredFields = ['email', 'matrix'];
+    const addressToParent = await this.getAddressToParent(blockNumber);
+    const parents = Array.from(new Set(addressToParent.values()));
+    const identities = await this.provider.identityOf(parents, blockNumber);
+
+    for (const address of this.uniqueAddresses) {
+      const parent = addressToParent.get(address);
+      const identity = identities[parent];
+      if (!identity) continue;
+
+      for (const { account, alerts, groupId } of this.getAccounts(H.IdentityFieldsMissing, address)) {
+        const missingFields = requiredFields.filter(field => !identity[field]);
+        const isFiring = missingFields.length > 0;
+
+        const messageLines = [
+          `Required identity fields missing for ${this.formatAccountLink(account)}.`,
+          ...missingFields.map(field => `${field}: Not set`),
+        ];
+
+        const message = this.createMessage(messageLines, { blockNumber });
+        const key = `${account.ss58}:${groupId}:${H.IdentityFieldsMissing}`;
+        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+      }
+    }
+  }
+
   /**
    * The monitor receives a list of addresses to watch, but some accounts operate as sub-identities.
    * In such cases, the identity information is stored under the parent account, not under the monitored address.

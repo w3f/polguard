@@ -2,6 +2,7 @@ import { ApiPromise } from '@polkadot/api';
 import { ChainWatcher } from './chain-watcher';
 import { createChainDataProvider } from './chain-data-provider';
 import {
+  AlertFiringThresholds,
   ChainProperties,
   Logger,
   KeyValueStorageClient,
@@ -22,7 +23,7 @@ export async function createChainWatcher(
   groups: MonitoringGroup[],
   dependencies: ChainWatcherDependencies,
 ): Promise<ChainWatcher> {
-  const { logger, api, chainProps, storageClient, eventEmitterClient, metricsClient } = dependencies;
+  const { logger, api, chainProps, storageClient, eventEmitterClient, metricsClient, firingThresholds } = dependencies;
 
   const specName = api.runtimeVersion.specName.toString();
   if (specName !== chainProps.specName) {
@@ -53,6 +54,7 @@ export async function createChainWatcher(
     chainDataProvider,
     chainProps,
     monitorConfigs,
+    firingThresholds,
   );
 }
 
@@ -63,4 +65,5 @@ export interface ChainWatcherDependencies {
   eventEmitterClient: EventEmitterClient;
   metricsClient: MetricsClient;
   chainProps: ChainProperties;
+  firingThresholds?: AlertFiringThresholds;
 }

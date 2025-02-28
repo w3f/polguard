@@ -7,7 +7,7 @@ import { ConfigProcessor } from './config-processor';
 export interface ConfigSource {
   name: string;
   url: string;
-  auth_token?: string;
+  authToken?: string;
 }
 
 /**
@@ -21,7 +21,7 @@ export interface ConfigSource {
  * Example usage:
  * ```typescript
  * const sources = [
- *   { name: 'main', url: 'https://gitlab.com/config.yaml', auth_token: 'token' }
+ *   { name: 'main', url: 'https://gitlab.com/config.yaml', authToken: 'token' }
  * ];
  * const targetDir = './monitoring-configs';
  * 
@@ -59,8 +59,8 @@ export class ConfigFetcher {
 
     for (const source of sources) {
       const headers: Record<string, string> = {};
-      if (source.auth_token) {
-        headers['PRIVATE-TOKEN'] = source.auth_token;
+      if (source.authToken) {
+        headers['PRIVATE-TOKEN'] = source.authToken;
       }
       const response = await axios.get(source.url, { headers });
       const fileName = `${source.name}.yaml`;

@@ -1,23 +1,17 @@
-import { Injectable, Logger, OnApplicationShutdown, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { ConfigService } from './config/config.service';
-import { MetricsService } from './metrics/metrics.service';
-import { StorageService } from './storage/storage.service';
-import { TelemetryService } from './telemetry/telemetry.service';
-import { WatcherType, getChainProperties } from '@w3f/monitoring-types';
-import { createChainWatcher, ChainWatcherDependencies } from '../lib/chain/chain-watcher-factory';
-import { createTelemetryWatcher, TelemetryWatcherDependencies } from '../lib/telemetry/telemetry-watcher-factory';
-import { AbstractWatcher } from '../lib/common/abstract-watcher';
-import { IncidentPublisherService } from './incident/incident-publisher.service';
+import { ConfigService } from '../config/config.service';
+import { MetricsService } from '../metrics/metrics.service';
+import { StorageService } from '../storage/storage.service';
+import { TelemetryService } from '../telemetry/telemetry.service';
+import { WatcherType, getChainProperties, ActiveIncidentState } from '@w3f/monitoring-types';
+import { createChainWatcher, ChainWatcherDependencies } from '../../lib/chain/chain-watcher-factory';
+import { createTelemetryWatcher, TelemetryWatcherDependencies } from '../../lib/telemetry/telemetry-watcher-factory';
+import { AbstractWatcher } from '../../lib/common/abstract-watcher';
+import { IncidentPublisherService } from '../incident/incident-publisher.service';
 
-/**
- * Main application service responsible for:
- * 1. Initializing and managing chain and telemetry watchers
- * 2. Managing connections to blockchain node and telemetry API
- * 3. Handling application lifecycle
- */
 @Injectable()
-export class AppService implements OnApplicationBootstrap, OnApplicationShutdown {
+export class WatcherService implements OnApplicationBootstrap, OnApplicationShutdown {
   private api: ApiPromise | null = null;
   private watcher: AbstractWatcher<any, any, any>;
 
@@ -43,13 +37,21 @@ export class AppService implements OnApplicationBootstrap, OnApplicationShutdown
     }
   }
 
+  async getAllOngoingIncidents(): Promise<ActiveIncidentState[]> {
+    if (!this.watcher) {
+      throw new Error('Watcher not initialized');
+    }
+    return this.watcher.getAllOngoingIncidents();
+  }
+
   private async start(): Promise<void> {
     const chain = this.config.getChain();
-    const chainConfig = this.config.getChainConfig();
     const groups = this.config.getMonitoringGroups(chain);
     const chainProps = getChainProperties(chain);
+    const firingThresholds = this.config.getFiringThresholds();
 
     if (this.config.getWatcherType() === WatcherType.Chain) {
+      const chainConfig = this.config.getChainConfig();
       // Initialize chain watcher
       this.api = await this.createApi(chainConfig.rpcs[0]);
 
@@ -60,15 +62,17 @@ export class AppService implements OnApplicationBootstrap, OnApplicationShutdown
         eventEmitterClient: this.incidents,
         metricsClient: this.metrics,
         chainProps,
+        firingThresholds,
       };
 
       this.watcher = await createChainWatcher(groups, chainDependencies);
-      await this.watcher.start(chainConfig.start_block);
+      await this.watcher.start(chainConfig.startBlock);
     } else {
       // Initialize telemetry watcher
       if (!this.telemetry) {
         throw new Error('TelemetryService is required for Telemetry watcher');
       }
+      const telemetryConfig = this.config.getTelemetryConfig();
 
       const telemetryDependencies: TelemetryWatcherDependencies = {
         logger: new Logger('TelemetryWatcher'),
@@ -77,6 +81,8 @@ export class AppService implements OnApplicationBootstrap, OnApplicationShutdown
         metricsClient: this.metrics,
         telemetryClient: this.telemetry,
         chainProps,
+        interval: telemetryConfig.interval,
+        firingThresholds,
       };
 
       this.watcher = await createTelemetryWatcher(groups, telemetryDependencies);

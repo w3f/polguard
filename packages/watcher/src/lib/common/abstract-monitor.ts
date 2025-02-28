@@ -1,5 +1,6 @@
 import {
   AccountSettings,
+  AlertFiringThresholds,
   AlertSettings,
   ChainProperties,
   ComparisonType,
@@ -62,6 +63,7 @@ export abstract class AbstractMonitor<T extends MonitorType, D extends DataProvi
     protected chainProps: ChainProperties,
     protected provider: D,
     protected monitorType: T,
+    protected readonly firingThresholds?: AlertFiringThresholds,
   ) {
     this.buildAccountLookup();
     this.initializeHandlers();
@@ -231,5 +233,20 @@ export abstract class AbstractMonitor<T extends MonitorType, D extends DataProvi
    */
   protected formatLink(title: string, url: string): string {
     return `[${title}](${url})`;
+  }
+
+  /**
+   * Gets the firing threshold for a given sensitivity level.
+   * Falls back to default values if thresholds are not configured.
+   * 
+   * @param sensitivity - The sensitivity level to get threshold for
+   * @returns The number of consecutive failures required before firing
+   */
+  protected getFiringThreshold(sensitivity: keyof AlertFiringThresholds = 'sensitive'): number {
+    return this.firingThresholds?.[sensitivity] ?? {
+      tolerant: 60,   // High threshold for noisy conditions
+      moderate: 5,    // Standard threshold for most conditions
+      sensitive: 3,   // Low threshold for stable conditions
+    }[sensitivity];
   }
 }

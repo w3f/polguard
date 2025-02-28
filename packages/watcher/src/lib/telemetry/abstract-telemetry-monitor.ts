@@ -6,10 +6,6 @@ import {
   TelemetryHandlerParams,
   TelemetryMonitor,
   NoProvider,
-  NodeInfo,
-  MonitorHandlerType,
-  AccountSettings,
-  AlertSettings,
 } from '@w3f/monitoring-types';
 import { AbstractMonitor } from '../common/abstract-monitor';
 
@@ -43,37 +39,6 @@ export abstract class AbstractTelemetryMonitor<T extends MonitorType>
     const handlers = this.handlers.get('telemetryHandlers') as Set<TelemetryHandlerFunction>;
     for (const handler of handlers) {
       await handler.call(this, params);
-    }
-  }
-
-  /**
-   * Helper method to iterate through all nodes for a given handler type.
-   * Simplifies common pattern of iterating through unique addresses, their accounts, and nodes.
-   *
-   * @param handlerType - Type of handler to get accounts for
-   * @param data - Telemetry data containing nodes by address
-   * @param callback - Function to execute for each node
-   */
-  protected async forEachNode(
-    handlerType: MonitorHandlerType[T],
-    data: Record<string, NodeInfo[]>,
-    callback: (params: {
-      node: NodeInfo;
-      account: AccountSettings<T>;
-      alerts: AlertSettings;
-      groupId: string;
-    }) => Promise<void>,
-  ): Promise<void> {
-    for (const address of this.uniqueAddresses) {
-      if (!data[address]) continue;
-      for (const accountInfo of this.getAccounts(handlerType, address)) {
-        for (const node of data[address]) {
-          await callback({
-            node,
-            ...accountInfo,
-          });
-        }
-      }
     }
   }
 

@@ -25,8 +25,8 @@ import { MessageStyler } from './message-styler';
  * - Handles one-time incidents.
  *
  * For ongoing incidents:
- * - An incident is emitted when it has been firing for a specified number of consecutive blocks (threshold).
- * - An incident is resolved when it has not been firing for the same number of consecutive blocks.
+ * - An incident is emitted when it has been firing for a specified number of consecutive iterations (threshold).
+ * - An incident is resolved when it has not been firing for the same number of consecutive iterations.
  * - Unresolved incidents are re-emitted at a specified interval.
  */
 export class IncidentHandler implements IncidentHandlerClient {
@@ -46,7 +46,9 @@ export class IncidentHandler implements IncidentHandlerClient {
     incidentKey: string,
     isFiring: boolean,
     blockNumber?: number,
+    threshold?: number,
   ): Promise<void> {
+    const firingThreshold = threshold ?? this.THRESHOLD;
     const incidentId = this.getIncidentId(incidentKey);
     let state = await this.store.getOngoingIncident(incidentId);
     if (!isFiring && !state) {
@@ -54,19 +56,21 @@ export class IncidentHandler implements IncidentHandlerClient {
     }
     if (!state) {
       state = {
-        incidentId,
-        consecutiveFiringBlocks: 0,
-        consecutiveNormalBlocks: 0,
+        incidentKey,
+        consecutiveFiring: 0,
+        consecutiveNormal: 0,
         lastEmitted: 0,
+        lastEmittedISOTime: new Date(0).toISOString(),
+        message,
       };
     }
 
     if (isFiring) {
       const currentTimestamp = Date.now();
-      state.consecutiveFiringBlocks++;
-      state.consecutiveNormalBlocks = 0;
+      state.consecutiveFiring++;
+      state.consecutiveNormal = 0;
 
-      if (state.consecutiveFiringBlocks >= this.THRESHOLD) {
+      if (state.consecutiveFiring >= firingThreshold) {
         let repeatInterval = this.DEFAULT_REPEAT_INTERVAL;
 
         if (alerts.repeatIntervalHours !== undefined) {
@@ -78,13 +82,21 @@ export class IncidentHandler implements IncidentHandlerClient {
         if (shouldEmit) {
           await this.emitIncident(incidentId, message, alerts, MessageType.Firing, blockNumber);
           state.lastEmitted = currentTimestamp;
+          state.lastEmittedISOTime = new Date(currentTimestamp).toISOString();
+          state.message = message;
         }
       }
     } else {
-      state.consecutiveNormalBlocks++;
-      state.consecutiveFiringBlocks = 0;
+      // If we have never reached firing threshold, clean the state
+      if (state.lastEmitted === 0) {
+        await this.store.deleteOngoingIncident(incidentId);
+        return;
+      }
 
-      if (state.consecutiveNormalBlocks >= this.THRESHOLD) {
+      state.consecutiveNormal++;
+      state.consecutiveFiring = 0;
+
+      if (state.consecutiveNormal >= this.THRESHOLD) {
         await this.emitIncident(incidentId, message, alerts, MessageType.Resolved, blockNumber);
         await this.store.deleteOngoingIncident(incidentId);
         return;

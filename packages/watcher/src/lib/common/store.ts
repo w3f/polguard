@@ -39,6 +39,11 @@ export class Store implements DataStoreClient {
     return this.client.get<T>(`${this.namespace}:${key}`);
   }
 
+  async mget<T>(keys: string[]): Promise<(T | null)[]> {
+    if (keys.length === 0) return [];
+    return this.client.mget<T>(keys);
+  }
+
   async set(key: string, value: any): Promise<void> {
     await this.client.set(`${this.namespace}:${key}`, value);
   }
@@ -53,6 +58,13 @@ export class Store implements DataStoreClient {
 
   async keys(pattern: string): Promise<string[]> {
     return this.client.keys(`${this.namespace}:${pattern}`);
+  }
+
+  async getAllOngoingIncidents(): Promise<ActiveIncidentState[]> {
+    const keys = await this.keys('inc:*');
+    if (keys.length === 0) return [];
+    const incidents = await this.mget<ActiveIncidentState>(keys);
+    return incidents.filter((incident): incident is ActiveIncidentState => incident !== null);
   }
 
   async getOngoingIncident(incidentId: string): Promise<ActiveIncidentState | null> {

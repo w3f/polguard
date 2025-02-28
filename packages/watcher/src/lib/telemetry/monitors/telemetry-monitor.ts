@@ -1,138 +1,155 @@
 import { TelemetryHandler } from '../../common/decorators';
 import { AbstractTelemetryMonitor } from '../abstract-telemetry-monitor';
 import { MonitorType, Chain, TelemetryHandlerType as H, TelemetryHandlerParams } from '@w3f/monitoring-types';
+import * as semver from 'semver';
 
 export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telemetry> {
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async locationUnexpected({ data }: TelemetryHandlerParams): Promise<void> {
-    await this.forEachNode(H.LocationUnexpected, data, async ({ node, account, alerts, groupId }) => {
+    await this.forEachAccount(H.LocationUnexpected, async ({ account, alerts, groupId }) => {
       const { sanctionedCountries, sanctionedRegions } = account.settings;
       if (!sanctionedCountries && !sanctionedRegions) return;
+      let details: string[] = [];
 
-      const isSanctioned =
-        (sanctionedCountries?.includes(node.ipinfo?.country) || false) ||
-        (sanctionedRegions?.includes(node.ipinfo?.region) || false);
+      for (const node of data[account.ss58] || []) {
+        if (
+          sanctionedCountries?.includes(node.geoLocation?.country) ||
+          false ||
+          sanctionedRegions?.includes(node.geoLocation?.region) ||
+          false
+        ) {
+          details = [`${[node.geoLocation?.region, node.geoLocation?.country].filter(Boolean).join(', ')}`];
+          break;
+        }
+      }
 
-      const message = this.createMessage([
-        `${account.name} node detected in sanctioned location.`,
-        `${[node.ipinfo?.region, node.ipinfo?.country].filter(Boolean).join(', ')}`,
-      ]);
+      const isFiring = details.length > 0;
+      const message = this.createMessage([`${account.name} node detected in sanctioned location.`, ...details]);
 
-      const key = `${account.ss58}:${groupId}:${node.id}:${H.LocationUnexpected}`;
-      await this.incidents.ongoingIncident(message, alerts, key, isSanctioned);
+      const key = `${account.ss58}:${groupId}:${H.LocationUnexpected}`;
+      await this.incidents.ongoingIncident(message, alerts, key, isFiring);
     });
   }
 
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async providerUnexpected({ data }: TelemetryHandlerParams): Promise<void> {
-    await this.forEachNode(H.ProviderUnexpected, data, async ({ node, account, alerts, groupId }) => {
+    await this.forEachAccount(H.ProviderUnexpected, async ({ account, alerts, groupId }) => {
       if (!account.settings.provider) return;
+      let details: string[] = [];
 
-      const providerName = node.ipinfo?.asn?.name;
-      const isFiring = providerName !== account.settings.provider;
+      for (const node of data[account.ss58] || []) {
+        const providerName = node.geoLocation?.asn?.name;
+        if (providerName !== account.settings.provider) {
+          details = [`Expected "${account.settings.provider}", got "${providerName}"`];
+          break;
+        }
+      }
 
-      const message = this.createMessage([
-        `${account.name} node running on unexpected provider.`,
-        `Expected "${account.settings.provider}", got "${providerName}"`,
-      ]);
+      const isFiring = details.length > 0;
+      const message = this.createMessage([`${account.name} node running on unexpected provider.`, ...details]);
 
-      const key = `${account.ss58}:${groupId}:${node.id}:${H.ProviderUnexpected}`;
+      const key = `${account.ss58}:${groupId}:${H.ProviderUnexpected}`;
       await this.incidents.ongoingIncident(message, alerts, key, isFiring);
     });
   }
 
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async clientVersionOutdated({ data }: TelemetryHandlerParams): Promise<void> {
-    await this.forEachNode(H.VersionOutdated, data, async ({ node, account, alerts, groupId }) => {
+    await this.forEachAccount(H.VersionOutdated, async ({ account, alerts, groupId }) => {
       if (!account.settings.clientVersion) return;
+      let details: string[] = [];
 
-      const latestVersion = account.settings.clientVersion[node.implementation];
-      const currentVersion = node.version.split('-')[0];
-      const isFiring = !latestVersion || currentVersion !== latestVersion;
+      for (const node of data[account.ss58] || []) {
+        const expectedVersion = account.settings.clientVersion[node.implementation];
+        const currentVersion = node.version.split('-')[0];
+        if (!expectedVersion) {
+          details = [`Unknown implementation "${node.implementation}"`];
+          break;
+        }
 
-      const message = this.createMessage([
-        `${account.name} node client version issue detected.`,
-        !latestVersion
-          ? `Unknown implementation "${node.implementation}"`
-          : `Expected "${latestVersion}", got "${currentVersion}"`,
-      ]);
+        const cleanExpected = semver.clean(expectedVersion);
+        const cleanCurrent = semver.clean(currentVersion);
+        if (!cleanExpected || !cleanCurrent) {
+          details = [`Invalid version format. Expected: "${cleanExpected}", Current: "${currentVersion}"`];
+          break;
+        }
 
-      const key = `${account.ss58}:${groupId}:${node.id}:${H.VersionOutdated}`;
+        if (semver.lt(cleanCurrent, cleanExpected)) {
+          details = [`Version "${currentVersion}" is outdated. Expected version is "${cleanExpected}"`];
+          break;
+        }
+      }
+
+      const isFiring = details.length > 0;
+      const message = this.createMessage([`${account.name} node client version issue detected.`, ...details]);
+
+      const key = `${account.ss58}:${groupId}:${H.VersionOutdated}`;
       await this.incidents.ongoingIncident(message, alerts, key, isFiring);
     });
   }
 
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async hardwareUnexpected({ data }: TelemetryHandlerParams): Promise<void> {
-    await this.forEachNode(H.HardwareUnexpected, data, async ({ node, account, alerts, groupId }) => {
+    await this.forEachAccount(H.HardwareUnexpected, async ({ account, alerts, groupId }) => {
       const { cpu, minMemoryGB, minCores } = account.settings;
       if (!cpu && !minMemoryGB && !minCores) return;
+      const details: string[] = [];
 
-      const systemInfo = node.systemInfo!;
-      const memoryGB = systemInfo.memory / (1024 * 1024 * 1024);
-      const issues: string[] = [];
-      let isFiring = false;
+      for (const node of data[account.ss58] || []) {
+        const systemInfo = node.systemInfo!;
+        const memoryGB = systemInfo.memory / (1024 * 1024 * 1024);
 
-      if (cpu) {
-        const isCpuMismatch = systemInfo.cpu !== cpu;
-        if (isCpuMismatch) {
-          issues.push(`Expected CPU "${cpu}", got "${systemInfo.cpu}"`);
-          isFiring = true;
+        if (cpu && systemInfo.cpu !== cpu) {
+          details.push(`Expected CPU "${cpu}", got "${systemInfo.cpu}"`);
         }
+        if (minMemoryGB && memoryGB < minMemoryGB) {
+          details.push(`Expected memory "${minMemoryGB}GB", got "${memoryGB.toFixed(2)}GB"`);
+        }
+        if (minCores && systemInfo.coreCount < minCores) {
+          details.push(`Expected cores "${minCores}", got "${systemInfo.coreCount}"`);
+        }
+
+        if (details.length > 0) break;
       }
 
-      if (minMemoryGB) {
-        const isMemoryInsufficient = memoryGB < minMemoryGB;
-        if (isMemoryInsufficient) {
-          issues.push(`Expected memory "${minMemoryGB}GB", got "${memoryGB.toFixed(2)}GB"`);
-          isFiring = true;
-        }
-      }
+      const isFiring = details.length > 0;
+      const message = this.createMessage([`${account.name} node hardware requirements not met.`, ...details]);
 
-      if (minCores) {
-        const isCoresInsufficient = systemInfo.coreCount < minCores;
-        if (isCoresInsufficient) {
-          issues.push(`Expected cores "${minCores}", got "${systemInfo.coreCount}"`);
-          isFiring = true;
-        }
-      }
-
-      const message = this.createMessage(
-        [
-          `${account.name} node hardware requirements not met.`,
-          ...issues
-        ]
-      );
-
-      const key = `${account.ss58}:${groupId}:${node.id}:${H.HardwareUnexpected}`;
+      const key = `${account.ss58}:${groupId}:${H.HardwareUnexpected}`;
       await this.incidents.ongoingIncident(message, alerts, key, isFiring);
     });
   }
 
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async ipSpoofing({ data }: TelemetryHandlerParams): Promise<void> {
-    await this.forEachNode(H.IpSpoofing, data, async ({ node, account, alerts, groupId }) => {
-      const reportedIp = node?.networkInfo?.ip;
-      if (!reportedIp || !node.peerDiscovery?.addresses) return;
-
+    await this.forEachAccount(H.IpSpoofing, async ({ account, alerts, groupId }) => {
+      let details: string[] = [];
       const ipv4Regex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
-      const discoveredIps = node.peerDiscovery.addresses
-        .map(addr => {
-          const match = addr.multiaddr.match(ipv4Regex);
-          return match ? match[0] : null;
-        })
-        .filter(Boolean);
 
-      const ipVerified = discoveredIps.includes(reportedIp);
-      const isFiring = !ipVerified;
+      for (const node of data[account.ss58] || []) {
+        const reportedIp = node?.networkInfo?.ip;
+        if (!reportedIp || !node.peerDiscovery?.addresses) continue;
 
-      const message = this.createMessage([
-        `${account.name} node potential IP spoofing detected.`,
-        `Reported IP "${reportedIp}" not found in peer discovery addresses.`,
-        `Discovered IPs: ${discoveredIps.join(', ')}`
-      ]);
+        const discoveredIps = node.peerDiscovery.addresses
+          .map(addr => {
+            const match = addr.multiaddr.match(ipv4Regex);
+            return match ? match[0] : null;
+          })
+          .filter(Boolean);
 
-      const key = `${account.ss58}:${groupId}:${node.id}:${H.IpSpoofing}`;
+        if (!discoveredIps.includes(reportedIp)) {
+          details = [
+            `Reported IP "${reportedIp}" not found in peer discovery addresses.`,
+            `Discovered IPs: ${discoveredIps.join(', ')}`,
+          ];
+          break;
+        }
+      }
+
+      const isFiring = details.length > 0;
+      const message = this.createMessage([`${account.name} node potential IP spoofing detected.`, ...details]);
+
+      const key = `${account.ss58}:${groupId}:${H.IpSpoofing}`;
       await this.incidents.ongoingIncident(message, alerts, key, isFiring);
     });
   }
@@ -145,7 +162,9 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
       const message = this.createMessage([`${account.name} telemetry data not available.`]);
 
       const key = `${account.ss58}:${groupId}:${H.TelemetryMissing}`;
-      await this.incidents.ongoingIncident(message, alerts, key, isFiring);
+      // Use tolerant threshold as telemetry data can be noisy
+      const threshold = this.getFiringThreshold('tolerant');
+      await this.incidents.ongoingIncident(message, alerts, key, isFiring, undefined, threshold);
     });
   }
 }

@@ -33,11 +33,13 @@ export interface KeyValueStorageClient {
   setex(key: string, seconds: number, value: any): Promise<void>;
   del(key: string): Promise<void>;
   keys(pattern: string): Promise<string[]>;
+  mget<T>(keys: string[]): Promise<(T | null)[]>;
 }
 
 /** Main data store interface combining key-value operations with specific monitoring functionality */
 export interface DataStoreClient extends KeyValueStorageClient {
   // Incident management
+  getAllOngoingIncidents(): Promise<ActiveIncidentState[]>;
   getOngoingIncident(incidentId: string): Promise<ActiveIncidentState | null>;
   setOngoingIncident(incidentId: string, state: ActiveIncidentState): Promise<void>;
   deleteOngoingIncident(incidentId: string): Promise<void>;

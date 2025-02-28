@@ -47,4 +47,10 @@ export class StorageService implements KeyValueStorageClient {
   async keys(pattern: string): Promise<string[]> {
     return await this.client.keys(pattern);
   }
+
+  async mget<T>(keys: string[]): Promise<(T | null)[]> {
+    if (keys.length === 0) return [];
+    const values = await this.client.mget(keys);
+    return values.map(value => (value ? (this.deserialize(value) as T) : null));
+  }
 }

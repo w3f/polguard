@@ -3,7 +3,7 @@ import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Joi from 'joi';
-import { Chain, MonitoringGroup, WatcherType } from '@w3f/monitoring-types';
+import { AlertFiringThresholds, Chain, MonitoringGroup, WatcherType } from '@w3f/monitoring-types';
 import { ConfigFetcher } from '@w3f/monitoring-config';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class ConfigService {
   async initialize(): Promise<void> {
     try {
       this.monitoringGroups = await ConfigFetcher.fetchAndProcessConfigs(
-        this.config.monitoring_config_sources,
+        this.config.monitoringConfigSources,
         this.configsDir,
       );
       this.logger.log(`Loaded ${this.monitoringGroups.length} monitoring groups`);
@@ -45,7 +45,7 @@ export class ConfigService {
   private validateConfig(config: unknown): Config {
     const chainConfigSchema = Joi.object({
       rpcs: Joi.array().items(Joi.string().uri()).min(1).required(),
-      start_block: Joi.number().integer().min(1).optional(),
+      startBlock: Joi.number().integer().min(1).optional(),
     });
 
     const telemetryConfigSchema = Joi.object({
@@ -54,9 +54,30 @@ export class ConfigService {
         username: Joi.string().required(),
         password: Joi.string().required(),
       }).optional(),
+      interval: Joi.number()
+        .integer()
+        .min(1000)
+        .default(30000)
+        .description('Telemetry polling interval in milliseconds'),
+    });
+
+    const firingThresholdsSchema = Joi.object({
+      tolerant: Joi.number()
+        .integer()
+        .min(1)
+        .description('High threshold for noisy conditions'),
+      moderate: Joi.number()
+        .integer()
+        .min(1)
+        .description('Standard threshold for most conditions'),
+      sensitive: Joi.number()
+        .integer()
+        .min(1)
+        .description('Low threshold for stable conditions'),
     });
 
     const schema = Joi.object({
+      firingThresholds: firingThresholdsSchema.optional(),
       chain: Joi.string()
         .valid(...Object.values(Chain))
         .required(),
@@ -69,12 +90,12 @@ export class ConfigService {
       redis: Joi.object({
         url: Joi.string().uri().required(),
       }).required(),
-      monitoring_config_sources: Joi.array()
+      monitoringConfigSources: Joi.array()
         .items(
           Joi.object({
             name: Joi.string().required(),
             url: Joi.string().uri().required(),
-            auth_token: Joi.string().optional(),
+            authToken: Joi.string().optional(),
           }),
         )
         .required(),
@@ -138,11 +159,15 @@ export class ConfigService {
   getWatcherType(): WatcherType {
     return this.config.watcherType;
   }
+
+  getFiringThresholds(): AlertFiringThresholds | null {
+    return this.config.firingThresholds || null;
+  }
 }
 
 interface ChainConfig {
   rpcs: string[];
-  start_block?: number;
+  startBlock?: number;
 }
 
 interface Config {
@@ -152,16 +177,17 @@ interface Config {
   redis: {
     url: string;
   };
-  monitoring_config_sources: {
+  monitoringConfigSources: {
     name: string;
     url: string;
-    auth_token?: string;
+    authToken?: string;
   }[];
   logging?: {
     level: string;
   };
   chainConfig?: ChainConfig;
   telemetryConfig?: TelemetryConfig;
+  firingThresholds?: AlertFiringThresholds;
 }
 
 interface TelemetryConfig {
@@ -170,4 +196,5 @@ interface TelemetryConfig {
     username: string;
     password?: string;
   };
+  interval: number;
 }

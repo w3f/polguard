@@ -12,6 +12,7 @@ import {
   NoProvider,
   NodeInfo,
   TelemetryData,
+  AlertFiringThresholds,
 } from '@w3f/monitoring-types';
 import { AbstractWatcher } from '../common/abstract-watcher';
 
@@ -30,8 +31,6 @@ import { AbstractWatcher } from '../common/abstract-watcher';
  *    - Distributes telemetry data to relevant monitors
  */
 export class TelemetryWatcher extends AbstractWatcher<MonitorType, TelemetryMonitor<MonitorType>, NoProvider> {
-  private readonly DEFAULT_INTERVAL = 6000; // 6 seconds
-
   constructor(
     logger: Logger,
     monitoringGroups: MonitoringGroup[],
@@ -41,27 +40,29 @@ export class TelemetryWatcher extends AbstractWatcher<MonitorType, TelemetryMoni
     private telemetryClient: TelemetryClient,
     chainProps: ChainProperties,
     monitorConfigs: [MonitorType, MonitorConstructor<MonitorType, TelemetryMonitor<MonitorType>, NoProvider>][],
+    private readonly interval: number,
+    firingThresholds?: AlertFiringThresholds,
   ) {
-    super(logger, monitoringGroups, incidents, store, metrics, chainProps, {} as NoProvider, monitorConfigs);
+    super(logger, monitoringGroups, incidents, store, metrics, chainProps, {} as NoProvider, monitorConfigs, firingThresholds);
+    this.logger.debug(`Telemetry polling interval: ${interval}ms`);
   }
 
-  protected async startWatching(intervalMs?: number): Promise<void> {
+  protected async startWatching(): Promise<void> {
     if (this.monitors.length === 0) {
       throw new Error('No monitors were initialized for TelemetryWatcher.');
     }
 
-    const interval = intervalMs || this.DEFAULT_INTERVAL;
-    this.runTelemetryProcessing(interval);
+    this.runTelemetryProcessing();
   }
 
   protected async stopWatching(): Promise<void> {
     // No cleanup needed
   }
 
-  private async runTelemetryProcessing(interval: number): Promise<void> {
+  private async runTelemetryProcessing(): Promise<void> {
     while (this.isRunning) {
       await this.processTelemetry();
-      await new Promise(resolve => setTimeout(resolve, interval));
+      await new Promise(resolve => setTimeout(resolve, this.interval));
     }
   }
 

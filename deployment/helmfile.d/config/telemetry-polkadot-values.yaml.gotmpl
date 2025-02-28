@@ -23,14 +23,19 @@ config:
   watcherType: Telemetry
   chain: Polkadot
   telemetryConfig:
-    endpoint: https://telemetry-exporter.w3f.community/feed/filtered
+    endpoint: http://telemetry-exporter:3000/feed/filtered
     basicAuth:
       username: api
       password: "{{ env "TELEMETRY_PASSWORD" }}"
-  monitoring_config_sources:
+    interval: 30000
+  monitoringConfigSources:
   - name: "gitlab"
     url: "https://gitlab.w3f.tech/api/v4/projects/99/repository/files/accounts.yaml/raw?ref=feature/telemetry-test"
-    auth_token: "{{ env "GITLAB_TOKEN" }}"  # Optional  
+    authToken: "{{ env "GITLAB_TOKEN" }}"  # Optional  
   logging:
     level: debug 
+  firingThresholds:
+    tolerant: 60
+    moderate: 5
+    sensitive: 3
 {{ end }}

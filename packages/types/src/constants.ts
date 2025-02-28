@@ -63,6 +63,8 @@ export enum BalancesHandlerType {
 export enum IdentityHandlerType {
   IdentityUnexpected = 'IdentityUnexpected',
   IdentityChanged = 'IdentityChanged',
+  IdentityMissing = 'IdentityMissing',
+  IdentityFieldsMissing = 'IdentityFieldsMissing',
 }
 
 export enum TelemetryHandlerType {

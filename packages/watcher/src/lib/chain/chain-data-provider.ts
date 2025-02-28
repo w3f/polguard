@@ -162,7 +162,6 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       addresses.forEach((address, index) => {
         const identity = identities[index];
         if (identity.isNone) {
-          this.logger.debug(`No identity found for address ${address} at block ${blockNumber}`);
           result[address] = null;
         } else {
           result[address] = this.processIdentityInfo(identity.unwrap()[0].info as unknown as PeopleIdentityInfo);

@@ -14,6 +14,6 @@ releases:
   namespace: test
   {{ end }}
   chart: bitnami/redis
-  version: ^20.2.1
+  version: 20.9.0
   values:
     - ./config/redis-values.yaml.gotmpl
