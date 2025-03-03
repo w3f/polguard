@@ -21,7 +21,7 @@ All services are built with Nest.js, supporting both synchronous and asynchronou
 2. **@w3f/monitoring-config** - Configuration processing package, provides YAML configuration validation and transformation. [More details](./packages/config/README.md)
 
 ### External Dependencies
-1. **@w3f/telemetry-exporter** - REST API service providing telemetry data for nodes specified in monitoring configuration. [More details](https://github.com/w3f/telemetry-exporter/README.md)
+1. **@w3f/telemetry-exporter** - REST API service providing telemetry data for nodes specified in monitoring configuration. [More details](https://github.com/w3f/telemetry-exporter/blob/master/README.md)
 
 ## Documentation
 
