@@ -2,7 +2,7 @@
   "name": "@w3f/monitoring-watcher",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "",
   "author": "W3F SecOps Team <devops@web3.foundation>",
   "private": true,

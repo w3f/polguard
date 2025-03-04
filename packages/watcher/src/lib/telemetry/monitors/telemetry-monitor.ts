@@ -7,6 +7,7 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async locationUnexpected({ data }: TelemetryHandlerParams): Promise<void> {
     await this.forEachAccount(H.LocationUnexpected, async ({ account, alerts, groupId }) => {
+      if (!data[account.ss58]) return;
       const { sanctionedCountries, sanctionedRegions } = account.settings;
       if (!sanctionedCountries && !sanctionedRegions) return;
       let details: string[] = [];
@@ -34,6 +35,7 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async providerUnexpected({ data }: TelemetryHandlerParams): Promise<void> {
     await this.forEachAccount(H.ProviderUnexpected, async ({ account, alerts, groupId }) => {
+      if (!data[account.ss58]) return;
       if (!account.settings.provider) return;
       let details: string[] = [];
 
@@ -56,6 +58,7 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async clientVersionOutdated({ data }: TelemetryHandlerParams): Promise<void> {
     await this.forEachAccount(H.VersionOutdated, async ({ account, alerts, groupId }) => {
+      if (!data[account.ss58]) return;
       if (!account.settings.clientVersion) return;
       let details: string[] = [];
 
@@ -91,6 +94,7 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async hardwareUnexpected({ data }: TelemetryHandlerParams): Promise<void> {
     await this.forEachAccount(H.HardwareUnexpected, async ({ account, alerts, groupId }) => {
+      if (!data[account.ss58]) return;
       const { cpu, minMemoryGB, minCores } = account.settings;
       if (!cpu && !minMemoryGB && !minCores) return;
       const details: string[] = [];
@@ -123,6 +127,7 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
   @TelemetryHandler([Chain.Polkadot, Chain.Kusama])
   async ipSpoofing({ data }: TelemetryHandlerParams): Promise<void> {
     await this.forEachAccount(H.IpSpoofing, async ({ account, alerts, groupId }) => {
+      if (!data[account.ss58]) return;
       let details: string[] = [];
       const ipv4Regex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
 
