@@ -1,6 +1,6 @@
 {
   "name": "@w3f/monitoring-types",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Common types, interfaces and constants for W3F monitoring services including chain watcher, matrix notifications and configuration",
   "author": "W3F SecOps Team <devops@web3.foundation>",
   "license": "MIT",
