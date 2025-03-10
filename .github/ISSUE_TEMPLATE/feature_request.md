@@ -7,14 +7,14 @@ assignees: vovacha
 
 ---
 
-**Description**
+### Description
 What feature would you like to see?
 
-**Why is it needed?**
+### Why is it needed
 Explain why this would be useful.
 
-**Possible Implementation**
+### Possible implementation
 Any ideas on how it could be built?
 
-**Additional Context**
+### Additional context
 Any references, links, or images.
