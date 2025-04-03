@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { ConfigService } from '../config/config.service';
+import { Incident } from './incident.entity';
 
 const configService = new ConfigService();
 const dbConfig = configService.getDatabaseConfig();
@@ -11,6 +12,7 @@ export default new DataSource({
   username: dbConfig.username,
   password: dbConfig.password,
   database: dbConfig.database,
-  entities: ['src/service/**/*.entity.ts'],
-  migrations: ['src/service/database/migrations/*.ts'],
+  entities: [Incident],
+  migrations: ['src/database/migrations/*.ts'],
+  synchronize: configService.getEnvironment() !== 'production',
 });

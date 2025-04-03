@@ -24,16 +24,16 @@ module.exports = {
   coverageDirectory: "./coverage",
   testEnvironment: "node",
   moduleNameMapper: {
+    '^@service/(.*)$': '<rootDir>/src/service/$1',
+    '^@lib/(.*)$': '<rootDir>/src/lib/$1',
     '^@w3f/monitoring-types$': '<rootDir>/../types/src'
   },
   roots: [
-    "<rootDir>/src",
-    "<rootDir>/tests"
+    "<rootDir>/tests/integration"
   ],
   testPathIgnorePatterns: [
     "/node_modules/",
-    "/dist/",
-    "/tests/integration/"
+    "/dist/"
   ],
   modulePathIgnorePatterns: [
     "<rootDir>/dist/"

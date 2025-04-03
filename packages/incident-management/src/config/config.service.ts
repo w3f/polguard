@@ -31,9 +31,6 @@ export class ConfigService {
   private validateConfig(config: unknown): AppConfig {
     const schema = Joi.object({
       environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
-      redis: Joi.object({
-        url: Joi.string().uri().required(),
-      }).required(),
       database: Joi.object({
         host: Joi.string().required(),
         port: Joi.number().default(5432),
@@ -41,6 +38,18 @@ export class ConfigService {
         password: Joi.string().required(),
         database: Joi.string().required(),
       }).required(),
+      server: Joi.object({
+        port: Joi.number().default(3000),
+        host: Joi.string().default('0.0.0.0'),
+      }).optional(),
+      notification: Joi.object({
+        matrix: Joi.object({
+          url: Joi.string().required(),
+        }).optional(),
+        slack: Joi.object({
+          url: Joi.string().required(),
+        }).optional(),
+      }).optional(),
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
       }).optional(),
@@ -54,35 +63,44 @@ export class ConfigService {
     return value;
   }
 
-  getRedisConfig(): { host: string; port: number; db: number } {
-    const redisUrl = new URL(this.config.redis.url);
-    return {
-      host: redisUrl.hostname,
-      port: Number(redisUrl.port) || 6379,
-      db: Number(redisUrl.pathname.split('/')[1]) || 0,
-    };
-  }
-
   getDatabaseConfig() {
     return this.config.database;
+  }
+
+  getServerConfig() {
+    return this.config.server || { port: 3000, host: '0.0.0.0' };
+  }
+
+  getNotificationConfig() {
+    return this.config.notification;
   }
 
   getLoggingLevel(): string {
     return this.config.logging?.level || 'info';
   }
+
+  getEnvironment(): string {
+    return this.config.environment;
+  }
 }
 
 interface AppConfig {
   environment: string;
-  redis: {
-    url: string;
-  };
   database: {
     host: string;
     port: number;
     username: string;
     password: string;
     database: string;
+  };
+  server?: {
+    port: number;
+    host: string;
+  };
+  notification: {
+    matrix: {
+      url: string;
+    };
   };
   logging?: {
     level: string;
