@@ -1,4 +1,4 @@
-import { MessageStyler, StyleType } from '../../src/notification/message-styler';
+import { MessageStyler, StyleType } from '../../../src/notification/message-styler';
 import { Message, MessageType } from '@w3f/monitoring-types';
 
 describe('MessageStyler', () => {

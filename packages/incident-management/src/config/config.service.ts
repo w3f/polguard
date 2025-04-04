@@ -53,6 +53,15 @@ export class ConfigService {
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
       }).optional(),
+      monitoringConfigSources: Joi.array()
+        .items(
+          Joi.object({
+            name: Joi.string().required(),
+            url: Joi.string().uri().required(),
+            authToken: Joi.string().optional(),
+          }),
+        )
+        .optional(),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -82,6 +91,10 @@ export class ConfigService {
   getEnvironment(): string {
     return this.config.environment;
   }
+
+  getMonitoringConfigSources() {
+    return this.config.monitoringConfigSources || [];
+  }
 }
 
 interface AppConfig {
@@ -105,4 +118,9 @@ interface AppConfig {
   logging?: {
     level: string;
   };
+  monitoringConfigSources?: {
+    name: string;
+    url: string;
+    authToken?: string;
+  }[];
 }

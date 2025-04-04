@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { Chain, MessengerType } from '@w3f/monitoring-types';
 
 @Entity('incidents')
-@Index(['wallet', 'groupName', 'handlerName'], { where: 'resolved = false' })
+@Index(['chain', 'groupName', 'handlerName', 'wallet'], { where: 'resolved = false' })
 export class Incident {
   @PrimaryGeneratedColumn()
   id: number;

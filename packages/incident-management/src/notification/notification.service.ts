@@ -75,6 +75,8 @@ export class NotificationService {
       const title = messageLines[0] || '';
       const details = messageLines.slice(1) || [];
 
+      // TODO: Add incident.id to the message details?
+
       // Create message object
       const messageObj: Message = {
         title,

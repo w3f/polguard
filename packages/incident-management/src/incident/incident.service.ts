@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nest
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Incident } from '../database/incident.entity';
-import { CreateIncidentDto, GetIncidentsDto } from '../dto';
+import { CreateIncidentDto, GetIncidentsDto } from './dto';
 import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
@@ -66,14 +66,15 @@ export class IncidentService {
   }
 
   async createIncident(createIncidentDto: CreateIncidentDto): Promise<Incident> {
-    // Check for existing unresolved incidents with the same identifier (wallet+groupName+handlerName)
+    // Check for existing unresolved incidents with the same identifier (chain+groupId+handlerName+wallet)
     // to ensure idempotency. Skip for one-time incidents (events, extrinsics) that are immediately resolved.
     if (!createIncidentDto.resolved) {
       const existingIncident = await this.incidentRepository.findOne({
         where: {
-          wallet: createIncidentDto.wallet,
+          chain: createIncidentDto.chain,
           groupName: createIncidentDto.groupName,
           handlerName: createIncidentDto.handlerName,
+          wallet: createIncidentDto.wallet,
           resolved: false,
         },
       });

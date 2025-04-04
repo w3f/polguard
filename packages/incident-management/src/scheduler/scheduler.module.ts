@@ -3,9 +3,10 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { SchedulerService } from './scheduler.service';
 import { NotificationModule } from '../notification/notification.module';
 import { IncidentModule } from '../incident/incident.module';
+import { MonitoringConfigModule } from '../monitoring-config/monitoring-config.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), NotificationModule, IncidentModule],
+  imports: [ScheduleModule.forRoot(), NotificationModule, IncidentModule, MonitoringConfigModule],
   providers: [SchedulerService],
 })
 export class SchedulerModule {}

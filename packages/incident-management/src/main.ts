@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
+import JSONbig from 'json-bigint';
 
 async function bootstrap() {
   const logger = new Logger('Main');
@@ -14,6 +15,17 @@ async function bootstrap() {
       whitelist: true,
     }),
   );
+
+  // Override Express JSON serializer to handle BigInt
+  app.use((req, res, next) => {
+    res.json = function (body) {
+      const jsonBody = JSONbig.stringify(body);
+      res.setHeader('Content-Type', 'application/json');
+      return res.send(jsonBody);
+    };
+
+    next();
+  });
 
   // Get server configuration
   const configService = app.get(ConfigService);

@@ -6,7 +6,7 @@ import {
   ResolveIncidentDto,
   GetIncidentsDto,
   IncidentResponseDto,
-} from '../dto';
+} from './dto';
 
 @Controller('incidents')
 export class IncidentController {

@@ -8,6 +8,7 @@ import { NotificationModule } from './notification/notification.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { MonitoringConfigModule } from './monitoring-config/monitoring-config.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { MetricsModule } from './metrics/metrics.module';
     SchedulerModule,
     HealthModule,
     MetricsModule,
+    MonitoringConfigModule,
   ],
 })
 export class AppModule {}

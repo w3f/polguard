@@ -1,72 +1,38 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { Chain, MessengerType } from '@w3f/monitoring-types';
-import { AppModule } from '../../src/app.module';
-import { Incident } from '../../src/database/incident.entity';
-import { CreateIncidentDto } from '../../src/dto';
+import { CreateIncidentDto } from '../../src/incident/dto';
 import { DataSource } from 'typeorm';
+import { setupTestDatabase, createTestApp } from './test-utils';
 
-describe('IncidentController (e2e)', () => {
-  jest.setTimeout(30000); // Increase timeout to 30 seconds
+describe('IncidentController (integration)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
   let createdIncidentId: number;
 
+  // Test data
+  const testGroup = 'test-group';
+  const testWallet = '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy';
+  
   beforeAll(async () => {
-    // Create a temporary connection to create/drop the test database
-    const tempDataSource = new DataSource({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'postgres',
-      database: 'postgres', // Connect to default postgres database
-    });
-
-    await tempDataSource.initialize();
-
-    try {
-      // Drop the test database if it exists
-      await tempDataSource.query(`DROP DATABASE IF EXISTS incident_management_test`);
-      // Create a fresh test database
-      await tempDataSource.query(`CREATE DATABASE incident_management_test`);
-    } catch (error) {
-      console.error('Error setting up test database:', error);
-    } finally {
-      await tempDataSource.destroy();
-    }
-
-    // Now create the test module with the fresh test database
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        TypeOrmModule.forRoot({
-          type: 'postgres',
-          host: 'localhost',
-          port: 5432,
-          username: 'postgres',
-          password: 'postgres',
-          database: 'incident_management_test',
-          entities: [Incident],
-          synchronize: true, // Create tables based on entities
-        }),
-        AppModule,
-      ],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }));
+    // Setup test database
+    await setupTestDatabase();
+    
+    // Create test app with shared fixture
+    const { app: testApp, moduleFixture } = await createTestApp();
+    app = testApp;
     
     dataSource = moduleFixture.get<DataSource>(DataSource);
-    await app.init();
   });
 
   afterAll(async () => {
+    // Close the app and wait for all connections to be closed
     await app.close();
+    
+    // Close the data source explicitly
+    if (dataSource && dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
   });
 
   it('should create an incident', async () => {
@@ -75,8 +41,8 @@ describe('IncidentController (e2e)', () => {
       messengerType: MessengerType.Matrix,
       chain: Chain.Polkadot,
       blockNumber: 12345,
-      wallet: 'test-wallet',
-      groupName: 'test-group',
+      wallet: testWallet,
+      groupName: testGroup,
       handlerName: 'test-handler',
       channelId: 'test-channel',
       ackRequired: true,
