@@ -11,6 +11,7 @@ export class MonitoringConfigService implements OnModuleInit {
   private monitoringGroups: MonitoringGroup[] = [];
   private monitoringConfigMap: Record<string, Record<string, MonitoringGroup>> = {};
   private accountsMap: Record<string, Record<string, string[]>> = {};
+  private allActiveAccounts: string[] = [];
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -44,6 +45,7 @@ export class MonitoringConfigService implements OnModuleInit {
   private buildLookupDictionaries(): void {
     this.monitoringConfigMap = {};
     this.accountsMap = {};
+    this.allActiveAccounts = [];
 
     // Group by chain first
     for (const group of this.monitoringGroups) {
@@ -62,7 +64,11 @@ export class MonitoringConfigService implements OnModuleInit {
 
       // Store the group and accounts by chain and group name
       this.monitoringConfigMap[group.chain][group.name] = group;
-      this.accountsMap[group.chain][group.name] = group.accounts.map(account => account.ss58);
+      const accountAddresses = group.accounts.map(account => account.ss58);
+      this.accountsMap[group.chain][group.name] = accountAddresses;
+
+      // Add to the flat list of all active accounts
+      this.allActiveAccounts.push(...accountAddresses);
     }
   }
 
@@ -98,5 +104,13 @@ export class MonitoringConfigService implements OnModuleInit {
       },
       {} as Record<string, string[]>,
     );
+  }
+
+  /**
+   * Gets all active accounts across all chains and groups
+   * @returns Array of all active account addresses
+   */
+  getAllActiveAccounts(): string[] {
+    return this.allActiveAccounts;
   }
 }

@@ -150,4 +150,48 @@ export class IncidentService {
 
     return savedIncident;
   }
+
+  /**
+   * Auto-resolves incidents for accounts that are no longer in the monitoring configuration
+   * @param activeAccounts List of all active accounts from monitoring configuration
+   * @returns Number of incidents that were auto-resolved
+   */
+  async autoResolveOrphanedIncidents(activeAccounts: string[]): Promise<number> {
+    // Safety check - if no active accounts, something might be wrong with configuration
+    if (activeAccounts.length === 0) {
+      this.logger.warn('No active accounts found in monitoring configuration. Skipping auto-resolution.');
+      return 0;
+    }
+
+    // Find all unresolved incidents where the wallet is NOT in the active accounts
+    const orphanedIncidents = await this.incidentRepository
+      .createQueryBuilder('incident')
+      .where('incident.resolved = :resolved', { resolved: false })
+      .andWhere('incident.wallet NOT IN (:...activeAccounts)', { activeAccounts })
+      .getMany();
+
+    if (orphanedIncidents.length === 0) {
+      this.logger.debug('No incidents needed auto-resolution');
+      return 0;
+    }
+
+    this.logger.log(`Auto-resolving ${orphanedIncidents.length} orphaned incidents`);
+
+    let resolvedCount = 0;
+
+    // Process all incidents
+    for (const incident of orphanedIncidents) {
+      try {
+        await this.resolveIncident(incident.id, 'Auto-resolved: Account no longer present in monitoring configuration');
+        resolvedCount++;
+      } catch (error) {
+        this.logger.error(`Failed to auto-resolve incident ${incident.id}`, error);
+      }
+    }
+
+    // TODO: In the future, consider handlerName in addition to wallet address
+    // when determining if an incident should be auto-resolved
+
+    return resolvedCount;
+  }
 }

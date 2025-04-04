@@ -8,6 +8,42 @@ interface Link {
 }
 
 export class MessageStyler {
+  /**
+   * Parses a message string into title and details, optionally prepends an incident ID,
+   * and applies styling based on the message type and style type.
+   *
+   * @param messageContent The raw message content to parse and style
+   * @param messageType The type of message (Firing, Resolved, OneTime)
+   * @param styleType The style to apply (html, plain, markdown)
+   * @param incidentId Optional incident ID to prepend to the title
+   * @returns Styled message string
+   */
+  static parseAndStyle(
+    messageContent: string,
+    messageType: MessageType,
+    styleType: StyleType,
+    incidentId?: number,
+  ): string {
+    // Parse message content into title and details
+    const messageLines = messageContent.split('\n').filter(line => line.trim() !== '');
+    let title = messageLines[0] || '';
+    const details = messageLines.slice(1) || [];
+
+    // Prepend incident ID to title if provided
+    if (incidentId !== undefined) {
+      title = `${incidentId}. ${title}`;
+    }
+
+    // Create message object
+    const messageObj: Message = {
+      title,
+      details,
+    };
+
+    // Apply style to message and return
+    return this.applyStyle(messageObj, messageType, styleType);
+  }
+
   static applyStyle(message: Message, messageType: MessageType, styleType: StyleType): string {
     const { prefix, color } = this.getPrefixAndColor(messageType);
     const title = this.styleTitle(prefix, message.title, color, styleType);

@@ -2,7 +2,7 @@ import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, Not, LessThan } from 'typeorm';
-import { Message, MessageType, MessengerType } from '@w3f/monitoring-types';
+import { MessageType, MessengerType } from '@w3f/monitoring-types';
 import { Incident } from '../database/incident.entity';
 import { MessageStyler } from './message-styler';
 import { ConfigService } from '../config/config.service';
@@ -19,100 +19,40 @@ export class NotificationService {
     private readonly configService: ConfigService,
   ) {}
 
-  async sendAlertNotification(incident: Incident): Promise<boolean> {
+  async sendAlertNotification(incident: Incident): Promise<void> {
     this.logger.log(`Sending alert notification for incident ${incident.id}`);
+    const messageType = incident.resolved ? MessageType.OneTime : MessageType.Firing;
+    const styledMessage = MessageStyler.parseAndStyle(incident.message, messageType, 'html', incident.id);
+    await this.sendNotification(incident.channelId, incident.messengerType, styledMessage);
 
-    if (!incident.channelId) {
-      this.logger.warn(`No channel ID for incident ${incident.id}, skipping notification`);
-      return false;
-    }
+    incident.alertNotificationSent = new Date();
+    await this.incidentRepository.save(incident);
 
-    try {
-      // Determine message type based on incident properties
-      const messageType = incident.resolved ? MessageType.OneTime : MessageType.Firing;
-
-      // Parse message content into title and details
-      const messageLines = incident.message.split('\n').filter(line => line.trim() !== '');
-      const title = messageLines[0] || '';
-      const details = messageLines.slice(1) || [];
-
-      // Create message object
-      const messageObj: Message = {
-        title,
-        details,
-      };
-
-      // Apply style to message
-      const styledMessage = MessageStyler.applyStyle(messageObj, messageType, 'html');
-
-      // Send notification based on messenger type
-      await this.sendNotification(incident, styledMessage);
-
-      this.logger.log(`Alert notification sent for incident ${incident.id}`);
-
-      // Update alertNotificationSent
-      incident.alertNotificationSent = new Date();
-      await this.incidentRepository.save(incident);
-
-      return true;
-    } catch (error) {
-      this.logger.error(`Failed to send alert notification for incident ${incident.id}`, error);
-      return false;
-    }
+    this.logger.log(`Alert notification sent for incident ${incident.id}`);
   }
 
-  async sendResolvedNotification(incident: Incident): Promise<boolean> {
+  async sendResolvedNotification(incident: Incident): Promise<void> {
     this.logger.log(`Sending resolved notification for incident ${incident.id}`);
+    const messageType = MessageType.Resolved;
+    const styledMessage = MessageStyler.parseAndStyle(incident.message, messageType, 'html', incident.id);
+    await this.sendNotification(incident.channelId, incident.messengerType, styledMessage);
 
-    if (!incident.channelId || !incident.resolvedMessage) {
-      this.logger.warn(`No channel ID or resolved message for incident ${incident.id}, skipping notification`);
-      return false;
-    }
+    incident.resolvedNotificationSent = new Date();
+    await this.incidentRepository.save(incident);
 
-    try {
-      // Parse message content into title and details
-      const messageLines = incident.resolvedMessage.split('\n').filter(line => line.trim() !== '');
-      const title = messageLines[0] || '';
-      const details = messageLines.slice(1) || [];
-
-      // TODO: Add incident.id to the message details?
-
-      // Create message object
-      const messageObj: Message = {
-        title,
-        details,
-      };
-
-      // Apply style to message
-      const styledMessage = MessageStyler.applyStyle(messageObj, MessageType.Resolved, 'html');
-
-      // Send notification based on messenger type
-      await this.sendNotification(incident, styledMessage);
-
-      this.logger.log(`Resolved notification sent for incident ${incident.id}`);
-
-      // Update resolvedNotificationSent
-      incident.resolvedNotificationSent = new Date();
-      await this.incidentRepository.save(incident);
-
-      return true;
-    } catch (error) {
-      this.logger.error(`Failed to send resolved notification for incident ${incident.id}`, error);
-      return false;
-    }
+    this.logger.log(`Resolved notification sent for incident ${incident.id}`);
   }
 
-  private async sendNotification(incident: Incident, message: string): Promise<void> {
+  private async sendNotification(channelId: string, messengerType: MessengerType, message: string): Promise<void> {
     const notificationConfig = this.configService.getNotificationConfig();
 
-    switch (incident.messengerType) {
+    switch (messengerType) {
       case MessengerType.Matrix:
         const matrixUrl = notificationConfig.matrix.url;
         await firstValueFrom(
           this.httpService.post(matrixUrl, {
-            channelId: incident.channelId,
+            channelId: channelId,
             message: message,
-            incidentId: incident.id,
           }),
         );
         break;
@@ -121,7 +61,7 @@ export class NotificationService {
         throw new NotImplementedException('Slack messenger is not implemented yet');
 
       default:
-        throw new NotImplementedException(`Messenger type ${incident.messengerType} is not implemented`);
+        throw new NotImplementedException(`Messenger type ${messengerType} is not implemented`);
     }
   }
 
@@ -176,7 +116,7 @@ export class NotificationService {
 
     // Process firing incidents
     for (const incident of firingIncidents) {
-      // For case 2, check if it's time to retry
+      // For case 2 only, check if it's time to retry
       if (incident.alertNotificationSent && incident.repeatIntervalHours) {
         const nextNotificationTime = new Date(
           incident.alertNotificationSent.getTime() + incident.repeatIntervalHours * 60 * 60 * 1000,
@@ -188,7 +128,6 @@ export class NotificationService {
         }
       }
 
-      // Try to send the notification
       await this.sendAlertNotification(incident);
     }
   }
@@ -206,13 +145,7 @@ export class NotificationService {
 
     // Process resolved incidents
     for (const incident of resolvedIncidents) {
-      const result = await this.sendResolvedNotification(incident);
-
-      // Update resolvedNotificationSent if notification was sent successfully
-      if (result) {
-        incident.resolvedNotificationSent = new Date();
-        await this.incidentRepository.save(incident);
-      }
+      await this.sendResolvedNotification(incident);
     }
   }
 }

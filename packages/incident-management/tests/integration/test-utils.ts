@@ -4,10 +4,9 @@ import { DataSource } from 'typeorm';
 import { AppModule } from '../../src/app.module';
 import { MonitoringConfigService } from '../../src/monitoring-config/monitoring-config.service';
 import { ConfigService } from '../../src/config/config.service';
-import { HttpService } from '@nestjs/axios';
+import { NotificationService } from '../../src/notification/notification.service';
 import * as path from 'path';
 import * as fs from 'fs';
-import { of } from 'rxjs';
 
 /**
  * Sets up a test database for integration tests
@@ -57,7 +56,7 @@ export async function setupMonitoringConfigService(
   const targetPath = path.join(configsDir, 'test-config.yaml');
   fs.writeFileSync(targetPath, fixtureContent);
   
-  // Now let the service refresh configurations normally
+  // The service refreshes configurations normally
   // It will find our test fixture in the configsDir
   await service.refreshConfigurations();
 }
@@ -96,9 +95,11 @@ export async function createTestApp(fixtureOptions?: {
     getLoggingLevel: jest.fn().mockReturnValue('info'),
     getEnvironment: jest.fn().mockReturnValue('test'),
   })
-  .overrideProvider(HttpService)
+  .overrideProvider(NotificationService)
   .useValue({
-    post: jest.fn().mockReturnValue(of({ data: {} })),
+    sendAlertNotification: jest.fn().mockResolvedValue(undefined),
+    sendResolvedNotification: jest.fn().mockResolvedValue(undefined),
+    retryFailedNotifications: jest.fn().mockResolvedValue(undefined),
   })
   .compile();
 
