@@ -3,21 +3,24 @@
 DB_NAME="incident_management"
 POSTGRES_PASSWORD="postgres"
 
-# Find the postgres container
-CONTAINER_ID=$(docker ps -q --filter "name=postgres")
+# Check if postgres-test container exists (running or stopped)
+CONTAINER_ID=$(docker ps -a -q --filter "name=postgres-test")
 
 if [ -z "$CONTAINER_ID" ]; then
-  echo "No postgres container found. Creating a new one..."
-  docker run -d --name postgres-test -p 5432:5432 -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD postgres
+  echo "No postgres-test container found. Creating a new one..."
 else
-  echo "Found postgres container: $CONTAINER_ID"
+  echo "Found postgres-test container: $CONTAINER_ID"
   echo "Stopping and removing container..."
-  docker stop $CONTAINER_ID
+  # Stop the container if it's running
+  docker stop $CONTAINER_ID 2>/dev/null || true
+  # Remove the container
   docker rm $CONTAINER_ID
   
-  echo "Creating a new postgres container..."
-  docker run -d --name postgres-test -p 5432:5432 -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD postgres
+  echo "Container removed successfully."
 fi
+
+echo "Creating a new postgres container..."
+docker run -d --name postgres-test -p 5432:5432 -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD postgres
 
 echo "Waiting for postgres to start..."
 sleep 5

@@ -55,17 +55,17 @@ export class MonitoringConfigService implements OnModuleInit {
       }
 
       // Check for duplicate group names within the same chain
-      if (this.monitoringConfigMap[group.chain][group.name]) {
+      if (this.monitoringConfigMap[group.chain][group.id]) {
         throw new Error(
-          `Duplicate monitoring group name "${group.name}" found for chain "${group.chain}". ` +
+          `Duplicate monitoring group name "${group.id}" found for chain "${group.chain}". ` +
             'Each monitoring group must have a unique name within a chain.',
         );
       }
 
       // Store the group and accounts by chain and group name
-      this.monitoringConfigMap[group.chain][group.name] = group;
+      this.monitoringConfigMap[group.chain][group.id] = group;
       const accountAddresses = group.accounts.map(account => account.ss58);
-      this.accountsMap[group.chain][group.name] = accountAddresses;
+      this.accountsMap[group.chain][group.id] = accountAddresses;
 
       // Add to the flat list of all active accounts
       this.allActiveAccounts.push(...accountAddresses);

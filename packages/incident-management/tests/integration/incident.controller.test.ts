@@ -42,7 +42,7 @@ describe('IncidentController (integration)', () => {
       chain: Chain.Polkadot,
       blockNumber: 12345,
       wallet: testWallet,
-      groupName: testGroup,
+      groupId: testGroup,
       handlerName: 'test-handler',
       channelId: 'test-channel',
       ackRequired: true,
@@ -58,7 +58,7 @@ describe('IncidentController (integration)', () => {
     expect(response.body.message).toBe(createIncidentDto.message);
     expect(response.body.chain).toBe(createIncidentDto.chain);
     expect(response.body.wallet).toBe(createIncidentDto.wallet);
-    expect(response.body.groupName).toBe(createIncidentDto.groupName);
+    expect(response.body.groupId).toBe(createIncidentDto.groupId);
     expect(response.body.handlerName).toBe(createIncidentDto.handlerName);
     expect(response.body.channelId).toBe(createIncidentDto.channelId);
     expect(response.body.ackRequired).toBe(createIncidentDto.ackRequired);

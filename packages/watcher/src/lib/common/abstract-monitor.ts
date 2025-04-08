@@ -218,7 +218,7 @@ export abstract class AbstractMonitor<T extends MonitorType, D extends DataProvi
             settings: account[this.monitorType] as MonitorSettings<T>,
           },
           alerts: group.alerts,
-          groupId: group.name,
+          groupId: group.id,
         });
       }
     }

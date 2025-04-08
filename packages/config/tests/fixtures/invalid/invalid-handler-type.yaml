@@ -1,5 +1,5 @@
 groups:
-  - name: invalid-handler-type
+  - id: invalid-handler-type
     chains:
       - Polkadot
     alerts:

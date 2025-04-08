@@ -142,7 +142,7 @@ const defaultsSchema = Joi.object({
 });
 
 const groupSchema = Joi.object({
-  name: Joi.string().required(),
+  id: Joi.string().required(),
   chains: Joi.array()
     .items(Joi.string().valid(...Object.values(Chain)))
     .optional(),
@@ -173,7 +173,13 @@ export function validateConfig(config: any): void {
 
   const defaults = validatedConfig.defaults || {};
 
+  // Validate that all group IDs are unique
+  const groupIds = new Set<string>();
   validatedConfig.groups.forEach((group: any) => {
+    if (groupIds.has(group.id)) {
+      throw new Error(`Duplicate group ID found: "${group.id}". All group IDs must be unique.`);
+    }
+    groupIds.add(group.id);
     validateGroup(group, defaults);
   });
 }
@@ -188,7 +194,7 @@ function validateGroup(group: any, defaults: any): void {
   requiredProps.forEach(prop => {
     const value = group[prop.name] || defaults[prop.name];
     if (!prop.check(value)) {
-      throw new Error(`Group "${group.name}" must have ${prop.name} defined either in the group or in defaults`);
+      throw new Error(`Group "${group.id}" must have ${prop.name} defined either in the group or in defaults`);
     }
   });
 
@@ -204,7 +210,7 @@ function validateMonitors(group: any, defaults: any): void {
       if (account.commission === undefined && stakingMonitor.commission === undefined) {
         throw new Error(
           `Neither the Staking monitor nor account ${account.name || account.address} ` +
-            `in group ${group.name} has a commission specified`,
+            `in group ${group.id} has a commission specified`,
         );
       }
     });

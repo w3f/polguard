@@ -48,7 +48,7 @@ describe('MonitoringConfigController (integration)', () => {
     
     // Verify the structure of the returned groups
     const group = response.body.groups[0];
-    expect(group).toHaveProperty('name');
+    expect(group).toHaveProperty('id');
     expect(group).toHaveProperty('chain');
     expect(group).toHaveProperty('monitors');
     expect(group).toHaveProperty('accounts');
@@ -96,13 +96,13 @@ describe('MonitoringConfigController (integration)', () => {
     expect(Array.isArray(response.body.groups)).toBe(true);
     
     // Verify that only the requested group is returned
-    const groupNames = response.body.groups.map(group => group.name);
-    expect(groupNames).toContain(singleGroup);
+    const groupIds = response.body.groups.map(group => group.id);
+    expect(groupIds).toContain(singleGroup);
     
     // Verify that the other test group is not returned
     const otherGroup = testGroups.find(g => g !== singleGroup);
     if (otherGroup) {
-      expect(groupNames).not.toContain(otherGroup);
+      expect(groupIds).not.toContain(otherGroup);
     }
   });
   

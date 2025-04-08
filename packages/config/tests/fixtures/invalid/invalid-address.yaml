@@ -1,5 +1,5 @@
 groups:
-  - name: invalid-addresses
+  - id: invalid-addresses
     chains:
       - Polkadot
     alerts:

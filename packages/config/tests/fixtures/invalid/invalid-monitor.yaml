@@ -1,5 +1,5 @@
 groups:
-  - name: invalid-monitors
+  - id: invalid-monitors
     chains:
       - Polkadot
     alerts:

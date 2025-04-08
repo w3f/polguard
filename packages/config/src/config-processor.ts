@@ -30,7 +30,7 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  * Output example:
  * [
  *   {
- *     name: "validators group",
+ *     id: "validators-group",
  *     chain: Chain.Polkadot,
  *     monitors: [
  *       {
@@ -93,7 +93,7 @@ export class ConfigProcessor {
     return groups.flatMap(group => {
       const transformedMonitors = this.transformMonitors(group.monitors || []);
       return (group.chains || []).map(chain => ({
-        name: group.name,
+        id: group.id,
         chain,
         monitors: transformedMonitors,
         accounts: group.accounts.map(account => this.transformAccount(account, chain, transformedMonitors)),

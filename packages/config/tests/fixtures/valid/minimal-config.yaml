@@ -1,5 +1,5 @@
 groups:
-  - name: minimal-validators
+  - id: minimal-validators
     chains:
       - Polkadot
     alerts:

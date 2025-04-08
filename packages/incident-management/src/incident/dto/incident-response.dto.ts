@@ -6,7 +6,7 @@ export class IncidentResponseDto {
   blockNumber?: number;
   chain: Chain;
   wallet: string;
-  groupName: string;
+  groupId: string;
   handlerName: string;
   channelId: string;
   ackRequired: boolean;

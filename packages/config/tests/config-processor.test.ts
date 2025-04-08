@@ -24,7 +24,7 @@ describe('ConfigProcessor', () => {
       expect(kusamaGroups.length).toBe(2); // validators-default and validators-custom    
 
       // Test defaults inheritance
-      const defaultGroup = result.find(g => g.name === 'validators-default' && g.chain === Chain.Polkadot);
+      const defaultGroup = result.find(g => g.id === 'validators-default' && g.chain === Chain.Polkadot);
       expect(defaultGroup).toBeDefined();
       expect(defaultGroup?.alerts).toEqual({
         messengerType: 'matrix',
@@ -40,7 +40,7 @@ describe('ConfigProcessor', () => {
       expect(hexAccount?.ss58).toBe(POLKADOT_SS58);
 
       // Test monitor settings merging and completeness
-      const customGroup = result.find(g => g.name === 'validators-custom' && g.chain === Chain.Kusama);
+      const customGroup = result.find(g => g.id === 'validators-custom' && g.chain === Chain.Kusama);
       const bobAccount = customGroup?.accounts.find(a => a.name === 'Bob');
       expect(bobAccount).toBeDefined();
       

@@ -16,7 +16,7 @@ defaults:
           - SlashReported
 
 groups:
-  - name: validators-default  # This group will be created for both Polkadot and Kusama
+  - id: validators-default  # This group will be created for both Polkadot and Kusama
     accounts:
       - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
         name: "Alice"
@@ -25,7 +25,7 @@ groups:
         name: "Bob-Hex"
         commission: 5
 
-  - name: validators-custom
+  - id: validators-custom
     chains:
       - Kusama  # This group only for Kusama
     alerts:

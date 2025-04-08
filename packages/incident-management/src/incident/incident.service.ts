@@ -50,8 +50,8 @@ export class IncidentService {
       queryBuilder.andWhere('incident.wallet = :wallet', { wallet: filters.wallet });
     }
 
-    if (filters.groupName) {
-      queryBuilder.andWhere('incident.groupName = :groupName', { groupName: filters.groupName });
+    if (filters.groupId) {
+      queryBuilder.andWhere('incident.groupId = :groupId', { groupId: filters.groupId });
     }
 
     if (filters.handlerName) {
@@ -72,7 +72,7 @@ export class IncidentService {
       const existingIncident = await this.incidentRepository.findOne({
         where: {
           chain: createIncidentDto.chain,
-          groupName: createIncidentDto.groupName,
+          groupId: createIncidentDto.groupId,
           handlerName: createIncidentDto.handlerName,
           wallet: createIncidentDto.wallet,
           resolved: false,

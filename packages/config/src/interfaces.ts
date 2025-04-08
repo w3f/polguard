@@ -11,7 +11,7 @@ export interface RawConfig {
 }
 
 export interface RawMonitoringGroup {
-  name: string;
+  id: string;
   chains?: Chain[];
   monitors?: RawMonitorSettings[];
   alerts?: AlertSettings;

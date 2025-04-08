@@ -24,7 +24,7 @@ export class GetIncidentsDto {
 
   @IsOptional()
   @IsString()
-  groupName?: string;
+  groupId?: string;
 
   @IsOptional()
   @IsString()

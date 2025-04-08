@@ -10,15 +10,15 @@ defaults:
       commission: 10
 
 groups:
-  - name: validators-default
+  - id: validators-default
     accounts:
       - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"  # Alice
       - address: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"  # Bob
 
-  - name: validators-custom
+  - id: validators-custom
     accounts:
       - address: "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y"  # Charlie
 
-  - name: test-group
+  - id: test-group
     accounts:
       - address: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"  # Test wallet

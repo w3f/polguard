@@ -127,7 +127,7 @@ export type MonitorTypeSettings = {
 export type MonitorSettings<T extends MonitorType> = MonitorTypeSettings[T];
 
 export interface MonitoringGroup {
-  name: string;
+  id: string;
   chain: Chain;
   monitors: MonitorConfig[];
   accounts: ConfigAccountSettings[];

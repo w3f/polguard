@@ -1,5 +1,5 @@
 groups:
-  - name: invalid-balances
+  - id: invalid-balances
     chains:
       - Polkadot
     alerts:

@@ -47,7 +47,7 @@ Query parameters:
 - `createdBefore`: Filter incidents created before a specific date
 - `chain`: Filter by blockchain chain
 - `wallet`: Filter by wallet address
-- `groupName`: Filter by group name
+- `groupId`: Filter by group id
 - `handlerName`: Filter by handler name
 
 ### POST /incidents

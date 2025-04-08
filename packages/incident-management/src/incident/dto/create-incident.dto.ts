@@ -19,7 +19,7 @@ export class CreateIncidentDto {
 
   @IsString()
   @IsNotEmpty()
-  groupName: string;
+  groupId: string;
 
   @IsString()
   @IsNotEmpty()
