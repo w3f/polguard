@@ -1,9 +1,9 @@
-import { IsOptional, IsEnum, IsDateString, IsString } from 'class-validator';
+import { IsOptional, IsEnum, IsDateString, IsString, IsBoolean } from 'class-validator';
 import { Chain } from '@w3f/monitoring-types';
 
 export class GetIncidentsDto {
   @IsOptional()
-  @IsEnum(['open', 'acked', 'resolved', 'all'])
+  @IsEnum(['open', 'acked', 'unacked', 'resolved', 'all'])
   status?: string = 'all';
 
   @IsOptional()
@@ -29,4 +29,20 @@ export class GetIncidentsDto {
   @IsOptional()
   @IsString()
   handlerName?: string;
+
+  @IsOptional()
+  @IsString()
+  channelId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  ackRequired?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  acked?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  resolved?: boolean;
 }

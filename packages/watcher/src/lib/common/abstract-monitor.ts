@@ -238,15 +238,18 @@ export abstract class AbstractMonitor<T extends MonitorType, D extends DataProvi
   /**
    * Gets the firing threshold for a given sensitivity level.
    * Falls back to default values if thresholds are not configured.
-   * 
+   *
    * @param sensitivity - The sensitivity level to get threshold for
    * @returns The number of consecutive failures required before firing
    */
   protected getFiringThreshold(sensitivity: keyof AlertFiringThresholds = 'sensitive'): number {
-    return this.firingThresholds?.[sensitivity] ?? {
-      tolerant: 60,   // High threshold for noisy conditions
-      moderate: 5,    // Standard threshold for most conditions
-      sensitive: 3,   // Low threshold for stable conditions
-    }[sensitivity];
+    return (
+      this.firingThresholds?.[sensitivity] ??
+      {
+        tolerant: 60, // High threshold for noisy conditions
+        moderate: 5, // Standard threshold for most conditions
+        sensitive: 3, // Low threshold for stable conditions
+      }[sensitivity]
+    );
   }
 }

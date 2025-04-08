@@ -62,18 +62,9 @@ export class ConfigService {
     });
 
     const firingThresholdsSchema = Joi.object({
-      tolerant: Joi.number()
-        .integer()
-        .min(1)
-        .description('High threshold for noisy conditions'),
-      moderate: Joi.number()
-        .integer()
-        .min(1)
-        .description('Standard threshold for most conditions'),
-      sensitive: Joi.number()
-        .integer()
-        .min(1)
-        .description('Low threshold for stable conditions'),
+      tolerant: Joi.number().integer().min(1).description('High threshold for noisy conditions'),
+      moderate: Joi.number().integer().min(1).description('Standard threshold for most conditions'),
+      sensitive: Joi.number().integer().min(1).description('Low threshold for stable conditions'),
     });
 
     const schema = Joi.object({

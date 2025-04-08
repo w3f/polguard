@@ -43,7 +43,17 @@ export class TelemetryWatcher extends AbstractWatcher<MonitorType, TelemetryMoni
     private readonly interval: number,
     firingThresholds?: AlertFiringThresholds,
   ) {
-    super(logger, monitoringGroups, incidents, store, metrics, chainProps, {} as NoProvider, monitorConfigs, firingThresholds);
+    super(
+      logger,
+      monitoringGroups,
+      incidents,
+      store,
+      metrics,
+      chainProps,
+      {} as NoProvider,
+      monitorConfigs,
+      firingThresholds,
+    );
     this.logger.debug(`Telemetry polling interval: ${interval}ms`);
   }
 

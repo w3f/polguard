@@ -22,15 +22,31 @@ export class IncidentService {
     if (filters.status && filters.status !== 'all') {
       switch (filters.status) {
         case 'open':
-          queryBuilder.andWhere('incident.acked = false AND incident.resolved = false');
+          queryBuilder.andWhere('incident.resolved = false');
           break;
         case 'acked':
           queryBuilder.andWhere('incident.acked = true AND incident.resolved = false');
+          break;
+        case 'unacked':
+          queryBuilder.andWhere('incident.ackRequired = true AND incident.acked = false');
           break;
         case 'resolved':
           queryBuilder.andWhere('incident.resolved = true');
           break;
       }
+    }
+
+    // Apply direct boolean filters
+    if (filters.ackRequired !== undefined) {
+      queryBuilder.andWhere('incident.ackRequired = :ackRequired', { ackRequired: filters.ackRequired });
+    }
+
+    if (filters.acked !== undefined) {
+      queryBuilder.andWhere('incident.acked = :acked', { acked: filters.acked });
+    }
+
+    if (filters.resolved !== undefined) {
+      queryBuilder.andWhere('incident.resolved = :resolved', { resolved: filters.resolved });
     }
 
     // Apply other filters
@@ -56,6 +72,10 @@ export class IncidentService {
 
     if (filters.handlerName) {
       queryBuilder.andWhere('incident.handlerName = :handlerName', { handlerName: filters.handlerName });
+    }
+
+    if (filters.channelId) {
+      queryBuilder.andWhere('incident.channelId = :channelId', { channelId: filters.channelId });
     }
 
     // Apply limit and order

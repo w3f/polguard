@@ -114,6 +114,35 @@ describe('IncidentController (integration)', () => {
     expect(response.body[0].resolved).toBe(false);
   });
 
+  it('should get incidents requiring acknowledgment', async () => {
+    // Create a new incident that requires acknowledgment
+    const createIncidentDto: CreateIncidentDto = {
+      message: 'Test incident requiring acknowledgment',
+      messengerType: MessengerType.Matrix,
+      chain: Chain.Polkadot,
+      blockNumber: 12346,
+      wallet: testWallet,
+      groupId: testGroup,
+      handlerName: 'test-handler-unacked',
+      channelId: 'test-channel',
+      ackRequired: true,
+    };
+
+    await request(app.getHttpServer())
+      .post('/incidents')
+      .send(createIncidentDto)
+      .expect(201);
+
+    const response = await request(app.getHttpServer())
+      .get('/incidents?status=unacked')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBeGreaterThan(0);
+    expect(response.body[0].ackRequired).toBe(true);
+    expect(response.body[0].acked).toBe(false);
+  });
+
   it('should resolve an incident', async () => {
     const response = await request(app.getHttpServer())
       .post(`/incidents/${createdIncidentId}/resolve`)

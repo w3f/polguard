@@ -7,9 +7,25 @@ export interface MatrixConfig {
 }
 
 export interface Incident {
-  id: string;
+  id: number;
+  message: string;
+  chain: string;
+  groupId: string;
+  handlerName: string;
+  wallet: string;
+  ackRequired: boolean;
+  acked: boolean;
+  ackedByUser?: string;
+  ackedAt?: Date;
+  resolved: boolean;
+  resolvedAt?: Date;
+  resolvedMessage?: string;
+  createdAt: Date;
 }
 
 export interface IncidentServiceInterface {
-  getNonAckedIncidentsForRoom(roomId: string): Promise<Incident[]>;
+  getNonResolved(roomId: string): Promise<Incident[]>;
+  getNonAcked(roomId: string): Promise<Incident[]>;
+  getIncidentById(incidentId: number): Promise<Incident>;
+  acknowledgeIncident(incidentId: number, username: string, channelId: string): Promise<void>;
 }

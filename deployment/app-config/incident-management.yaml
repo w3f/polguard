@@ -16,7 +16,7 @@ server:
 # Notification service configuration
 notification:
   matrix:
-    url: http://matrix:3000/api/notify
+    url: http://matrix:3000/notifications
 
 # Logging configuration
 logging:

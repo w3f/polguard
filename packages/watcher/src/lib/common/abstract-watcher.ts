@@ -81,7 +81,17 @@ export abstract class AbstractWatcher<T extends MonitorType, M extends Monitor<T
 
         this.logger.debug(`Creating monitor ${MonitorClass.name} with ${monitorAccounts} accounts`);
 
-        return [new MonitorClass(this.logger, groups, this.incidents, this.chainProps, this.provider, monitorType, this.firingThresholds)];
+        return [
+          new MonitorClass(
+            this.logger,
+            groups,
+            this.incidents,
+            this.chainProps,
+            this.provider,
+            monitorType,
+            this.firingThresholds,
+          ),
+        ];
       }
       return [];
     });

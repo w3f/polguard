@@ -133,7 +133,7 @@ export class MatrixClient {
     this.logger.debug(`Received message from ${sender} in room ${room.roomId}: ${content.body}`);
 
     if (content.body.startsWith('!')) {
-      this.handleCommand(room.roomId, content.body);
+      this.handleCommand(room.roomId, content.body, event);
     }
   }
 
@@ -147,10 +147,12 @@ export class MatrixClient {
    *
    * @param roomId The ID of the room where the command was received
    * @param command The full command string, including the leading '!'
+   * @param event The original Matrix event object
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected handleCommand(roomId: string, command: string) {
-    // TODO: Implement it.
+  protected handleCommand(roomId: string, command: string, event?: MatrixEvent) {
+    // Default implementation does nothing
+    // Subclasses should override this method to provide command handling
   }
 
   /**

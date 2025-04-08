@@ -53,9 +53,13 @@ export class ConfigService {
           )
           .optional(),
       }).required(),
-      redis: Joi.object({
+      incidentManagement: Joi.object({
         url: Joi.string().uri().required(),
       }).required(),
+      server: Joi.object({
+        port: Joi.number().default(3000),
+        host: Joi.string().default('0.0.0.0'),
+      }).optional(),
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
       }).optional(),
@@ -73,25 +77,28 @@ export class ConfigService {
     return this.config.matrix;
   }
 
-  getRedisConfig(): { host: string; port: number; db: number } {
-    const redisUrl = new URL(this.config.redis.url);
-    return {
-      host: redisUrl.hostname,
-      port: Number(redisUrl.port) || 6379,
-      db: Number(redisUrl.pathname.split('/')[1]) || 0,
-    };
+  getIncidentManagementUrl(): string {
+    return this.config.incidentManagement.url;
   }
 
   getLoggingLevel(): string {
     return this.config.logging?.level || 'info';
+  }
+
+  getServerConfig() {
+    return this.config.server || { port: 3000, host: '0.0.0.0' };
   }
 }
 
 interface AppConfig {
   environment: string;
   matrix: MatrixConfig;
-  redis: {
+  incidentManagement: {
     url: string;
+  };
+  server: {
+    port: number;
+    host: string;
   };
   logging?: {
     level: string;

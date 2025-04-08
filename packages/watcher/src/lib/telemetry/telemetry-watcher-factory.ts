@@ -21,8 +21,16 @@ export async function createTelemetryWatcher(
   groups: MonitoringGroup[],
   dependencies: TelemetryWatcherDependencies,
 ): Promise<TelemetryWatcher> {
-  const { logger, chainProps, storageClient, eventEmitterClient, metricsClient, telemetryClient, interval, firingThresholds } =
-    dependencies;
+  const {
+    logger,
+    chainProps,
+    storageClient,
+    eventEmitterClient,
+    metricsClient,
+    telemetryClient,
+    interval,
+    firingThresholds,
+  } = dependencies;
 
   const store = new Store(storageClient, chainProps.chain, logger);
   const incidentHandler = new IncidentHandler(logger, store, eventEmitterClient, chainProps.chain);
