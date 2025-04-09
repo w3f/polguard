@@ -1,6 +1,7 @@
+// TODO: The whole Telemetry feature is going to be removed in the future
+
 import {
   MonitorType,
-  Message,
   HandlerExecutionType,
   TelemetryHandlerFunction,
   TelemetryHandlerParams,
@@ -40,12 +41,5 @@ export abstract class AbstractTelemetryMonitor<T extends MonitorType>
     for (const handler of handlers) {
       await handler.call(this, params);
     }
-  }
-
-  /**
-   * Creates a message with telemetry-specific details
-   */
-  protected createMessage(rows: string[]): Message {
-    return { title: rows.shift(), details: rows };
   }
 }

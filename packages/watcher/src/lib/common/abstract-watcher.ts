@@ -9,7 +9,6 @@ import {
   MonitorType,
   MonitorConstructor,
   DataProvider,
-  ActiveIncidentState,
   AlertFiringThresholds,
 } from '@w3f/monitoring-types';
 
@@ -148,12 +147,4 @@ export abstract class AbstractWatcher<T extends MonitorType, M extends Monitor<T
    * Cleans up watcher-specific resources, usually API connections
    */
   protected abstract stopWatching(): Promise<void>;
-
-  /**
-   * Returns all ongoing incidents across all monitors
-   * @returns Promise<ActiveIncidentState[]> List of active incidents
-   */
-  async getAllOngoingIncidents(): Promise<ActiveIncidentState[]> {
-    return this.store.getAllOngoingIncidents();
-  }
 }

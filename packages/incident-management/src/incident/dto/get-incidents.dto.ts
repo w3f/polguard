@@ -28,7 +28,7 @@ export class GetIncidentsDto {
 
   @IsOptional()
   @IsString()
-  handlerName?: string;
+  handler?: string;
 
   @IsOptional()
   @IsString()

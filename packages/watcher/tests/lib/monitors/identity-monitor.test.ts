@@ -59,12 +59,11 @@ describe('IdentityMonitor', () => {
         await monitor.processEvent({ eventRecord: event, blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Identity change detected'),
-            details: expect.arrayContaining([
-              expect.stringContaining('display: "Not set" → "New Display Name"')
-            ])
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Identity change detected'),
+            expect.stringContaining('display: "Not set" → "New Display Name"')
+          ]),
+          expect.any(Object),
           expect.any(Object),
           TEST_BLOCK
         );
@@ -85,12 +84,11 @@ describe('IdentityMonitor', () => {
         await monitor.processEvent({ eventRecord: event, blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Identity change detected'),
-            details: expect.arrayContaining([
-              expect.stringContaining('display: "Test Display Name" → "Not set"')
-            ])
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Identity change detected'),
+            expect.stringContaining('display: "Test Display Name" → "Not set"')
+          ]),
+          expect.any(Object),
           expect.any(Object),
           TEST_BLOCK
         );
@@ -114,12 +112,11 @@ describe('IdentityMonitor', () => {
         await monitor.processEvent({ eventRecord: event, blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Identity change detected'),
-            details: expect.arrayContaining([
-              expect.stringContaining('display: "Test Display Name" → "New Display Name"')
-            ])
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Identity change detected'),
+            expect.stringContaining('display: "Test Display Name" → "New Display Name"')
+          ]),
+          expect.any(Object),
           expect.any(Object),
           TEST_BLOCK
         );
@@ -152,18 +149,16 @@ describe('IdentityMonitor', () => {
           },
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Unexpected identity fields'),
-            details: expect.arrayContaining([
-              expect.stringContaining('display: expected "Test Display Name", got "Wrong Display Name"')
-            ])
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Unexpected identity fields'),
+            expect.stringContaining('display: expected "Test Display Name", got "Wrong Display Name"')
+          ]),
           expect.any(Object),
-          expect.any(String),
           true,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
@@ -179,18 +174,16 @@ describe('IdentityMonitor', () => {
           },
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Unexpected identity fields'),
-            details: expect.arrayContaining([
-              expect.stringContaining('display: expected "Test Display Name", got "Wrong Display Name"')
-            ])
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Unexpected identity fields'),
+            expect.stringContaining('display: expected "Test Display Name", got "Wrong Display Name"')
+          ]),
           expect.any(Object),
-          expect.any(String),
           true,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
@@ -201,30 +194,28 @@ describe('IdentityMonitor', () => {
           [TEST_ADDRESS]: identityWithoutEmail,
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Unexpected identity fields'),
-            details: expect.arrayContaining([
-              expect.stringContaining('email: expected "test@example.com", got "Not set"')
-            ])
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Unexpected identity fields'),
+            expect.stringContaining('email: expected "test@example.com", got "Not set"')
+          ]),
           expect.any(Object),
-          expect.any(String),
           true,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
 
       it('should not fire incident when all fields match', async () => {
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
           expect.any(Object),
           expect.any(Object),
-          expect.any(String),
           false,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
@@ -251,18 +242,15 @@ describe('IdentityMonitor', () => {
 
         suite.mockIdentitySuperOf({ [TEST_ADDRESS]: null });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Unexpected identity fields'),
-            details: expect.not.arrayContaining([
-              expect.stringContaining('expected')
-            ])
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Unexpected identity fields')
+          ]),
           expect.any(Object),
-          expect.any(String),
           false,
+          expect.any(Object),
           TEST_BLOCK
         );
       });

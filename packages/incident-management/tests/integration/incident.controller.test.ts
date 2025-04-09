@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { Chain, MessengerType } from '@w3f/monitoring-types';
-import { CreateIncidentDto } from '../../src/incident/dto';
+import { CreateIncidentDto, ResolveIncidentDto } from '../../src/incident/dto';
 import { DataSource } from 'typeorm';
 import { setupTestDatabase, createTestApp } from './test-utils';
 
@@ -43,7 +43,7 @@ describe('IncidentController (integration)', () => {
       blockNumber: 12345,
       wallet: testWallet,
       groupId: testGroup,
-      handlerName: 'test-handler',
+      handler: 'test-handler',
       channelId: 'test-channel',
       ackRequired: true,
       repeatIntervalHours: 24,
@@ -59,7 +59,7 @@ describe('IncidentController (integration)', () => {
     expect(response.body.chain).toBe(createIncidentDto.chain);
     expect(response.body.wallet).toBe(createIncidentDto.wallet);
     expect(response.body.groupId).toBe(createIncidentDto.groupId);
-    expect(response.body.handlerName).toBe(createIncidentDto.handlerName);
+    expect(response.body.handler).toBe(createIncidentDto.handler);
     expect(response.body.channelId).toBe(createIncidentDto.channelId);
     expect(response.body.ackRequired).toBe(createIncidentDto.ackRequired);
     expect(response.body.repeatIntervalHours).toBe(createIncidentDto.repeatIntervalHours);
@@ -123,7 +123,7 @@ describe('IncidentController (integration)', () => {
       blockNumber: 12346,
       wallet: testWallet,
       groupId: testGroup,
-      handlerName: 'test-handler-unacked',
+      handler: 'test-handler-unacked',
       channelId: 'test-channel',
       ackRequired: true,
     };
@@ -143,17 +143,56 @@ describe('IncidentController (integration)', () => {
     expect(response.body[0].acked).toBe(false);
   });
 
-  it('should resolve an incident', async () => {
+  it('should resolve an incident by ID', async () => {
     const response = await request(app.getHttpServer())
       .post(`/incidents/${createdIncidentId}/resolve`)
       .send({
-        resolvedMessage: 'Test resolution',
+        resolvedMessage: 'Test resolution by ID',
       })
       .expect(201);
 
     expect(response.body.id).toBe(createdIncidentId);
     expect(response.body.resolved).toBe(true);
-    expect(response.body.resolvedMessage).toBe('Test resolution');
+    expect(response.body.resolvedMessage).toBe('Test resolution by ID');
+    expect(response.body.resolvedAt).toBeTruthy();
+  });
+
+  it('should resolve an incident by fields', async () => {
+    // Create a new incident to resolve
+    const createIncidentDto: CreateIncidentDto = {
+      message: 'Test incident for field resolution',
+      messengerType: MessengerType.Matrix,
+      chain: Chain.Polkadot,
+      blockNumber: 12347,
+      wallet: testWallet,
+      groupId: 'test-group-resolve',
+      handler: 'test-handler-resolve',
+      channelId: 'test-channel',
+      ackRequired: true,
+    };
+
+    const createResponse = await request(app.getHttpServer())
+      .post('/incidents')
+      .send(createIncidentDto)
+      .expect(201);
+
+    // Resolve the incident using the fields
+    const resolveIncidentDto: ResolveIncidentDto = {
+      wallet: testWallet,
+      handler: 'test-handler-resolve',
+      chain: Chain.Polkadot,
+      groupId: 'test-group-resolve',
+      resolvedMessage: 'Test resolution by fields',
+    };
+
+    const response = await request(app.getHttpServer())
+      .post('/incidents/resolve')
+      .send(resolveIncidentDto)
+      .expect(201);
+
+    expect(response.body.id).toBe(createResponse.body.id);
+    expect(response.body.resolved).toBe(true);
+    expect(response.body.resolvedMessage).toBe('Test resolution by fields');
     expect(response.body.resolvedAt).toBeTruthy();
   });
 

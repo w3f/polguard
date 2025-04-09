@@ -4,11 +4,11 @@ import { ConfigService } from '../config/config.service';
 import { MetricsService } from '../metrics/metrics.service';
 import { StorageService } from '../storage/storage.service';
 import { TelemetryService } from '../telemetry/telemetry.service';
-import { WatcherType, getChainProperties, ActiveIncidentState } from '@w3f/monitoring-types';
+import { WatcherType, getChainProperties } from '@w3f/monitoring-types';
 import { createChainWatcher, ChainWatcherDependencies } from '../../lib/chain/chain-watcher-factory';
 import { createTelemetryWatcher, TelemetryWatcherDependencies } from '../../lib/telemetry/telemetry-watcher-factory';
 import { AbstractWatcher } from '../../lib/common/abstract-watcher';
-import { IncidentPublisherService } from '../incident/incident-publisher.service';
+import { IncidentApiService } from '../incident/incident-publisher.service';
 
 @Injectable()
 export class WatcherService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -21,7 +21,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     private readonly metrics: MetricsService,
     private readonly storage: StorageService,
     private readonly telemetry: TelemetryService | null,
-    private readonly incidents: IncidentPublisherService,
+    private readonly incidents: IncidentApiService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -35,13 +35,6 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     if (this.api) {
       await this.api.disconnect();
     }
-  }
-
-  async getAllOngoingIncidents(): Promise<ActiveIncidentState[]> {
-    if (!this.watcher) {
-      throw new Error('Watcher not initialized');
-    }
-    return this.watcher.getAllOngoingIncidents();
   }
 
   private async start(): Promise<void> {
@@ -59,7 +52,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
         logger: new Logger('ChainWatcher'),
         api: this.api,
         storageClient: this.storage,
-        eventEmitterClient: this.incidents,
+        incidentApiClient: this.incidents,
         metricsClient: this.metrics,
         chainProps,
         firingThresholds,
@@ -77,7 +70,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
       const telemetryDependencies: TelemetryWatcherDependencies = {
         logger: new Logger('TelemetryWatcher'),
         storageClient: this.storage,
-        eventEmitterClient: this.incidents,
+        incidentApiClient: this.incidents,
         metricsClient: this.metrics,
         telemetryClient: this.telemetry,
         chainProps,

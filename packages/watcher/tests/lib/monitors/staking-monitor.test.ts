@@ -54,13 +54,12 @@ describe('StakingMonitor', () => {
         await monitor.processEvent({ eventRecord: event, blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('has been slashed'),
-            details: expect.arrayContaining([
-              expect.stringContaining('Block: 100'),
-              expect.stringContaining('Network: Polkadot'),
-            ]),
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('has been slashed'),
+            expect.stringContaining('Block: 100'),
+            expect.stringContaining('Network: Polkadot')
+          ]),
+          expect.any(Object),
           expect.any(Object),
           TEST_BLOCK
         );
@@ -81,12 +80,11 @@ describe('StakingMonitor', () => {
         await monitor.processEvent({ eventRecord: event, blockNumber: TEST_BLOCK });
         
         expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Commission change detected'),
-            details: expect.arrayContaining([
-              expect.stringContaining('Commission: 20'),
-            ]),
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Commission change detected'),
+            expect.stringContaining('Commission: 20')
+          ]),
+          expect.any(Object),
           expect.any(Object),
           TEST_BLOCK
         );
@@ -118,12 +116,11 @@ describe('StakingMonitor', () => {
         });
     
         expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Destination change detected'),
-            details: expect.arrayContaining([
-              expect.stringContaining('Destination: Controller'),
-            ]),
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Destination change detected'),
+            expect.stringContaining('Destination: Controller')
+          ]),
+          expect.any(Object),
           expect.any(Object),
           TEST_BLOCK
         );
@@ -149,12 +146,11 @@ describe('StakingMonitor', () => {
         });
     
         expect(suite.mockIncidents.oneTimeIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Destination change detected'),
-            details: expect.arrayContaining([
-              expect.stringContaining('Destination: Controller'),
-            ]),
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Destination change detected'),
+            expect.stringContaining('Destination: Controller')
+          ]),
+          expect.any(Object),
           expect.any(Object),
           TEST_BLOCK
         );
@@ -170,18 +166,16 @@ describe('StakingMonitor', () => {
           commission: 20, // Higher than expected 10
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Unexpected commission'),
-            details: expect.arrayContaining([
-              expect.stringContaining('Expected 10, got 20'),
-            ]),
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Unexpected commission'),
+            expect.stringContaining('Expected 10, got 20')
+          ]),
           expect.any(Object),
-          expect.any(String),
           true,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
@@ -192,13 +186,13 @@ describe('StakingMonitor', () => {
           commission: 5,
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
           expect.any(Object),
           expect.any(Object),
-          expect.any(String),
           false,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
@@ -211,19 +205,17 @@ describe('StakingMonitor', () => {
           selfStake: BigInt(500), // Less than expected 1000
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Unexpected self-stake'),
-            details: expect.arrayContaining([
-              expect.stringContaining('Expected'),
-              expect.stringContaining('got'),
-            ]),
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Unexpected self-stake'),
+            expect.stringContaining('Expected'),
+            expect.stringContaining('got')
+          ]),
           expect.any(Object),
-          expect.any(String),
           true,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
@@ -234,13 +226,13 @@ describe('StakingMonitor', () => {
           selfStake: BigInt(2000),
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
           expect.any(Object),
           expect.any(Object),
-          expect.any(String),
           false,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
@@ -253,30 +245,28 @@ describe('StakingMonitor', () => {
           payee: 'Controller', // Expected 'Staked'
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('Unexpected reward destination'),
-            details: expect.arrayContaining([
-              expect.stringContaining('Expected "Staked", got "Controller"'),
-            ]),
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('Unexpected reward destination'),
+            expect.stringContaining('Expected "Staked", got "Controller"')
+          ]),
           expect.any(Object),
-          expect.any(String),
           true,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
 
       it('should not fire incident for correct payee', async () => {
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
           expect.any(Object),
           expect.any(Object),
-          expect.any(String),
           false,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
@@ -289,30 +279,28 @@ describe('StakingMonitor', () => {
           isValidator: false,
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: expect.stringContaining('not present in the validation active set'),
-            details: expect.arrayContaining([
-              expect.stringContaining('Era: 100'),
-            ]),
-          }),
+          expect.arrayContaining([
+            expect.stringContaining('not present in the validation active set'),
+            expect.stringContaining('Era: 100')
+          ]),
           expect.any(Object),
-          expect.any(String),
           true,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
 
       it('should not fire incident when validator is in active set', async () => {
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
           expect.any(Object),
           expect.any(Object),
-          expect.any(String),
           false,
+          expect.any(Object),
           TEST_BLOCK
         );
       });
@@ -324,15 +312,15 @@ describe('StakingMonitor', () => {
           isBonded: false
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         const calls = suite.mockIncidents.ongoingIncident.mock.calls;
-        const validatorIntentionCall = calls.find(call => call[2].includes(H.ValidatorIntentionMissing));
+        const validatorIntentionCall = calls.find(call => call[3].handler === H.ValidatorIntentionMissing);
         expect(validatorIntentionCall).toBeTruthy();
 
-        const [message, , , isFiring] = validatorIntentionCall;
-        expect(message.title).toContain('not properly set up as validator');
-        expect(message.details).toContain('Account is not bonded.');
+        const [message, , isFiring] = validatorIntentionCall;
+        expect(message[0]).toContain('not properly set up as validator');
+        expect(message[1]).toContain('Account is not bonded.');
         expect(isFiring).toBe(true);
       });
 
@@ -341,26 +329,26 @@ describe('StakingMonitor', () => {
           commission: null
         });
 
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         const calls = suite.mockIncidents.ongoingIncident.mock.calls;
-        const validatorIntentionCall = calls.find(call => call[2].includes(H.ValidatorIntentionMissing));
+        const validatorIntentionCall = calls.find(call => call[3].handler === H.ValidatorIntentionMissing);
         expect(validatorIntentionCall).toBeTruthy();
 
-        const [message, , , isFiring] = validatorIntentionCall;
-        expect(message.title).toContain('not properly set up as validator');
-        expect(message.details).toContain('No validator preferences (commission) set.');
+        const [message, , isFiring] = validatorIntentionCall;
+        expect(message[0]).toContain('not properly set up as validator');
+        expect(message[1]).toContain('No validator preferences (commission) set.');
         expect(isFiring).toBe(true);
       });
 
       it('should not fire incident when properly set up', async () => {
-        await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+        await monitor.processState({ blockNumber: TEST_BLOCK });
 
         const calls = suite.mockIncidents.ongoingIncident.mock.calls;
-        const validatorIntentionCall = calls.find(call => call[2].includes(H.ValidatorIntentionMissing));
+        const validatorIntentionCall = calls.find(call => call[3].handler === H.ValidatorIntentionMissing);
         expect(validatorIntentionCall).toBeTruthy();
 
-        const [, , , isFiring] = validatorIntentionCall;
+        const [, , isFiring] = validatorIntentionCall;
         expect(isFiring).toBe(false);
       });
     });

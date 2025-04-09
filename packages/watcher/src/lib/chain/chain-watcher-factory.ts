@@ -6,7 +6,7 @@ import {
   ChainProperties,
   Logger,
   KeyValueStorageClient,
-  EventEmitterClient,
+  IncidentApiClient,
   MetricsClient,
   MonitoringGroup,
   MonitorType,
@@ -23,7 +23,7 @@ export async function createChainWatcher(
   groups: MonitoringGroup[],
   dependencies: ChainWatcherDependencies,
 ): Promise<ChainWatcher> {
-  const { logger, api, chainProps, storageClient, eventEmitterClient, metricsClient, firingThresholds } = dependencies;
+  const { logger, api, chainProps, storageClient, incidentApiClient, metricsClient, firingThresholds } = dependencies;
 
   const specName = api.runtimeVersion.specName.toString();
   if (specName !== chainProps.specName) {
@@ -34,7 +34,7 @@ export async function createChainWatcher(
 
   const store = new Store(storageClient, chainProps.chain, logger);
   const chainDataProvider = createChainDataProvider(api, store, logger);
-  const incidentHandler = new IncidentHandler(logger, store, eventEmitterClient, chainProps.chain);
+  const incidentHandler = new IncidentHandler(logger, store, incidentApiClient, chainProps.chain);
 
   const monitorConfigs: [MonitorType, MonitorConstructor<MonitorType, ChainMonitor<MonitorType>, ChainDataProvider>][] =
     [
@@ -62,7 +62,7 @@ export interface ChainWatcherDependencies {
   logger: Logger;
   api: ApiPromise;
   storageClient: KeyValueStorageClient;
-  eventEmitterClient: EventEmitterClient;
+  incidentApiClient: IncidentApiClient;
   metricsClient: MetricsClient;
   chainProps: ChainProperties;
   firingThresholds?: AlertFiringThresholds;

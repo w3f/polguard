@@ -101,6 +101,16 @@ export class ConfigService {
       watcherType: Joi.string()
         .valid(...Object.values(WatcherType))
         .required(),
+      incidentManagement: Joi.object({
+        urls: Joi.object({
+          create: Joi.string().uri().required(),
+          resolve: Joi.string().uri().required(),
+        }).required(),
+      }).required(),
+      server: Joi.object({
+        port: Joi.number().default(3000),
+        host: Joi.string().default('0.0.0.0'),
+      }).optional(),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -154,6 +164,14 @@ export class ConfigService {
   getFiringThresholds(): AlertFiringThresholds | null {
     return this.config.firingThresholds || null;
   }
+
+  getIncidentManagementUrls(): { create: string; resolve: string } {
+    return this.config.incidentManagement.urls;
+  }
+
+  getServerConfig(): { host: string; port: number } {
+    return this.config.server || { host: '0.0.0.0', port: 3000 };
+  }
 }
 
 interface ChainConfig {
@@ -179,6 +197,16 @@ interface Config {
   chainConfig?: ChainConfig;
   telemetryConfig?: TelemetryConfig;
   firingThresholds?: AlertFiringThresholds;
+  incidentManagement: {
+    urls: {
+      create: string;
+      resolve: string;
+    };
+  };
+  server?: {
+    port: number;
+    host: string;
+  };
 }
 
 interface TelemetryConfig {

@@ -1,16 +1,18 @@
 import {
   Chain,
-  EveryBlockHandlerParams,
+  StateHandlerParams,
   MonitorType,
   BalancesHandlerType as H,
   EventHandlerParams,
+  IncidentKey,
 } from '@w3f/monitoring-types';
-import { EventHandler, EveryBlockHandler } from '../../../common/decorators';
+import { Event, State, Handler } from '../../../common/decorators';
 import { AbstractChainMonitor } from '../abstract-chain-monitor';
 
 export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> {
-  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
-  async balanceChange({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @State([Chain.Polkadot, Chain.Kusama])
+  @Handler(H.BalanceChange)
+  async balanceChange({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
     const currentBalances = await this.provider.systemAccountBalance(this.uniqueAddresses, blockNumber);
     const previousBalances = await this.provider.systemAccountBalance(this.uniqueAddresses, blockNumber - 1);
 
@@ -18,10 +20,9 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
       const currentBalance = currentBalances[address];
       const previousBalance = previousBalances[address];
 
-      for (const { account, alerts, groupId } of this.getAccounts(H.BalanceChange, address)) {
+      for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
         const compareFunc = BalancesMonitor.comparisonFunctions[account.settings.changeComparison];
         const isFiring = compareFunc(currentBalance, previousBalance);
-
         const message = this.createMessage(
           [
             `Balance changed for ${this.formatAccountLink(account)}`,
@@ -30,23 +31,22 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
           ],
           { blockNumber },
         );
-
-        const key = `${account.ss58}:${groupId}:${H.BalanceChange}`;
-        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+        const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+        await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
       }
     }
   }
 
-  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
-  async balanceThreshold({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @State([Chain.Polkadot, Chain.Kusama])
+  @Handler(H.BalanceThreshold)
+  async balanceThreshold({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
     const currentBalances = await this.provider.systemAccountBalance(this.uniqueAddresses, blockNumber);
 
     for (const address of this.uniqueAddresses) {
       const currentBalance = currentBalances[address];
-      for (const { account, alerts, groupId } of this.getAccounts(H.BalanceThreshold, address)) {
+      for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
         if (!account.settings.threshold) continue;
         const isFiring = currentBalance < account.settings.threshold;
-
         const message = this.createMessage(
           [
             `Balance for ${this.formatAccountLink(account)} is below threshold.`,
@@ -55,20 +55,18 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
           ],
           { blockNumber },
         );
-
-        const key = `${account.ss58}:${groupId}:${H.BalanceThreshold}`;
-        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+        const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+        await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
       }
     }
   }
 
-  @EventHandler('balances.Transfer', [Chain.Polkadot, Chain.Kusama])
-  async balancesTransferIngress({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
+  @Event('balances.Transfer', [Chain.Polkadot, Chain.Kusama])
+  @Handler(H.TransferIngress)
+  async balancesTransferIngress({ eventRecord, blockNumber, handler }: EventHandlerParams<H>): Promise<void> {
     const [from, to, amount] = eventRecord.event.data.map(item => item.toString());
 
-    for (const { account, alerts } of this.getAccounts(H.TransferIngress, to)) {
-      this.logger.debug(`BalancesTransfer: ${from} -> ${to}: ${amount}`);
-
+    for (const { account, alerts, groupId } of this.getAccounts(handler, to)) {
       const message = this.createMessage(
         [
           `${this.formatAccountLink(account)} received ${this.formatBalance(amount)}`,
@@ -76,18 +74,17 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
         ],
         { blockNumber, phase: eventRecord.phase },
       );
-
-      await this.incidents.oneTimeIncident(message, alerts, blockNumber);
+      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+      await this.incidents.oneTimeIncident(message, alerts, key, blockNumber);
     }
   }
 
-  @EventHandler('balances.Transfer', [Chain.Polkadot, Chain.Kusama])
-  async balancesTransferEgress({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
+  @Event('balances.Transfer', [Chain.Polkadot, Chain.Kusama])
+  @Handler(H.TransferEgress)
+  async balancesTransferEgress({ eventRecord, blockNumber, handler }: EventHandlerParams<H>): Promise<void> {
     const [from, to, amount] = eventRecord.event.data.map(item => item.toString());
 
-    for (const { account, alerts } of this.getAccounts(H.TransferEgress, from)) {
-      this.logger.debug(`BalancesTransfer: ${from} -> ${to}: ${amount}`);
-
+    for (const { account, alerts, groupId } of this.getAccounts(handler, from)) {
       const message = this.createMessage(
         [
           `${this.formatAccountLink(account)} sent ${this.formatBalance(amount)}`,
@@ -95,8 +92,8 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
         ],
         { blockNumber, phase: eventRecord.phase },
       );
-
-      await this.incidents.oneTimeIncident(message, alerts, blockNumber);
+      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+      await this.incidents.oneTimeIncident(message, alerts, key, blockNumber);
     }
   }
 }

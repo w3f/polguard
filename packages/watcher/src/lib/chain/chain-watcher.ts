@@ -94,7 +94,7 @@ export class ChainWatcher extends AbstractWatcher<MonitorType, ChainMonitor<Moni
 
     // Apply every block handlers: process custom logic, usually storage calls
     for (const monitor of this.monitors) {
-      await monitor.processEveryBlock({ blockNumber });
+      await monitor.processState({ blockNumber });
     }
 
     // Apply event handlers: process event payload

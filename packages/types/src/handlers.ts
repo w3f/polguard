@@ -7,27 +7,31 @@ import { NodeInfo } from './telemetry';
 export type HandlerFunction<T> = (params: T) => Promise<void>;
 export type EventHandlerFunction = HandlerFunction<EventHandlerParams>;
 export type CallHandlerFunction = HandlerFunction<CallHandlerParams>;
-export type BlockHandlerFunction = HandlerFunction<EveryBlockHandlerParams>;
+export type BlockHandlerFunction = HandlerFunction<StateHandlerParams>;
 export type TelemetryHandlerFunction = HandlerFunction<TelemetryHandlerParams>;
 
-export interface TelemetryHandlerParams {
+export interface TelemetryHandlerParams<T extends HandlerType = HandlerType> {
   data: Record<string, NodeInfo[]>;
+  handler?: T;
 }
 
-export interface CallHandlerParams {
+export interface CallHandlerParams<T extends HandlerType = HandlerType> {
   call: CallBase<AnyTuple>;
   origin: string;
   blockNumber: number;
   extrinsicIndex: number;
+  handler?: T;
 }
 
-export interface EventHandlerParams {
+export interface EventHandlerParams<T extends HandlerType = HandlerType> {
   eventRecord: EventRecord;
   blockNumber: number;
+  handler?: T;
 }
 
-export interface EveryBlockHandlerParams {
+export interface StateHandlerParams<T extends HandlerType = HandlerType> {
   blockNumber: number;
+  handler?: T;
 }
 
 export type MonitorHandlerType = {

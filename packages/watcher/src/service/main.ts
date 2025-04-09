@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from './config/config.service';
 
 async function bootstrap() {
-  const httpPort = 3000;
   const logger = new Logger('Main');
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+  const serverConfig = configService.getServerConfig();
 
   process.on('SIGTERM', async () => {
     logger.log('SIGTERM signal received. Starting graceful shutdown...');
@@ -15,11 +17,11 @@ async function bootstrap() {
 
   logger.debug('Application created, starting initialization...');
   await app.init();
-  await app.listen(httpPort);
-  logger.log(`HTTP server is listening on port ${httpPort}`);
+  await app.listen(serverConfig.port, serverConfig.host);
+  logger.log(`HTTP server is listening on ${serverConfig.host}:${serverConfig.port}`);
 
   logger.log('Application initialized successfully');
-  logger.log('Microservice is ready to emit events');
+  logger.log('Microservice is ready to send incidents to the incident management service');
 }
 
 bootstrap().catch(error => {

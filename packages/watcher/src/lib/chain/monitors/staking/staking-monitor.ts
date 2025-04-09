@@ -1,63 +1,77 @@
 import '@polkadot/api-augment/polkadot';
-import { EveryBlockHandler, EventHandler, CallHandler } from '../../../common/decorators';
+import { Event, State, Handler, Call } from '../../../common/decorators';
 import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
 import {
   StakingHandlerType as H,
-  EveryBlockHandlerParams,
+  StateHandlerParams,
   CallHandlerParams,
   EventHandlerParams,
   MonitorType,
   Chain,
+  IncidentKey,
 } from '@w3f/monitoring-types';
 import { AbstractChainMonitor } from '../abstract-chain-monitor';
 
 export class StakingMonitor extends AbstractChainMonitor<MonitorType.Staking> {
-  @EventHandler('staking.SlashReported', [Chain.Polkadot, Chain.Kusama])
-  async slashReported({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
+  @Event('staking.SlashReported', [Chain.Polkadot, Chain.Kusama])
+  @Handler(H.SlashReported)
+  async slashReported({ eventRecord, blockNumber, handler }: EventHandlerParams<H>): Promise<void> {
     const validatorId = eventRecord.event.data[0].toString();
-    for (const { account, alerts } of this.getAccounts(H.SlashReported, validatorId)) {
+    for (const { account, alerts, groupId } of this.getAccounts(handler, validatorId)) {
       const message = this.createMessage([`Validator ${account.name} has been slashed.`], {
         blockNumber,
         phase: eventRecord.phase,
       });
 
-      await this.incidents.oneTimeIncident(message, alerts, blockNumber);
+      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+      await this.incidents.oneTimeIncident(message, alerts, key, blockNumber);
     }
   }
 
-  @EventHandler('staking.ValidatorPrefsSet', [Chain.Polkadot, Chain.Kusama])
-  async commissionChanged({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
+  @Event('staking.ValidatorPrefsSet', [Chain.Polkadot, Chain.Kusama])
+  @Handler(H.CommissionChanged)
+  async commissionChanged({ eventRecord, blockNumber, handler }: EventHandlerParams<H>): Promise<void> {
     const stash = eventRecord.event.data[0].toString();
     const prefs = eventRecord.event.data[1] as PalletStakingValidatorPrefs;
-    for (const { account, alerts } of this.getAccounts(H.CommissionChanged, stash)) {
+    for (const { account, alerts, groupId } of this.getAccounts(handler, stash)) {
       const message = this.createMessage(
         [`Commission change detected for ${this.formatAccountLink(account)}.`, `Commission: ${prefs.commission}`],
         { blockNumber, phase: eventRecord.phase },
       );
 
-      await this.incidents.oneTimeIncident(message, alerts, blockNumber);
+      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+      await this.incidents.oneTimeIncident(message, alerts, key, blockNumber);
     }
   }
 
-  @CallHandler(['staking.setPayee', 'staking.bond'], [Chain.Polkadot, Chain.Kusama])
-  async destinationChanged({ call, origin, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
+  @Call(['staking.setPayee', 'staking.bond'], [Chain.Polkadot, Chain.Kusama])
+  @Handler(H.DestinationChanged)
+  async destinationChanged({
+    call,
+    origin,
+    blockNumber,
+    extrinsicIndex,
+    handler,
+  }: CallHandlerParams<H>): Promise<void> {
     const payee = (call.method === 'setPayee' ? call.args[0] : call.args[1]) as PalletStakingRewardDestination;
     const destination = payee.isAccount ? payee.asAccount.toString() : payee.type;
-    for (const { account, alerts } of this.getAccounts(H.DestinationChanged, origin)) {
+    for (const { account, alerts, groupId } of this.getAccounts(handler, origin)) {
       const message = this.createMessage(
         [`Destination change detected for ${this.formatAccountLink(account)}.`, `Destination: ${destination}`],
         { blockNumber, extrinsicIndex },
       );
 
-      await this.incidents.oneTimeIncident(message, alerts, blockNumber);
+      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+      await this.incidents.oneTimeIncident(message, alerts, key, blockNumber);
     }
   }
 
-  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
-  async commissionUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @State([Chain.Polkadot, Chain.Kusama])
+  @Handler(H.CommissionUnexpected)
+  async commissionUnexpected({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
     const commissions = await this.provider.stakingValidatorsCommission(this.uniqueAddresses, blockNumber);
 
-    await this.forEachAccount(H.CommissionUnexpected, async ({ account, alerts, groupId }) => {
+    await this.forEachAccount(handler, async ({ account, alerts, groupId }) => {
       const commission = commissions[account.ss58];
       if (commission === null) return;
 
@@ -74,13 +88,14 @@ export class StakingMonitor extends AbstractChainMonitor<MonitorType.Staking> {
         { blockNumber },
       );
 
-      const key = `${account.ss58}:${groupId}:${H.CommissionUnexpected}`;
-      await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+      await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
     });
   }
 
-  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
-  async selfStakeUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @State([Chain.Polkadot, Chain.Kusama])
+  @Handler(H.SelfStakeUnexpected)
+  async selfStakeUnexpected({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
     // Note: The staking.ledger storage is still keyed by what was historically the controller address.
     // Although stash-controller separation is deprecated and staking.bonded now returns the same address,
     // we still need this two-step lookup process to access the ledger storage due to backward compatibility
@@ -95,7 +110,7 @@ export class StakingMonitor extends AbstractChainMonitor<MonitorType.Staking> {
       const stake = ledgers[bondedAddress];
       if (stake === null) continue;
 
-      for (const { account, alerts, groupId } of this.getAccounts(H.SelfStakeUnexpected, address)) {
+      for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
         const expectedStake = account.settings.selfStake;
         if (!expectedStake) continue;
 
@@ -111,18 +126,19 @@ export class StakingMonitor extends AbstractChainMonitor<MonitorType.Staking> {
           { blockNumber },
         );
 
-        const key = `${account.ss58}:${groupId}:${H.SelfStakeUnexpected}`;
-        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+        const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+        await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
       }
     }
   }
 
-  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
-  async validatorIntentionMissing({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @State([Chain.Polkadot, Chain.Kusama])
+  @Handler(H.ValidatorIntentionMissing)
+  async validatorIntentionMissing({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
     const bondedInfo = await this.provider.stakingBonded(this.uniqueAddresses, blockNumber);
     const commissions = await this.provider.stakingValidatorsCommission(this.uniqueAddresses, blockNumber);
 
-    await this.forEachAccount(H.ValidatorIntentionMissing, async ({ account, alerts, groupId }) => {
+    await this.forEachAccount(handler, async ({ account, alerts, groupId }) => {
       const isBonded = bondedInfo[account.ss58] !== null;
       const hasValidatorPrefs = commissions[account.ss58] !== null;
       const isFiring = !isBonded || !hasValidatorPrefs;
@@ -137,16 +153,17 @@ export class StakingMonitor extends AbstractChainMonitor<MonitorType.Staking> {
 
       const message = this.createMessage(messageLines, { blockNumber });
 
-      const key = `${account.ss58}:${groupId}:${H.ValidatorIntentionMissing}`;
-      await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+      await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
     });
   }
 
-  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
-  async destinationUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @State([Chain.Polkadot, Chain.Kusama])
+  @Handler(H.DestinationUnexpected)
+  async destinationUnexpected({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
     const payees = await this.provider.stakingPayee(this.uniqueAddresses, blockNumber);
 
-    await this.forEachAccount(H.DestinationUnexpected, async ({ account, alerts, groupId }) => {
+    await this.forEachAccount(handler, async ({ account, alerts, groupId }) => {
       const destination = payees[account.ss58];
       if (destination === null) return;
 
@@ -162,15 +179,16 @@ export class StakingMonitor extends AbstractChainMonitor<MonitorType.Staking> {
         { blockNumber },
       );
 
-      const key = `${account.ss58}:${groupId}:${H.DestinationUnexpected}`;
-      await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+      await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
     });
   }
 
-  @EveryBlockHandler([Chain.Polkadot, Chain.Kusama])
-  async activeSetPresense({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @State([Chain.Polkadot, Chain.Kusama])
+  @Handler(H.ActiveSetPresence)
+  async activeSetPresense({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
     const validators = await this.provider.sessionValidators(blockNumber);
-    await this.forEachAccount(H.ActiveSetPresence, async ({ account, alerts, groupId }) => {
+    await this.forEachAccount(handler, async ({ account, alerts, groupId }) => {
       const isFiring = !validators[account.ss58];
 
       const message = this.createMessage([
@@ -178,8 +196,8 @@ export class StakingMonitor extends AbstractChainMonitor<MonitorType.Staking> {
         `Era: ${await this.provider.stakingActiveEra(blockNumber)}`,
       ]);
 
-      const key = `${account.ss58}:${groupId}:${H.ActiveSetPresence}`;
-      await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+      await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
     });
   }
 }

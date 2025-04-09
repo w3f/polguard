@@ -1,15 +1,17 @@
-import { MonitorType, EventHandlerParams, Chain } from '@w3f/monitoring-types';
+import { MonitorType, EventHandlerParams, Chain, GovernanceHandlerType as H } from '@w3f/monitoring-types';
 import { AbstractChainMonitor } from '../abstract-chain-monitor';
-import { EventHandler } from '../../../common/decorators';
+import { Event, Handler } from '../../../common/decorators';
 
 export class GovernanceMonitor extends AbstractChainMonitor<MonitorType.Governance> {
-  @EventHandler('referenda.Submitted', [Chain.Polkadot, Chain.Kusama])
-  async referendaSubmitted({}: EventHandlerParams): Promise<void> {
+  @Event('referenda.Submitted', [Chain.Polkadot, Chain.Kusama])
+  @Handler(H.ReferendaSubmitted)
+  async referendaSubmitted({ }: EventHandlerParams<H>): Promise<void> {
     // TODO: Do we need persistence?
   }
 
-  @EventHandler('convictionVoting.Voted', [Chain.Polkadot, Chain.Kusama])
-  async convictionVoted({}: EventHandlerParams): Promise<void> {
+  @Event('convictionVoting.Voted', [Chain.Polkadot, Chain.Kusama])
+  @Handler(H.ConvictionVoted)
+  async convictionVoted({ }: EventHandlerParams<H>): Promise<void> {
     // TODO: polkadot-sdk currently doesn't have referenda id in the event. PR/issue to polkadot-sdk is required.
     // Current Event: Voted { who: T::AccountId, vote: AccountVote<BalanceOf<T, I>> },
   }

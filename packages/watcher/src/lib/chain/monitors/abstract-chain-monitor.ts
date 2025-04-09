@@ -3,9 +3,8 @@ import {
   ChainDataProvider,
   CallHandlerParams,
   EventHandlerParams,
-  EveryBlockHandlerParams,
+  StateHandlerParams,
   MonitorType,
-  Message,
   AccountId,
   HandlerExecutionType,
   ChainMonitor,
@@ -35,7 +34,7 @@ export abstract class AbstractChainMonitor<T extends MonitorType>
     return {
       eventHandlers: { type: 'triggered' }, // Executes on specific events
       callHandlers: { type: 'triggered' }, // Executes on specific calls
-      blockHandlers: { type: 'periodic' }, // Executes on every block
+      stateHandlers: { type: 'periodic' }, // Executes on every block
     };
   }
 
@@ -73,14 +72,14 @@ export abstract class AbstractChainMonitor<T extends MonitorType>
   }
 
   /**
-   * Process periodic block checks using registered handlers
+   * Process periodic state checks using registered handlers
    */
-  async processEveryBlock(params: EveryBlockHandlerParams): Promise<void> {
-    if (!this.handlers.has('blockHandlers')) {
+  async processState(params: StateHandlerParams): Promise<void> {
+    if (!this.handlers.has('stateHandlers')) {
       return;
     }
 
-    const handlers = this.handlers.get('blockHandlers') as Set<BlockHandlerFunction>;
+    const handlers = this.handlers.get('stateHandlers') as Set<BlockHandlerFunction>;
     for (const handler of handlers) {
       await handler.call(this, params);
     }
@@ -130,7 +129,7 @@ export abstract class AbstractChainMonitor<T extends MonitorType>
       extrinsicIndex?: number;
       address?: string;
     },
-  ): Message {
+  ): string[] {
     if (options) {
       rows.push(`Block: ${options.blockNumber}`);
       if (options.phase !== undefined) {
@@ -140,7 +139,7 @@ export abstract class AbstractChainMonitor<T extends MonitorType>
       }
     }
     rows.push(`Network: ${this.chainProps.chain}`);
-    return { title: rows.shift(), details: rows };
+    return rows;
   }
 
   /**

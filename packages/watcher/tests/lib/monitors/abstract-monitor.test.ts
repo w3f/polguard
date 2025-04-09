@@ -1,30 +1,35 @@
 import { AbstractChainMonitor } from '@lib/chain/monitors/abstract-chain-monitor';
 import { Chain, MonitorType, StakingHandlerType as H } from '@w3f/monitoring-types';
 import { MonitorTestSuite } from './monitor-test-suite';
-import { EventHandler, CallHandler, EveryBlockHandler } from '@lib/common/decorators';
+import { Event, Call, State, Handler } from '@lib/common/decorators';
 
 class TestChainMonitor extends AbstractChainMonitor<MonitorType.Staking> {
-  @EventHandler('test.event', [Chain.Polkadot])
-  async testEventHandler({ eventRecord, blockNumber }) {
+  @Event('test.event', [Chain.Polkadot])
+  @Handler(H.SlashReported)
+  async testEventHandler({ eventRecord, blockNumber, handler }) {
     const address = eventRecord.event.data[0].toString();
-    for (const { account, alerts } of this.getAccounts(H.SlashReported, address)) {
-      await this.incidents.oneTimeIncident({ title: 'test', details: [] }, alerts, blockNumber);
+    for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
+      const key = { wallet: account.ss58, groupId, handler };
+      await this.incidents.oneTimeIncident(['test'], alerts, key, blockNumber);
     }
   }
 
-  @CallHandler('test.call', [Chain.Polkadot])
-  async testCallHandler({ call, origin, blockNumber }) {
-    for (const { account, alerts } of this.getAccounts(H.DestinationChanged, origin)) {
-      await this.incidents.oneTimeIncident({ title: 'test', details: [] }, alerts, blockNumber);
+  @Call('test.call', [Chain.Polkadot])
+  @Handler(H.DestinationChanged)
+  async testCallHandler({ call, origin, blockNumber, handler }) {
+    for (const { account, alerts, groupId } of this.getAccounts(handler, origin)) {
+      const key = { wallet: account.ss58, groupId, handler };
+      await this.incidents.oneTimeIncident(['test'], alerts, key, blockNumber);
     }
   }
 
-  @EveryBlockHandler([Chain.Polkadot])
-  async testBlockHandler({ blockNumber }) {
+  @State([Chain.Polkadot])
+  @Handler(H.CommissionUnexpected)
+  async testBlockHandler({ blockNumber, handler }) {
     for (const address of this.uniqueAddresses) {
-      for (const { account, alerts, groupId } of this.getAccounts(H.CommissionUnexpected, address)) {
-        const key = `${account.ss58}:${groupId}:${H.CommissionUnexpected}`;
-        await this.incidents.ongoingIncident({ title: 'test', details: [] }, alerts, key, true, blockNumber);
+      for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
+        const key = { wallet: account.ss58, groupId, handler };
+        await this.incidents.ongoingIncident(['test'], alerts, true, key, blockNumber);
       }
     }
   }
@@ -65,18 +70,18 @@ describe('AbstractChainMonitor', () => {
       expect(handlerDefs).toEqual({
         eventHandlers: { type: 'triggered' },
         callHandlers: { type: 'triggered' },
-        blockHandlers: { type: 'periodic' }
+        stateHandlers: { type: 'periodic' }
       });
 
       expect(monitor['handlers'].get('eventHandlers')).toBeInstanceOf(Map);
       expect(monitor['handlers'].get('callHandlers')).toBeInstanceOf(Map);
-      expect(monitor['handlers'].get('blockHandlers')).toBeInstanceOf(Set);
+      expect(monitor['handlers'].get('stateHandlers')).toBeInstanceOf(Set);
     });
 
     it('should register handlers for supported chains', () => {
       expect(monitor['handlers'].get('eventHandlers').size).toBe(1);
       expect(monitor['handlers'].get('callHandlers').size).toBe(1);
-      expect(monitor['handlers'].get('blockHandlers').size).toBe(1);
+      expect(monitor['handlers'].get('stateHandlers').size).toBe(1);
     });
 
     it('should not register handlers for unsupported chains', () => {
@@ -103,7 +108,7 @@ describe('AbstractChainMonitor', () => {
       
       expect(monitor['handlers'].get('eventHandlers').size).toBe(0);
       expect(monitor['handlers'].get('callHandlers').size).toBe(0);
-      expect(monitor['handlers'].get('blockHandlers').size).toBe(0);
+      expect(monitor['handlers'].get('stateHandlers').size).toBe(0);
     });
   });
 
@@ -146,7 +151,7 @@ describe('AbstractChainMonitor', () => {
       jest.clearAllMocks();
 
       // This handler should be filtered out
-      await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+      await monitor.processState({ blockNumber: TEST_BLOCK });
       expect(suite.mockIncidents.ongoingIncident).not.toHaveBeenCalled();
     });
 
@@ -179,7 +184,7 @@ describe('AbstractChainMonitor', () => {
       expect(suite.mockIncidents.oneTimeIncident).not.toHaveBeenCalled();
 
       // This handler should not be filtered out
-      await monitor.processEveryBlock({ blockNumber: TEST_BLOCK });
+      await monitor.processState({ blockNumber: TEST_BLOCK });
       expect(suite.mockIncidents.ongoingIncident).toHaveBeenCalled();
     });
 

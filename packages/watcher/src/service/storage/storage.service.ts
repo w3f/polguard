@@ -44,6 +44,11 @@ export class StorageService implements KeyValueStorageClient {
     await this.client.del(key);
   }
 
+  async exists(key: string): Promise<boolean> {
+    const exists = await this.client.exists(key);
+    return !!exists;
+  }
+
   async keys(pattern: string): Promise<string[]> {
     return await this.client.keys(pattern);
   }

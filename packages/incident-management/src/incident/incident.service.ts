@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nest
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Incident } from '../database/incident.entity';
-import { CreateIncidentDto, GetIncidentsDto } from './dto';
+import { CreateIncidentDto, GetIncidentsDto, ResolveIncidentDto } from './dto';
 import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
@@ -70,8 +70,8 @@ export class IncidentService {
       queryBuilder.andWhere('incident.groupId = :groupId', { groupId: filters.groupId });
     }
 
-    if (filters.handlerName) {
-      queryBuilder.andWhere('incident.handlerName = :handlerName', { handlerName: filters.handlerName });
+    if (filters.handler) {
+      queryBuilder.andWhere('incident.handler = :handler', { handler: filters.handler });
     }
 
     if (filters.channelId) {
@@ -86,14 +86,14 @@ export class IncidentService {
   }
 
   async createIncident(createIncidentDto: CreateIncidentDto): Promise<Incident> {
-    // Check for existing unresolved incidents with the same identifier (chain+groupId+handlerName+wallet)
+    // Check for existing unresolved incidents with the same identifier (chain+groupId+handler+wallet)
     // to ensure idempotency. Skip for one-time incidents (events, extrinsics) that are immediately resolved.
     if (!createIncidentDto.resolved) {
       const existingIncident = await this.incidentRepository.findOne({
         where: {
           chain: createIncidentDto.chain,
           groupId: createIncidentDto.groupId,
-          handlerName: createIncidentDto.handlerName,
+          handler: createIncidentDto.handler,
           wallet: createIncidentDto.wallet,
           resolved: false,
         },
@@ -144,7 +144,7 @@ export class IncidentService {
     return this.incidentRepository.save(incident);
   }
 
-  async resolveIncident(id: number, resolvedMessage: string): Promise<Incident> {
+  async resolveIncidentById(id: number, resolvedMessage?: string): Promise<Incident> {
     const incident = await this.incidentRepository.findOne({ where: { id } });
 
     if (!incident) {
@@ -159,7 +159,44 @@ export class IncidentService {
     // Update resolution information
     incident.resolved = true;
     incident.resolvedAt = new Date();
-    incident.resolvedMessage = resolvedMessage;
+    if (resolvedMessage) {
+      incident.resolvedMessage = resolvedMessage;
+    }
+
+    const savedIncident = await this.incidentRepository.save(incident);
+
+    // Send notification for resolved incident
+    this.notificationService.sendResolvedNotification(savedIncident).catch(error => {
+      this.logger.error(`Failed to send resolution notification for incident ${savedIncident.id}`, error);
+    });
+
+    return savedIncident;
+  }
+
+  async resolveIncident(resolveIncidentDto: ResolveIncidentDto): Promise<Incident> {
+    const { wallet, handler, chain, groupId, resolvedMessage } = resolveIncidentDto;
+
+    // Find the incident using the provided fields
+    const incident = await this.incidentRepository.findOne({
+      where: {
+        chain,
+        groupId,
+        handler,
+        wallet,
+        resolved: false,
+      },
+    });
+
+    if (!incident) {
+      throw new NotFoundException(`Incident not found for the provided criteria`);
+    }
+
+    // Update resolution information
+    incident.resolved = true;
+    incident.resolvedAt = new Date();
+    if (resolvedMessage) {
+      incident.resolvedMessage = resolvedMessage;
+    }
 
     const savedIncident = await this.incidentRepository.save(incident);
 
@@ -202,14 +239,17 @@ export class IncidentService {
     // Process all incidents
     for (const incident of orphanedIncidents) {
       try {
-        await this.resolveIncident(incident.id, 'Auto-resolved: Account no longer present in monitoring configuration');
+        await this.resolveIncidentById(
+          incident.id,
+          'Auto-resolved: Account no longer present in monitoring configuration',
+        );
         resolvedCount++;
       } catch (error) {
         this.logger.error(`Failed to auto-resolve incident ${incident.id}`, error);
       }
     }
 
-    // TODO: In the future, consider handlerName in addition to wallet address
+    // TODO: In the future, consider handler in addition to wallet address
     // when determining if an incident should be auto-resolved
 
     return resolvedCount;

@@ -9,9 +9,8 @@ export class CreateIncidentDto {
   @IsEnum(Chain)
   chain: Chain;
 
-  @IsOptional()
   @IsNumber()
-  blockNumber?: number;
+  blockNumber: number;
 
   @IsString()
   @IsNotEmpty()
@@ -23,7 +22,7 @@ export class CreateIncidentDto {
 
   @IsString()
   @IsNotEmpty()
-  handlerName: string;
+  handler: string;
 
   @IsString()
   @IsNotEmpty()

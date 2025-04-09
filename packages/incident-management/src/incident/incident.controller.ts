@@ -29,7 +29,7 @@ export class IncidentController {
   }
 
   @Post(':id/acknowledge')
-  async acknowledgeIncident(
+  async acknowledgeIncidentById(
     @Param('id') id: number,
     @Body() acknowledgeIncidentDto: AcknowledgeIncidentDto,
   ): Promise<IncidentResponseDto> {
@@ -43,12 +43,19 @@ export class IncidentController {
   }
 
   @Post(':id/resolve')
-  async resolveIncident(
+  async resolveIncidentById(
     @Param('id') id: number,
-    @Body() resolveIncidentDto: ResolveIncidentDto,
+    @Body('resolvedMessage') resolvedMessage?: string,
   ): Promise<IncidentResponseDto> {
-    this.logger.debug(`Resolving incident ${id}`);
-    const incident = await this.incidentService.resolveIncident(id, resolveIncidentDto.resolvedMessage);
+    this.logger.debug(`Resolving incident ${id} by ID`);
+    const incident = await this.incidentService.resolveIncidentById(id, resolvedMessage);
+    return incident;
+  }
+
+  @Post('resolve')
+  async resolveIncident(@Body() resolveIncidentDto: ResolveIncidentDto): Promise<IncidentResponseDto> {
+    this.logger.debug(`Resolving incident for ${resolveIncidentDto.wallet}`);
+    const incident = await this.incidentService.resolveIncident(resolveIncidentDto);
     return incident;
   }
 }

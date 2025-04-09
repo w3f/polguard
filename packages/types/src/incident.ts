@@ -21,27 +21,46 @@ export interface Message {
   details: string[];
 }
 
-export interface ActiveIncidentState {
-  incidentKey: string;
-  consecutiveFiring: number;
-  consecutiveNormal: number;
-  lastEmitted: number;
-  lastEmittedISOTime: string;
-  message: Message;
+export interface CreateIncidentDto {
+  message: string;
+  chain: Chain;
+  blockNumber: number;
+  wallet: string;
+  groupId: string;
+  handler: string;
+  channelId: string;
+  messengerType: MessengerType;
+  ackRequired?: boolean;
+  repeatIntervalHours?: number;
+  resolved?: boolean;
+}
+
+export interface ResolveIncidentDto {
+  chain: Chain;
+  groupId: string;
+  handler: string;
+  wallet: string;
+  resolvedMessage?: string;
+}
+
+export interface IncidentKey {
+  groupId: string;
+  wallet: string;
+  handler: string;
 }
 
 export interface IncidentHandlerClient {
   oneTimeIncident(
-    message: Message, 
+    message: string[], 
     alerts: AlertSettings, 
-    blockNumber?: number
+    incidentKey: IncidentKey,
+    blockNumber: number
   ): Promise<void>;
   ongoingIncident(
-    message: Message,
+    message: string[],
     alerts: AlertSettings,
-    key: string,
     isFiring: boolean,
-    blockNumber?: number,
-    threshold?: number,
+    incidentKey: IncidentKey,
+    blockNumber: number
   ): Promise<void>;
 }

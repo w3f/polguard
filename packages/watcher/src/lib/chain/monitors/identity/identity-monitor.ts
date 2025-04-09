@@ -1,17 +1,19 @@
-import { EventHandler, EveryBlockHandler } from '../../../common/decorators';
+import { Event, State, Handler } from '../../../common/decorators';
 import {
   IdentityHandlerType as H,
-  EveryBlockHandlerParams,
+  StateHandlerParams,
   MonitorType,
   Chain,
   EventHandlerParams,
   IDENTITY_FIELDS,
+  IncidentKey,
 } from '@w3f/monitoring-types';
 import { AbstractChainMonitor } from '../abstract-chain-monitor';
 
 export class IdentityMonitor extends AbstractChainMonitor<MonitorType.Identity> {
-  @EveryBlockHandler([Chain.PeoplePolkadot, Chain.PeopleKusama])
-  async identityUnexpected({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @State([Chain.PeoplePolkadot, Chain.PeopleKusama])
+  @Handler(H.IdentityUnexpected)
+  async identityUnexpected({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
     const addressToParent = await this.getAddressToParent(blockNumber);
     const parents = Array.from(new Set(addressToParent.values()));
     const identities = await this.provider.identityOf(parents, blockNumber);
@@ -20,7 +22,7 @@ export class IdentityMonitor extends AbstractChainMonitor<MonitorType.Identity> 
       const parent = addressToParent.get(address);
       const identity = identities[parent];
 
-      for (const { account, alerts, groupId } of this.getAccounts(H.IdentityUnexpected, address)) {
+      for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
         const mismatchedFields = IDENTITY_FIELDS.filter(field => {
           const expectedValue = account.settings[field];
           if (!expectedValue) return false;
@@ -36,24 +38,25 @@ export class IdentityMonitor extends AbstractChainMonitor<MonitorType.Identity> 
 
         const message = this.createMessage(messageLines, { blockNumber });
 
-        const key = `${account.ss58}:${groupId}:${H.IdentityUnexpected}`;
-        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+        const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+        await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
       }
     }
   }
 
-  @EventHandler(
+  @Event(
     ['identity.IdentitySet', 'identity.IdentityCleared', 'identity.IdentityKilled'],
     [Chain.PeoplePolkadot, Chain.PeopleKusama],
   )
-  async identityChanged({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
+  @Handler(H.IdentityChanged)
+  async identityChanged({ eventRecord, blockNumber, handler }: EventHandlerParams<H>): Promise<void> {
     const parent = eventRecord.event.data[0].toString();
     const addressToParent = await this.getAddressToParent(blockNumber);
     const address = this.findAddressByParent(parent, addressToParent);
 
     if (!address) return;
 
-    for (const { account, alerts } of this.getAccounts(H.IdentityChanged, address)) {
+    for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
       const previousIdentity = await this.provider.identityOf([parent], blockNumber - 1);
       const currentIdentity = await this.provider.identityOf([parent], blockNumber);
       const previous = previousIdentity[parent];
@@ -80,12 +83,14 @@ export class IdentityMonitor extends AbstractChainMonitor<MonitorType.Identity> 
         phase: eventRecord.phase,
       });
 
-      await this.incidents.oneTimeIncident(message, alerts, blockNumber);
+      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+      await this.incidents.oneTimeIncident(message, alerts, key, blockNumber);
     }
   }
 
-  @EveryBlockHandler([Chain.PeoplePolkadot, Chain.PeopleKusama])
-  async identityMissing({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @State([Chain.PeoplePolkadot, Chain.PeopleKusama])
+  @Handler(H.IdentityMissing)
+  async identityMissing({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
     const addressToParent = await this.getAddressToParent(blockNumber);
     const parents = Array.from(new Set(addressToParent.values()));
     const identities = await this.provider.identityOf(parents, blockNumber);
@@ -95,18 +100,19 @@ export class IdentityMonitor extends AbstractChainMonitor<MonitorType.Identity> 
       const identity = identities[parent];
       const isFiring = !identity;
 
-      for (const { account, alerts, groupId } of this.getAccounts(H.IdentityMissing, address)) {
+      for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
         const messageLines = [`Identity is missing for ${this.formatAccountLink(account)}.`];
 
         const message = this.createMessage(messageLines, { blockNumber });
-        const key = `${account.ss58}:${groupId}:${H.IdentityMissing}`;
-        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+        const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+        await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
       }
     }
   }
 
-  @EveryBlockHandler([Chain.PeoplePolkadot, Chain.PeopleKusama])
-  async identityFieldsMissing({ blockNumber }: EveryBlockHandlerParams): Promise<void> {
+  @State([Chain.PeoplePolkadot, Chain.PeopleKusama])
+  @Handler(H.IdentityFieldsMissing)
+  async identityFieldsMissing({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
     // TODO: Make requiredFields configurable
     const requiredFields = ['email', 'matrix'];
     const addressToParent = await this.getAddressToParent(blockNumber);
@@ -118,7 +124,7 @@ export class IdentityMonitor extends AbstractChainMonitor<MonitorType.Identity> 
       const identity = identities[parent];
       if (!identity) continue;
 
-      for (const { account, alerts, groupId } of this.getAccounts(H.IdentityFieldsMissing, address)) {
+      for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
         const missingFields = requiredFields.filter(field => !identity[field]);
         const isFiring = missingFields.length > 0;
 
@@ -128,8 +134,8 @@ export class IdentityMonitor extends AbstractChainMonitor<MonitorType.Identity> 
         ];
 
         const message = this.createMessage(messageLines, { blockNumber });
-        const key = `${account.ss58}:${groupId}:${H.IdentityFieldsMissing}`;
-        await this.incidents.ongoingIncident(message, alerts, key, isFiring, blockNumber);
+        const key: IncidentKey = { wallet: account.ss58, groupId, handler };
+        await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
       }
     }
   }

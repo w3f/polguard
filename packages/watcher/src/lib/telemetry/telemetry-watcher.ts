@@ -1,3 +1,5 @@
+// TODO: The whole Telemetry feature is going to be removed in the future
+
 import {
   Logger,
   MonitoringGroup,

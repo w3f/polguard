@@ -1,7 +1,7 @@
 import { ChainProperties, ConfigAccountSettings, Logger, IdentityField } from '.';
 import { Chain, ComparisonType, MonitorType, PolkadotClientImpl } from './constants';
 import { AlertSettings, IncidentHandlerClient } from './incident';
-import { CallHandlerParams, EventHandlerParams, EveryBlockHandlerParams, MonitorHandlerType, TelemetryHandlerParams } from './handlers';
+import { CallHandlerParams, EventHandlerParams, StateHandlerParams, MonitorHandlerType, TelemetryHandlerParams } from './handlers';
 import { DataProvider } from './data-provider';
 
 /**
@@ -49,7 +49,7 @@ export interface TelemetryMonitor<T extends MonitorType> extends Monitor<T> {
  * Chain-specific monitor interface
  */
 export interface ChainMonitor<T extends MonitorType> extends Monitor<T> {
-  processEveryBlock(params: EveryBlockHandlerParams): Promise<void>;
+  processState(params: StateHandlerParams): Promise<void>;
   processEvent(params: EventHandlerParams): Promise<void>;
   processCall(params: CallHandlerParams): Promise<void>;
 }

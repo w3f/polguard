@@ -19,7 +19,7 @@ function ensureHandlerMap<T>(target: any, mapName: string): Map<string, T> {
 /**
  * Decorates methods to handle specific chain events
  */
-export function EventHandler(eventNames: string | string[], chains: Chain[]) {
+export function Event(eventNames: string | string[], chains: Chain[]) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     const handlers = ensureHandlerMap<HandlerMetadata>(target, 'eventHandlers');
     const names = Array.isArray(eventNames) ? eventNames : [eventNames];
@@ -37,7 +37,7 @@ export function EventHandler(eventNames: string | string[], chains: Chain[]) {
 /**
  * Decorates methods to handle specific chain calls
  */
-export function CallHandler(callNames: string | string[], chains: Chain[]) {
+export function Call(callNames: string | string[], chains: Chain[]) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     const handlers = ensureHandlerMap<HandlerMetadata>(target, 'callHandlers');
     const names = Array.isArray(callNames) ? callNames : [callNames];
@@ -53,11 +53,11 @@ export function CallHandler(callNames: string | string[], chains: Chain[]) {
 }
 
 /**
- * Decorates methods to execute on every block
+ * Decorates methods to execute on every block for state monitoring
  */
-export function EveryBlockHandler(chains: Chain[]) {
+export function State(chains: Chain[]) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    const handlers = ensureHandlerMap<HandlerMetadata>(target, 'blockHandlers');
+    const handlers = ensureHandlerMap<HandlerMetadata>(target, 'stateHandlers');
     handlers.set(propertyKey, {
       method: propertyKey,
       chains,
@@ -67,9 +67,28 @@ export function EveryBlockHandler(chains: Chain[]) {
 }
 
 /**
+ * Decorates methods to specify their handler type
+ * @param handler The handler type enum value
+ */
+export function Handler(handler: any) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = function (...args: any[]) {
+      const params = args[0] || {};
+      params.handler = handler;
+      // Call the original method with the enhanced params
+      return originalMethod.call(this, params);
+    };
+
+    return descriptor;
+  };
+}
+
+/**
  * Decorates methods to execute on telemetry data
  */
-export function TelemetryHandler(chains: Chain[]) {
+export function Telemetry(chains: Chain[]) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     const handlers = ensureHandlerMap<HandlerMetadata>(target, 'telemetryHandlers');
     handlers.set(propertyKey, {

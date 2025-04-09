@@ -65,7 +65,7 @@ export class MonitorTestSuite {
 
   createMonitoringGroup(overrides: Partial<MonitoringGroup> = {}): MonitoringGroup {
     return {
-      name: 'Test Group',
+      id: 'test-group',
       chain: Chain.Polkadot,
       alerts: this.createDefaultAlerts(),
       accounts: [],
@@ -206,21 +206,22 @@ export class MonitorTestSuite {
 
   expectOngoingIncident(titleFragment: string, blockNumber: number, isFiring: boolean) {
     expect(this.mockIncidents.ongoingIncident).toHaveBeenCalledWith(
-      expect.objectContaining({ 
-        title: expect.stringContaining(titleFragment),
-      }),
+      expect.arrayContaining([
+        expect.stringContaining(titleFragment)
+      ]),
       expect.any(Object),
-      expect.any(String),
       isFiring,
+      expect.any(Object),
       blockNumber
     );
   }
 
   expectOneTimeIncident(titleFragment: string, blockNumber: number) {
     expect(this.mockIncidents.oneTimeIncident).toHaveBeenCalledWith(
-      expect.objectContaining({ 
-        title: expect.stringContaining(titleFragment),
-      }),
+      expect.arrayContaining([
+        expect.stringContaining(titleFragment)
+      ]),
+      expect.any(Object),
       expect.any(Object),
       blockNumber
     );

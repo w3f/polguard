@@ -1,143 +1,130 @@
-import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
 import {
   Logger,
-  IncidentEvent,
   AlertSettings,
-  EventEmitterClient,
-  Message,
   DataStoreClient,
   IncidentHandlerClient,
   Chain,
-  MessageType,
-  MessengerType,
+  IncidentApiClient,
+  CreateIncidentDto,
+  ResolveIncidentDto,
+  IncidentKey,
 } from '@w3f/monitoring-types';
-import { MessageStyler } from './message-styler';
 
 /**
- * IncidentHandler is responsible for managing and emitting incident events.
+ * IncidentHandler is responsible for managing and sending incidents to the incident management service.
  * It handles both ongoing incidents and one-time incidents.
  *
  * Key features:
- * - Tracks the state of ongoing incidents.
- * - Uses a threshold mechanism to determine when to emit or resolve incidents.
- * - Supports periodic re-emission of unresolved incidents.
+ * - Uses a simple exists/doesn't exist approach to track incident state.
+ * - Creates an incident when a condition starts firing (and wasn't firing before).
+ * - Resolves an incident when a condition stops firing.
  * - Handles one-time incidents.
- *
- * For ongoing incidents:
- * - An incident is emitted when it has been firing for a specified number of consecutive iterations (threshold).
- * - An incident is resolved when it has not been firing for the same number of consecutive iterations.
- * - Unresolved incidents are re-emitted at a specified interval.
  */
 export class IncidentHandler implements IncidentHandlerClient {
-  private readonly THRESHOLD = 3;
-  private readonly DEFAULT_REPEAT_INTERVAL = 24 * 3600 * 1000; // 24 hours
-
   constructor(
     private logger: Logger,
     private store: DataStoreClient,
-    private eventEmitter: EventEmitterClient,
+    private incidentApi: IncidentApiClient,
     private chain: Chain,
   ) {}
 
   async ongoingIncident(
-    message: Message,
+    message: string[],
     alerts: AlertSettings,
-    incidentKey: string,
     isFiring: boolean,
-    blockNumber?: number,
-    threshold?: number,
+    incidentKey: IncidentKey,
+    blockNumber: number,
   ): Promise<void> {
-    const firingThreshold = threshold ?? this.THRESHOLD;
-    const incidentId = this.getIncidentId(incidentKey);
-    let state = await this.store.getOngoingIncident(incidentId);
-    if (!isFiring && !state) {
-      return;
+    const incidentKeyStr = `inc:${incidentKey.wallet}:${incidentKey.groupId}:${incidentKey.handler}`;
+    const incidentId = this.getIncidentId(incidentKeyStr);
+
+    // Check if an incident is already active
+    const exists = await this.store.exists(incidentId);
+
+    if (isFiring && !exists) {
+      // Create new incident if firing and no active incident
+      await this.createIncident(message, alerts, incidentKey, blockNumber, false);
+
+      // Just store a simple value "1" to indicate it's active
+      await this.store.set(incidentId, 1);
+    } else if (!isFiring && exists) {
+      // Resolve incident if not firing and incident is active
+      await this.resolveIncident(incidentKey);
+      await this.store.del(incidentId);
     }
-    if (!state) {
-      state = {
-        incidentKey,
-        consecutiveFiring: 0,
-        consecutiveNormal: 0,
-        lastEmitted: 0,
-        lastEmittedISOTime: new Date(0).toISOString(),
-        message,
-      };
-    }
-
-    if (isFiring) {
-      const currentTimestamp = Date.now();
-      state.consecutiveFiring++;
-      state.consecutiveNormal = 0;
-
-      if (state.consecutiveFiring >= firingThreshold) {
-        let repeatInterval = this.DEFAULT_REPEAT_INTERVAL;
-
-        if (alerts.repeatIntervalHours !== undefined) {
-          repeatInterval = alerts.repeatIntervalHours * 3600 * 1000;
-        }
-
-        const shouldEmit = state.lastEmitted === 0 || currentTimestamp - state.lastEmitted >= repeatInterval;
-
-        if (shouldEmit) {
-          await this.emitIncident(incidentId, message, alerts, MessageType.Firing, blockNumber);
-          state.lastEmitted = currentTimestamp;
-          state.lastEmittedISOTime = new Date(currentTimestamp).toISOString();
-          state.message = message;
-        }
-      }
-    } else {
-      // If we have never reached firing threshold, clean the state
-      if (state.lastEmitted === 0) {
-        await this.store.deleteOngoingIncident(incidentId);
-        return;
-      }
-
-      state.consecutiveNormal++;
-      state.consecutiveFiring = 0;
-
-      if (state.consecutiveNormal >= this.THRESHOLD) {
-        await this.emitIncident(incidentId, message, alerts, MessageType.Resolved, blockNumber);
-        await this.store.deleteOngoingIncident(incidentId);
-        return;
-      }
-    }
-    await this.store.setOngoingIncident(incidentId, state);
   }
 
-  async oneTimeIncident(message: Message, alerts: AlertSettings, blockNumber?: number): Promise<void> {
-    const incidentId = this.getIncidentId();
-    await this.emitIncident(incidentId, message, alerts, MessageType.OneTime, blockNumber);
-  }
-
-  private async emitIncident(
-    id: string,
-    message: Message,
+  async oneTimeIncident(
+    message: string[],
     alerts: AlertSettings,
-    messageType: MessageType,
-    blockNumber?: number,
+    incidentKey: IncidentKey,
+    blockNumber: number,
   ): Promise<void> {
-    const styledMessage = MessageStyler.applyStyle(message, messageType, MessengerType.Matrix);
-
-    const incident: IncidentEvent = {
-      id,
-      chain: this.chain,
-      message: styledMessage,
+    await this.createIncident(
+      message,
       alerts,
+      incidentKey,
       blockNumber,
-      timestamp: Date.now(),
+      true, // One-time incidents are resolved immediately
+    );
+  }
+
+  private async createIncident(
+    message: string[],
+    alerts: AlertSettings,
+    incidentKey: IncidentKey,
+    blockNumber: number,
+    resolved: boolean = false,
+  ): Promise<void> {
+    // Create the incident DTO according to CreateIncidentDto
+    const createIncidentDto: CreateIncidentDto = {
+      message: message.join('\n'),
+      chain: this.chain,
+      blockNumber,
+      // Required fields
+      wallet: incidentKey.wallet,
+      groupId: incidentKey.groupId,
+      handler: incidentKey.handler,
+      // From alerts
+      channelId: alerts.targets[0],
+      messengerType: alerts.messengerType,
+      // Optional fields
+      ackRequired: alerts.acknowledgement || false,
+      repeatIntervalHours: alerts.repeatIntervalHours,
+      resolved: resolved,
     };
 
-    this.logger.debug(`Emitting incident: ${JSON.stringify(incident)}`);
+    this.logger.debug(`Creating incident: ${JSON.stringify(createIncidentDto)}`);
 
-    const eventName = messageType === MessageType.Resolved ? 'incident.resolved' : 'incident.created';
-    await this.eventEmitter.emit(eventName, incident);
+    try {
+      await this.incidentApi.createIncident(createIncidentDto);
+    } catch (error) {
+      this.logger.error(`Failed to create incident: ${error.message}`);
+      throw new Error(`Failed to create incident: ${error.message}`);
+    }
   }
 
-  private getIncidentId(incidentKey?: string): string {
-    if (incidentKey) {
-      return createHash('md5').update(incidentKey).digest('hex').substring(0, 16);
+  private async resolveIncident(incidentKey: IncidentKey): Promise<void> {
+    const resolveIncidentDto: ResolveIncidentDto = {
+      chain: this.chain,
+      groupId: incidentKey.groupId,
+      handler: incidentKey.handler,
+      wallet: incidentKey.wallet,
+    };
+
+    this.logger.debug(`Resolving incident for ${incidentKey.wallet} in group ${incidentKey.groupId}`);
+
+    try {
+      await this.incidentApi.resolveIncident(resolveIncidentDto);
+    } catch (error) {
+      this.logger.error(`Failed to resolve incident: ${error.message}`);
+      throw new Error(`Failed to resolve incident: ${error.message}`);
     }
-    return uuidv4().replace(/-/g, '').substring(0, 16);
+  }
+
+  // This is only used internally by the watcher
+  private getIncidentId(incidentKey: string): string {
+    return createHash('md5').update(incidentKey).digest('hex').substring(0, 16);
   }
 }

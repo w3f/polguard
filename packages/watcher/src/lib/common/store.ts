@@ -1,4 +1,4 @@
-import { DataStoreClient, ActiveIncidentState, KeyValueStorageClient, Logger } from '@w3f/monitoring-types';
+import { DataStoreClient, KeyValueStorageClient, Logger } from '@w3f/monitoring-types';
 
 /**
  * Store provides a namespaced key-value storage layer for the monitoring platform.
@@ -56,23 +56,12 @@ export class Store implements DataStoreClient {
     await this.client.del(`${this.namespace}:${key}`);
   }
 
+  async exists(key: string): Promise<boolean> {
+    return this.client.exists(`${this.namespace}:${key}`);
+  }
+
   async keys(pattern: string): Promise<string[]> {
     return this.client.keys(`${this.namespace}:${pattern}`);
-  }
-
-  async getAllOngoingIncidents(): Promise<ActiveIncidentState[]> {
-    const keys = await this.keys('inc:*');
-    if (keys.length === 0) return [];
-    const incidents = await this.mget<ActiveIncidentState>(keys);
-    return incidents.filter((incident): incident is ActiveIncidentState => incident !== null);
-  }
-
-  async getOngoingIncident(incidentId: string): Promise<ActiveIncidentState | null> {
-    return this.get<ActiveIncidentState>(`inc:${incidentId}`);
-  }
-
-  async setOngoingIncident(incidentId: string, state: ActiveIncidentState): Promise<void> {
-    await this.set(`inc:${incidentId}`, state);
   }
 
   async deleteOngoingIncident(incidentId: string): Promise<void> {
