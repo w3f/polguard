@@ -9,7 +9,6 @@ import {
   MonitorType,
   MonitorConstructor,
   DataProvider,
-  AlertFiringThresholds,
 } from '@w3f/monitoring-types';
 
 /**
@@ -43,7 +42,6 @@ export abstract class AbstractWatcher<T extends MonitorType, M extends Monitor<T
     protected chainProps: ChainProperties,
     protected provider: D,
     protected monitorConfigs: [T, MonitorConstructor<T, M, D>][],
-    protected firingThresholds?: AlertFiringThresholds,
   ) {
     this.initializeMonitors();
   }
@@ -80,17 +78,7 @@ export abstract class AbstractWatcher<T extends MonitorType, M extends Monitor<T
 
         this.logger.debug(`Creating monitor ${MonitorClass.name} with ${monitorAccounts} accounts`);
 
-        return [
-          new MonitorClass(
-            this.logger,
-            groups,
-            this.incidents,
-            this.chainProps,
-            this.provider,
-            monitorType,
-            this.firingThresholds,
-          ),
-        ];
+        return [new MonitorClass(this.logger, groups, this.incidents, this.chainProps, this.provider, monitorType)];
       }
       return [];
     });

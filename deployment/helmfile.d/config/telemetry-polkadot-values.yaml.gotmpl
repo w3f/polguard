@@ -34,8 +34,4 @@ config:
     authToken: "{{ env "GITLAB_TOKEN" }}"  # Optional  
   logging:
     level: debug 
-  firingThresholds:
-    tolerant: 60
-    moderate: 5
-    sensitive: 3
 {{ end }}

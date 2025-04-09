@@ -5,33 +5,6 @@ import { CallHandlerParams, EventHandlerParams, StateHandlerParams, MonitorHandl
 import { DataProvider } from './data-provider';
 
 /**
- * Defines threshold levels for alert firing based on consecutive check failures.
- * Higher thresholds help reduce alert noise by requiring more confirmations.
- */
-export interface AlertFiringThresholds {
-  /**
-   * High threshold for noisy conditions
-   * Requires many consecutive failures before firing
-   * Use for conditions that may frequently trigger falsely
-   */
-  tolerant: number;
-
-  /**
-   * Standard threshold for regular alerts
-   * Balanced number of confirmations required
-   * Default for most monitoring conditions
-   */
-  moderate: number;
-
-  /**
-   * Low threshold that fires quickly
-   * Minimal confirmation needed
-   * Use for stable conditions unlikely to trigger falsely
-   */
-  sensitive: number;
-}
-
-/**
  * Base monitor interface that all monitors must implement
  */
 export interface Monitor<T extends MonitorType> {
@@ -70,8 +43,7 @@ export type MonitorConstructor<
   incidents: IncidentHandlerClient,
   chainProps: ChainProperties,
   provider: D,
-  monitorType: T,
-  firingThresholds?: AlertFiringThresholds
+  monitorType: T
 ) => M;
 
 type HandlerConfig<T> = {

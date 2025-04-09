@@ -10,7 +10,7 @@ import {
   ChainMonitor,
   EventHandlerFunction,
   CallHandlerFunction,
-  BlockHandlerFunction,
+  StateHandlerFunction,
 } from '@w3f/monitoring-types';
 import { formatBalance } from '@polkadot/util';
 import { AbstractMonitor } from '../../common/abstract-monitor';
@@ -79,7 +79,7 @@ export abstract class AbstractChainMonitor<T extends MonitorType>
       return;
     }
 
-    const handlers = this.handlers.get('stateHandlers') as Set<BlockHandlerFunction>;
+    const handlers = this.handlers.get('stateHandlers') as Set<StateHandlerFunction>;
     for (const handler of handlers) {
       await handler.call(this, params);
     }

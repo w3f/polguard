@@ -14,7 +14,6 @@ import {
   NoProvider,
   NodeInfo,
   TelemetryData,
-  AlertFiringThresholds,
 } from '@w3f/monitoring-types';
 import { AbstractWatcher } from '../common/abstract-watcher';
 
@@ -43,19 +42,8 @@ export class TelemetryWatcher extends AbstractWatcher<MonitorType, TelemetryMoni
     chainProps: ChainProperties,
     monitorConfigs: [MonitorType, MonitorConstructor<MonitorType, TelemetryMonitor<MonitorType>, NoProvider>][],
     private readonly interval: number,
-    firingThresholds?: AlertFiringThresholds,
   ) {
-    super(
-      logger,
-      monitoringGroups,
-      incidents,
-      store,
-      metrics,
-      chainProps,
-      {} as NoProvider,
-      monitorConfigs,
-      firingThresholds,
-    );
+    super(logger, monitoringGroups, incidents, store, metrics, chainProps, {} as NoProvider, monitorConfigs);
     this.logger.debug(`Telemetry polling interval: ${interval}ms`);
   }
 

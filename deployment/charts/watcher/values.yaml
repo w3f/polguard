@@ -55,23 +55,3 @@ config:
 
   logging:
     level: debug
-
-  # Optional firing thresholds for alert conditions
-  # These thresholds define how many consecutive check failures are required before an alert fires
-  # For telemetry watcher: Each check happens every 'interval' ms (default 30s)
-  # For chain watcher: Each check happens every block (6s)
-  firingThresholds:
-    # High threshold for noisy conditions that may trigger falsely
-    # Telemetry: 60 checks = 30 minutes with default interval
-    # Chain: 60 blocks = 6 minutes
-    tolerant: 60
-
-    # Standard threshold for regular conditions
-    # Telemetry: 5 checks = 2.5 minutes with default interval
-    # Chain: 5 blocks = 30 seconds
-    moderate: 5
-
-    # Low threshold for stable conditions unlikely to trigger falsely
-    # Telemetry: 3 checks = 1.5 minutes with default interval
-    # Chain: 3 blocks = 18 seconds
-    sensitive: 3

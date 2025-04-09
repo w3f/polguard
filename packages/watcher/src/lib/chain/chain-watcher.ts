@@ -5,7 +5,6 @@ import { AnyTuple } from '@polkadot/types/types';
 
 import { AbstractWatcher } from '../common/abstract-watcher';
 import {
-  AlertFiringThresholds,
   ChainDataProvider,
   Logger,
   MetricsClient,
@@ -49,9 +48,8 @@ export class ChainWatcher extends AbstractWatcher<MonitorType, ChainMonitor<Moni
     provider: ChainDataProvider,
     chainProps: ChainProperties,
     monitorConfigs: [MonitorType, MonitorConstructor<MonitorType, ChainMonitor<MonitorType>, ChainDataProvider>][],
-    firingThresholds?: AlertFiringThresholds,
   ) {
-    super(logger, monitoringGroups, incidents, store, metrics, chainProps, provider, monitorConfigs, firingThresholds);
+    super(logger, monitoringGroups, incidents, store, metrics, chainProps, provider, monitorConfigs);
   }
 
   protected async startWatching(startBlock?: number): Promise<void> {

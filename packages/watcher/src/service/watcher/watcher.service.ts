@@ -41,7 +41,6 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     const chain = this.config.getChain();
     const groups = this.config.getMonitoringGroups(chain);
     const chainProps = getChainProperties(chain);
-    const firingThresholds = this.config.getFiringThresholds();
 
     if (this.config.getWatcherType() === WatcherType.Chain) {
       const chainConfig = this.config.getChainConfig();
@@ -55,7 +54,6 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
         incidentApiClient: this.incidents,
         metricsClient: this.metrics,
         chainProps,
-        firingThresholds,
       };
 
       this.watcher = await createChainWatcher(groups, chainDependencies);
@@ -75,7 +73,6 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
         telemetryClient: this.telemetry,
         chainProps,
         interval: telemetryConfig.interval,
-        firingThresholds,
       };
 
       this.watcher = await createTelemetryWatcher(groups, telemetryDependencies);

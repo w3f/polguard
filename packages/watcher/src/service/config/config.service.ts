@@ -3,7 +3,7 @@ import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Joi from 'joi';
-import { AlertFiringThresholds, Chain, MonitoringGroup, WatcherType } from '@w3f/monitoring-types';
+import { Chain, MonitoringGroup, WatcherType } from '@w3f/monitoring-types';
 import { ConfigFetcher } from '@w3f/monitoring-config';
 
 @Injectable()
@@ -61,14 +61,7 @@ export class ConfigService {
         .description('Telemetry polling interval in milliseconds'),
     });
 
-    const firingThresholdsSchema = Joi.object({
-      tolerant: Joi.number().integer().min(1).description('High threshold for noisy conditions'),
-      moderate: Joi.number().integer().min(1).description('Standard threshold for most conditions'),
-      sensitive: Joi.number().integer().min(1).description('Low threshold for stable conditions'),
-    });
-
     const schema = Joi.object({
-      firingThresholds: firingThresholdsSchema.optional(),
       chain: Joi.string()
         .valid(...Object.values(Chain))
         .required(),
@@ -161,10 +154,6 @@ export class ConfigService {
     return this.config.watcherType;
   }
 
-  getFiringThresholds(): AlertFiringThresholds | null {
-    return this.config.firingThresholds || null;
-  }
-
   getIncidentManagementUrls(): { create: string; resolve: string } {
     return this.config.incidentManagement.urls;
   }
@@ -196,7 +185,6 @@ interface Config {
   };
   chainConfig?: ChainConfig;
   telemetryConfig?: TelemetryConfig;
-  firingThresholds?: AlertFiringThresholds;
   incidentManagement: {
     urls: {
       create: string;

@@ -1,7 +1,6 @@
 // TODO: The whole Telemetry feature is going to be removed in the future
 
 import {
-  AlertFiringThresholds,
   ChainProperties,
   Logger,
   KeyValueStorageClient,
@@ -23,16 +22,8 @@ export async function createTelemetryWatcher(
   groups: MonitoringGroup[],
   dependencies: TelemetryWatcherDependencies,
 ): Promise<TelemetryWatcher> {
-  const {
-    logger,
-    chainProps,
-    storageClient,
-    incidentApiClient,
-    metricsClient,
-    telemetryClient,
-    interval,
-    firingThresholds,
-  } = dependencies;
+  const { logger, chainProps, storageClient, incidentApiClient, metricsClient, telemetryClient, interval } =
+    dependencies;
 
   const store = new Store(storageClient, chainProps.chain, logger);
   const incidentHandler = new IncidentHandler(logger, store, incidentApiClient, chainProps.chain);
@@ -51,7 +42,6 @@ export async function createTelemetryWatcher(
     chainProps,
     monitorConfigs,
     interval,
-    firingThresholds,
   );
 }
 
@@ -63,5 +53,4 @@ export interface TelemetryWatcherDependencies {
   telemetryClient: TelemetryClient;
   chainProps: ChainProperties;
   interval: number;
-  firingThresholds?: AlertFiringThresholds;
 }

@@ -7,7 +7,7 @@ import { NodeInfo } from './telemetry';
 export type HandlerFunction<T> = (params: T) => Promise<void>;
 export type EventHandlerFunction = HandlerFunction<EventHandlerParams>;
 export type CallHandlerFunction = HandlerFunction<CallHandlerParams>;
-export type BlockHandlerFunction = HandlerFunction<StateHandlerParams>;
+export type StateHandlerFunction = HandlerFunction<StateHandlerParams>;
 export type TelemetryHandlerFunction = HandlerFunction<TelemetryHandlerParams>;
 
 export interface TelemetryHandlerParams<T extends HandlerType = HandlerType> {
