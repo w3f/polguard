@@ -1,20 +1,18 @@
 // TODO: The whole Telemetry feature is going to be removed in the future
 
-import { Telemetry, Handler } from '../../common/decorators';
+import { Telemetry, IncidentPayload } from '../../common/decorators';
 import { AbstractTelemetryMonitor } from '../abstract-telemetry-monitor';
-import {
-  MonitorType,
-  Chain,
-  TelemetryHandlerType as H,
-  TelemetryHandlerParams,
-  IncidentKey,
-} from '@w3f/monitoring-types';
+import { MonitorType, Chain, TelemetryHandlerType as H, TelemetryHandlerParams } from '@w3f/monitoring-types';
 import * as semver from 'semver';
 
 export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telemetry> {
-  @Telemetry([Chain.Polkadot, Chain.Kusama])
-  @Handler(H.LocationUnexpected)
-  async locationUnexpected({ data, handler }: TelemetryHandlerParams<H>): Promise<void> {
+  @Telemetry(H.LocationUnexpected, [Chain.Polkadot, Chain.Kusama])
+  async locationUnexpected({
+    data,
+    handler,
+  }: TelemetryHandlerParams<H.LocationUnexpected>): Promise<IncidentPayload[]> {
+    const incidents: IncidentPayload[] = [];
+
     await this.forEachAccount(handler, async ({ account, alerts, groupId }) => {
       if (!data[account.ss58]) return;
       const { sanctionedCountries, sanctionedRegions } = account.settings;
@@ -35,15 +33,20 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
 
       const isFiring = details.length > 0;
       const message = [`${account.name} node detected in sanctioned location.`, ...details];
-
-      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
-      await this.incidents.ongoingIncident(message, alerts, isFiring, key, 0);
+      const key = { wallet: account.ss58, groupId, handler };
+      incidents.push({ message, alerts, key, blockNumber: 0, isFiring });
     });
+
+    return incidents;
   }
 
-  @Telemetry([Chain.Polkadot, Chain.Kusama])
-  @Handler(H.ProviderUnexpected)
-  async providerUnexpected({ data, handler }: TelemetryHandlerParams<H>): Promise<void> {
+  @Telemetry(H.ProviderUnexpected, [Chain.Polkadot, Chain.Kusama])
+  async providerUnexpected({
+    data,
+    handler,
+  }: TelemetryHandlerParams<H.ProviderUnexpected>): Promise<IncidentPayload[]> {
+    const incidents: IncidentPayload[] = [];
+
     await this.forEachAccount(handler, async ({ account, alerts, groupId }) => {
       if (!data[account.ss58]) return;
       if (!account.settings.provider) return;
@@ -59,15 +62,20 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
 
       const isFiring = details.length > 0;
       const message = [`${account.name} node running on unexpected provider.`, ...details];
-
-      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
-      await this.incidents.ongoingIncident(message, alerts, isFiring, key, 0);
+      const key = { wallet: account.ss58, groupId, handler };
+      incidents.push({ message, alerts, key, blockNumber: 0, isFiring });
     });
+
+    return incidents;
   }
 
-  @Telemetry([Chain.Polkadot, Chain.Kusama])
-  @Handler(H.VersionOutdated)
-  async clientVersionOutdated({ data, handler }: TelemetryHandlerParams<H>): Promise<void> {
+  @Telemetry(H.VersionOutdated, [Chain.Polkadot, Chain.Kusama])
+  async clientVersionOutdated({
+    data,
+    handler,
+  }: TelemetryHandlerParams<H.VersionOutdated>): Promise<IncidentPayload[]> {
+    const incidents: IncidentPayload[] = [];
+
     await this.forEachAccount(handler, async ({ account, alerts, groupId }) => {
       if (!data[account.ss58]) return;
       if (!account.settings.clientVersion) return;
@@ -96,15 +104,20 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
 
       const isFiring = details.length > 0;
       const message = [`${account.name} node client version issue detected.`, ...details];
-
-      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
-      await this.incidents.ongoingIncident(message, alerts, isFiring, key, 0);
+      const key = { wallet: account.ss58, groupId, handler };
+      incidents.push({ message, alerts, key, blockNumber: 0, isFiring });
     });
+
+    return incidents;
   }
 
-  @Telemetry([Chain.Polkadot, Chain.Kusama])
-  @Handler(H.HardwareUnexpected)
-  async hardwareUnexpected({ data, handler }: TelemetryHandlerParams<H>): Promise<void> {
+  @Telemetry(H.HardwareUnexpected, [Chain.Polkadot, Chain.Kusama])
+  async hardwareUnexpected({
+    data,
+    handler,
+  }: TelemetryHandlerParams<H.HardwareUnexpected>): Promise<IncidentPayload[]> {
+    const incidents: IncidentPayload[] = [];
+
     await this.forEachAccount(handler, async ({ account, alerts, groupId }) => {
       if (!data[account.ss58]) return;
       const { cpu, minMemoryGB, minCores } = account.settings;
@@ -130,15 +143,17 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
 
       const isFiring = details.length > 0;
       const message = [`${account.name} node hardware requirements not met.`, ...details];
-
-      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
-      await this.incidents.ongoingIncident(message, alerts, isFiring, key, 0);
+      const key = { wallet: account.ss58, groupId, handler };
+      incidents.push({ message, alerts, key, blockNumber: 0, isFiring });
     });
+
+    return incidents;
   }
 
-  @Telemetry([Chain.Polkadot, Chain.Kusama])
-  @Handler(H.IpSpoofing)
-  async ipSpoofing({ data, handler }: TelemetryHandlerParams<H>): Promise<void> {
+  @Telemetry(H.IpSpoofing, [Chain.Polkadot, Chain.Kusama])
+  async ipSpoofing({ data, handler }: TelemetryHandlerParams<H.IpSpoofing>): Promise<IncidentPayload[]> {
+    const incidents: IncidentPayload[] = [];
+
     await this.forEachAccount(handler, async ({ account, alerts, groupId }) => {
       if (!data[account.ss58]) return;
       let details: string[] = [];
@@ -166,22 +181,24 @@ export class TelemetryMonitor extends AbstractTelemetryMonitor<MonitorType.Telem
 
       const isFiring = details.length > 0;
       const message = [`${account.name} node potential IP spoofing detected.`, ...details];
-
-      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
-      await this.incidents.ongoingIncident(message, alerts, isFiring, key, 0);
+      const key = { wallet: account.ss58, groupId, handler };
+      incidents.push({ message, alerts, key, blockNumber: 0, isFiring });
     });
+
+    return incidents;
   }
 
-  @Telemetry([Chain.Polkadot, Chain.Kusama])
-  @Handler(H.TelemetryMissing)
-  async telemetryMissing({ data, handler }: TelemetryHandlerParams<H>): Promise<void> {
+  @Telemetry(H.TelemetryMissing, [Chain.Polkadot, Chain.Kusama])
+  async telemetryMissing({ data, handler }: TelemetryHandlerParams<H.TelemetryMissing>): Promise<IncidentPayload[]> {
+    const incidents: IncidentPayload[] = [];
+
     await this.forEachAccount(handler, async ({ account, alerts, groupId }) => {
       const isFiring = !data[account.ss58] || data[account.ss58].length === 0;
-
       const message = [`${account.name} telemetry data not available.`];
-
-      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
-      await this.incidents.ongoingIncident(message, alerts, isFiring, key, 0);
+      const key = { wallet: account.ss58, groupId, handler };
+      incidents.push({ message, alerts, key, blockNumber: 0, isFiring });
     });
+
+    return incidents;
   }
 }

@@ -32,9 +32,9 @@ export abstract class AbstractChainMonitor<T extends MonitorType>
 {
   protected getHandlerDefinitions(): Record<string, { type: HandlerExecutionType }> {
     return {
-      eventHandlers: { type: 'triggered' }, // Executes on specific events
-      callHandlers: { type: 'triggered' }, // Executes on specific calls
-      stateHandlers: { type: 'periodic' }, // Executes on every block
+      event: { type: 'triggered' }, // Executes on specific events
+      call: { type: 'triggered' }, // Executes on specific calls
+      state: { type: 'periodic' }, // Executes on every block
     };
   }
 
@@ -42,13 +42,13 @@ export abstract class AbstractChainMonitor<T extends MonitorType>
    * Process a chain event if there's a matching handler
    */
   async processEvent({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
-    if (!this.handlers.has('eventHandlers')) {
+    if (!this.handlers.has('event')) {
       return;
     }
 
     const { event } = eventRecord;
     const eventName = `${event.section}.${event.method}`;
-    const handlers = this.handlers.get('eventHandlers') as Map<string, EventHandlerFunction>;
+    const handlers = this.handlers.get('event') as Map<string, EventHandlerFunction>;
     const handler = handlers.get(eventName);
     if (handler) {
       await handler.call(this, { eventRecord, blockNumber });
@@ -59,12 +59,12 @@ export abstract class AbstractChainMonitor<T extends MonitorType>
    * Process a chain call if there's a matching handler
    */
   async processCall({ call, origin, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
-    if (!this.handlers.has('callHandlers')) {
+    if (!this.handlers.has('call')) {
       return;
     }
 
     const callName = `${call.section}.${call.method}`;
-    const handlers = this.handlers.get('callHandlers') as Map<string, CallHandlerFunction>;
+    const handlers = this.handlers.get('call') as Map<string, CallHandlerFunction>;
     const handler = handlers.get(callName);
     if (handler) {
       await handler.call(this, { call, origin, blockNumber, extrinsicIndex });
@@ -75,11 +75,11 @@ export abstract class AbstractChainMonitor<T extends MonitorType>
    * Process periodic state checks using registered handlers
    */
   async processState(params: StateHandlerParams): Promise<void> {
-    if (!this.handlers.has('stateHandlers')) {
+    if (!this.handlers.has('state')) {
       return;
     }
 
-    const handlers = this.handlers.get('stateHandlers') as Set<StateHandlerFunction>;
+    const handlers = this.handlers.get('state') as Set<StateHandlerFunction>;
     for (const handler of handlers) {
       await handler.call(this, params);
     }

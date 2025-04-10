@@ -25,7 +25,7 @@ export abstract class AbstractTelemetryMonitor<T extends MonitorType>
 {
   protected getHandlerDefinitions(): Record<string, { type: HandlerExecutionType }> {
     return {
-      telemetryHandlers: { type: 'periodic' }, // Executes on every telemetry fetch
+      telemetry: { type: 'periodic' }, // Executes on every telemetry fetch
     };
   }
 
@@ -33,11 +33,11 @@ export abstract class AbstractTelemetryMonitor<T extends MonitorType>
    * Process telemetry data using registered handlers
    */
   async processTelemetry(params: TelemetryHandlerParams): Promise<void> {
-    if (!this.handlers.has('telemetryHandlers')) {
+    if (!this.handlers.has('telemetry')) {
       return;
     }
 
-    const handlers = this.handlers.get('telemetryHandlers') as Set<TelemetryHandlerFunction>;
+    const handlers = this.handlers.get('telemetry') as Set<TelemetryHandlerFunction>;
     for (const handler of handlers) {
       await handler.call(this, params);
     }

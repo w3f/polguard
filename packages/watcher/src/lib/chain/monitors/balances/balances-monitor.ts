@@ -4,17 +4,16 @@ import {
   MonitorType,
   BalancesHandlerType as H,
   EventHandlerParams,
-  IncidentKey,
 } from '@w3f/monitoring-types';
-import { Event, State, Handler } from '../../../common/decorators';
+import { Event, State, IncidentPayload } from '../../../common/decorators';
 import { AbstractChainMonitor } from '../abstract-chain-monitor';
 
 export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> {
-  @State([Chain.Polkadot, Chain.Kusama])
-  @Handler(H.BalanceChange)
-  async balanceChange({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
+  @State(H.BalanceChange, [Chain.Polkadot, Chain.Kusama])
+  async balanceChange({ blockNumber, handler }: StateHandlerParams<H.BalanceChange>): Promise<IncidentPayload[]> {
     const currentBalances = await this.provider.systemAccountBalance(this.uniqueAddresses, blockNumber);
     const previousBalances = await this.provider.systemAccountBalance(this.uniqueAddresses, blockNumber - 1);
+    const incidents: IncidentPayload[] = [];
 
     for (const address of this.uniqueAddresses) {
       const currentBalance = currentBalances[address];
@@ -22,7 +21,6 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
 
       for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
         const compareFunc = BalancesMonitor.comparisonFunctions[account.settings.changeComparison];
-        const isFiring = compareFunc(currentBalance, previousBalance);
         const message = this.createMessage(
           [
             `Balance changed for ${this.formatAccountLink(account)}`,
@@ -31,22 +29,25 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
           ],
           { blockNumber },
         );
-        const key: IncidentKey = { wallet: account.ss58, groupId, handler };
-        await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
+        if (compareFunc(currentBalance, previousBalance)) {
+          const key = { wallet: account.ss58, groupId, handler };
+          incidents.push({ message, alerts, key, blockNumber });
+        }
       }
     }
+    return incidents;
   }
 
-  @State([Chain.Polkadot, Chain.Kusama])
-  @Handler(H.BalanceThreshold)
-  async balanceThreshold({ blockNumber, handler }: StateHandlerParams<H>): Promise<void> {
+  @State(H.BalanceThreshold, [Chain.Polkadot, Chain.Kusama])
+  async balanceThreshold({ blockNumber, handler }: StateHandlerParams<H.BalanceThreshold>): Promise<IncidentPayload[]> {
     const currentBalances = await this.provider.systemAccountBalance(this.uniqueAddresses, blockNumber);
+    const incidents: IncidentPayload[] = [];
 
     for (const address of this.uniqueAddresses) {
       const currentBalance = currentBalances[address];
       for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
         if (!account.settings.threshold) continue;
-        const isFiring = currentBalance < account.settings.threshold;
+
         const message = this.createMessage(
           [
             `Balance for ${this.formatAccountLink(account)} is below threshold.`,
@@ -55,16 +56,22 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
           ],
           { blockNumber },
         );
-        const key: IncidentKey = { wallet: account.ss58, groupId, handler };
-        await this.incidents.ongoingIncident(message, alerts, isFiring, key, blockNumber);
+        const key = { wallet: account.ss58, groupId, handler };
+        const isFiring = currentBalance < account.settings.threshold;
+        incidents.push({ message, alerts, key, blockNumber, isFiring });
       }
     }
+    return incidents;
   }
 
-  @Event('balances.Transfer', [Chain.Polkadot, Chain.Kusama])
-  @Handler(H.TransferIngress)
-  async balancesTransferIngress({ eventRecord, blockNumber, handler }: EventHandlerParams<H>): Promise<void> {
+  @Event(H.TransferIngress, [Chain.Polkadot, Chain.Kusama], 'balances.Transfer')
+  async balancesTransferIngress({
+    eventRecord,
+    blockNumber,
+    handler,
+  }: EventHandlerParams<H.TransferIngress>): Promise<IncidentPayload[]> {
     const [from, to, amount] = eventRecord.event.data.map(item => item.toString());
+    const incidents: IncidentPayload[] = [];
 
     for (const { account, alerts, groupId } of this.getAccounts(handler, to)) {
       const message = this.createMessage(
@@ -74,15 +81,20 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
         ],
         { blockNumber, phase: eventRecord.phase },
       );
-      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
-      await this.incidents.oneTimeIncident(message, alerts, key, blockNumber);
+      const key = { wallet: account.ss58, groupId, handler };
+      incidents.push({ message, alerts, key, blockNumber });
     }
+    return incidents;
   }
 
-  @Event('balances.Transfer', [Chain.Polkadot, Chain.Kusama])
-  @Handler(H.TransferEgress)
-  async balancesTransferEgress({ eventRecord, blockNumber, handler }: EventHandlerParams<H>): Promise<void> {
+  @Event(H.TransferEgress, [Chain.Polkadot, Chain.Kusama], 'balances.Transfer')
+  async balancesTransferEgress({
+    eventRecord,
+    blockNumber,
+    handler,
+  }: EventHandlerParams<H.TransferEgress>): Promise<IncidentPayload[]> {
     const [from, to, amount] = eventRecord.event.data.map(item => item.toString());
+    const incidents: IncidentPayload[] = [];
 
     for (const { account, alerts, groupId } of this.getAccounts(handler, from)) {
       const message = this.createMessage(
@@ -92,8 +104,9 @@ export class BalancesMonitor extends AbstractChainMonitor<MonitorType.Balances> 
         ],
         { blockNumber, phase: eventRecord.phase },
       );
-      const key: IncidentKey = { wallet: account.ss58, groupId, handler };
-      await this.incidents.oneTimeIncident(message, alerts, key, blockNumber);
+      const key = { wallet: account.ss58, groupId, handler };
+      incidents.push({ message, alerts, key, blockNumber });
     }
+    return incidents;
   }
 }

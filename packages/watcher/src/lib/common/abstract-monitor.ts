@@ -115,14 +115,14 @@ export abstract class AbstractMonitor<T extends MonitorType, D extends DataProvi
    *
    * Example for chain monitor:
    * {
-   *   eventHandlers: { type: 'triggered' },  // Execute on specific events
-   *   callHandlers: { type: 'triggered' },   // Execute on specific calls
-   *   blockHandlers: { type: 'periodic' }    // Execute on every block
+   *   event: { type: 'triggered' },  // Execute on specific events
+   *   call: { type: 'triggered' },   // Execute on specific calls
+   *   state: { type: 'periodic' }    // Execute on every block
    * }
    *
    * Example for telemetry monitor:
    * {
-   *   telemetryHandlers: { type: 'periodic' }  // Execute on every telemetry fetch
+   *   telemetry: { type: 'periodic' }  // Execute on every telemetry fetch
    * }
    *
    * @returns Record mapping handler collection names to their execution types

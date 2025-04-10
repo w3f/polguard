@@ -1,37 +1,62 @@
 import { AbstractChainMonitor } from '@lib/chain/monitors/abstract-chain-monitor';
 import { Chain, MonitorType, StakingHandlerType as H } from '@w3f/monitoring-types';
 import { MonitorTestSuite } from './monitor-test-suite';
-import { Event, Call, State, Handler } from '@lib/common/decorators';
+import { Event, Call, State, IncidentPayload } from '@lib/common/decorators';
 
 class TestChainMonitor extends AbstractChainMonitor<MonitorType.Staking> {
-  @Event('test.event', [Chain.Polkadot])
-  @Handler(H.SlashReported)
+  @Event(H.SlashReported, [Chain.Polkadot], 'test.event')
   async testEventHandler({ eventRecord, blockNumber, handler }) {
     const address = eventRecord.event.data[0].toString();
+    const incidents: IncidentPayload[] = [];
+    
     for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
       const key = { wallet: account.ss58, groupId, handler };
-      await this.incidents.oneTimeIncident(['test'], alerts, key, blockNumber);
+      incidents.push({
+        message: ['test'],
+        alerts,
+        key,
+        blockNumber
+      });
     }
+    
+    return incidents;
   }
 
-  @Call('test.call', [Chain.Polkadot])
-  @Handler(H.DestinationChanged)
+  @Call(H.DestinationChanged, [Chain.Polkadot], 'test.call')
   async testCallHandler({ call, origin, blockNumber, handler }) {
+    const incidents: IncidentPayload[] = [];
+    
     for (const { account, alerts, groupId } of this.getAccounts(handler, origin)) {
       const key = { wallet: account.ss58, groupId, handler };
-      await this.incidents.oneTimeIncident(['test'], alerts, key, blockNumber);
+      incidents.push({
+        message: ['test'],
+        alerts,
+        key,
+        blockNumber
+      });
     }
+    
+    return incidents;
   }
 
-  @State([Chain.Polkadot])
-  @Handler(H.CommissionUnexpected)
+  @State(H.CommissionUnexpected, [Chain.Polkadot])
   async testBlockHandler({ blockNumber, handler }) {
+    const incidents: IncidentPayload[] = [];
+    
     for (const address of this.uniqueAddresses) {
       for (const { account, alerts, groupId } of this.getAccounts(handler, address)) {
         const key = { wallet: account.ss58, groupId, handler };
-        await this.incidents.ongoingIncident(['test'], alerts, true, key, blockNumber);
+        incidents.push({
+          message: ['test'],
+          alerts,
+          key,
+          blockNumber,
+          isFiring: true
+        });
       }
     }
+    
+    return incidents;
   }
 }
 
@@ -68,20 +93,20 @@ describe('AbstractChainMonitor', () => {
     it('should properly initialize triggered and periodic handlers', () => {
       const handlerDefs = monitor['getHandlerDefinitions']();
       expect(handlerDefs).toEqual({
-        eventHandlers: { type: 'triggered' },
-        callHandlers: { type: 'triggered' },
-        stateHandlers: { type: 'periodic' }
+        event: { type: 'triggered' },
+        call: { type: 'triggered' },
+        state: { type: 'periodic' }
       });
 
-      expect(monitor['handlers'].get('eventHandlers')).toBeInstanceOf(Map);
-      expect(monitor['handlers'].get('callHandlers')).toBeInstanceOf(Map);
-      expect(monitor['handlers'].get('stateHandlers')).toBeInstanceOf(Set);
+      expect(monitor['handlers'].get('event')).toBeInstanceOf(Map);
+      expect(monitor['handlers'].get('call')).toBeInstanceOf(Map);
+      expect(monitor['handlers'].get('state')).toBeInstanceOf(Set);
     });
 
     it('should register handlers for supported chains', () => {
-      expect(monitor['handlers'].get('eventHandlers').size).toBe(1);
-      expect(monitor['handlers'].get('callHandlers').size).toBe(1);
-      expect(monitor['handlers'].get('stateHandlers').size).toBe(1);
+      expect(monitor['handlers'].get('event').size).toBe(1);
+      expect(monitor['handlers'].get('call').size).toBe(1);
+      expect(monitor['handlers'].get('state').size).toBe(1);
     });
 
     it('should not register handlers for unsupported chains', () => {
@@ -106,9 +131,9 @@ describe('AbstractChainMonitor', () => {
         MonitorType.Staking
       );
       
-      expect(monitor['handlers'].get('eventHandlers').size).toBe(0);
-      expect(monitor['handlers'].get('callHandlers').size).toBe(0);
-      expect(monitor['handlers'].get('stateHandlers').size).toBe(0);
+      expect(monitor['handlers'].get('event').size).toBe(0);
+      expect(monitor['handlers'].get('call').size).toBe(0);
+      expect(monitor['handlers'].get('state').size).toBe(0);
     });
   });
 
