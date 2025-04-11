@@ -38,15 +38,6 @@ export interface KeyValueStorageClient {
   mget<T>(keys: string[]): Promise<(T | null)[]>;
 }
 
-/** Main data store interface combining key-value operations with specific monitoring functionality */
-export interface DataStoreClient extends KeyValueStorageClient {
-  // Processing state management
-  getLastProcessed(key: string): Promise<number | null>;
-  setLastProcessed(key: string, value: number): Promise<void>;
-
-  // Utility methods
-  clearAll(): Promise<void>;
-}
 
 /** Client for sending incidents to the incident management service */
 export interface IncidentApiClient {

@@ -1,4 +1,4 @@
-import { DataStoreClient, KeyValueStorageClient, Logger } from '@w3f/monitoring-types';
+import { KeyValueStorageClient } from '@w3f/monitoring-types';
 
 /**
  * Store provides a namespaced key-value storage layer for the monitoring platform.
@@ -16,8 +16,8 @@ import { DataStoreClient, KeyValueStorageClient, Logger } from '@w3f/monitoring-
  * Example usage:
  * ```typescript
  * // Persistent storage
- * const chainStore = new Store(redisClient, 'polkadot', logger);
- * await chainStore.setLastProcessed('block', 12345);
+ * const chainStore = new Store(redisClient, 'polkadot');
+ * await chainStore.set('last_processed_block', 12345);
  *
  * // Caching
  * class ExampleService {
@@ -28,11 +28,10 @@ import { DataStoreClient, KeyValueStorageClient, Logger } from '@w3f/monitoring-
  * }
  * ```
  */
-export class Store implements DataStoreClient {
+export class Store implements KeyValueStorageClient {
   constructor(
     private client: KeyValueStorageClient,
     private namespace: string,
-    private logger: Logger,
   ) {}
 
   async get<T>(key: string): Promise<T | null> {
@@ -62,33 +61,5 @@ export class Store implements DataStoreClient {
 
   async keys(pattern: string): Promise<string[]> {
     return this.client.keys(`${this.namespace}:${pattern}`);
-  }
-
-  async deleteOngoingIncident(incidentId: string): Promise<void> {
-    await this.del(`inc:${incidentId}`);
-  }
-
-  async getLastProcessed(key: string): Promise<number | null> {
-    return this.get<number>(`last_processed_${key}`);
-  }
-
-  async setLastProcessed(key: string, value: number): Promise<void> {
-    await this.set(`last_processed_${key}`, value);
-  }
-
-  /**
-   * Clears all keys in the current namespace
-   * @throws Error if deletion fails
-   */
-  public async clearAll(): Promise<void> {
-    try {
-      const keys = await this.client.keys(`${this.namespace}*`);
-      if (keys.length > 0) {
-        await Promise.all(keys.map(key => this.client.del(key)));
-      }
-    } catch (error) {
-      this.logger.error(`Failed to clear all keys: ${error.message}`);
-      throw error;
-    }
   }
 }

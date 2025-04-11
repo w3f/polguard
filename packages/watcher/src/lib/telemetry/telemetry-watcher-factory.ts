@@ -25,7 +25,7 @@ export async function createTelemetryWatcher(
   const { logger, chainProps, storageClient, incidentApiClient, metricsClient, telemetryClient, interval } =
     dependencies;
 
-  const store = new Store(storageClient, chainProps.chain, logger);
+  const store = new Store(storageClient, chainProps.chain);
   const incidentHandler = new IncidentHandler(logger, store, incidentApiClient, chainProps.chain);
 
   const monitorConfigs: [MonitorType, MonitorConstructor<MonitorType, TelemetryMonitor<MonitorType>, NoProvider>][] = [

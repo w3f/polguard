@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import {
   Logger,
   AlertSettings,
-  DataStoreClient,
+  KeyValueStorageClient,
   IncidentHandlerClient,
   Chain,
   IncidentApiClient,
@@ -24,7 +24,7 @@ import {
 export class IncidentHandler implements IncidentHandlerClient {
   constructor(
     private logger: Logger,
-    private store: DataStoreClient,
+    private store: KeyValueStorageClient,
     private incidentApi: IncidentApiClient,
     private chain: Chain,
   ) {}

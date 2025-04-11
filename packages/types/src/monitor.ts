@@ -88,12 +88,17 @@ export interface TelemetrySettings {
   sanctionedRegions?: string[];
 }
 
+export interface XcmSettings {
+  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Xcm]>;
+}
+
 export type MonitorTypeSettings = {
   [MonitorType.Staking]: StakingSettings;
   [MonitorType.Governance]: GovernanceSettings;
   [MonitorType.Balances]: BalancesSettings;
   [MonitorType.Identity]: IdentitySettings;
   [MonitorType.Telemetry]: TelemetrySettings;
+  [MonitorType.Xcm]: XcmSettings;
 };
 
 export type MonitorSettings<T extends MonitorType> = MonitorTypeSettings[T];

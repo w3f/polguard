@@ -15,7 +15,7 @@ import {
 } from '@w3f/monitoring-types';
 import { Store } from '../common/store';
 import { IncidentHandler } from '../common/incident-handler';
-import { BalancesMonitor, GovernanceMonitor, StakingMonitor } from './monitors';
+import { BalancesMonitor, GovernanceMonitor, StakingMonitor, XcmMonitor } from './monitors';
 import { IdentityMonitor } from './monitors/identity/identity-monitor';
 
 export async function createChainWatcher(
@@ -31,7 +31,7 @@ export async function createChainWatcher(
     );
   }
 
-  const store = new Store(storageClient, chainProps.chain, logger);
+  const store = new Store(storageClient, chainProps.chain);
   const chainDataProvider = createChainDataProvider(api, store, logger);
   const incidentHandler = new IncidentHandler(logger, store, incidentApiClient, chainProps.chain);
 
@@ -41,6 +41,7 @@ export async function createChainWatcher(
       [MonitorType.Staking, StakingMonitor],
       [MonitorType.Balances, BalancesMonitor],
       [MonitorType.Identity, IdentityMonitor],
+      [MonitorType.Xcm, XcmMonitor],
     ];
 
   return new ChainWatcher(

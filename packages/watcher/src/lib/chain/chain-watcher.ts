@@ -11,7 +11,7 @@ import {
   MonitorConstructor,
   MonitoringGroup,
   IncidentHandlerClient,
-  DataStoreClient,
+  KeyValueStorageClient,
   MonitorType,
   ChainProperties,
   ChainMonitor,
@@ -43,7 +43,7 @@ export class ChainWatcher extends AbstractWatcher<MonitorType, ChainMonitor<Moni
     monitoringGroups: MonitoringGroup[],
     private api: ApiPromise,
     incidents: IncidentHandlerClient,
-    store: DataStoreClient,
+    store: KeyValueStorageClient,
     metrics: MetricsClient,
     provider: ChainDataProvider,
     chainProps: ChainProperties,
@@ -72,7 +72,7 @@ export class ChainWatcher extends AbstractWatcher<MonitorType, ChainMonitor<Moni
   }
 
   private async runBlockProcessing(startBlock?: number): Promise<void> {
-    let nextBlockToProcess = startBlock ? startBlock : (await this.store.getLastProcessed('block')) + 1;
+    let nextBlockToProcess = startBlock ? startBlock : (await this.store.get<number>('last_processed_block')) + 1;
 
     while (this.isRunning) {
       if (nextBlockToProcess <= this.latestBlockNumber) {
@@ -111,7 +111,7 @@ export class ChainWatcher extends AbstractWatcher<MonitorType, ChainMonitor<Moni
       await this.processCallTree(blockNumber, extrinsic.method, origin, extrinsicIndex);
     }
 
-    await this.store.setLastProcessed('block', blockNumber);
+    await this.store.set('last_processed_block', blockNumber);
     this.metrics.setBlockHeight(blockNumber);
   }
 
