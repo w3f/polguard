@@ -2,7 +2,6 @@
 
 import {
   Logger,
-  MonitoringGroup,
   IncidentHandlerClient,
   KeyValueStorageClient,
   MetricsClient,
@@ -14,6 +13,7 @@ import {
   NoProvider,
   NodeInfo,
   TelemetryData,
+  MonitoringConfigClient,
 } from '@w3f/monitoring-types';
 import { AbstractWatcher } from '../common/abstract-watcher';
 
@@ -34,7 +34,7 @@ import { AbstractWatcher } from '../common/abstract-watcher';
 export class TelemetryWatcher extends AbstractWatcher<MonitorType, TelemetryMonitor<MonitorType>, NoProvider> {
   constructor(
     logger: Logger,
-    monitoringGroups: MonitoringGroup[],
+    monitoringConfigClient: MonitoringConfigClient,
     incidents: IncidentHandlerClient,
     store: KeyValueStorageClient,
     metrics: MetricsClient,
@@ -43,7 +43,7 @@ export class TelemetryWatcher extends AbstractWatcher<MonitorType, TelemetryMoni
     monitorConfigs: [MonitorType, MonitorConstructor<MonitorType, TelemetryMonitor<MonitorType>, NoProvider>][],
     private readonly interval: number,
   ) {
-    super(logger, monitoringGroups, incidents, store, metrics, chainProps, {} as NoProvider, monitorConfigs);
+    super(logger, monitoringConfigClient, incidents, store, metrics, chainProps, {} as NoProvider, monitorConfigs);
     this.logger.debug(`Telemetry polling interval: ${interval}ms`);
   }
 
@@ -60,7 +60,17 @@ export class TelemetryWatcher extends AbstractWatcher<MonitorType, TelemetryMoni
   }
 
   private async runTelemetryProcessing(): Promise<void> {
+    let lastConfigRefreshTime = Date.now();
+
     while (this.isRunning) {
+      // Check if it's time to refresh config
+      const now = Date.now();
+      if (now - lastConfigRefreshTime >= this.configRefreshIntervalMs) {
+        // Refresh monitors with latest configuration
+        await this.initializeMonitors();
+        lastConfigRefreshTime = now;
+      }
+
       await this.processTelemetry();
       await new Promise(resolve => setTimeout(resolve, this.interval));
     }

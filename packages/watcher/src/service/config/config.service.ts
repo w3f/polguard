@@ -3,32 +3,16 @@ import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Joi from 'joi';
-import { Chain, MonitoringGroup, WatcherType } from '@w3f/monitoring-types';
-import { ConfigFetcher } from '@w3f/monitoring-config';
+import { Chain, WatcherType } from '@w3f/monitoring-types';
 
 @Injectable()
 export class ConfigService {
   private readonly config: Config;
-  private monitoringGroups: MonitoringGroup[] | null = null;
-  private readonly configsDir = path.join(process.cwd(), 'monitoring-configs');
 
   constructor(private readonly logger: Logger) {
     const configPath = this.getConfigPath();
     const rawConfig = this.loadConfig(configPath);
     this.config = this.validateConfig(rawConfig);
-  }
-
-  async initialize(): Promise<void> {
-    try {
-      this.monitoringGroups = await ConfigFetcher.fetchAndProcessConfigs(
-        this.config.monitoringConfigSources,
-        this.configsDir,
-      );
-      this.logger.log(`Loaded ${this.monitoringGroups.length} monitoring groups`);
-    } catch (error) {
-      this.logger.error('Failed to initialize monitoring configuration:', error);
-      throw new Error('Monitoring configuration initialization failed.');
-    }
   }
 
   private getConfigPath(): string {
@@ -74,15 +58,7 @@ export class ConfigService {
       redis: Joi.object({
         url: Joi.string().uri().required(),
       }).required(),
-      monitoringConfigSources: Joi.array()
-        .items(
-          Joi.object({
-            name: Joi.string().required(),
-            url: Joi.string().uri().required(),
-            authToken: Joi.string().optional(),
-          }),
-        )
-        .required(),
+      monitoringGroupIds: Joi.array().items(Joi.string()).required(),
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
       }).optional(),
@@ -99,6 +75,9 @@ export class ConfigService {
           create: Joi.string().uri().required(),
           resolve: Joi.string().uri().required(),
         }).required(),
+      }).required(),
+      monitoringConfig: Joi.object({
+        url: Joi.string().uri().required(),
       }).required(),
       server: Joi.object({
         port: Joi.number().default(3000),
@@ -139,11 +118,8 @@ export class ConfigService {
     return this.config.logging?.level || 'info';
   }
 
-  getMonitoringGroups(chain: Chain): MonitoringGroup[] {
-    if (this.monitoringGroups === null) {
-      throw new Error('Monitoring configurations have not been initialized');
-    }
-    return this.monitoringGroups.filter(group => group.chain.includes(chain));
+  getMonitoringGroupIds(): string[] {
+    return this.config.monitoringGroupIds;
   }
 
   getTelemetryConfig(): TelemetryConfig | null {
@@ -156,6 +132,10 @@ export class ConfigService {
 
   getIncidentManagementUrls(): { create: string; resolve: string } {
     return this.config.incidentManagement.urls;
+  }
+
+  getMonitoringConfigUrl(): string {
+    return this.config.monitoringConfig.url;
   }
 
   getServerConfig(): { host: string; port: number } {
@@ -175,11 +155,7 @@ interface Config {
   redis: {
     url: string;
   };
-  monitoringConfigSources: {
-    name: string;
-    url: string;
-    authToken?: string;
-  }[];
+  monitoringGroupIds: string[];
   logging?: {
     level: string;
   };
@@ -190,6 +166,9 @@ interface Config {
       create: string;
       resolve: string;
     };
+  };
+  monitoringConfig: {
+    url: string;
   };
   server?: {
     port: number;

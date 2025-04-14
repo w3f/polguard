@@ -5,10 +5,12 @@ import { MetricsModule } from '../metrics/metrics.module';
 import { StorageModule } from '../storage/storage.module';
 import { TelemetryModule } from '../telemetry/telemetry.module';
 import { IncidentModule } from '../incident/incident.module';
+import { MonitoringConfigModule } from '../monitoring-config/monitoring-config.module';
 
 @Module({
   imports: [
     ConfigModule,
+    MonitoringConfigModule.forRootAsync(),
     MetricsModule.forRootAsync(),
     StorageModule.forRootAsync(),
     TelemetryModule.forRootAsync(),

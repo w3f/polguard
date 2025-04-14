@@ -7,22 +7,20 @@ import {
   KeyValueStorageClient,
   IncidentApiClient,
   MetricsClient,
-  MonitoringGroup,
   MonitorType,
   ChainDataProvider,
   MonitorConstructor,
   ChainMonitor,
+  MonitoringConfigClient,
 } from '@w3f/monitoring-types';
 import { Store } from '../common/store';
 import { IncidentHandler } from '../common/incident-handler';
 import { BalancesMonitor, GovernanceMonitor, StakingMonitor, XcmMonitor } from './monitors';
 import { IdentityMonitor } from './monitors/identity/identity-monitor';
 
-export async function createChainWatcher(
-  groups: MonitoringGroup[],
-  dependencies: ChainWatcherDependencies,
-): Promise<ChainWatcher> {
-  const { logger, api, chainProps, storageClient, incidentApiClient, metricsClient } = dependencies;
+export async function createChainWatcher(dependencies: ChainWatcherDependencies): Promise<ChainWatcher> {
+  const { logger, api, chainProps, storageClient, incidentApiClient, metricsClient, monitoringConfigClient } =
+    dependencies;
 
   const specName = api.runtimeVersion.specName.toString();
   if (specName !== chainProps.specName) {
@@ -46,7 +44,7 @@ export async function createChainWatcher(
 
   return new ChainWatcher(
     logger,
-    groups,
+    monitoringConfigClient,
     api,
     incidentHandler,
     store,
@@ -64,4 +62,5 @@ export interface ChainWatcherDependencies {
   incidentApiClient: IncidentApiClient;
   metricsClient: MetricsClient;
   chainProps: ChainProperties;
+  monitoringConfigClient: MonitoringConfigClient;
 }

@@ -1,6 +1,6 @@
 # App
 /monitoring-configs
-/config
+/config/config.yaml
 
 # Compiled output
 /dist

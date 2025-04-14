@@ -29,7 +29,6 @@
     "@nestjs/platform-express": "^11.0.14",
     "@nestjs/terminus": "^11.0.0",
     "@polkadot/api": "^12.4.2",
-    "@w3f/monitoring-config": "workspace:*",
     "@w3f/monitoring-types": "workspace:*",
     "@w3f/nest-redis-streams": "^1.0.0",
     "axios": "^1.7.7",

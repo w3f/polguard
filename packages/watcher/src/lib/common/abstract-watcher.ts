@@ -9,11 +9,12 @@ import {
   MonitorType,
   MonitorConstructor,
   DataProvider,
+  MonitoringConfigClient,
 } from '@w3f/monitoring-types';
 
 /**
  * Base class for all watchers in the monitoring platform.
- * Provides common infrastructure for metrics, monitor initialization, and lifecycle management.
+ * Provides common infrastructure for monitor initialization and lifecycle management.
  *
  * @typeParam T - Type of monitors this watcher manages (e.g., Staking, Identity)
  * @typeParam M - Specific monitor implementation (e.g., ChainMonitor, TelemetryMonitor)
@@ -23,7 +24,6 @@ import {
  * 1. Monitor Management
  *    - Initializes configured monitors
  *    - Maintains monitor instances
- *    - Tracks monitoring metrics
  *
  * 2. Lifecycle Management
  *    - Controls watcher's running state
@@ -32,72 +32,58 @@ import {
 export abstract class AbstractWatcher<T extends MonitorType, M extends Monitor<T>, D extends DataProvider> {
   protected monitors: M[] = [];
   protected isRunning = false;
+  protected readonly configRefreshIntervalMs = 15 * 60 * 1000; // 15 minutes
 
   constructor(
     protected logger: Logger,
-    protected monitoringGroups: MonitoringGroup[],
+    protected monitoringConfigClient: MonitoringConfigClient,
     protected incidents: IncidentHandlerClient,
     protected store: KeyValueStorageClient,
     protected metrics: MetricsClient,
     protected chainProps: ChainProperties,
     protected provider: D,
     protected monitorConfigs: [T, MonitorConstructor<T, M, D>][],
-  ) {
-    this.initializeMonitors();
-  }
+  ) {}
 
   /**
-   * Initializes monitors based on the provided configurations.
+   * Initializes monitors based on the latest configuration.
    * For each monitor type:
-   * 1. Filters relevant monitoring groups
-   * 2. Creates monitor instance if there are matching groups
-   * 3. Tracks total accounts and groups for metrics
+   * 1. Fetches the latest monitoring groups from the client
+   * 2. Filters relevant monitoring groups
+   * 3. Creates monitor instance if there are matching groups
    */
-  protected initializeMonitors(): void {
-    this.logger.debug(`Initializing monitors for ${this.constructor.name}`);
+  protected async initializeMonitors(throwError: boolean = true): Promise<void> {
+    // Fetch the latest monitoring groups
 
-    let totalAccounts = 0;
-    let totalGroups = 0;
+    let groups: MonitoringGroup[];
+    try {
+      groups = await this.monitoringConfigClient.getMonitoringGroups();
+    } catch (error) {
+      this.logger.error(`Failed to fetch monitoring groups: ${error.message}`);
+      if (throwError) {
+        throw new Error(`Failed to fetch monitoring groups: ${error.message}`);
+      }
+      return;
+    }
 
-    this.logger.debug(
-      `Monitor configs: ${this.monitorConfigs.map(([type, ctor]) => `${type}: ${ctor.name}`).join(', ')}`,
-    );
+    // Clear existing monitors
+    this.monitors = [];
 
+    // Create new monitors based on the latest configuration
     this.monitors = this.monitorConfigs.flatMap(([monitorType, MonitorClass]) => {
-      const groups = this.monitoringGroups.filter(
+      const filteredGroups = groups.filter(
         group => group.chain === this.chainProps.chain && group.monitors.some(monitor => monitor.name === monitorType),
       );
 
-      this.logger.debug(`Found ${groups.length} groups for monitor type ${monitorType}`);
-
-      if (groups.length > 0) {
-        const monitorAccounts = groups.reduce((acc, group) => acc + (group.accounts?.length || 0), 0);
-
-        totalGroups += groups.length;
-        totalAccounts += monitorAccounts;
-
-        this.logger.debug(`Creating monitor ${MonitorClass.name} with ${monitorAccounts} accounts`);
-
-        return [new MonitorClass(this.logger, groups, this.incidents, this.chainProps, this.provider, monitorType)];
+      if (filteredGroups.length > 0) {
+        return [
+          new MonitorClass(this.logger, filteredGroups, this.incidents, this.chainProps, this.provider, monitorType),
+        ];
       }
       return [];
     });
 
-    this.logger.debug(`Initialized ${this.monitors.length} monitors`);
-    this.logger.debug(`Total accounts: ${totalAccounts}, total groups: ${totalGroups}`);
-
-    this.initializeMetrics(totalAccounts, totalGroups);
-  }
-
-  /**
-   * Updates metrics with the current monitoring state
-   * @param totalAccounts - Total number of accounts being monitored
-   * @param totalGroups - Total number of monitoring groups
-   */
-  protected initializeMetrics(totalAccounts: number, totalGroups: number): void {
-    this.metrics.setMonitoredAccountsCount(totalAccounts);
-    this.metrics.setMonitorGroupsCount(totalGroups);
-    this.metrics.setMonitorsCount(this.monitors.length);
+    this.logger.debug(`Initialized ${this.monitors.length} monitors for chain ${this.chainProps.chain}`);
   }
 
   /**
@@ -110,6 +96,10 @@ export abstract class AbstractWatcher<T extends MonitorType, M extends Monitor<T
       this.logger.debug(`${this.constructor.name} has already been started.`);
       return;
     }
+
+    // Load initial monitoring groups
+    await this.initializeMonitors();
+
     this.isRunning = true;
     await this.startWatching(params);
   }

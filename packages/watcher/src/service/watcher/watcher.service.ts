@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ConfigService } from '../config/config.service';
+import { MonitoringConfigService } from '../monitoring-config/monitoring-config.service';
 import { MetricsService } from '../metrics/metrics.service';
 import { StorageService } from '../storage/storage.service';
 import { TelemetryService } from '../telemetry/telemetry.service';
@@ -18,6 +19,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
   constructor(
     private readonly logger: Logger,
     private readonly config: ConfigService,
+    private readonly monitoringConfig: MonitoringConfigService,
     private readonly metrics: MetricsService,
     private readonly storage: StorageService,
     private readonly telemetry: TelemetryService | null,
@@ -39,7 +41,6 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
 
   private async start(): Promise<void> {
     const chain = this.config.getChain();
-    const groups = this.config.getMonitoringGroups(chain);
     const chainProps = getChainProperties(chain);
 
     if (this.config.getWatcherType() === WatcherType.Chain) {
@@ -54,9 +55,10 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
         incidentApiClient: this.incidents,
         metricsClient: this.metrics,
         chainProps,
+        monitoringConfigClient: this.monitoringConfig,
       };
 
-      this.watcher = await createChainWatcher(groups, chainDependencies);
+      this.watcher = await createChainWatcher(chainDependencies);
       await this.watcher.start(chainConfig.startBlock);
     } else {
       // Initialize telemetry watcher
@@ -73,9 +75,10 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
         telemetryClient: this.telemetry,
         chainProps,
         interval: telemetryConfig.interval,
+        monitoringConfigClient: this.monitoringConfig,
       };
 
-      this.watcher = await createTelemetryWatcher(groups, telemetryDependencies);
+      this.watcher = await createTelemetryWatcher(telemetryDependencies);
       await this.watcher.start();
     }
   }

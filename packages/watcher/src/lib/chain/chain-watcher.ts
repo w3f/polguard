@@ -9,12 +9,12 @@ import {
   Logger,
   MetricsClient,
   MonitorConstructor,
-  MonitoringGroup,
   IncidentHandlerClient,
   KeyValueStorageClient,
   MonitorType,
   ChainProperties,
   ChainMonitor,
+  MonitoringConfigClient,
 } from '@w3f/monitoring-types';
 
 /**
@@ -40,7 +40,7 @@ export class ChainWatcher extends AbstractWatcher<MonitorType, ChainMonitor<Moni
 
   constructor(
     logger: Logger,
-    monitoringGroups: MonitoringGroup[],
+    monitoringConfigClient: MonitoringConfigClient,
     private api: ApiPromise,
     incidents: IncidentHandlerClient,
     store: KeyValueStorageClient,
@@ -49,7 +49,7 @@ export class ChainWatcher extends AbstractWatcher<MonitorType, ChainMonitor<Moni
     chainProps: ChainProperties,
     monitorConfigs: [MonitorType, MonitorConstructor<MonitorType, ChainMonitor<MonitorType>, ChainDataProvider>][],
   ) {
-    super(logger, monitoringGroups, incidents, store, metrics, chainProps, provider, monitorConfigs);
+    super(logger, monitoringConfigClient, incidents, store, metrics, chainProps, provider, monitorConfigs);
   }
 
   protected async startWatching(startBlock?: number): Promise<void> {
@@ -73,8 +73,17 @@ export class ChainWatcher extends AbstractWatcher<MonitorType, ChainMonitor<Moni
 
   private async runBlockProcessing(startBlock?: number): Promise<void> {
     let nextBlockToProcess = startBlock ? startBlock : (await this.store.get<number>('last_processed_block')) + 1;
+    let lastConfigRefreshTime = Date.now();
 
     while (this.isRunning) {
+      // Check if it's time to refresh config
+      const now = Date.now();
+      if (now - lastConfigRefreshTime >= this.configRefreshIntervalMs) {
+        // Refresh monitors with latest configuration
+        await this.initializeMonitors(false);
+        lastConfigRefreshTime = now;
+      }
+
       if (nextBlockToProcess <= this.latestBlockNumber) {
         await this.processBlock(nextBlockToProcess);
         nextBlockToProcess++;

@@ -7,10 +7,16 @@
  * - KeyValueStorageClient: Represents a client for caching and storing data (e.g., Redis)
  * - TelemetryClient: Represents a client for fetching telemetry data from nodes
  * - IncidentApiClient: Represents a client for sending incidents to the incident management service
+ * - MonitoringConfigClient: Represents a client for fetching monitoring configuration
  */
 
 import { TelemetryData } from './telemetry';
 import { CreateIncidentDto, ResolveIncidentDto } from './incident';
+import { MonitoringGroup } from './monitor';
+
+export interface MonitoringConfigClient {
+  getMonitoringGroups(): Promise<MonitoringGroup[]>;
+}
 
 export interface TelemetryClient {
   getTelemetry(): Promise<TelemetryData>;

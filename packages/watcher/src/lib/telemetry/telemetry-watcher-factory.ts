@@ -6,24 +6,29 @@ import {
   KeyValueStorageClient,
   IncidentApiClient,
   MetricsClient,
-  MonitoringGroup,
   MonitorType,
   TelemetryClient,
   MonitorConstructor,
   TelemetryMonitor,
   NoProvider,
+  MonitoringConfigClient,
 } from '@w3f/monitoring-types';
 import { Store } from '../common/store';
 import { IncidentHandler } from '../common/incident-handler';
 import { TelemetryMonitor as TelemetryMonitorImpl } from './monitors/telemetry-monitor';
 import { TelemetryWatcher } from './telemetry-watcher';
 
-export async function createTelemetryWatcher(
-  groups: MonitoringGroup[],
-  dependencies: TelemetryWatcherDependencies,
-): Promise<TelemetryWatcher> {
-  const { logger, chainProps, storageClient, incidentApiClient, metricsClient, telemetryClient, interval } =
-    dependencies;
+export async function createTelemetryWatcher(dependencies: TelemetryWatcherDependencies): Promise<TelemetryWatcher> {
+  const {
+    logger,
+    chainProps,
+    storageClient,
+    incidentApiClient,
+    metricsClient,
+    telemetryClient,
+    interval,
+    monitoringConfigClient,
+  } = dependencies;
 
   const store = new Store(storageClient, chainProps.chain);
   const incidentHandler = new IncidentHandler(logger, store, incidentApiClient, chainProps.chain);
@@ -34,7 +39,7 @@ export async function createTelemetryWatcher(
 
   return new TelemetryWatcher(
     logger,
-    groups,
+    monitoringConfigClient,
     incidentHandler,
     store,
     metricsClient,
@@ -53,4 +58,5 @@ export interface TelemetryWatcherDependencies {
   telemetryClient: TelemetryClient;
   chainProps: ChainProperties;
   interval: number;
+  monitoringConfigClient: MonitoringConfigClient;
 }
