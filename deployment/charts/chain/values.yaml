@@ -1,0 +1,44 @@
+image:
+  repo: web3f/mp-chain
+  # tag: xy
+
+httpPort: 3000
+
+resources: {}
+
+# nameOverride: xy
+
+prometheusRules:
+  enabled: false
+  labels:
+    app: w3f
+    role: alert-rules #according to https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/alerting.md#prometheusrule-labelling
+  origin: clusterName
+
+serviceMonitor:
+  enabled: false
+  labels:
+    group: w3f
+    release: prometheus-operator
+
+config:
+  environment: development
+  redis:
+    url: redis://redis-master:6379/0
+  chain: Polkadot
+  rpc:
+    url: wss://rpc-polkadot.luckyfriday.io
+  startBlock: 24283300
+  monitoringGroupIds:
+    - test-group-validator-1
+  monitoringApi:
+    baseUrl: http://api:3000
+    endpoints:
+      createIncident: /incidents
+      resolveIncident: /incidents/resolve
+      getConfig: /monitoring-config/groups
+  httpServer:
+    port: 3000
+    host: 0.0.0.0
+  logging:
+    level: debug

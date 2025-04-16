@@ -1,0 +1,5 @@
+description: Monitoring Platform - Telemetry Watcher
+name: mp-telemetry
+version: v0.0.8
+appVersion: v0.0.8
+apiVersion: v2

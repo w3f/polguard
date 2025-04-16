@@ -50,5 +50,3 @@ export type HandlerType =
   | IdentityHandlerType
   | TelemetryHandlerType
   | XcmHandlerType;
-
-export type HandlerExecutionType = 'triggered' | 'periodic';

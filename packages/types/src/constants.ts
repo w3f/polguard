@@ -1,10 +1,5 @@
 import { ChainProperties } from '.';
 
-export enum WatcherType {
-  Chain = 'Chain',
-  Telemetry = 'Telemetry',
-}
-
 export enum Chain {
   Polkadot = 'Polkadot',
   Kusama = 'Kusama',

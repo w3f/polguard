@@ -13,6 +13,7 @@
 import { TelemetryData } from './telemetry';
 import { CreateIncidentDto, ResolveIncidentDto } from './incident';
 import { MonitoringGroup } from './monitor';
+import { Hash, Header, SignedBlock, EventRecord } from '@polkadot/types/interfaces';
 
 export interface MonitoringConfigClient {
   getMonitoringGroups(): Promise<MonitoringGroup[]>;
@@ -27,7 +28,7 @@ export interface EventEmitterClient {
 }
 
 export interface MetricsClient {
-  setBlockHeight(height: number): void;
+  setBlockHeight?(height: number): void;
   setMonitoredAccountsCount(count: number): void;
   setMonitorsCount(count: number): void;
   setMonitorGroupsCount(count: number): void;
@@ -49,4 +50,27 @@ export interface KeyValueStorageClient {
 export interface IncidentApiClient {
   createIncident(incident: CreateIncidentDto): Promise<boolean>;
   resolveIncident(resolveData: ResolveIncidentDto): Promise<boolean>;
+}
+
+/**
+ * Interface for chain API operations required by the ChainWatcher.
+ * This decouples the watcher from the specific ApiPromise implementation.
+ */
+export interface ChainApiClient {
+  rpc: {
+    chain: {
+      getHeader(): Promise<Header>;
+      getBlockHash(blockNumber: number): Promise<Hash>;
+      getBlock(blockHash: Hash): Promise<SignedBlock>;
+      subscribeFinalizedHeads(callback: (header: Header) => void): void;
+    }
+  };
+  
+  at(blockHash: Hash): Promise<{
+    query: {
+      system: {
+        events(callback: (records: EventRecord[]) => Promise<void>): Promise<void>;
+      }
+    }
+  }>;
 }

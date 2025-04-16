@@ -3,12 +3,7 @@ import { IdentityField } from '.';
 export type IdentityInfo = {
   [K in IdentityField]?: string;
 };
-
-export interface DataProvider {}
-
-export type NoProvider = DataProvider;
-
-export interface ChainDataProvider extends DataProvider {
+export interface ChainDataProvider {
   stakingValidators(blockNumber: number): Promise<Set<string>>;
   stakingValidatorsCommission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>>;
   stakingLedgerActive(addresses: string[], blockNumber: number): Promise<Record<string, bigint | null>>;

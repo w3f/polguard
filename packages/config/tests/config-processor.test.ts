@@ -60,7 +60,8 @@ describe('ConfigProcessor', () => {
 
       // Check Balances monitor settings
       expect(bobAccount?.[MonitorType.Balances]).toEqual({
-        threshold: 750250000000000n // Converted to BigInt
+        threshold: 750250000000000n, // Converted to BigInt
+        changeComparison: ComparisonType.GreaterThanOrEqual // Default from schema
       });
 
       // Check Identity monitor settings

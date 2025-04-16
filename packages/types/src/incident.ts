@@ -7,20 +7,6 @@ export interface AlertSettings {
   repeatIntervalHours?: number;
 }
 
-export interface IncidentEvent {
-  id: string;
-  chain: Chain;
-  message: string;
-  alerts: AlertSettings;
-  timestamp: number;
-  blockNumber?: number;
-}
-
-export interface Message {
-  title: string;
-  details: string[];
-}
-
 export interface CreateIncidentDto {
   message: string;
   chain: Chain;
@@ -50,17 +36,11 @@ export interface IncidentKey {
 }
 
 export interface IncidentHandlerClient {
-  oneTimeIncident(
-    message: string[], 
-    alerts: AlertSettings, 
-    incidentKey: IncidentKey,
-    blockNumber: number
-  ): Promise<void>;
-  ongoingIncident(
+  handle(
     message: string[],
     alerts: AlertSettings,
-    isFiring: boolean,
     incidentKey: IncidentKey,
-    blockNumber: number
+    blockNumber: number,
+    isFiring?: boolean
   ): Promise<void>;
 }

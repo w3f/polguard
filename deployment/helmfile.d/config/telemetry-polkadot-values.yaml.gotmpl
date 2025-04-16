@@ -3,7 +3,7 @@ image:
   tag: {{ env "CIRCLE_SHA1" | default "kind" }}
 {{ else if eq .Environment.Name "local" }}
 image:
-  repo: localhost:5000/mp-watcher
+  repo: localhost:5000/mp-telemetry
   tag: latest
 {{ end }}
 
@@ -20,18 +20,24 @@ config:
   environment: test
   redis:
     url: redis://redis-master:6379/0
-  watcherType: Telemetry
   chain: Polkadot
-  telemetryConfig:
-    endpoint: http://telemetry-exporter:3000/feed/filtered
+  telemetryExporterApi:
+    url: https://telemetry-exporter.w3f.community/feed/filtered
     basicAuth:
       username: api
       password: "{{ env "TELEMETRY_PASSWORD" }}"
-    interval: 30000
-  monitoringConfigSources:
-  - name: "gitlab"
-    url: "https://gitlab.w3f.tech/api/v4/projects/99/repository/files/accounts.yaml/raw?ref=feature/telemetry-test"
-    authToken: "{{ env "GITLAB_TOKEN" }}"  # Optional  
+  pollingIntervalMs: 60000
+  monitoringGroupIds:
+    - test-group-validator-1
+  monitoringApi:
+    baseUrl: http://api:3000
+    endpoints:
+      createIncident: /incidents
+      resolveIncident: /incidents/resolve
+      getConfig: /monitoring-config/groups
+  httpServer:
+    port: 3000
+    host: 0.0.0.0
   logging:
     level: debug 
 {{ end }}

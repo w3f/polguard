@@ -1,4 +1,4 @@
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ COPY packages/matrix packages/matrix
 RUN yarn build:types && \
     yarn build:matrix
 
-FROM node:18-alpine
+FROM node:20-alpine AS production
 
 WORKDIR /app
 

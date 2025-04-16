@@ -1,158 +1,149 @@
-version: 2
+version: 2.1
 
-commit_filters: &commit_filters
-  filters:
-    tags:
-      only: /.*/ 
-release_filters: &release_filters
-  filters:
-    branches:
-      ignore: /.*/
-    tags:
-      only: /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
-
-defaults: &defaults
-  docker:
-    - image: web3f/ci-commons:v3
-
-node_defaults: &node_defaults
-  docker:
-    - image: web3f/node-dind:v3
+executors:
+  default-executor:
+    docker:
+      - image: web3f/ci-commons:v3
+  node-executor:
+    docker:
+      - image: web3f/node-dind:v3
 
 jobs:
-  yarnLint: &yarnLint
-    <<: *node_defaults
+  yarn_lint:
+    parameters:
+      module:
+        type: string
+    executor: node-executor
     steps:
       - checkout
       - run:
           command: |
             corepack enable && corepack prepare yarn@4.6.0 --activate
             yarn install
-            yarn workspace @w3f/monitoring-${MODULE} lint     
+            yarn workspace @w3f/monitoring-<< parameters.module >> lint
 
-  helmLint: &helmLint
-    <<: *defaults
+  helm_lint:
+    parameters:
+      module:
+        type: string
+    executor: default-executor
     steps:
       - checkout
       - run:
-          command: helm lint ./deployment/charts/"${MODULE}"
+          command: helm lint ./deployment/charts/"<< parameters.module >>"
 
-  buildImage: &buildImage
-    <<: *defaults
+  build_image:
+    parameters:
+      module:
+        type: string
+    executor: default-executor
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          command: |
-            /scripts/build-image.sh web3f/mp-"${MODULE}" . -f packages/"${MODULE}"/Dockerfile
+          command: /scripts/build-image.sh web3f/mp-"<< parameters.module >>" . -f packages/"<< parameters.module >>"/Dockerfile
 
-  publishImage: &publishImage
-    <<: *defaults
+  publish_image:
+    parameters:
+      module:
+        type: string
+    executor: default-executor
     steps:
       - checkout
       - setup_remote_docker
       - run:
-          command: |
-            /scripts/publish-image.sh web3f/mp-"${MODULE}"
+          command: /scripts/publish-image.sh web3f/mp-"<< parameters.module >>"
 
-  # Watcher jobs
-  yarnLintWatcher: &watcher_job
-    environment: &watcher_env
-      MODULE: watcher
-    <<: *yarnLint
-
-  helmLintWatcher:
-    environment: *watcher_env
-    <<: *helmLint 
-
-  buildImageWatcher:
-    environment: *watcher_env
-    <<: *buildImage
-
-  publishImageWatcher:
-    environment: *watcher_env
-    <<: *publishImage 
-
-  # Matrix jobs
-  yarnLintMatrix: &matrix_job
-    environment: &matrix_env
-      MODULE: matrix
-    <<: *yarnLint
-
-  helmLintMatrix:
-    environment: *matrix_env
-    <<: *helmLint          
-
-  buildImageMatrix:
-    environment: *matrix_env
-    <<: *buildImage
-
-  publishImageMatrix:
-    environment: *matrix_env
-    <<: *publishImage                   
-
-  integrationTests:
-    <<: *defaults
+  integration_tests:
+    executor: default-executor
     steps:
       - checkout
       - setup_remote_docker
       - run:
           description: run integration tests
-          command: |
-            /scripts/integration-tests.sh kindest/node:v1.23.4   
+          command: /scripts/integration-tests.sh kindest/node:v1.23.4
 
-  publishCharts:
-    <<: *defaults
+  publish_charts:
+    executor: default-executor
     environment:
       HELM_CHARTS_SOURCE: /root/project/deployment/charts
     steps:
       - checkout
       - run:
-          command: |
-            /scripts/publish-chart.sh            
+          command: /scripts/publish-chart.sh
+
+filters:
+  all_tags: &all_tags
+    tags:
+      only: /.*/
+  release_tags: &release_tags
+    branches:
+      ignore: /.*/
+    tags:
+      only: /^v\d+\.\d+\.\d+.*/
 
 workflows:
-  version: 2
   test_and_publish:
     jobs:
-      # Lint jobs
-      - yarnLintWatcher: &commit_job
-          <<: *commit_filters
-      - yarnLintMatrix: *commit_job
-      - helmLintWatcher: *commit_job
-      - helmLintMatrix: *commit_job     
+      # Yarn lint jobs for all modules
+      - yarn_lint:
+          name: yarn-lint-<< matrix.module >>
+          matrix:
+            parameters:
+              module: ["api", "chain", "telemetry", "matrix"]
+          filters: *all_tags
 
-      # Build jobs
-      - buildImageWatcher: &build_job
+      # Helm lint jobs for all modules
+      - helm_lint:
+          name: helm-lint-<< matrix.module >>
+          matrix:
+            parameters:
+              module: ["api", "chain", "telemetry", "matrix"]
+          filters: *all_tags
+
+      # Build jobs for all modules
+      - build_image:
+          name: build-<< matrix.module >>
           context: dockerhub-bot
+          matrix:
+            parameters:
+              module: ["api", "chain", "telemetry", "matrix"]
           requires:
-            - helmLintWatcher
-            - yarnLintWatcher
-          <<: *commit_filters
-      - buildImageMatrix:
-          <<: *build_job
-          requires:
-            - helmLintMatrix
-            - yarnLintMatrix
+            - yarn-lint-api
+            - yarn-lint-chain
+            - yarn-lint-telemetry
+            - yarn-lint-matrix
+            - helm-lint-api
+            - helm-lint-chain
+            - helm-lint-telemetry
+            - helm-lint-matrix
+          filters: *all_tags
 
       # Integration tests
-      - integrationTests:
+      - integration_tests:
           context: ci-matrixbot
-          <<: *commit_filters
           requires:
-            - buildImageWatcher  
-            - buildImageMatrix
+            - build-api
+            - build-chain
+            - build-telemetry
+            - build-matrix
+          filters: *all_tags
 
-      # Publish jobs
-      - publishImageWatcher: &publish_job
+      # Publish jobs for all modules
+      - publish_image:
+          name: publish-<< matrix.module >>
           context: dockerhub-bot
-          <<: *release_filters
+          matrix:
+            parameters:
+              module: ["api", "chain", "telemetry", "matrix"]
           requires:
-            - integrationTests
-      - publishImageMatrix: *publish_job
-      - publishCharts:
+            - integration_tests
+          filters: *release_tags
+
+      # Publish charts
+      - publish_charts:
           context: github-bot
-          <<: *release_filters
           requires:
-            - integrationTests
+            - integration_tests
+          filters: *release_tags

@@ -3,7 +3,7 @@ image:
   tag: {{ env "CIRCLE_SHA1" | default "kind" }}
 {{ else if eq .Environment.Name "local" }}
 image:
-  repo: localhost:5000/mp-watcher
+  repo: localhost:5000/mp-chain
   tag: latest
 {{ end }}
 
@@ -20,16 +20,21 @@ config:
   environment: test
   redis:
     url: redis://redis-master:6379/0
-  watcherType: Chain
   chain: Polkadot
-  chainConfig:
-    startBlock: 24703912
-    rpcs:
-      - wss://rpc-polkadot.luckyfriday.io
-  monitoringConfigSources:
-  - name: "gitlab"
-    url: "https://gitlab.w3f.tech/api/v4/projects/99/repository/files/accounts.yaml/raw?ref=main"
-    authToken: "{{ env "GITLAB_TOKEN" }}"  # Optional 
+  rpc:
+    url: wss://rpc-polkadot.luckyfriday.io
+  startBlock: 24703912
+  monitoringGroupIds:
+    - test-group-validator-1
+  monitoringApi:
+    baseUrl: http://api:3000
+    endpoints:
+      createIncident: /incidents
+      resolveIncident: /incidents/resolve
+      getConfig: /monitoring-config/groups
+  httpServer:
+    port: 3000
+    host: 0.0.0.0
   logging:
     level: debug 
 {{ end }}

@@ -1,0 +1,18 @@
+environment: development
+
+matrix:
+  url: "https://matrix.web3.foundation"
+  userId: "@vlad-test:web3.foundation"
+  # password is provided via env variable MATRIX_PASSWORD
+  rooms:
+    # TestMonitoringPlatform room
+    - id: "!BabNKVNdOktKGafXzd:web3.foundation"
+  logging:
+    level: warn
+
+
+monitoringApi:
+  baseUrl: "http://api:3000"
+
+logging:
+  level: info

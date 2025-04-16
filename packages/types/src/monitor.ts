@@ -1,50 +1,30 @@
-import { ChainProperties, ConfigAccountSettings, Logger, IdentityField } from '.';
+import { ChainProperties, ConfigAccountSettings, Logger, IdentityField, ChainDataProvider } from '.';
 import { Chain, ComparisonType, MonitorType, PolkadotClientImpl } from './constants';
 import { AlertSettings, IncidentHandlerClient } from './incident';
 import { CallHandlerParams, EventHandlerParams, StateHandlerParams, MonitorHandlerType, TelemetryHandlerParams } from './handlers';
-import { DataProvider } from './data-provider';
 
-/**
- * Base monitor interface that all monitors must implement
- */
-export interface Monitor<T extends MonitorType> {
-  // Common monitor methods could go here if needed
-}
-
-/**
- * Telemetry-specific monitor interface
- */
-export interface TelemetryMonitor<T extends MonitorType> extends Monitor<T> {
-  processTelemetry(params: TelemetryHandlerParams): Promise<void>;
-}
-
-/**
- * Chain-specific monitor interface
- */
-export interface ChainMonitor<T extends MonitorType> extends Monitor<T> {
+export interface Monitor {
   processState(params: StateHandlerParams): Promise<void>;
   processEvent(params: EventHandlerParams): Promise<void>;
   processCall(params: CallHandlerParams): Promise<void>;
 }
 
+export interface TelemetryMonitor {
+  processTelemetry(params: TelemetryHandlerParams): Promise<void>;
+}
+
 /**
  * Constructor type for monitors
  * @typeParam T - Type of monitor (e.g., Staking, Identity)
- * @typeParam M - Specific monitor implementation (e.g., ChainMonitor, TelemetryMonitor)
- * @typeParam D - Type of data provider used by the monitor
  */
-export type MonitorConstructor<
-  T extends MonitorType,
-  M extends Monitor<T>,
-  D extends DataProvider
-> = new (
+export type MonitorConstructor<T extends MonitorType> = new (
   logger: Logger,
   groups: MonitoringGroup[],
   incidents: IncidentHandlerClient,
   chainProps: ChainProperties,
-  provider: D,
+  provider: ChainDataProvider,
   monitorType: T
-) => M;
+) => Monitor;
 
 type HandlerConfig<T> = {
   include: T[];

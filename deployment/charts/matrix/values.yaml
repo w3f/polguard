@@ -16,7 +16,7 @@ config:
     url: redis://redis-master:6379/0
 
   matrix:
-    serverAddress: "https://matrix.web3.foundation"
+    url: "https://matrix.web3.foundation"
     userId: "@xxx:web3.foundation"
     password: "xxx"
     rooms:
@@ -25,6 +25,12 @@ config:
     logging:
       level: warn
 
+  monitoringApi:
+    baseUrl: "http://api:3000"
+
+  server:
+    port: 3000
+    host: "0.0.0.0"
+
   logging:
     level: info
-

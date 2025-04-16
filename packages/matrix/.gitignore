@@ -1,5 +1,5 @@
 # App
-/config
+/config/config.yaml
 matrix-storage/
 
 # Compiled output

@@ -15,9 +15,9 @@ export class IncidentService implements IncidentServiceInterface {
 
   async getNonResolved(roomId: string): Promise<Incident[]> {
     try {
-      const apiUrl = this.configService.getIncidentManagementUrl();
+      const baseUrl = this.configService.getMonitoringApi().baseUrl;
       const response = await firstValueFrom(
-        this.httpService.get(`${apiUrl}/incidents`, {
+        this.httpService.get(`${baseUrl}/incidents`, {
           params: {
             channelId: roomId,
             resolved: false,
@@ -33,9 +33,9 @@ export class IncidentService implements IncidentServiceInterface {
 
   async getNonAcked(roomId: string): Promise<Incident[]> {
     try {
-      const apiUrl = this.configService.getIncidentManagementUrl();
+      const baseUrl = this.configService.getMonitoringApi().baseUrl;
       const response = await firstValueFrom(
-        this.httpService.get(`${apiUrl}/incidents`, {
+        this.httpService.get(`${baseUrl}/incidents`, {
           params: {
             channelId: roomId,
             ackRequired: true,
@@ -52,8 +52,8 @@ export class IncidentService implements IncidentServiceInterface {
 
   async getIncidentById(incidentId: number): Promise<Incident> {
     try {
-      const apiUrl = this.configService.getIncidentManagementUrl();
-      const response = await firstValueFrom(this.httpService.get(`${apiUrl}/incidents/${incidentId}`));
+      const baseUrl = this.configService.getMonitoringApi().baseUrl;
+      const response = await firstValueFrom(this.httpService.get(`${baseUrl}/incidents/${incidentId}`));
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to fetch incident details: ${error.message}`);
@@ -63,9 +63,9 @@ export class IncidentService implements IncidentServiceInterface {
 
   async acknowledgeIncident(incidentId: number, username: string, channelId: string): Promise<void> {
     try {
-      const apiUrl = this.configService.getIncidentManagementUrl();
+      const baseUrl = this.configService.getMonitoringApi().baseUrl;
       await firstValueFrom(
-        this.httpService.post(`${apiUrl}/incidents/${incidentId}/acknowledge`, {
+        this.httpService.post(`${baseUrl}/incidents/${incidentId}/acknowledge`, {
           username,
           channelId,
         }),

@@ -68,7 +68,7 @@ export class MatrixClient {
   }
 
   private async performLogin(): Promise<{ newAccessToken: string; newDeviceId: string }> {
-    const loginClient = createClient({ baseUrl: this.config.serverAddress });
+    const loginClient = createClient({ baseUrl: this.config.url });
     try {
       const response = await loginClient.login('m.login.password', {
         user: this.config.userId,
@@ -100,7 +100,7 @@ export class MatrixClient {
     matrixLogger.setDefaultLevel(this.config.logging.level);
 
     return createClient({
-      baseUrl: this.config.serverAddress,
+      baseUrl: this.config.url,
       accessToken,
       userId: this.config.userId,
       deviceId,

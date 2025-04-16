@@ -1,4 +1,5 @@
 import { MonitorType, ComparisonType, MonitorConfig, ChainProperties, MonitorTypeSettings } from '@w3f/monitoring-types';
+import { monitorSchemas, extractFieldsFromSchema, extractDefaultsFromSchema } from './config-validator';
 
 /**
  * Builds the final account monitor settings object used in the chain watcher.
@@ -57,28 +58,23 @@ import { MonitorType, ComparisonType, MonitorConfig, ChainProperties, MonitorTyp
  * // }
  */
 export class AccountSettingsBuilder {
+  /**
+   * Gets the field names for a specific monitor type from its Joi schema.
+   * This replaces the hardcoded list of fields with a dynamic approach that
+   * extracts the fields from the validation schema.
+   * 
+   * @param monitorType - The monitor type to get fields for
+   * @returns An array of field names for the monitor type
+   */
   private static getMonitorTypeKeys<T extends MonitorType>(
     monitorType: T
   ): (keyof MonitorTypeSettings[T])[] {
-    // TODO: Consider replacing hardcoded monitor type fields with a more maintainable solution.
-    const settingsType = {
-      [MonitorType.Staking]: ['commission', 'commissionComparison', 'selfStakeComparison', 'selfStake', 'payee', 'handlers'],
-      [MonitorType.Balances]: ['threshold', 'changeComparison', 'handlers'],
-      [MonitorType.Identity]: ['matrix', 'email', 'handlers'],
-      [MonitorType.Xcm]: ['handlers'],
-      [MonitorType.Telemetry]: [
-        'handlers',
-        'cpu',
-        'minMemoryGB',
-        'minCores',
-        'clientVersion',
-        'provider',
-        'sanctionedCountries',
-        'sanctionedRegions'
-      ],
-      [MonitorType.Governance]: ['handlers']
-    };
-    return settingsType[monitorType] as (keyof MonitorTypeSettings[T])[];
+    const schema = monitorSchemas[monitorType];
+    if (!schema) {
+      return [] as (keyof MonitorTypeSettings[T])[];
+    }
+    
+    return extractFieldsFromSchema(schema) as (keyof MonitorTypeSettings[T])[];
   }
 
   static buildSettings(
@@ -122,18 +118,30 @@ export class AccountSettingsBuilder {
     return mergedSettings;
   }
 
+  /**
+   * Applies default values to monitor settings.
+   * This method extracts default values from the Joi schemas and applies them
+   * to the merged settings.
+   * 
+   * @param mergedSettings - The merged settings from monitors and accounts
+   * @returns Settings with defaults applied
+   */
   private static applyDefaultSettings(
     mergedSettings: Record<MonitorType, Record<string, any>>,
   ): Record<MonitorType, Record<string, any>> {
     const settingsWithDefaults = { ...mergedSettings };
 
-    if (settingsWithDefaults[MonitorType.Staking]) {
-      settingsWithDefaults[MonitorType.Staking] = {
-        commissionComparison: ComparisonType.LessThanOrEqual,
-        selfStakeComparison: ComparisonType.GreaterThanOrEqual,
-        ...settingsWithDefaults[MonitorType.Staking],
-      };
-    }
+    // Apply defaults for each monitor type
+    Object.entries(settingsWithDefaults).forEach(([monitorType, settings]) => {
+      const schema = monitorSchemas[monitorType as MonitorType];
+      if (schema) {
+        const defaults = extractDefaultsFromSchema(schema);
+        settingsWithDefaults[monitorType as MonitorType] = {
+          ...defaults,
+          ...settings,
+        };
+      }
+    });
 
     return settingsWithDefaults;
   }

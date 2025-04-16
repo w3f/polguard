@@ -7,10 +7,14 @@
  * It checks the structure and values of the config but does not apply any defaults
  * or transform the data in any way. Data transformation and default application
  * are handled separately in the config processor module.
+ * 
+ * The module also exports the monitor schemas to be used by other modules,
+ * such as the AccountSettingsBuilder, to extract field names.
  */
 import * as Joi from 'joi';
 import { Chain, ComparisonType, MessengerType, MonitorType, StakingHandlerType, IdentityHandlerType,
-         BalancesHandlerType, TelemetryHandlerType, IDENTITY_FIELDS, PolkadotClientImpl } from '@w3f/monitoring-types';
+         BalancesHandlerType, TelemetryHandlerType, GovernanceHandlerType, XcmHandlerType,
+         IDENTITY_FIELDS, PolkadotClientImpl } from '@w3f/monitoring-types';
 
 const decimalStringPattern = /^-?\d*\.?\d*$/;
 const decimalStringSchema = Joi.string()
@@ -36,6 +40,12 @@ const alertSchema = Joi.object({
   repeatIntervalHours: Joi.number(),
 });
 
+/**
+ * Creates a Joi schema for handler configuration
+ * @param handlerEnum - The enum containing handler types
+ * @param monitorName - The name of the monitor
+ * @returns A Joi schema for handler configuration
+ */
 function createHandlerSchema(handlerEnum: Record<string, string>, monitorName: string) {
   const handlerArraySchema = Joi.array()
     .items(
@@ -70,8 +80,10 @@ function createHandlerSchema(handlerEnum: Record<string, string>, monitorName: s
 const stakingMonitorSchema = Joi.object({
   commission: Joi.number().min(0).max(100),
   selfStake: decimalStringSchema,
-  selfStakeComparison: Joi.string().valid(...Object.values(ComparisonType)),
-  commissionComparison: Joi.string().valid(...Object.values(ComparisonType)),
+  selfStakeComparison: Joi.string().valid(...Object.values(ComparisonType))
+    .default(ComparisonType.GreaterThanOrEqual),
+  commissionComparison: Joi.string().valid(...Object.values(ComparisonType))
+    .default(ComparisonType.LessThanOrEqual),
   payee: Joi.string(),
   handlers: createHandlerSchema(StakingHandlerType, 'Staking')
 });
@@ -85,7 +97,8 @@ const identityMonitorSchema = Joi.object({
 
 const balancesMonitorSchema = Joi.object({
   threshold: decimalStringSchema,
-  changeComparison: Joi.string().valid(...Object.values(ComparisonType)),
+  changeComparison: Joi.string().valid(...Object.values(ComparisonType))
+    .default(ComparisonType.GreaterThanOrEqual),
   handlers: createHandlerSchema(BalancesHandlerType, 'Balances')
 });
 
@@ -103,6 +116,63 @@ const telemetryMonitorSchema = Joi.object({
   sanctionedRegions: Joi.array().items(Joi.string())
 });
 
+const governanceMonitorSchema = Joi.object({
+  handlers: createHandlerSchema(GovernanceHandlerType, 'Governance')
+});
+
+const xcmMonitorSchema = Joi.object({
+  handlers: createHandlerSchema(XcmHandlerType, 'Xcm')
+});
+
+/**
+ * Map of monitor types to their schemas
+ */
+export const monitorSchemas = {
+  [MonitorType.Staking]: stakingMonitorSchema,
+  [MonitorType.Identity]: identityMonitorSchema,
+  [MonitorType.Balances]: balancesMonitorSchema,
+  [MonitorType.Telemetry]: telemetryMonitorSchema,
+  [MonitorType.Governance]: governanceMonitorSchema,
+  [MonitorType.Xcm]: xcmMonitorSchema
+};
+
+/**
+ * Extracts field names from a Joi schema
+ * @param schema - The Joi schema to extract fields from
+ * @returns An array of field names
+ */
+export function extractFieldsFromSchema(schema: Joi.Schema): string[] {
+  const description = schema.describe();
+  
+  if (description.type === 'object' && description.keys) {
+    return Object.keys(description.keys);
+  }
+  
+  return [];
+}
+
+/**
+ * Extracts default values from a Joi schema
+ * @param schema - The Joi schema to extract defaults from
+ * @returns An object containing field names and their default values
+ */
+export function extractDefaultsFromSchema(schema: Joi.Schema): Record<string, any> {
+  const description = schema.describe();
+  const defaults: Record<string, any> = {};
+  
+  if (description.type === 'object' && description.keys) {
+    Object.entries(description.keys).forEach(([key, value]) => {
+      // Type assertion for the value object
+      const schemaValue = value as any;
+      if (schemaValue.flags && schemaValue.flags.default !== undefined) {
+        defaults[key] = schemaValue.flags.default;
+      }
+    });
+  }
+  
+  return defaults;
+}
+
 const monitorSchema = Joi.object({
   name: Joi.string()
     .valid(...Object.values(MonitorType))
@@ -117,6 +187,8 @@ const monitorSchema = Joi.object({
     { is: MonitorType.Identity, then: identityMonitorSchema },
     { is: MonitorType.Balances, then: balancesMonitorSchema },
     { is: MonitorType.Telemetry, then: telemetryMonitorSchema },
+    { is: MonitorType.Governance, then: governanceMonitorSchema },
+    { is: MonitorType.Xcm, then: xcmMonitorSchema },
   ]
 });
 
@@ -131,7 +203,9 @@ const accountSchema = Joi.object({
   .concat(stakingMonitorSchema)
   .concat(identityMonitorSchema)
   .concat(balancesMonitorSchema)
-  .concat(telemetryMonitorSchema);
+  .concat(telemetryMonitorSchema)
+  .concat(governanceMonitorSchema)
+  .concat(xcmMonitorSchema);
 
 const defaultsSchema = Joi.object({
   chains: Joi.array()

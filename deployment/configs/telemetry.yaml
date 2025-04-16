@@ -1,0 +1,22 @@
+chain: Polkadot
+monitoringGroupIds:
+  - test-group-validator-1
+pollingIntervalMs: 60000  # 1 minute for testing
+
+telemetryExporterApi:
+  url: https://telemetry-exporter.w3f.community/feed/filtered
+  basicAuth:
+    username: api
+    password: password
+redis:
+  url: redis://redis:6379/0
+monitoringApi:
+  baseUrl: http://api:3000
+  endpoints:
+    createIncident: /incidents
+    resolveIncident: /incidents/resolve
+    getConfig: /monitoring-config/groups
+
+environment: development
+logging:
+  level: debug

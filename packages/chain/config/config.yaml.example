@@ -1,0 +1,20 @@
+chain: Polkadot
+# startBlock: 24283300
+
+monitoringGroupIds:
+  - test-group-validator-1
+
+redis:
+  url: redis://localhost:6379/0
+rpc:
+  url: wss://rpc-polkadot.luckyfriday.io
+monitoringApi:
+  baseUrl: http://localhost:8082
+  endpoints:
+    createIncident: /incidents
+    resolveIncident: /incidents/resolve
+    getConfig: /monitoring-config/groups
+
+environment: development
+logging:
+  level: debug

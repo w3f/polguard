@@ -1,0 +1,130 @@
+import {
+  AccountSettings,
+  AlertSettings,
+  ConfigAccountSettings,
+  MonitorHandlerType,
+  MonitoringGroup,
+  MonitorSettings,
+  MonitorType,
+} from '@w3f/monitoring-types';
+
+type AccountConfig<T extends MonitorType> = {
+  account: AccountSettings<T>;
+  alerts: AlertSettings;
+  groupId: string;
+};
+
+export class AccountRegistry<T extends MonitorType> {
+  private accounts: Map<string, AccountConfig<T>[]> = new Map();
+  private uniqueAddresses: string[];
+
+  constructor(
+    private groups: MonitoringGroup[],
+    private monitorType: T,
+  ) {
+    this.buildAccountLookup();
+    this.uniqueAddresses = Array.from(this.accounts.keys());
+  }
+
+  /**
+   * Builds account lookup structure for the monitor.
+   *
+   * This method processes all accounts from the monitoring groups and creates a lookup map
+   * that maps ss58 addresses to arrays of account configurations. Multiple configurations
+   * for the same address are possible when the same account is monitored by different groups
+   * with different settings.
+   *
+   * Example:
+   * {
+   *   "5GrwvaEF...": [
+   *     {
+   *       account: { ss58: "5GrwvaEF...", name: "Alice", ... },
+   *       alerts: { targets: ["room1"], ... },
+   *       groupId: "validators-1"
+   *     },
+   *     {
+   *       account: { ss58: "5GrwvaEF...", name: "Alice", ... },
+   *       alerts: { targets: ["room2"], ... },
+   *       groupId: "validators-2"
+   *     }
+   *   ]
+   * }
+   *
+   * Using Map for O(1) address lookups.
+   */
+  private buildAccountLookup(): void {
+    for (const group of this.groups) {
+      for (const account of group.accounts as ConfigAccountSettings[]) {
+        if (!this.accounts.has(account.ss58)) {
+          this.accounts.set(account.ss58, []);
+        }
+        this.accounts.get(account.ss58).push({
+          account: {
+            ss58: account.ss58,
+            hex: account.hex,
+            name: account.name,
+            settings: account[this.monitorType] as MonitorSettings<T>,
+          },
+          alerts: group.alerts,
+          groupId: group.id,
+        });
+      }
+    }
+  }
+
+  /**
+   * Gets account configurations filtered by handler eligibility.
+   *
+   * Each address can have multiple account configurations when same account is monitored
+   * by different groups with different settings. This method filters account configurations
+   * based on handler configuration:
+   *
+   * - If no handlers configuration provided - all account configurations are returned
+   * - If include list is provided - only configurations that include the handler are returned
+   * - If exclude list is provided - only configurations that don't exclude the handler are returned
+   *
+   * @param handler - Handler type to check eligibility for
+   * @param address - Account address to get configurations for
+   * @returns Array of account configurations that are eligible for the handler
+   */
+  getAccounts(handler: MonitorHandlerType[T], address: string): AccountConfig<T>[] {
+    const accounts = this.accounts.get(address) || [];
+
+    return accounts.filter(account => {
+      const handlers = account.account.settings?.handlers;
+      if (!handlers) return true;
+
+      if ('include' in handlers) {
+        return (handlers.include as MonitorHandlerType[T][]).includes(handler);
+      }
+      return !(handlers.exclude as MonitorHandlerType[T][]).includes(handler);
+    });
+  }
+
+  /**
+   * Helper method to iterate through all accounts for a given handler type.
+   * Simplifies common pattern of iterating through unique addresses and their accounts.
+   *
+   * @param handlerType - Type of handler to get accounts for
+   * @param callback - Function to execute for each account
+   */
+  async forEachAccount(
+    handlerType: MonitorHandlerType[T],
+    callback: (params: { account: AccountSettings<T>; alerts: AlertSettings; groupId: string }) => Promise<void>,
+  ): Promise<void> {
+    for (const address of this.uniqueAddresses) {
+      for (const accountInfo of this.getAccounts(handlerType, address)) {
+        await callback(accountInfo);
+      }
+    }
+  }
+
+  /**
+   * Gets all unique addresses in the registry.
+   *
+   * @returns Array of unique addresses
+   */
+  getUniqueAddresses(): string[] {
+    return this.uniqueAddresses;
+  }
+}

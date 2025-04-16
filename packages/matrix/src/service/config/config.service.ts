@@ -33,7 +33,7 @@ export class ConfigService {
     const schema = Joi.object({
       environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
       matrix: Joi.object({
-        serverAddress: Joi.string().uri().required(),
+        url: Joi.string().uri().required(),
         logging: Joi.object({
           level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error'),
         }).default({ level: 'warn' }),
@@ -53,10 +53,10 @@ export class ConfigService {
           )
           .optional(),
       }).required(),
-      incidentManagement: Joi.object({
-        url: Joi.string().uri().required(),
+      monitoringApi: Joi.object({
+        baseUrl: Joi.string().uri().required(),
       }).required(),
-      server: Joi.object({
+      httpServer: Joi.object({
         port: Joi.number().default(3000),
         host: Joi.string().default('0.0.0.0'),
       }).optional(),
@@ -77,8 +77,10 @@ export class ConfigService {
     return this.config.matrix;
   }
 
-  getIncidentManagementUrl(): string {
-    return this.config.incidentManagement.url;
+  getMonitoringApi(): {
+    baseUrl: string;
+  } {
+    return this.config.monitoringApi;
   }
 
   getLoggingLevel(): string {
@@ -86,17 +88,17 @@ export class ConfigService {
   }
 
   getServerConfig() {
-    return this.config.server || { port: 3000, host: '0.0.0.0' };
+    return this.config.httpServer || { port: 3000, host: '0.0.0.0' };
   }
 }
 
 interface AppConfig {
   environment: string;
   matrix: MatrixConfig;
-  incidentManagement: {
-    url: string;
+  monitoringApi: {
+    baseUrl: string;
   };
-  server: {
+  httpServer: {
     port: number;
     host: string;
   };

@@ -1,5 +1,5 @@
 export interface MatrixConfig {
-  serverAddress: string;
+  url: string;
   userId: string;
   password: string;
   logging: { level: 'trace' | 'debug' | 'info' | 'warn' | 'error' };

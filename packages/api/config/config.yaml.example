@@ -1,0 +1,15 @@
+environment: development
+
+database:
+  host: localhost
+  port: 5432
+  username: postgres
+  password: postgres
+  database: monitoring
+
+notificationApi:
+  matrix:
+    url: http://localhost:8081/api/notify
+
+logging:
+  level: debug

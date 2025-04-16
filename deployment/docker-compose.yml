@@ -1,13 +1,23 @@
 services:
-  watcher:
+  chain:
     build:
       context: ..
-      dockerfile: packages/watcher/Dockerfile
+      dockerfile: packages/chain/Dockerfile
     volumes:
-      - ./app-config/watcher.yaml:/app/packages/watcher/config/config.yaml
-      - ./app-config/watcher.monitoring.yaml:/app/packages/watcher/monitoring-configs/config.yaml
+      - ./configs/chain.yaml:/app/packages/chain/config/config.yaml
     ports:
       - "127.0.0.1:8080:3000"
+    depends_on:
+      - redis
+
+  telemetry:
+    build:
+      context: ..
+      dockerfile: packages/telemetry/Dockerfile
+    volumes:
+      - ./configs/telemetry.yaml:/app/packages/telemetry/config/config.yaml
+    ports:
+      - "127.0.0.1:8083:3000"
     depends_on:
       - redis
 
@@ -18,19 +28,20 @@ services:
     environment:
       - MATRIX_PASSWORD
     volumes:
-      - ./app-config/matrix.yaml:/app/packages/matrix/config/config.yaml
+      - ./configs/matrix.yaml:/app/packages/matrix/config/config.yaml
       - ../packages/matrix/matrix-storage:/app/packages/matrix/matrix-storage/
     ports:
       - "127.0.0.1:8081:3000"
     depends_on:
       - redis
 
-  incident-management:
+  api:
     build:
       context: ..
-      dockerfile: packages/incident-management/Dockerfile
+      dockerfile: packages/api/Dockerfile
     volumes:
-      - ./app-config/incident-management.yaml:/app/packages/incident-management/config/config.yaml
+      - ./configs/api.yaml:/app/packages/api/config/config.yaml
+      - ./configs/monitoring-groups.yaml:/app/packages/api/monitoring-configs/config.yaml
     ports:
       - "127.0.0.1:8082:3000"
     depends_on:
@@ -43,20 +54,17 @@ services:
     volumes:
       - redis-data:/data
     command: redis-server --save 1 1
-    environment:
-      - REDIS_REPLICATION_MODE=master
     restart: always
     
   postgres:
-    image: postgres:14-alpine
+    image: postgres:17-alpine
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=incident_management
+      - POSTGRES_DB=monitoring
     restart: always
 
 volumes:

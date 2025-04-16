@@ -1,0 +1,21 @@
+defaults:
+  alerts:
+    # ~30 seconds between firing events (for testing purposes)
+    repeatIntervalHours: 0.0083
+    messengerType: matrix
+    targets:
+      # TestMonitoringPlatform room
+      - "!BabNKVNdOktKGafXzd:web3.foundation"
+  chains:
+    - Polkadot
+  monitors:
+    - name: Staking
+      commission: 5
+    - name: Telemetry
+      minMemoryGB: 16
+      minCores: 4
+
+groups:
+  - id: test-group-validator-1
+    accounts:
+      - address: 15tEXHHDjEv6VKR2MhpnfeJZnKQnTyMPVvGH51BJvBXNoCNK

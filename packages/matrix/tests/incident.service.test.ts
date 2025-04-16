@@ -19,7 +19,7 @@ describe('IncidentService', () => {
     };
 
     configServiceMock = {
-      getIncidentManagementUrl: jest.fn().mockReturnValue('http://incident-management:3000'),
+      getMonitoringApi: jest.fn().mockReturnValue({ baseUrl: 'http://api:3000' }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -56,7 +56,7 @@ describe('IncidentService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { url: 'http://incident-management:3000/incidents' } as any,
+        config: { url: 'http://api:3000/incidents' } as any,
       };
 
       (httpServiceMock.get as jest.Mock).mockReturnValue(of(mockResponse));
@@ -65,13 +65,24 @@ describe('IncidentService', () => {
 
       expect(result).toEqual(mockIncidents);
       expect(httpServiceMock.get).toHaveBeenCalledWith(
-        'http://incident-management:3000/incidents',
+        'http://api:3000/incidents',
         {
           params: {
             channelId: 'test-room',
             resolved: false,
           },
         },
+      );
+    });
+
+    it('should throw an error when the API call fails', async () => {
+      const errorMessage = 'Network error';
+      (httpServiceMock.get as jest.Mock).mockReturnValue(
+        throwError(() => new Error(errorMessage)),
+      );
+
+      await expect(service.getNonResolved('test-room')).rejects.toThrow(
+        `Failed to fetch non-resolved incidents: ${errorMessage}`,
       );
     });
   });
@@ -88,7 +99,7 @@ describe('IncidentService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { url: 'http://incident-management:3000/incidents' } as any,
+        config: { url: 'http://api:3000/incidents' } as any,
       };
 
       (httpServiceMock.get as jest.Mock).mockReturnValue(of(mockResponse));
@@ -97,7 +108,7 @@ describe('IncidentService', () => {
 
       expect(result).toEqual(mockIncidents);
       expect(httpServiceMock.get).toHaveBeenCalledWith(
-        'http://incident-management:3000/incidents',
+        'http://api:3000/incidents',
         {
           params: {
             channelId: 'test-room',
@@ -118,7 +129,7 @@ describe('IncidentService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { url: 'http://incident-management:3000/incidents/1' } as any,
+        config: { url: 'http://api:3000/incidents/1' } as any,
       };
 
       (httpServiceMock.get as jest.Mock).mockReturnValue(of(mockResponse));
@@ -127,7 +138,7 @@ describe('IncidentService', () => {
 
       expect(result).toEqual(mockIncident);
       expect(httpServiceMock.get).toHaveBeenCalledWith(
-        'http://incident-management:3000/incidents/1',
+        'http://api:3000/incidents/1',
       );
     });
   });
@@ -139,7 +150,7 @@ describe('IncidentService', () => {
         status: 201,
         statusText: 'Created',
         headers: {},
-        config: { url: 'http://incident-management:3000/incidents/1/acknowledge' } as any,
+        config: { url: 'http://api:3000/incidents/1/acknowledge' } as any,
       };
 
       (httpServiceMock.post as jest.Mock).mockReturnValue(of(mockResponse));
@@ -147,7 +158,7 @@ describe('IncidentService', () => {
       await service.acknowledgeIncident(1, 'test-user', 'test-room');
 
       expect(httpServiceMock.post).toHaveBeenCalledWith(
-        'http://incident-management:3000/incidents/1/acknowledge',
+        'http://api:3000/incidents/1/acknowledge',
         {
           username: 'test-user',
           channelId: 'test-room',

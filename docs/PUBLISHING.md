@@ -9,7 +9,9 @@ Public packages:
 - `@w3f/monitoring-config`
 
 Private packages:
-- `@w3f/monitoring-watcher`
+- `@w3f/monitoring-api`
+- `@w3f/monitoring-chain`
+- `@w3f/monitoring-telemetry`
 - `@w3f/monitoring-matrix`
 
 ## Publishing Workflow
