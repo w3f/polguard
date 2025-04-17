@@ -12,6 +12,19 @@ The Matrix service is responsible for delivering incident notifications to Matri
 - **Bot Commands**: Provides commands for interacting with incidents
 - **Incident Acknowledgment**: Allows users to acknowledge incidents via Matrix
 
+## REST API Endpoints
+
+### Notifications
+
+- `POST /notifications`: Send a notification to a Matrix room
+  - Request body: `{ "channelId": "string", "message": "string" }`
+  - Response: `{ "success": true }` or error
+
+### Health and Metrics
+
+- `GET /health`: Health check endpoint that returns a 200 status code when the service is healthy
+- `GET /metrics`: Prometheus metrics endpoint that exposes default Node.js metrics (memory usage, CPU usage, event loop lag, etc.)
+
 ## Bot Commands
 
 The Matrix bot supports several commands:
@@ -35,7 +48,7 @@ The Matrix service requires a configuration file to specify its behavior. For an
 - Access to a Matrix homeserver
 - API service (for incident management)
 
-### Installation
+### Running the Service
 
 ```bash
 # Install dependencies
@@ -43,19 +56,20 @@ yarn install
 
 # Build the package
 yarn build
-```
-
-### Running the Service
-
-```bash
-# Start in development mode
-yarn start:dev
 
 # Start in production mode
 yarn start
 ```
 
 ## Development
+
+```bash
+# Start in development mode
+yarn start:dev
+
+# Run tests
+yarn test
+```
 
 ### Project Structure
 
@@ -68,15 +82,3 @@ yarn start
   - `health/`: Health check endpoints
   - `incident/`: Incident management
   - `metrics/`: Prometheus metrics
-
-### Testing
-
-```bash
-# Run tests
-yarn test
-
-# Run tests in watch mode
-yarn test:watch
-
-# Run tests with coverage
-yarn test:coverage

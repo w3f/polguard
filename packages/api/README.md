@@ -30,6 +30,11 @@ The API service serves as the central control point for the Monitoring Platform,
 - `GET /monitoring-config/groups`: Get monitoring groups
 - `GET /monitoring-config/accounts`: Get accounts for monitoring
 
+### Health and Metrics
+
+- `GET /health`: Health check endpoint that returns a 200 status code when the service is healthy
+- `GET /metrics`: Prometheus metrics endpoint that exposes default Node.js metrics (memory usage, CPU usage, event loop lag, etc.)
+
 ## Scheduled Tasks
 
 The API service performs several scheduled tasks:
@@ -50,7 +55,7 @@ The API service requires a configuration file to specify its behavior. For an ex
 - Yarn 4.6.0+
 - PostgreSQL database
 
-### Installation
+### Running the Service
 
 ```bash
 # Install dependencies
@@ -58,19 +63,23 @@ yarn install
 
 # Build the package
 yarn build
-```
-
-### Running the Service
-
-```bash
-# Start in development mode
-yarn start:dev
 
 # Start in production mode
 yarn start
 ```
 
 ## Development
+
+```bash
+# Start in development mode
+yarn start:dev
+
+# Run tests
+yarn test
+
+# Run integration tests
+yarn test:integration
+```
 
 ### Project Structure
 
@@ -83,18 +92,3 @@ yarn start
   - `monitoring-config/`: Monitoring configuration management
   - `notification/`: Notification handling
   - `scheduler/`: Scheduled tasks
-
-### Testing
-
-```bash
-# Run tests
-yarn test
-
-# Run integration tests
-yarn test:integration
-
-# Run tests in watch mode
-yarn test:watch
-
-# Run tests with coverage
-yarn test:coverage

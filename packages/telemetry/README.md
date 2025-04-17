@@ -8,6 +8,21 @@ The Telemetry service is responsible for monitoring node telemetry data and gene
 
 Note: This service is a temporary solution and will be removed in the future.
 
+## Key Features
+
+- **Telemetry Processing**: Processes node telemetry data to analyze node status
+- **Multi-Monitor Architecture**: Supports specialized monitors for different telemetry aspects
+- **Configuration Refresh**: Periodically updates monitoring configuration
+- **Incident Generation**: Creates and resolves incidents based on detected conditions
+
+### Monitors
+
+The Telemetry service includes one specialized monitor:
+
+- **Telemetry Monitor**: Tracks node hardware, software, location, and network information
+
+For a complete reference of all monitors and handlers, see the [Monitors & Handlers Reference](../config/MONITORS.md).
+
 ## Simplified Architecture Overview
 
 ```mermaid
@@ -24,13 +39,12 @@ graph TD
     IncidentHandler -- "Create/Resolve incident" --> ApiService
 ```
 
-## Monitors
+## REST API Endpoints
 
-The Telemetry service includes one specialized monitor:
+### Health and Metrics
 
-- **Telemetry Monitor**: Tracks node hardware, software, location, and network information
-
-For a complete reference of all monitors and handlers, see the [Monitors & Handlers Reference](../config/MONITORS.md).
+- `GET /health`: Health check endpoint that returns a 200 status code when the service is healthy
+- `GET /metrics`: Prometheus metrics endpoint that exposes default Node.js metrics and custom metrics (accounts count, monitors count, groups count)
 
 ## Configuration
 
@@ -46,7 +60,7 @@ The Telemetry service requires a configuration file to specify its behavior. For
 - Access to telemetry data source
 - API service (for monitoring configuration and incident management)
 
-### Installation
+### Running the Service
 
 ```bash
 # Install dependencies
@@ -54,19 +68,20 @@ yarn install
 
 # Build the package
 yarn build
-```
-
-### Running the Service
-
-```bash
-# Start in development mode
-yarn start:dev
 
 # Start in production mode
 yarn start
 ```
 
 ## Development
+
+```bash
+# Start in development mode
+yarn start:dev
+
+# Run tests
+yarn test
+```
 
 ### Project Structure
 
@@ -82,16 +97,3 @@ yarn start
   - `metrics/`: Prometheus metrics
   - `telemetry/`: Telemetry data fetching
   - `watcher/`: Watcher service implementation
-
-### Testing
-
-```bash
-# Run tests
-yarn test
-
-# Run tests in watch mode
-yarn test:watch
-
-# Run tests with coverage
-yarn test:coverage
-```

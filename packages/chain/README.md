@@ -6,6 +6,28 @@ Blockchain monitoring service for the Monitoring Platform.
 
 The Chain service is responsible for monitoring blockchain activities and generating or resolving incidents based on detected conditions. It processes blockchain events, extrinsic calls, and state changes to track various on-chain activities across the Polkadot ecosystem.
 
+## Key Features
+
+- **Block Processing**: Processes blockchain blocks sequentially to ensure ordered analysis
+- **Event Monitoring**: Tracks and analyzes blockchain events for anomalies and conditions
+- **Extrinsic Monitoring**: Processes extrinsics including nested calls
+- **State Monitoring**: Tracks on-chain state changes
+- **Multi-Monitor Architecture**: Supports specialized monitors for different blockchain aspects
+- **Configuration Refresh**: Periodically updates monitoring configuration
+- **Incident Generation**: Creates and resolves incidents based on detected conditions
+
+### Monitors
+
+The Chain service includes several specialized monitors:
+
+- **Staking Monitor**: Tracks validator activities, commission rates, and staking parameters
+- **Balances Monitor**: Monitors account balances and transfers
+- **Identity Monitor**: Tracks on-chain identity information
+- **Governance Monitor**: Monitors governance activities like referenda and voting
+- **XCM Monitor**: Tracks cross-chain asset transfers
+
+For a complete reference of all monitors and handlers, see the [Monitors & Handlers Reference](../config/MONITORS.md).
+
 ## Simplified Architecture Overview
 
 ```mermaid
@@ -24,17 +46,12 @@ graph TD
     IncidentHandler -- "Create/Resolve incident" --> ApiService
 ```
 
-## Monitors
+## REST API Endpoints
 
-The Chain service includes several specialized monitors:
+### Health and Metrics
 
-- **Staking Monitor**: Tracks validator activities, commission rates, and staking parameters
-- **Balances Monitor**: Monitors account balances and transfers
-- **Identity Monitor**: Tracks on-chain identity information
-- **Governance Monitor**: Monitors governance activities like referenda and voting
-- **XCM Monitor**: Tracks cross-chain asset transfers
-
-For a complete reference of all monitors and handlers, see the [Monitors & Handlers Reference](../config/MONITORS.md).
+- `GET /health`: Health check endpoint that returns a 200 status code when the service is healthy
+- `GET /metrics`: Prometheus metrics endpoint that exposes default Node.js metrics and custom metrics (block height, accounts count, monitors count, groups count)
 
 ## Configuration
 
@@ -50,7 +67,7 @@ The Chain service requires a configuration file to specify its behavior. For an 
 - Access to a blockchain RPC node
 - API service (for monitoring configuration and incident management)
 
-### Installation
+### Running the Service
 
 ```bash
 # Install dependencies
@@ -58,19 +75,20 @@ yarn install
 
 # Build the package
 yarn build
-```
-
-### Running the Service
-
-```bash
-# Start in development mode
-yarn start:dev
 
 # Start in production mode
 yarn start
 ```
 
 ## Development
+
+```bash
+# Start in development mode
+yarn start:dev
+
+# Run tests
+yarn test
+```
 
 ### Project Structure
 
@@ -88,15 +106,3 @@ yarn start
   - `incident/`: Incident publishing
   - `metrics/`: Prometheus metrics
   - `watcher/`: Watcher service implementation
-
-### Testing
-
-```bash
-# Run tests
-yarn test
-
-# Run tests in watch mode
-yarn test:watch
-
-# Run tests with coverage
-yarn test:coverage
