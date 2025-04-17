@@ -84,6 +84,7 @@ const stakingMonitorSchema = Joi.object({
     .default(ComparisonType.GreaterThanOrEqual),
   commissionComparison: Joi.string().valid(...Object.values(ComparisonType))
     .default(ComparisonType.LessThanOrEqual),
+  // TODO: add validation with the enum (Staked, Stash, etc.)
   payee: Joi.string(),
   handlers: createHandlerSchema(StakingHandlerType, 'Staking')
 });

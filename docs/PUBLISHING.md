@@ -4,15 +4,15 @@
 
 This project contains both public and private packages:
 
-Public packages:
-- `@w3f/monitoring-types`
-- `@w3f/monitoring-config`
+**Public packages**:
+- `@w3f/monitoring-types`: Common types, interfaces, and constants
+- `@w3f/monitoring-config`: Configuration processing and validation
 
-Private packages:
-- `@w3f/monitoring-api`
-- `@w3f/monitoring-chain`
-- `@w3f/monitoring-telemetry`
-- `@w3f/monitoring-matrix`
+**Private packages**:
+- `@w3f/monitoring-api`: Central control service
+- `@w3f/monitoring-chain`: Blockchain monitoring service
+- `@w3f/monitoring-telemetry`: Telemetry monitoring service
+- `@w3f/monitoring-matrix`: Matrix notification service
 
 ## Publishing Workflow
 
