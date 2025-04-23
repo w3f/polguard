@@ -20,7 +20,9 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
       const previousBalance = previousBalances[address];
 
       for (const { account, alerts, groupId } of this.reg.getAccounts(handler, address)) {
-        const compareFunc = BalancesMonitor.comparisonFunctions[account.settings.changeComparison];
+        const comparisonType = account.settings?.changeComparison;
+        const compareFunc = comparisonType && BalancesMonitor.comparisonFunctions[comparisonType];
+        if (!compareFunc) continue;
         const message = this.fmt.message(
           [
             `Balance changed for ${this.fmt.accountLink(account)}`,

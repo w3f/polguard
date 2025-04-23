@@ -9,7 +9,6 @@ groups:
       - name: Staking
         commission: 10
         handlers:
-          include:
-            - InvalidHandlerType  # Invalid handler type
+          - InvalidHandlerType  # Invalid handler type
     accounts:
       - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"

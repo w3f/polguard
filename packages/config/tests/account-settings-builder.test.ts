@@ -12,7 +12,7 @@ describe('AccountSettingsBuilder', () => {
             commission: 10,
             commissionComparison: ComparisonType.LessThanOrEqual,
             selfStakeComparison: ComparisonType.GreaterThanOrEqual,
-            handlers: { include: [StakingHandlerType.CommissionChanged] }
+            handlers: [StakingHandlerType.CommissionChanged]
           }
         }
       ];
@@ -38,9 +38,7 @@ describe('AccountSettingsBuilder', () => {
         selfStake: 10005000000000n, // Converted to BigInt
         commissionComparison: ComparisonType.LessThanOrEqual, // Default
         selfStakeComparison: ComparisonType.GreaterThanOrEqual, // Default
-        handlers: {
-          include: [StakingHandlerType.CommissionChanged]
-        }
+        handlers: [StakingHandlerType.CommissionChanged]
       });
     });
 
@@ -51,7 +49,8 @@ describe('AccountSettingsBuilder', () => {
           settings: {
             commission: 10,
             commissionComparison: ComparisonType.LessThanOrEqual,
-            selfStakeComparison: ComparisonType.GreaterThanOrEqual
+            selfStakeComparison: ComparisonType.GreaterThanOrEqual,
+            handlers: [StakingHandlerType.ActiveSetPresence]
           }
         }
       ];

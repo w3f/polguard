@@ -10,8 +10,15 @@ groups:
     monitors:
       - name: Staking
         commission: 5
+        handlers:
+          - CommissionChanged
       - name: Balances
         threshold: "1000.0"
+        handlers:
+          - BalanceThreshold
+      - name: Xcm
+        handlers:
+          - XcmTransferEgress
     accounts:
       - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
         name: "Alice-Polkadot"
@@ -25,8 +32,15 @@ groups:
     monitors:
       - name: Staking
         commission: 10
+        handlers:
+          - CommissionChanged
       - name: Balances
         threshold: "10000.0"
+        handlers:
+          - BalanceThreshold
+      - name: Xcm
+        handlers:
+          - XcmTransferEgress
     accounts:
       - address: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
         name: "Alice-Kusama"

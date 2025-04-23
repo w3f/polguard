@@ -1,10 +1,8 @@
-import { EventRecord } from '@polkadot/types/interfaces/system';
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
 
 import {
   Logger,
-  MetricsClient,
   IncidentHandlerClient,
   KeyValueStorageClient,
   MonitoringGroup,
@@ -64,7 +62,6 @@ export class ChainWatcher {
     private api: ChainApiClient,
     private incidents: IncidentHandlerClient,
     private store: KeyValueStorageClient,
-    private metrics: MetricsClient,
     private chainProps: ChainProperties,
     private chainProvider: ChainDataProvider,
   ) {}
@@ -112,7 +109,7 @@ export class ChainWatcher {
    *
    * @param throwError Whether to throw an error if fetching monitoring groups fails
    */
-  private async initializeMonitors(throwError: boolean = true): Promise<void> {
+  async initializeMonitors(throwError: boolean = true): Promise<void> {
     let groups: MonitoringGroup[];
     try {
       groups = await this.monitoringConfigClient.getMonitoringGroups();
@@ -197,7 +194,7 @@ export class ChainWatcher {
    *
    * @param blockNumber The block number to process
    */
-  private async processBlock(blockNumber: number): Promise<void> {
+  async processBlock(blockNumber: number): Promise<void> {
     this.logger.debug(`Processing block: #${blockNumber}`);
     const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
     const block = await this.api.rpc.chain.getBlock(blockHash);
@@ -209,13 +206,12 @@ export class ChainWatcher {
     }
 
     // Apply event handlers: process event payload
-    await apiAt.query.system.events(async (records: EventRecord[]) => {
-      for (const eventRecord of records) {
-        for (const monitor of this.monitors) {
-          await monitor.processEvent({ blockNumber, eventRecord });
-        }
+    const records = await apiAt.query.system.events();
+    for (const eventRecord of records) {
+      for (const monitor of this.monitors) {
+        await monitor.processEvent({ blockNumber, eventRecord });
       }
-    });
+    }
 
     // Apply call handlers: process call signature
     for (let extrinsicIndex = 0; extrinsicIndex < block.block.extrinsics.length; extrinsicIndex++) {
@@ -225,7 +221,6 @@ export class ChainWatcher {
     }
 
     await this.store.set('last_processed_block', blockNumber);
-    this.metrics.setBlockHeight(blockNumber);
   }
 
   /**

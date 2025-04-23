@@ -75,9 +75,11 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const commission = commissions[account.ss58];
       if (commission === null) return;
 
-      const expectedCommission = account.settings.commission;
-      const comparisonType = account.settings.commissionComparison;
-      const compareFunc = StakingMonitor.comparisonFunctions[comparisonType];
+      const expectedCommission = account.settings?.commission;
+      const comparisonType = account.settings?.commissionComparison;
+      const compareFunc = comparisonType && StakingMonitor.comparisonFunctions[comparisonType];
+      if (!expectedCommission || !compareFunc) return;
+
       const isFiring = !compareFunc(commission, expectedCommission);
       const message = this.fmt.message(
         [
@@ -110,11 +112,12 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       if (stake === null) continue;
 
       for (const { account, alerts, groupId } of this.reg.getAccounts(handler, address)) {
-        const expectedStake = account.settings.selfStake;
+        const expectedStake = account.settings?.selfStake;
         if (!expectedStake) continue;
 
-        const comparisonType = account.settings.selfStakeComparison;
-        const compareFunc = StakingMonitor.comparisonFunctions[comparisonType];
+        const comparisonType = account.settings?.selfStakeComparison;
+        const compareFunc = comparisonType && StakingMonitor.comparisonFunctions[comparisonType];
+        if (!compareFunc) continue;
         const isFiring = !compareFunc(stake, expectedStake);
         const message = this.fmt.message(
           [
@@ -166,7 +169,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const destination = payees[account.ss58];
       if (destination === null) return;
 
-      const expectedDestination = account.settings.payee;
+      const expectedDestination = account.settings?.payee;
       if (!expectedDestination) return;
       const isFiring = destination !== expectedDestination;
       const message = this.fmt.message(

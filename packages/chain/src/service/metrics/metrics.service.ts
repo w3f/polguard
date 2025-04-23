@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Registry, collectDefaultMetrics, Gauge } from 'prom-client';
 import { MetricsClient, Chain } from '@w3f/monitoring-types';
+import { StorageService } from '../storage/storage.service';
 
 const prefix = 'mp_chain_watcher_';
 
@@ -15,6 +16,7 @@ export class MetricsService implements OnModuleInit, MetricsClient {
   constructor(
     private readonly network: Chain,
     private readonly environment: string,
+    private readonly storage: StorageService,
   ) {
     this.registry = new Registry();
 
@@ -74,6 +76,12 @@ export class MetricsService implements OnModuleInit, MetricsClient {
   }
 
   async getMetrics(): Promise<string> {
+    // Update block height from storage before returning metrics
+    const lastProcessedBlock = await this.storage.get<number>('last_processed_block');
+    if (lastProcessedBlock !== null) {
+      this.setBlockHeight(lastProcessedBlock);
+    }
+
     return this.registry.metrics();
   }
 }

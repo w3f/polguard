@@ -22,7 +22,7 @@ import { monitorSchemas, extractFieldsFromSchema, extractDefaultsFromSchema } fr
  *     name: MonitorType.Staking,
  *     settings: {
  *       commission: 10,
- *       handlers: { include: ['CommissionChanged'] }
+ *       handlers: ['CommissionChanged']
  *     }
  *   },
  *   {
@@ -48,9 +48,7 @@ import { monitorSchemas, extractFieldsFromSchema, extractDefaultsFromSchema } fr
  * //     selfStake: 10005000000000n, // From account settings, converted to BigInt
  * //     commissionComparison: ComparisonType.LessThanOrEqual,  // Default applied
  * //     selfStakeComparison: ComparisonType.GreaterThanOrEqual, // Default applied
- * //     handlers: {                 // Preserved from monitor config
- * //       include: ['CommissionChanged']
- * //     }
+ * //     handlers: ['CommissionChanged']  // Preserved from monitor config
  * //   },
  * //   [MonitorType.Balances]: {
  * //     threshold: 1002200000000n,  // From monitor settings, converted to BigInt

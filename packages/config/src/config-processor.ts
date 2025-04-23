@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
-import { MonitoringGroup, MonitorConfig, ConfigAccountSettings, Chain, getChainProperties } from '@w3f/monitoring-types';
+import { MonitoringGroup, MonitorConfig, ConfigAccountSettings, Chain, getChainProperties, MonitorTypeSettings, MonitorType } from '@w3f/monitoring-types';
 import { RawConfig, RawMonitoringGroup } from './interfaces';
 import { validateConfig } from './config-validator';
 import { AddressTransformer } from './address-transformer';
@@ -35,7 +35,7 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  *     monitors: [
  *       {
  *         name: MonitorType.Staking,
- *         settings: { commission: 10, handlers: { include: ["CommissionChanged"] } }
+ *         settings: { commission: 10, handlers: ["CommissionChanged"] }
  *       }
  *     ],
  *     accounts: [
@@ -109,7 +109,7 @@ export class ConfigProcessor {
       const { name, ...settings } = monitor;
       return {
         name,
-        settings: Object.keys(settings).length > 0 ? settings : undefined,
+        settings: settings as MonitorTypeSettings[MonitorType],
       };
     });
   }

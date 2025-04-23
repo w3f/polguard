@@ -44,9 +44,8 @@ defaults:
     - name: Staking
       commission: 10
       handlers:
-        include:
-          - CommissionChanged
-          - SlashReported
+        - CommissionChanged
+        - SlashReported
 ```
 
 ## Group Configuration
@@ -128,14 +127,10 @@ The platform processes configuration in the following order:
 ## Handler Configuration
 
 ```yaml
-# If not specified, all handlers for the monitor will be active.
+# Handlers array is required and must contain at least one handler
 handlers:
-  include:  # Recommended: explicitly list desired handlers
-    - CommissionChanged
-    - SlashReported
-
-  exclude:  # Use with caution: includes all new handlers by default
-    - DestinationChanged
+  - CommissionChanged
+  - SlashReported
 ```
 
 ## Monitor Settings Hierarchy
@@ -183,11 +178,13 @@ groups:
       - name: Staking
         commission: 5
         handlers:
-          include:
-            - CommissionChanged
-            - SlashReported
+          - CommissionChanged
+          - SlashReported
       - name: Balances
         threshold: "1000.0"
+        handlers:
+          - BalanceThreshold
+          - TransferIngress
     accounts:
       - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
         name: "Alice Validator"

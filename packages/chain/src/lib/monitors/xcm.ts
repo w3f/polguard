@@ -28,7 +28,7 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
       throw error;
     }
 
-    const { origin, destination, destinationChain, amount, token } = transferInfo;
+    const { origin, destination, destinationChain, amount, _token } = transferInfo;
 
     if (!origin) {
       this.logger.warn(`Unable to determine origin address for XCM transfer in block ${blockNumber}`);
@@ -38,7 +38,7 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
     for (const { account, alerts, groupId } of this.reg.getAccounts(handler, origin)) {
       const message = this.fmt.message(
         [
-          `${this.fmt.accountLink(account)} sent ${this.fmt.balance(amount)} ${token || this.chainProps.chainToken}`,
+          `${this.fmt.accountLink(account)} sent ${this.fmt.balance(amount)}`,
           `To: ${destination || 'Unknown'}`,
           `Destination chain: ${destinationChain || 'Unknown'}`,
         ],
@@ -118,7 +118,7 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
       return;
     }
 
-    const x1 = location.interior.asX1;
+    const x1 = location.interior.asX1[0];
     if (x1.isAccountId32) {
       const originIdHex = x1.asAccountId32.id.toString();
       // Use chain's SS58 format

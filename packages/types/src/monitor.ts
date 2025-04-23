@@ -26,39 +26,33 @@ export type MonitorConstructor<T extends MonitorType> = new (
   monitorType: T
 ) => Monitor;
 
-type HandlerConfig<T> = {
-  include: T[];
-} | {
-  exclude: T[];
-};
-
 export interface StakingSettings {
   commission: number;
   commissionComparison: ComparisonType;
   selfStakeComparison: ComparisonType;
   selfStake?: bigint;
   payee?: string;
-  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Staking]>;
+  handlers: MonitorHandlerType[MonitorType.Staking][];
 }
 
 export interface GovernanceSettings {
-  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Governance]>;
+  handlers: MonitorHandlerType[MonitorType.Governance][];
 }
 
 export interface BalancesSettings {
   threshold?: bigint;
   changeComparison: ComparisonType;
-  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Balances]>;
+  handlers: MonitorHandlerType[MonitorType.Balances][];
 }
 
 export type IdentitySettings = {
   [K in IdentityField]?: string;
 } & {
-  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Identity]>;
+  handlers: MonitorHandlerType[MonitorType.Identity][];
 };
 
 export interface TelemetrySettings {
-  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Telemetry]>;
+  handlers: MonitorHandlerType[MonitorType.Telemetry][];
   cpu?: string;
   minMemoryGB?: number;
   minCores?: number;
@@ -69,7 +63,7 @@ export interface TelemetrySettings {
 }
 
 export interface XcmSettings {
-  handlers?: HandlerConfig<MonitorHandlerType[MonitorType.Xcm]>;
+  handlers: MonitorHandlerType[MonitorType.Xcm][];
 }
 
 export type MonitorTypeSettings = {
@@ -95,5 +89,5 @@ export interface MonitoringGroup {
 
 export interface MonitorConfig {
   name: MonitorType;
-  settings?: MonitorTypeSettings[MonitorType];
+  settings: MonitorTypeSettings[MonitorType];
 }

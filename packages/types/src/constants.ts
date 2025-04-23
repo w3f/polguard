@@ -80,7 +80,6 @@ export enum GovernanceHandlerType {
 }
 
 export enum XcmHandlerType {
-  XcmTransferIngress = 'XcmTransferIngress',
   XcmTransferEgress = 'XcmTransferEgress',
 }
 

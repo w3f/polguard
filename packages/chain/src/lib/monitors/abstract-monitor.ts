@@ -30,8 +30,8 @@ import { AccountRegistry } from '../account-registry';
  */
 export abstract class AbstractMonitor<T extends MonitorType> implements Monitor {
   protected handlers = {
-    event: new Map<string, EventHandlerFunction>(),
-    call: new Map<string, CallHandlerFunction>(),
+    event: new Map<string, EventHandlerFunction[]>(),
+    call: new Map<string, CallHandlerFunction[]>(),
     state: new Set<StateHandlerFunction>(),
   };
 
@@ -70,45 +70,82 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
    * 1. Binds handler methods to the instance
    * 2. Stores handlers in the appropriate collection
    * 3. Only includes handlers that are supported for the current chain
+   * 4. Only includes handlers that are specified in the monitoring groups
    */
   private initializeHandlers(): void {
     const prototype = Object.getPrototypeOf(this);
+    // A set of handler types that are included in the monitoring groups
+    const activeHandlers = new Set(
+      this.groups
+        .flatMap(group => group.monitors)
+        .filter(monitor => monitor.name === this.monitorType && monitor.settings.handlers)
+        .flatMap(monitor => monitor.settings.handlers as string[]),
+    );
 
     // Process event and call handlers (Map-based)
     for (const type of ['event', 'call']) {
-      for (const [key, metadata] of prototype[type]) {
-        if (typeof this[metadata.method] === 'function' && metadata.chains.includes(this.chainProps.chain)) {
-          const handler = this[metadata.method].bind(this);
-          this.handlers[type].set(key, handler);
+      if (prototype[type]) {
+        for (const [key, metadataArray] of prototype[type]) {
+          const handlers = [];
+          for (const metadata of metadataArray) {
+            if (
+              typeof this[metadata.method] === 'function' &&
+              metadata.chains.includes(this.chainProps.chain) &&
+              activeHandlers.has(metadata.handler)
+            ) {
+              // Bind the handler method to this instance
+              const boundHandler = this[metadata.method].bind(this);
+              handlers.push(boundHandler);
+            }
+          }
+
+          // Only set handlers if we found at least one valid handler
+          if (handlers.length > 0) {
+            this.handlers[type].set(key, handlers);
+          }
         }
       }
     }
 
     // Process state handlers (Set-based)
-    for (const [_, metadata] of prototype.state) {
-      if (typeof this[metadata.method] === 'function' && metadata.chains.includes(this.chainProps.chain)) {
-        const handler = this[metadata.method].bind(this);
-        this.handlers.state.add(handler);
+    if (prototype.state) {
+      for (const [_, metadata] of prototype.state) {
+        if (
+          typeof this[metadata.method] === 'function' &&
+          metadata.chains.includes(this.chainProps.chain) &&
+          activeHandlers.has(metadata.handler)
+        ) {
+          const handler = this[metadata.method].bind(this);
+          this.handlers.state.add(handler);
+        }
       }
     }
+
+    this.logger.debug(
+      `Initialized handlers for ${this.constructor.name}: ${this.handlers.event.size} event handlers, ${this.handlers.call.size} call handlers, ${this.handlers.state.size} state handlers`,
+    );
   }
 
   async processEvent({ eventRecord, blockNumber }: EventHandlerParams): Promise<void> {
     const { event } = eventRecord;
     const eventName = `${event.section}.${event.method}`;
-    const handler = this.handlers.event.get(eventName);
+    const handlers = this.handlers.event.get(eventName);
 
-    if (handler) {
-      await handler.call(this, { eventRecord, blockNumber });
+    if (handlers && handlers.length > 0) {
+      for (const handler of handlers) {
+        await handler.call(this, { eventRecord, blockNumber });
+      }
     }
   }
 
   async processCall({ call, origin, blockNumber, extrinsicIndex }: CallHandlerParams): Promise<void> {
     const callName = `${call.section}.${call.method}`;
-    const handler = this.handlers.call.get(callName);
+    const handlers = this.handlers.call.get(callName);
 
-    if (handler) {
-      await handler.call(this, { call, origin, blockNumber, extrinsicIndex });
+    if (handlers && handlers.length > 0) {
+      for (const handler of handlers) {
+        await handler.call(this, { call, origin, blockNumber, extrinsicIndex });
+      }
     }
   }
 

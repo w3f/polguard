@@ -13,6 +13,21 @@ For most services, we've intentionally split the NestJS implementation from the 
 - Clearer separation of concerns
 - Possibility to migrate from NestJS to other backend frameworks in the future
 
+### Handler Registration System
+
+The chain monitoring system uses TypeScript decorators to register handler methods for chain events, calls, and state checks. This approach provides a clean, declarative API for defining handlers, but introduces some complexity in the initialization process:
+
+```typescript
+@Event(H.TransferIngress, [Chain.Polkadot, Chain.Kusama], 'balances.Transfer')
+async balancesTransferIngress({ eventRecord, blockNumber, handler }) {
+  // Handler implementation
+}
+```
+
+The decorators store metadata about handlers on the class prototype at class definition time, before any instances are created. When a monitor instance is created, the `AbstractMonitor.initializeHandlers()` method reads this metadata, binds the handler methods to the instance, and stores them in the instance's handler maps.
+
+This design decision prioritizes a simple interface for defining handlers over simpler initialization logic. While the decorator-based approach makes the code more readable and maintainable for developers implementing new monitors, it requires careful management of the prototype chain.
+
 ### Telemetry and Chain Separation
 
 Telemetry is not focused on real-time processing like the chain monitoring. It remains part of the repository as we don't yet have general batch processing tools, or offline reports/dashboards for non-real-time data analysis. The code duplication between telemetry and chain watcher implementations is considered acceptable given the temporary nature of the current telemetry implementation.

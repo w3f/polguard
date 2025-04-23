@@ -79,9 +79,7 @@ export class AccountRegistry<T extends MonitorType> {
    * by different groups with different settings. This method filters account configurations
    * based on handler configuration:
    *
-   * - If no handlers configuration provided - all account configurations are returned
-   * - If include list is provided - only configurations that include the handler are returned
-   * - If exclude list is provided - only configurations that don't exclude the handler are returned
+   * - Only configurations that include the handler in their handlers array are returned
    *
    * @param handler - Handler type to check eligibility for
    * @param address - Account address to get configurations for
@@ -91,13 +89,8 @@ export class AccountRegistry<T extends MonitorType> {
     const accounts = this.accounts.get(address) || [];
 
     return accounts.filter(account => {
-      const handlers = account.account.settings?.handlers;
-      if (!handlers) return true;
-
-      if ('include' in handlers) {
-        return (handlers.include as MonitorHandlerType[T][]).includes(handler);
-      }
-      return !(handlers.exclude as MonitorHandlerType[T][]).includes(handler);
+      const handlers = account.account.settings.handlers as MonitorHandlerType[T][];
+      return handlers.includes(handler);
     });
   }
 

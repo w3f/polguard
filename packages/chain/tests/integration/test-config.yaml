@@ -1,0 +1,193 @@
+rpcEndpoints:
+  Polkadot: wss://rpc-polkadot.luckyfriday.io
+  Kusama: wss://rpc-kusama.luckyfriday.io
+  PeoplePolkadot: wss://rpc-people-polkadot.luckyfriday.io
+
+tests:
+  Staking:
+    SlashReported:
+      - description: "Event (staking.SlashReported)"
+        chain: Polkadot
+        block: 23912156
+        account:
+          address: 13YJ7PrjwAhKHP9m99APDSuvLwWKSQSmKABfJY3H2Cepk2CA
+    CommissionChanged:
+      - description: "Event (staking.ValidatorPrefsSet)"
+        chain: Polkadot
+        block: 25687816
+        account:
+          address: 15ZvLonEseaWZNy8LDkXXj3Y8bmAjxCjwvpy4pXWSL4nGSBs
+    DestinationChanged:
+      - description: "Call (staking.setPayee)"
+        chain: Polkadot
+        block: 25690413
+        account:
+          address: 16GHeAPkM9pja4XaigJ5XC7VBHyG7qHatm2hQcog4cmENeV6
+      - description: "Call (staking.bond)"
+        chain: Polkadot
+        block: 25690191
+        account:
+          address: 1aWpog533KKNYXQeKpvwCmrCaB8WXgFNhmo43oakFTP88TH
+    CommissionUnexpected:
+      - description: "State (staking.validators)"
+        chain: Polkadot
+        block: 25690600
+        account:
+          address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
+          commissionComparison: lte
+          commission: 9
+    SelfStakeUnexpected:
+      - description: "State (staking.bonded, staking.ledger)"
+        chain: Polkadot
+        block: 25690601
+        account:
+          address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
+          selfStakeComparison: gte
+          selfStake: 9000000000000
+    ValidatorIntentionMissing:
+      - description: "State (staking.bonded, staking.validators)"
+        chain: Polkadot
+        block: 25690602
+        account:
+          address: 12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ
+    DestinationUnexpected:
+      - description: "State (staking.payee)"
+        chain: Polkadot
+        block: 25690603
+        account:
+          address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
+          payee: test
+    ActiveSetPresence:
+      - description: "State (session.validators)"
+        chain: Polkadot
+        block: 25700079
+        account:
+          address: 12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ
+
+  Balances:
+    BalanceChange:
+      - description: "State (system.account). Balance decreased"
+        chain: Polkadot
+        block: 25700153
+        account:
+          address: 12nr7GiDrYHzAYT9L8HdeXnMfWcBuYfAXpgfzf3upujeCciz
+          changeComparison: lte
+      - description: "State (system.account). Balance increased"
+        chain: Polkadot
+        block: 25700153
+        account:
+          address: 12iTqoDYN18NkUbi7H3S1DWfMA99xporWhrjdyo2bvMZqJv5
+          changeComparison: gte
+    BalanceThreshold:
+      - description: "State (system.account)"
+        chain: Polkadot
+        block: 25700154
+        account:
+          address: 12iTqoDYN18NkUbi7H3S1DWfMA99xporWhrjdyo2bvMZqJv5
+          threshold: 1630000000000
+    TransferIngress:
+      - description: "Event (balances.Transfer)"
+        chain: Polkadot
+        block: 25700136
+        account:
+          address: 13sWK9B3PVxQyzeeGVtW1sZ9qBJJLa68pwtwP1asnUBMKXYz
+    TransferEgress:
+      - description: "Event (balances.Transfer)"
+        chain: Polkadot
+        block: 25700136
+        account:
+          address: 13hyXGa1E6Gprm1RQo56WwTGuvZWw4q2MoQHBPXFiGfVRx4f
+
+  Identity:
+    IdentityUnexpected:
+      - description: "State (identity.identityOf, identity.superOf)"
+        chain: PeoplePolkadot
+        block: 	1958722
+        account:
+          address: 162Cw32opH6PQRLU1dcLVgkvgC3EWrTFZQfjCK9kbuFYZ76p
+          display: test
+          legal: test
+          web: test
+          matrix: test
+          email: test
+    IdentityChanged:
+      - description: "Event (identity.IdentitySet)"
+        chain: PeoplePolkadot
+        block: 1952394
+        account:
+          address: 14V72dFeQ8E3cQN2DFu7LjCYEjEW8ufsK3HhXXwrMaVThopf
+      - description: "Event (identity.IdentityCleared)"
+        chain: PeoplePolkadot
+        block: 1804308
+        account:
+          address: 14SiBFwmMnUH6VLRCTmHQ78FSw6t21b6qkmUmHYYk88W83Z7
+    IdentityMissing:
+      - description: "State (identity.identityOf, identity.superOf)"
+        chain: PeoplePolkadot
+        block: 1958723
+        account:
+          address: HS9ucpbZ3FLR6q1wwf2ubUv1W7nRQBFufrwPek4ZmspgHbr
+    IdentityFieldsMissing:
+      - description: "State (identity.identityOf, identity.superOf)"
+        chain: PeoplePolkadot
+        block: 1958723
+        account:
+          address: 15iK81MWBDA5hLYMpAUSZF6ArGSdqiDD5mon2F7i5Pf3XtfT
+
+  Xcm:
+    XcmTransferEgress:
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Multisig dest 1000"
+        chain: Polkadot
+        block: 21497354
+        account:
+          address: 13FzGLWoueKvUqFePiJgvFYWhH5KckHGtVBXvAX7SBtVZbXu
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call limited_teleport_assets - XCM V2 dest 1000"
+        chain: Polkadot
+        block: 21814508
+        account:
+          address: 14Dtc5jL8Q9RwJrv4YwkcLTXqRyfBtFYDA8nG7z5ZxwRVCVP
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call limited_teleport_assets - XCM V3 dest 1004"
+        chain: Polkadot
+        block: 21812018
+        account:
+          address: 19e6YYas7iGGZzxwJh5KvAARL1XZnJXffcxxNvW3nkF9CLe
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call teleport_assets - XCM V2 dest 1001"
+        chain: Polkadot
+        block: 20479101
+        account:
+          address: 16YCL3UVpVWQLGW3p3Zx4k5WAEp9W1DwdDnxAbyAaPxVxnp3
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call transfer_assets - XCM V3 dest 1000"
+        chain: Polkadot
+        block: 21679999
+        account:
+          address: 14pB37HYXX8VELDLaYX3oah4XDTvwTzS3LSb6SVmcTVNpUKZ
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call reserve_transfer_assets - XCM V2 dest 2012"
+        chain: Polkadot
+        block: 21815927
+        account:
+          address: 16B5hraqXvJJjNL1ZpD58dEGYHGdVHnHuoJ2kQh4KagLsF8T
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call limited_reserve_transfer_assets - XCM V3 dest 2000"
+        chain: Polkadot
+        block: 21816282
+        account:
+          address: 14zHCfbyPJVL2QwRE8KedRTV63dqydA5SKzfi966vAFwsGb2
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call transfer_assets_using_type_and_then - custom XCM on dest AssetHub"
+        chain: Polkadot
+        block: 21803427
+        account:
+          address: 15dkzFquMdELBU3CpYqxW86ZDywBqfm3DcCxFYyDgsB4fbhL
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call smart contract destination - 2004 Moonbeam"
+        chain: Polkadot
+        block: 21821595
+        account:
+          address: 12jEnW69xZzGrU7HKZpiya3w2W6ns4ULWJwsPsnGKgUcyRAs
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call limited_teleport_assets - V2 dest 1000"
+        chain: Kusama
+        block: 24265902
+        account:
+          address: EAs8ocCfK72QQNC3H3PzC4hdmo9dtUth8Unb4kgbozZyuAz
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call send. Unknown asset instruction"
+        chain: Kusama
+        block: 24673667
+        account:
+          address: HCksmaxivAsisGDkWtm5dhdAt3Ti2e5P2Gt7JXZYFiEHMSH

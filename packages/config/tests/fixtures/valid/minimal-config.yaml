@@ -8,5 +8,10 @@ groups:
     monitors:
       - name: Staking
         commission: 10
+        handlers:
+          - CommissionChanged
+      - name: Xcm
+        handlers:
+          - XcmTransferEgress
     accounts:
       - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"

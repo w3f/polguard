@@ -8,10 +8,6 @@ groups:
     monitors:
       - name: Staking
         commission: 10
-        handlers:
-          include:
-            - CommissionChanged
-          exclude:           # Invalid: cannot have both include and exclude
-            - SlashReported
+        handlers: []         # Invalid: handlers array cannot be empty
     accounts:
       - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"

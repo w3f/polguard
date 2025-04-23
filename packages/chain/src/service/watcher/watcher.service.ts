@@ -2,7 +2,6 @@ import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } fro
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ConfigService } from '../config/config.service';
 import { MonitoringConfigService } from '../monitoring-config/monitoring-config.service';
-import { MetricsService } from '../metrics/metrics.service';
 import { StorageService } from '../storage/storage.service';
 import { getChainProperties } from '@w3f/monitoring-types';
 import { ChainWatcher } from '../../lib/watcher';
@@ -19,7 +18,6 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     private readonly logger: Logger,
     private readonly config: ConfigService,
     private readonly monitoringConfig: MonitoringConfigService,
-    private readonly metrics: MetricsService,
     private readonly storage: StorageService,
     private readonly incidents: IncidentApiService,
   ) {}
@@ -49,7 +47,6 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
       this.api,
       incidentHandler,
       this.storage,
-      this.metrics,
       chainProps,
       chainDataProvider,
     );

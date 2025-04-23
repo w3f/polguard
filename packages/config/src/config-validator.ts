@@ -47,25 +47,19 @@ const alertSchema = Joi.object({
  * @returns A Joi schema for handler configuration
  */
 function createHandlerSchema(handlerEnum: Record<string, string>, monitorName: string) {
-  const handlerArraySchema = Joi.array()
+  return Joi.array()
     .items(
       Joi.string()
         .valid(...Object.values(handlerEnum))
         .messages({
           'any.only': `Invalid ${monitorName} handler type. Must be one of: ${Object.values(handlerEnum).join(', ')}`
         })
-    );
-
-  return Joi.object()
-    .xor('include', 'exclude')
+    )
+    .min(1)
+    .optional()
     .messages({
-      'object.xor': `Invalid ${monitorName} handler configuration. Cannot have both include and exclude arrays.`
-    })
-    .keys({
-      include: handlerArraySchema,
-      exclude: handlerArraySchema
-    })
-    .optional(); // Make the entire handlers object optional
+      'array.min': `At least one handler is required for ${monitorName} monitor`
+    });
 }
 
 /**
@@ -278,16 +272,11 @@ function validateGroup(group: any, defaults: any): void {
 
 function validateMonitors(group: any, defaults: any): void {
   const monitors = group.monitors || defaults.monitors;
-  const hasStakingMonitor = monitors.some((monitor: any) => monitor.name === MonitorType.Staking);
-  if (hasStakingMonitor) {
-    const stakingMonitor = monitors.find((monitor: any) => monitor.name === MonitorType.Staking);
-    group.accounts.forEach((account: any) => {
-      if (account.commission === undefined && stakingMonitor.commission === undefined) {
-        throw new Error(
-          `Neither the Staking monitor nor account ${account.name || account.address} ` +
-            `in group ${group.id} has a commission specified`,
-        );
-      }
-    });
-  }
+  
+  // Validate that each monitor has handlers defined
+  monitors.forEach((monitor: any) => {
+    if (!monitor.handlers || monitor.handlers.length === 0) {
+      throw new Error(`Monitor ${monitor.name} in group "${group.id}" must have at least one handler defined`);
+    }
+  });
 }

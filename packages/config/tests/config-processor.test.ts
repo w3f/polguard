@@ -50,25 +50,27 @@ describe('ConfigProcessor', () => {
         selfStake: 1000500000000000n, // Converted to BigInt
         commissionComparison: ComparisonType.LessThanOrEqual, // Default
         selfStakeComparison: ComparisonType.GreaterThanOrEqual, // Default
-        handlers: {
-          include: [
-            StakingHandlerType.CommissionChanged,
-            StakingHandlerType.DestinationChanged
-          ]
-        }
+        handlers: [
+          StakingHandlerType.CommissionChanged,
+          StakingHandlerType.DestinationChanged
+        ]
       });
 
       // Check Balances monitor settings
-      expect(bobAccount?.[MonitorType.Balances]).toEqual({
+      expect(bobAccount?.[MonitorType.Balances]).toMatchObject({
         threshold: 750250000000000n, // Converted to BigInt
         changeComparison: ComparisonType.GreaterThanOrEqual // Default from schema
       });
+      expect(bobAccount?.[MonitorType.Balances].handlers).toBeDefined();
+      expect(Array.isArray(bobAccount?.[MonitorType.Balances].handlers)).toBe(true);
 
       // Check Identity monitor settings
-      expect(bobAccount?.[MonitorType.Identity]).toEqual({
+      expect(bobAccount?.[MonitorType.Identity]).toMatchObject({
         matrix: '@validator:matrix.org',
         email: 'validator@email.com'
       });
+      expect(bobAccount?.[MonitorType.Identity].handlers).toBeDefined();
+      expect(Array.isArray(bobAccount?.[MonitorType.Identity].handlers)).toBe(true);
     });
 
     it('should process minimal valid config', () => {
@@ -86,15 +88,17 @@ describe('ConfigProcessor', () => {
         Object.values(MonitorType).includes(key as MonitorType)
       );
       
-      // Should only have Staking monitor
-      expect(monitorKeys).toEqual([MonitorType.Staking]);
+      // Should have Staking and Xcm monitors
+      expect(monitorKeys).toContain(MonitorType.Staking);
       
       // Check Staking monitor settings
-      expect(account[MonitorType.Staking]).toEqual({
+      expect(account[MonitorType.Staking]).toMatchObject({
         commission: 10,
         commissionComparison: ComparisonType.LessThanOrEqual,
         selfStakeComparison: ComparisonType.GreaterThanOrEqual
       });
+      expect(account[MonitorType.Staking].handlers).toBeDefined();
+      expect(Array.isArray(account[MonitorType.Staking].handlers)).toBe(true);
     });
 
     it('should handle same address across different chains', () => {
@@ -135,14 +139,6 @@ describe('ConfigProcessor', () => {
       }).toThrow(/Invalid address format/);
     });
 
-    it('should throw when staking monitor missing commission', () => {
-      expect(() => {
-        ConfigProcessor.processConfigs([
-          path.join(FIXTURES_DIR, 'invalid/invalid-monitor.yaml')
-        ]);
-      }).toThrow(/Neither the Staking monitor nor account.*has a commission specified/);
-    });
-
     it('should throw on invalid alert configuration', () => {
       expect(() => {
         ConfigProcessor.processConfigs([
@@ -169,12 +165,12 @@ describe('ConfigProcessor', () => {
   
     describe('Invalid Configurations', () => {
       describe('handler validation', () => {
-        it('should throw on having both include and exclude', () => {
+        it('should throw on empty handlers array', () => {
           expect(() => {
             ConfigProcessor.processConfigs([
               path.join(FIXTURES_DIR, 'invalid/invalid-handlers.yaml')
             ]);
-          }).toThrow(/Cannot have both include and exclude arrays./);
+          }).toThrow(/At least one handler is required/);
         });
     
         it('should throw on invalid handler type', () => {

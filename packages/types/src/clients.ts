@@ -69,7 +69,7 @@ export interface ChainApiClient {
   at(blockHash: Hash): Promise<{
     query: {
       system: {
-        events(callback: (records: EventRecord[]) => Promise<void>): Promise<void>;
+        events(): Promise<EventRecord[]>;
       }
     }
   }>;

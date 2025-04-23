@@ -76,9 +76,8 @@ monitors:
   - name: Staking
     commission: 10  # Default commission percentage
     handlers:
-      include:
-        - CommissionChanged
-        - SlashReported
+      - CommissionChanged
+      - SlashReported
 
 accounts:
   - address: "..."
@@ -126,9 +125,8 @@ monitors:
   - name: Balances
     threshold: "1000.0"  # Default balance threshold
     handlers:
-      include:
-        - BalanceThreshold
-        - TransferIngress
+      - BalanceThreshold
+      - TransferIngress
 
 accounts:
   - address: "..."
@@ -178,9 +176,8 @@ Monitors on-chain identity information.
 monitors:
   - name: Identity
     handlers:
-      include:
-        - IdentityChanged
-        - IdentityMissing
+      - IdentityChanged
+      - IdentityMissing
 
 accounts:
   - address: "..."
@@ -211,9 +208,8 @@ Monitors governance activities.
 monitors:
   - name: Governance
     handlers:
-      include:
-        - ReferendaSubmitted
-        - ConvictionVoted
+      - ReferendaSubmitted
+      - ConvictionVoted
 ```
 
 ## XCM Monitor
@@ -233,8 +229,7 @@ Monitors cross-chain asset transfers.
 monitors:
   - name: Xcm
     handlers:
-      include:
-        - XcmTransferEgress
+      - XcmTransferEgress
 ```
 
 ## Telemetry Monitor
@@ -292,9 +287,8 @@ Monitors node telemetry data.
 monitors:
   - name: Telemetry
     handlers:
-      include:
-        - VersionOutdated
-        - TelemetryMissing
+      - VersionOutdated
+      - TelemetryMissing
     clientVersion:
       Polkadot: "v1.0.0"
     provider: "AWS"
@@ -326,21 +320,13 @@ Handlers are categorized by the type of blockchain data they process:
 
 ## Handler Configuration
 
-You can configure which handlers are active for each monitor:
+You should configure which handlers are active for each monitor:
 
 ```yaml
-handlers:
-  include:  # Recommended: explicitly list desired handlers
-    - CommissionChanged
-    - SlashReported
-
-  # OR (not both)
-  
-  exclude:  # Use with caution: includes all new handlers by default
-    - DestinationChanged
+handlers:  # Required: explicitly list desired handlers
+  - CommissionChanged
+  - SlashReported
 ```
-
-If no handlers are specified, all handlers for the monitor will be active.
 
 ## Related Documentation
 
