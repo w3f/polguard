@@ -3,7 +3,6 @@ import {
   ChainDataProvider,
   Monitor,
   ChainProperties,
-  ComparisonType,
   EventHandlerFunction,
   IncidentHandlerClient,
   Logger,
@@ -37,18 +36,6 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
 
   protected fmt: Formatter;
   protected reg: AccountRegistry<T>;
-
-  // TODO: This will be moved to a ValueProcessor
-  protected static readonly comparisonFunctions: Record<
-    ComparisonType,
-    <T extends number | bigint>(a: T, b: T) => boolean
-  > = {
-    [ComparisonType.Equal]: (a, b) => a === b,
-    [ComparisonType.GreaterThan]: (a, b) => a > b,
-    [ComparisonType.LessThan]: (a, b) => a < b,
-    [ComparisonType.GreaterThanOrEqual]: (a, b) => a >= b,
-    [ComparisonType.LessThanOrEqual]: (a, b) => a <= b,
-  };
 
   constructor(
     protected logger: Logger,

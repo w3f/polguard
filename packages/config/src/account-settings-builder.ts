@@ -1,5 +1,5 @@
-import { MonitorType, ComparisonType, MonitorConfig, ChainProperties, MonitorTypeSettings } from '@w3f/monitoring-types';
-import { monitorSchemas, extractFieldsFromSchema, extractDefaultsFromSchema } from './config-validator';
+import { MonitorType, MonitorConfig, ChainProperties, MonitorTypeSettings } from '@w3f/monitoring-types';
+import { monitorSchemas, extractFieldsFromSchema } from './config-validator';
 
 /**
  * Builds the final account monitor settings object used in the chain watcher.
@@ -9,11 +9,10 @@ import { monitorSchemas, extractFieldsFromSchema, extractDefaultsFromSchema } fr
  *    - Monitor settings serve as base configuration
  *    - Account settings override monitor settings
  *    - Handler configurations from monitors are preserved
- * 2. Applying default values for missing monitor settings (e.g., comparison types for Staking).
- * 3. Converting decimal string balances to BigInt values with proper chain decimals:
+ * 2. Converting decimal string balances to BigInt values with proper chain decimals:
  *    - Staking: selfStake field (e.g. "100.22" -> 1002200000000n)
  *    - Balances: threshold field
- * 4. Ensuring settings are properly segregated by monitor type.
+ * 3. Ensuring settings are properly segregated by monitor type.
  *
  * Example usage:
  *
@@ -46,8 +45,6 @@ import { monitorSchemas, extractFieldsFromSchema, extractDefaultsFromSchema } fr
  * //   [MonitorType.Staking]: {
  * //     commission: 5,              // From account settings
  * //     selfStake: 10005000000000n, // From account settings, converted to BigInt
- * //     commissionComparison: ComparisonType.LessThanOrEqual,  // Default applied
- * //     selfStakeComparison: ComparisonType.GreaterThanOrEqual, // Default applied
  * //     handlers: ['CommissionChanged']  // Preserved from monitor config
  * //   },
  * //   [MonitorType.Balances]: {
@@ -81,8 +78,7 @@ export class AccountSettingsBuilder {
     chainProps: ChainProperties,
   ): Record<MonitorType, Record<string, any>> {
     const mergedSettings = this.mergeSettings(monitorConfigs, accountSettings);
-    const settingsWithDefaults = this.applyDefaultSettings(mergedSettings);
-    return this.transformDecimalBalances(settingsWithDefaults, chainProps.chainDecimals);
+    return this.transformDecimalBalances(mergedSettings, chainProps.chainDecimals);
   }
 
   private static mergeSettings(
@@ -117,40 +113,12 @@ export class AccountSettingsBuilder {
   }
 
   /**
-   * Applies default values to monitor settings.
-   * This method extracts default values from the Joi schemas and applies them
-   * to the merged settings.
-   * 
-   * @param mergedSettings - The merged settings from monitors and accounts
-   * @returns Settings with defaults applied
-   */
-  private static applyDefaultSettings(
-    mergedSettings: Record<MonitorType, Record<string, any>>,
-  ): Record<MonitorType, Record<string, any>> {
-    const settingsWithDefaults = { ...mergedSettings };
-
-    // Apply defaults for each monitor type
-    Object.entries(settingsWithDefaults).forEach(([monitorType, settings]) => {
-      const schema = monitorSchemas[monitorType as MonitorType];
-      if (schema) {
-        const defaults = extractDefaultsFromSchema(schema);
-        settingsWithDefaults[monitorType as MonitorType] = {
-          ...defaults,
-          ...settings,
-        };
-      }
-    });
-
-    return settingsWithDefaults;
-  }
-
-  /**
    * Transforms decimal string balances to BigInt values.
    * Currently handles:
    * - Staking monitor: selfStake field
    * - Balances monitor: threshold field
    * 
-   * @param settings - Merged settings with defaults applied
+   * @param settings - Merged settings
    * @param decimals - Chain-specific decimal places
    * @returns Settings with decimal strings converted to BigInt
    */

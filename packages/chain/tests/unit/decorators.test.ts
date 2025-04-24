@@ -64,11 +64,11 @@ describe('Decorators', () => {
       const prototype = Object.getPrototypeOf(instance).constructor.prototype;
       const metadata = prototype.event.get('test.event');
       
-      expect(metadata).toEqual({
+      expect(metadata).toEqual([{
         method: 'handler',
         chains: [Chain.Polkadot, Chain.Kusama],
         handler: 'EventHandler'
-      });
+      }]);
     });
 
     it('should handle multiple decorators on same class', () => {
@@ -83,8 +83,8 @@ describe('Decorators', () => {
       const instance = new TestClass();
       const prototype = Object.getPrototypeOf(instance).constructor.prototype;
       expect(prototype.event.size).toBe(2);
-      expect(prototype.event.get('test.event1').chains).toEqual([Chain.Polkadot]);
-      expect(prototype.event.get('test.event2').chains).toEqual([Chain.Kusama]);
+      expect(prototype.event.get('test.event1')[0].chains).toEqual([Chain.Polkadot]);
+      expect(prototype.event.get('test.event2')[0].chains).toEqual([Chain.Kusama]);
     });
 
     it('should preserve existing handlers when adding new ones', () => {

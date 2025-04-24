@@ -9,8 +9,8 @@ import { Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 
 export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
-  @State(H.BalanceChange, [Chain.Polkadot, Chain.Kusama])
-  async balanceChange({ blockNumber, handler }: StateHandlerParams<H.BalanceChange>): Promise<void> {
+  @State(H.BalanceDecrease, [Chain.Polkadot, Chain.Kusama])
+  async balanceDecrease({ blockNumber, handler }: StateHandlerParams<H.BalanceDecrease>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
     const currentBalances = await this.chain.systemAccountBalance(addresses, blockNumber);
     const previousBalances = await this.chain.systemAccountBalance(addresses, blockNumber - 1);
@@ -20,9 +20,6 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
       const previousBalance = previousBalances[address];
 
       for (const { account, alerts, groupId } of this.reg.getAccounts(handler, address)) {
-        const comparisonType = account.settings?.changeComparison;
-        const compareFunc = comparisonType && BalancesMonitor.comparisonFunctions[comparisonType];
-        if (!compareFunc) continue;
         const message = this.fmt.message(
           [
             `Balance changed for ${this.fmt.accountLink(account)}`,
@@ -31,7 +28,10 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
           ],
           { blockNumber },
         );
-        if (compareFunc(currentBalance, previousBalance)) {
+        // TODO: We will implement a flexible value definition system so we can use BalanceChange
+        // instead of two BalanceDecrease, BalanceIncrease
+        // See: https://github.com/w3f/monitoring-platform/issues/69
+        if (currentBalance >= previousBalance) {
           const key = { wallet: account.ss58, groupId, handler };
           await this.incidents.handle(message, alerts, key, blockNumber);
         }

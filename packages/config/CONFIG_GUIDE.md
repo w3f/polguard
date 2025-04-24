@@ -90,12 +90,6 @@ groups:
 - Will be automatically converted to chain-specific bigint values
 - Examples: "0.1" DOT = 1000000000n planks (0.1 * 10^10)
 
-### Comparison Values
-- Valid values: "eq", "gt", "lt", "gte", "lte"
-- Ex. defaults for Staking monitor:
-  - `commissionComparison`: "lte" (less than or equal)
-  - `selfStakeComparison`: "gte" (greater than or equal)
-
 ### Alert Targets
 - Currently only supports Matrix rooms
 - Must match format: `!roomid:server.name`
@@ -109,17 +103,13 @@ The platform processes configuration in the following order:
    - Validate file structure and required fields
    - Check format of addresses, decimals, and other values
 
-2. Apply Defaults:
-   - Group settings fallback to defaults if not specified
-   - Default comparison types for monitors
+2. Transform Values:
    - Generate default names for accounts if not provided
-
-3. Transform Values:
    - Convert addresses to chain-specific SS58 format
    - Convert decimal balances to chain-specific bigint values
    - Build monitor-specific settings objects for each account
 
-4. Group Processing:
+3. Group Processing:
    - Create separate group for each chain in group's chains
    - Apply monitor settings hierarchy (account overrides group settings)
    - Preserve handler configurations from monitor level

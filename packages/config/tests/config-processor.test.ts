@@ -1,7 +1,7 @@
 import { encodeAddress } from '@polkadot/util-crypto';
 import { hexToU8a } from '@polkadot/util';
 import { ConfigProcessor } from '../src/config-processor';
-import { MonitorType, Chain, StakingHandlerType, getChainProperties, ComparisonType } from '@w3f/monitoring-types';
+import { MonitorType, Chain, StakingHandlerType, getChainProperties } from '@w3f/monitoring-types';
 import path from 'path';
 
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');
@@ -48,8 +48,6 @@ describe('ConfigProcessor', () => {
       expect(bobAccount?.[MonitorType.Staking]).toEqual({
         commission: 3, // Overridden from account
         selfStake: 1000500000000000n, // Converted to BigInt
-        commissionComparison: ComparisonType.LessThanOrEqual, // Default
-        selfStakeComparison: ComparisonType.GreaterThanOrEqual, // Default
         handlers: [
           StakingHandlerType.CommissionChanged,
           StakingHandlerType.DestinationChanged
@@ -58,8 +56,7 @@ describe('ConfigProcessor', () => {
 
       // Check Balances monitor settings
       expect(bobAccount?.[MonitorType.Balances]).toMatchObject({
-        threshold: 750250000000000n, // Converted to BigInt
-        changeComparison: ComparisonType.GreaterThanOrEqual // Default from schema
+        threshold: 750250000000000n // Converted to BigInt
       });
       expect(bobAccount?.[MonitorType.Balances].handlers).toBeDefined();
       expect(Array.isArray(bobAccount?.[MonitorType.Balances].handlers)).toBe(true);
@@ -93,9 +90,7 @@ describe('ConfigProcessor', () => {
       
       // Check Staking monitor settings
       expect(account[MonitorType.Staking]).toMatchObject({
-        commission: 10,
-        commissionComparison: ComparisonType.LessThanOrEqual,
-        selfStakeComparison: ComparisonType.GreaterThanOrEqual
+        commission: 10
       });
       expect(account[MonitorType.Staking].handlers).toBeDefined();
       expect(Array.isArray(account[MonitorType.Staking].handlers)).toBe(true);

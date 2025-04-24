@@ -34,7 +34,6 @@ tests:
         block: 25690600
         account:
           address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
-          commissionComparison: lte
           commission: 9
     SelfStakeUnexpected:
       - description: "State (staking.bonded, staking.ledger)"
@@ -42,7 +41,6 @@ tests:
         block: 25690601
         account:
           address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
-          selfStakeComparison: gte
           selfStake: 9000000000000
     ValidatorIntentionMissing:
       - description: "State (staking.bonded, staking.validators)"
@@ -65,19 +63,12 @@ tests:
           address: 12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ
 
   Balances:
-    BalanceChange:
+    BalanceDecrease:
       - description: "State (system.account). Balance decreased"
         chain: Polkadot
         block: 25700153
         account:
           address: 12nr7GiDrYHzAYT9L8HdeXnMfWcBuYfAXpgfzf3upujeCciz
-          changeComparison: lte
-      - description: "State (system.account). Balance increased"
-        chain: Polkadot
-        block: 25700153
-        account:
-          address: 12iTqoDYN18NkUbi7H3S1DWfMA99xporWhrjdyo2bvMZqJv5
-          changeComparison: gte
     BalanceThreshold:
       - description: "State (system.account)"
         chain: Polkadot

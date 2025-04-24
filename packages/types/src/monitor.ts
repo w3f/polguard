@@ -1,5 +1,5 @@
 import { ChainProperties, ConfigAccountSettings, Logger, IdentityField, ChainDataProvider } from '.';
-import { Chain, ComparisonType, MonitorType, PolkadotClientImpl } from './constants';
+import { Chain, MonitorType, PolkadotClientImpl } from './constants';
 import { AlertSettings, IncidentHandlerClient } from './incident';
 import { CallHandlerParams, EventHandlerParams, StateHandlerParams, MonitorHandlerType, TelemetryHandlerParams } from './handlers';
 
@@ -28,8 +28,6 @@ export type MonitorConstructor<T extends MonitorType> = new (
 
 export interface StakingSettings {
   commission: number;
-  commissionComparison: ComparisonType;
-  selfStakeComparison: ComparisonType;
   selfStake?: bigint;
   payee?: string;
   handlers: MonitorHandlerType[MonitorType.Staking][];
@@ -41,7 +39,6 @@ export interface GovernanceSettings {
 
 export interface BalancesSettings {
   threshold?: bigint;
-  changeComparison: ComparisonType;
   handlers: MonitorHandlerType[MonitorType.Balances][];
 }
 

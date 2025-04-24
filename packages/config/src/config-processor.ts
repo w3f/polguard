@@ -19,7 +19,6 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  *    - Uses defaults.chains if group.chains not provided
  *    - Uses defaults.monitors if group.monitors not provided
  *    - Uses defaults.alerts if group.alerts not provided
- *    - Applies default comparison types for monitors
  *
  * 3. Building final monitoring structure:
  *    - Creates separate group for each chain configuration
@@ -45,8 +44,6 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  *         ss58: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
  *         Staking: {
  *           commission: 5,
- *           commissionComparison: ComparisonType.LessThanOrEqual,
- *           selfStakeComparison: ComparisonType.GreaterThanOrEqual,
  *           selfStake: 10005000000000n
  *         }
  *       }

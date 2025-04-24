@@ -32,14 +32,6 @@ export enum MessengerType {
   Telegram = 'telegram',
 }
 
-export enum ComparisonType {
-  Equal = 'eq',
-  GreaterThan = 'gt',
-  LessThan = 'lt',
-  GreaterThanOrEqual = 'gte',
-  LessThanOrEqual = 'lte',
-}
-
 export enum StakingHandlerType {
   SlashReported = 'SlashReported',
   CommissionChanged = 'CommissionChanged',
@@ -52,7 +44,7 @@ export enum StakingHandlerType {
 }
 
 export enum BalancesHandlerType {
-  BalanceChange = 'BalanceChange',
+  BalanceDecrease = 'BalanceDecrease',
   BalanceThreshold = 'BalanceThreshold',
   TransferIngress = 'TransferIngress',
   TransferEgress = 'TransferEgress',

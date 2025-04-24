@@ -12,7 +12,7 @@
  * such as the AccountSettingsBuilder, to extract field names.
  */
 import * as Joi from 'joi';
-import { Chain, ComparisonType, MessengerType, MonitorType, StakingHandlerType, IdentityHandlerType,
+import { Chain, MessengerType, MonitorType, StakingHandlerType, IdentityHandlerType,
          BalancesHandlerType, TelemetryHandlerType, GovernanceHandlerType, XcmHandlerType,
          IDENTITY_FIELDS, PolkadotClientImpl } from '@w3f/monitoring-types';
 
@@ -74,10 +74,6 @@ function createHandlerSchema(handlerEnum: Record<string, string>, monitorName: s
 const stakingMonitorSchema = Joi.object({
   commission: Joi.number().min(0).max(100),
   selfStake: decimalStringSchema,
-  selfStakeComparison: Joi.string().valid(...Object.values(ComparisonType))
-    .default(ComparisonType.GreaterThanOrEqual),
-  commissionComparison: Joi.string().valid(...Object.values(ComparisonType))
-    .default(ComparisonType.LessThanOrEqual),
   // TODO: add validation with the enum (Staked, Stash, etc.)
   payee: Joi.string(),
   handlers: createHandlerSchema(StakingHandlerType, 'Staking')
@@ -92,8 +88,6 @@ const identityMonitorSchema = Joi.object({
 
 const balancesMonitorSchema = Joi.object({
   threshold: decimalStringSchema,
-  changeComparison: Joi.string().valid(...Object.values(ComparisonType))
-    .default(ComparisonType.GreaterThanOrEqual),
   handlers: createHandlerSchema(BalancesHandlerType, 'Balances')
 });
 

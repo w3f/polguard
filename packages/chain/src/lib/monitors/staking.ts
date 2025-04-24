@@ -76,11 +76,10 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       if (commission === null) return;
 
       const expectedCommission = account.settings?.commission;
-      const comparisonType = account.settings?.commissionComparison;
-      const compareFunc = comparisonType && StakingMonitor.comparisonFunctions[comparisonType];
-      if (!expectedCommission || !compareFunc) return;
+      if (!expectedCommission) return;
 
-      const isFiring = !compareFunc(commission, expectedCommission);
+      // Using hardcoded <= (LessThanOrEqual) which was the default
+      const isFiring = commission > expectedCommission;
       const message = this.fmt.message(
         [
           `Unexpected commission detected for ${this.fmt.accountLink(account)}.`,
@@ -115,10 +114,8 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
         const expectedStake = account.settings?.selfStake;
         if (!expectedStake) continue;
 
-        const comparisonType = account.settings?.selfStakeComparison;
-        const compareFunc = comparisonType && StakingMonitor.comparisonFunctions[comparisonType];
-        if (!compareFunc) continue;
-        const isFiring = !compareFunc(stake, expectedStake);
+        // Using hardcoded >= (GreaterThanOrEqual) which was the default
+        const isFiring = stake < expectedStake;
         const message = this.fmt.message(
           [
             `Unexpected self-stake detected for ${this.fmt.accountLink(account)}.`,

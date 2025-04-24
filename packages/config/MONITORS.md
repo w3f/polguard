@@ -42,7 +42,6 @@ Monitors validator staking activities.
 - **Description**: Alerts when commission doesn't match expected value
 - **Config Keys**:
   - `commission`: (number) Expected commission percentage (0-100)
-  - `commissionComparison`: (string) Comparison operator (see [Comparison](#comparison)). Default: "lte"
 
 #### SelfStakeUnexpected
 - **Type**: State (`staking.bonded`, `staking.ledger`)
@@ -50,7 +49,6 @@ Monitors validator staking activities.
 - **Description**: Alerts when self-stake doesn't match expected value
 - **Config Keys**:
   - `selfStake`: (string) Expected self-stake amount as a decimal string (e.g., "1000.5")
-  - `selfStakeComparison`: (string) Comparison operator (see [Comparison](#comparison)). Default: "gte"
 
 #### ValidatorIntentionMissing
 - **Type**: State (`staking.bonded`, `staking.validators`)
@@ -82,9 +80,7 @@ monitors:
 accounts:
   - address: "..."
     commission: 5  # Expected commission percentage
-    commissionComparison: "lte"
     selfStake: "1000.5"  # Expected self-stake amount
-    selfStakeComparison: "gte"
     payee: "Staked"  # Expected reward destination
 ```
 
@@ -94,12 +90,10 @@ Monitors account balances and transfers.
 
 ### Handlers
 
-#### BalanceChange
+#### BalanceDecrease
 - **Type**: State (`system.account`)
 - **Chains**: Polkadot, Kusama
-- **Description**: Detects any balance changes between blocks
-- **Config Keys**:
-  - `changeComparison`: (string) Comparison operator for balance changes (see [Comparison](#comparison))
+- **Description**: Detects any balance decreases between blocks
 
 #### BalanceThreshold
 - **Type**: State (`system.account`)
@@ -131,7 +125,6 @@ monitors:
 accounts:
   - address: "..."
     threshold: "500.0"  # Account-specific threshold
-    changeComparison: "gt"
 ```
 
 ## Identity Monitor
@@ -296,18 +289,6 @@ monitors:
     minCores: 4
     sanctionedCountries: ["Country1"]
 ```
-
-## Common Configuration
-
-### Comparison
-
-Many handlers use comparison operators to check values against thresholds:
-
-- `eq`: Equal to
-- `gt`: Greater than
-- `lt`: Less than
-- `gte`: Greater than or equal to
-- `lte`: Less than or equal to
 
 ## Handler Types
 
