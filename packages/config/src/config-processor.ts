@@ -18,7 +18,7 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  * 2. Applying defaults:
  *    - Uses defaults.chains if group.chains not provided
  *    - Uses defaults.monitors if group.monitors not provided
- *    - Uses defaults.alerts if group.alerts not provided
+ *    - Uses defaults.notifications if group.notifications not provided
  *
  * 3. Building final monitoring structure:
  *    - Creates separate group for each chain configuration
@@ -48,9 +48,9 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  *         }
  *       }
  *     ],
- *     alerts: {
+ *     notifications: {
  *       messengerType: "matrix",
- *       targets: ["!room:matrix.org"]
+ *       channels: ["!room:matrix.org"]
  *     },
  *   }
  * ]
@@ -81,7 +81,7 @@ export class ConfigProcessor {
         ...group,
         chains: group.chains || config.defaults?.chains,
         monitors: group.monitors || config.defaults?.monitors,
-        alerts: group.alerts || config.defaults?.alerts,
+        notifications: group.notifications || config.defaults?.notifications,
       })),
     );
   }
@@ -94,7 +94,7 @@ export class ConfigProcessor {
         chain,
         monitors: transformedMonitors,
         accounts: group.accounts.map(account => this.transformAccount(account, chain, transformedMonitors)),
-        alerts: group.alerts,
+        notifications: group.notifications,
         // TODO: Remove or redesign, this key doesn't belong to monitoring
         enablePayout: group?.enablePayout || false,
       }));

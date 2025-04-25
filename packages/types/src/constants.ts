@@ -32,6 +32,11 @@ export enum MessengerType {
   Telegram = 'telegram',
 }
 
+export enum NotificationType {
+  Alert = 'alert',
+  Resolution = 'resolution',
+}
+
 export enum StakingHandlerType {
   SlashReported = 'SlashReported',
   CommissionChanged = 'CommissionChanged',

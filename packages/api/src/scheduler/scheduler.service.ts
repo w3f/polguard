@@ -17,7 +17,7 @@ export class SchedulerService {
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleNotificationRetries() {
     this.logger.debug('Running notification retry job');
-    await this.notificationService.retryFailedNotifications();
+    await this.notificationService.retryNotifications();
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)

@@ -1,7 +1,7 @@
 defaults:
-  alerts:
+  notifications:
     messengerType: matrix
-    targets: ['!multichain:matrix.org']
+    channels: ['!multichain:matrix.org']
     
 groups:
   - id: polkadot-validators

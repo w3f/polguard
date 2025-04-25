@@ -8,7 +8,7 @@ import { LoggerAdapter, MockKeyValueStorage, TestIncidentHandler, ApiConnectionM
 export interface TestCase {
   chain: Chain;
   monitor: MonitorType;
-  handler: string;
+  handlerType: string;
   block: number;
   account: any;
   description?: string;
@@ -17,7 +17,7 @@ export interface TestCase {
 export interface TestResult {
   chain: Chain;
   monitor: MonitorType;
-  handler: string;
+  handlerType: string;
   block: number;
   account: string;
   success: boolean;
@@ -54,7 +54,7 @@ export class TestRunner {
           testCases.push({
             chain: test.chain as Chain,
             monitor,
-            handler: handlerName,
+            handlerType: handlerName,
             block: test.block,
             account: test.account,
             description: test.description
@@ -70,7 +70,7 @@ export class TestRunner {
     const results: TestResult[] = [];
     
     for (const testCase of testCases) {
-      console.log(`Testing ${testCase.monitor}.${testCase.handler} on ${testCase.chain} at block ${testCase.block}`);
+      console.log(`Testing ${testCase.monitor}.${testCase.handlerType} on ${testCase.chain} at block ${testCase.block}`);
       
       if (testCase.description) {
         console.log(`  Description: ${colors.yellow}${testCase.description}${colors.reset}`);
@@ -82,7 +82,7 @@ export class TestRunner {
         results.push({
           chain: testCase.chain,
           monitor: testCase.monitor,
-          handler: testCase.handler,
+          handlerType: testCase.handlerType,
           block: testCase.block,
           account: testCase.account.address,
           success
@@ -95,7 +95,7 @@ export class TestRunner {
         results.push({
           chain: testCase.chain,
           monitor: testCase.monitor,
-          handler: testCase.handler,
+          handlerType: testCase.handlerType,
           block: testCase.block,
           account: testCase.account.address,
           success: false,
@@ -118,7 +118,7 @@ export class TestRunner {
     const group = this.createMonitoringGroup(
       testCase.chain, 
       testCase.monitor, 
-      testCase.handler, 
+      testCase.handlerType, 
       testCase.account
     );
     
@@ -139,24 +139,24 @@ export class TestRunner {
     return incidentHandler.wasIncidentCreated(
       testCase.account.address,
       group.id,
-      testCase.handler
+      testCase.handlerType
     );
   }
   
   private createMonitoringGroup(
     chain: Chain,
     monitorType: MonitorType,
-    handlerName: string,
+    handlerType: string,
     account: any
   ): MonitoringGroup {
     return {
-      id: `test-group-${handlerName}`,
+      id: `test-group-${handlerType}`,
       chain,
       monitors: [
         {
           name: monitorType,
           settings: {
-            handlers: [handlerName as any]
+            handlers: [handlerType as any]
           }
         }
       ],
@@ -167,13 +167,13 @@ export class TestRunner {
           name: `Test Account ${account.address.substring(0, 8)}`,
           [monitorType]: {
             ...account,
-            handlers: [handlerName as any]
+            handlers: [handlerType as any]
           }
         }
       ],
-      alerts: {
+      notifications: {
         messengerType: MessengerType.Matrix,
-        targets: ['!test:matrix.org']
+        channels: ['!test:matrix.org']
       }
     };
   }

@@ -2,9 +2,9 @@ groups:
   - id: minimal-validators
     chains:
       - Polkadot
-    alerts:
+    notifications:
       messengerType: matrix
-      targets: ['!minimal:matrix.org']
+      channels: ['!minimal:matrix.org']
     monitors:
       - name: Staking
         commission: 10

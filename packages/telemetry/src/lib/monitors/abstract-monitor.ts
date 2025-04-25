@@ -53,13 +53,13 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Telemetr
       this.groups
         .flatMap(group => group.monitors)
         .filter(monitor => monitor.name === this.monitorType && monitor.settings.handlers)
-        .flatMap(monitor => monitor.settings.handlers as string[])
+        .flatMap(monitor => monitor.settings.handlers as string[]),
     );
 
     if (prototype.state) {
       for (const [_, metadata] of prototype.state) {
         if (
-          typeof this[metadata.method] === 'function' && 
+          typeof this[metadata.method] === 'function' &&
           metadata.chains.includes(this.chainProps.chain) &&
           activeHandlers.has(metadata.handler)
         ) {

@@ -7,11 +7,6 @@ interface Link {
   title: string;
 }
 
-export interface Message {
-  title: string;
-  details: string[];
-}
-
 export class MessageStyler {
   /**
    * Parses a message string into title and details, optionally prepends an incident ID,
@@ -39,21 +34,15 @@ export class MessageStyler {
       title = `${incidentId}. ${title}`;
     }
 
-    // Create message object
-    const messageObj: Message = {
-      title,
-      details,
-    };
-
     // Apply style to message and return
-    return this.applyStyle(messageObj, messageType, styleType);
+    return this.applyStyle(title, details, messageType, styleType);
   }
 
-  static applyStyle(message: Message, messageType: MessageType, styleType: StyleType): string {
+  static applyStyle(title: string, details: string[], messageType: MessageType, styleType: StyleType): string {
     const { prefix, color } = this.getPrefixAndColor(messageType);
-    const title = this.styleTitle(prefix, message.title, color, styleType);
-    const details = this.styleDetails(message.details, styleType);
-    return `${title}\n${details}`;
+    const styledTitle = this.styleTitle(prefix, title, color, styleType);
+    const styledDetails = this.styleDetails(details, styleType);
+    return `${styledTitle}\n${styledDetails}`;
   }
 
   private static styleTitle(prefix: string, title: string, color: string, styleType: StyleType): string {

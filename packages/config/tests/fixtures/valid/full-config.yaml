@@ -1,9 +1,9 @@
 defaults:
-  alerts:
+  notifications:
     messengerType: matrix
-    targets: ['!defaultroom:matrix.org']
-    acknowledgement: true
-    repeatIntervalHours: 24
+    channels: ['!defaultroom:matrix.org']
+    needsAck: true
+    repeatHours: 24
   chains:
     - Polkadot
     - Kusama
@@ -27,11 +27,11 @@ groups:
   - id: validators-custom
     chains:
       - Kusama  # This group only for Kusama
-    alerts:
+    notifications:
       messengerType: matrix
-      targets: ['!customroom:matrix.org']
-      acknowledgement: false
-      repeatIntervalHours: 12
+      channels: ['!customroom:matrix.org']
+      needsAck: false
+      repeatHours: 12
     monitors:
       - name: Staking
         commission: 7

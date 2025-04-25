@@ -1,10 +1,10 @@
 groups:
-  - id: invalid-alerts
+  - id: invalid-notifications
     chains:
       - Polkadot
-    alerts:
+    notifications:
       messengerType: invalid  # Invalid messenger type
-      targets: []            # Empty targets array
+      channels: []            # Empty channels array
     monitors:
       - name: Staking
         commission: 10

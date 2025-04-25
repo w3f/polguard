@@ -1,6 +1,6 @@
 import { ChainProperties, ConfigAccountSettings, Logger, IdentityField, ChainDataProvider } from '.';
 import { Chain, MonitorType, PolkadotClientImpl } from './constants';
-import { AlertSettings, IncidentHandlerClient } from './incident';
+import { NotificationSettings, IncidentHandlerClient } from './incident';
 import { CallHandlerParams, EventHandlerParams, StateHandlerParams, MonitorHandlerType, TelemetryHandlerParams } from './handlers';
 
 export interface Monitor {
@@ -79,7 +79,7 @@ export interface MonitoringGroup {
   chain: Chain;
   monitors: MonitorConfig[];
   accounts: ConfigAccountSettings[];
-  alerts: AlertSettings;
+  notifications: NotificationSettings;
   // TODO: Remove or redesign, this key doesn't belong to monitoring
   enablePayout?: boolean;
 }

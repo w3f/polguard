@@ -23,7 +23,7 @@ Every configuration must have:
 2. Each group must have:
    - `chains` (directly or from defaults)
    - `monitors` (directly or from defaults)
-   - `alerts` (directly or from defaults)
+   - `notifications` (directly or from defaults)
    - At least one account
 
 ## Default Settings
@@ -34,11 +34,11 @@ defaults:
     - Polkadot
     - Kusama
     
-  alerts:
+  notifications:
     messengerType: matrix
-    targets: ['!roomid:matrix.org']
-    acknowledgement: true
-    repeatIntervalHours: 24
+    channels: ['!roomid:matrix.org']
+    needsAck: true
+    repeatHours: 24
     
   monitors:
     - name: Staking
@@ -58,9 +58,9 @@ groups:
     chains:
       - Kusama
     
-    alerts:
+    notifications:
       messengerType: matrix
-      targets: ['!customroom:matrix.org']
+      channels: ['!customroom:matrix.org']
     
     monitors:
       - name: Staking
@@ -90,10 +90,10 @@ groups:
 - Will be automatically converted to chain-specific bigint values
 - Examples: "0.1" DOT = 1000000000n planks (0.1 * 10^10)
 
-### Alert Targets
+### Notification Channels
 - Currently only supports Matrix rooms
 - Must match format: `!roomid:server.name`
-- At least one target required
+- At least one channel required
 
 ## Configuration Processing
 
@@ -157,10 +157,10 @@ groups:
 defaults:
   chains:
     - Polkadot
-  alerts:
+  notifications:
     messengerType: matrix
-    targets: ['!roomid:matrix.org']
-    acknowledgement: true
+    channels: ['!roomid:matrix.org']
+    needsAck: true
 
 groups:
   - name: validators

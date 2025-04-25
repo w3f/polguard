@@ -1,7 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import { MonitoringGroup, MonitoringConfigClient, MonitorType, MessengerType, TelemetryHandlerType as H, MonitorTypeSettings } from '@w3f/monitoring-types';
+import {
+  MonitoringGroup,
+  MonitoringConfigClient,
+  MonitorType,
+  MessengerType,
+  TelemetryHandlerType as H,
+  MonitorTypeSettings,
+} from '@w3f/monitoring-types';
 import { ConfigService } from '../config/config.service';
 import { MetricsService } from '../metrics/metrics.service';
 
@@ -18,9 +25,9 @@ export class MonitoringConfigService implements MonitoringConfigClient {
     const monitoringApi = this.configService.getMonitoringApi();
     const configUrl = `${monitoringApi.baseUrl}${monitoringApi.endpoints.getConfig}`;
     const groupIds = this.configService.getMonitoringGroupIds();
-    
+
     let response;
-    
+
     try {
       response = await lastValueFrom(
         this.httpService.get(configUrl, {
@@ -32,16 +39,16 @@ export class MonitoringConfigService implements MonitoringConfigClient {
       );
     } catch (error) {
       this.logger.error(`Failed to fetch monitoring groups from IMS: ${error.message}`);
-      
+
       // In development environment, use hardcoded groups
       if (this.configService.getEnvironment() === 'development') {
         this.logger.warn('Using hardcoded monitoring groups for development environment');
         return this.getDevMonitoringGroups();
       }
-      
+
       throw new Error(`Failed to fetch monitoring groups: ${error.message}`);
     }
-    
+
     const groups = response.data.groups;
 
     // Validate that we received the expected number of groups
@@ -95,20 +102,20 @@ export class MonitoringConfigService implements MonitoringConfigClient {
           name: MonitorType.Telemetry,
           settings: {
             handlers: [H.ProviderUnexpected],
-          } as MonitorTypeSettings[MonitorType.Telemetry]
-        }
+          } as MonitorTypeSettings[MonitorType.Telemetry],
+        },
       ],
       accounts: [
         {
           ss58: '12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ',
           hex: '0x',
-          name: 'Development Test Account'
-        }
+          name: 'Development Test Account',
+        },
       ],
-      alerts: {
+      notifications: {
         messengerType: MessengerType.Matrix,
-        targets: ['#dev-alerts:matrix.org']
-      }
+        channels: ['#dev-alerts:matrix.org'],
+      },
     }));
   }
 

@@ -29,7 +29,7 @@ export function Telemetry(handler: HandlerType, chains: Chain[]) {
     const originalMethod = descriptor.value;
     descriptor.value = async function (...args: any[]) {
       const params = args[0] || {};
-      params.handler = handler;
+      params.handlerType = handler;
 
       // Call the original method
       return await originalMethod.call(this, params);

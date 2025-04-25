@@ -1,5 +1,6 @@
 import { Chain } from '@w3f/monitoring-types';
 import { ApiProperty } from '@nestjs/swagger';
+import { NotificationResponseDto } from './notification-response.dto';
 
 export class IncidentResponseDto {
   @ApiProperty()
@@ -15,34 +16,28 @@ export class IncidentResponseDto {
   chain: Chain;
 
   @ApiProperty()
-  wallet: string;
+  account: string;
 
   @ApiProperty()
   groupId: string;
 
   @ApiProperty()
-  handler: string;
+  handlerType: string;
 
   @ApiProperty()
-  channelId: string;
+  needsAck: boolean;
 
   @ApiProperty()
-  ackRequired: boolean;
-
-  @ApiProperty()
-  acked: boolean;
+  isAcked: boolean;
 
   @ApiProperty({ required: false })
-  ackedByUser?: string;
+  ackedBy?: string;
 
   @ApiProperty({ required: false })
   ackedAt?: Date;
 
-  @ApiProperty({ required: false })
-  repeatIntervalHours?: number;
-
   @ApiProperty()
-  resolved: boolean;
+  isResolved: boolean;
 
   @ApiProperty({ required: false })
   resolvedAt?: Date;
@@ -52,4 +47,7 @@ export class IncidentResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty({ type: [NotificationResponseDto] })
+  notifications: NotificationResponseDto[];
 }

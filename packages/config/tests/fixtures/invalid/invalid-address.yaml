@@ -2,12 +2,15 @@ groups:
   - id: invalid-addresses
     chains:
       - Polkadot
-    alerts:
+    notifications:
       messengerType: matrix
-      targets: ['!room:matrix.org']
+      channels: ['!room:matrix.org']
     monitors:
       - name: Staking
         commission: 10
+        handlers:
+          - CommissionChanged
+          - SlashReported
     accounts:
       - address: "invalid-address"  # Invalid format
       - address: "5GrwvaEF"        # Too short SS58

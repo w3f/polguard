@@ -43,12 +43,12 @@ export class GetIncidentsDto {
   chain?: Chain;
 
   @ApiProperty({
-    description: 'Filter incidents by wallet address, ex. 15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5',
+    description: 'Filter incidents by account address, ex. 15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5',
     required: false,
   })
   @IsOptional()
   @IsString()
-  wallet?: string;
+  account?: string;
 
   @ApiProperty({
     description: 'Filter incidents by monitoring group ID, ex. validators-default',
@@ -59,12 +59,12 @@ export class GetIncidentsDto {
   groupId?: string;
 
   @ApiProperty({
-    description: 'Filter incidents by handler name, ex. SlashReported',
+    description: 'Filter incidents by handler type, ex. SlashReported',
     required: false,
   })
   @IsOptional()
   @IsString()
-  handler?: string;
+  handlerType?: string;
 
   @ApiProperty({
     description: 'Filter incidents by channel ID, ex. !testroom:matrix.org',
@@ -81,7 +81,7 @@ export class GetIncidentsDto {
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
-  ackRequired?: boolean;
+  needsAck?: boolean;
 
   @ApiProperty({
     description: 'Filter incidents by acknowledgment status',
@@ -90,7 +90,7 @@ export class GetIncidentsDto {
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
-  acked?: boolean;
+  isAcked?: boolean;
 
   @ApiProperty({
     description: 'Filter incidents by resolution status',
@@ -99,5 +99,5 @@ export class GetIncidentsDto {
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
-  resolved?: boolean;
+  isResolved?: boolean;
 }

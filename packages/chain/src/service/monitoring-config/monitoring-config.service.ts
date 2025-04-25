@@ -112,9 +112,9 @@ export class MonitoringConfigService implements MonitoringConfigClient {
           name: 'Development Test Account',
         },
       ],
-      alerts: {
+      notifications: {
         messengerType: MessengerType.Matrix,
-        targets: ['#dev-alerts:matrix.org'],
+        channels: ['#dev-alerts:matrix.org'],
       },
     }));
   }

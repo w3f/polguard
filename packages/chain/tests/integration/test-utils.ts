@@ -1,4 +1,4 @@
-import { Logger, KeyValueStorageClient, AlertSettings, IncidentHandlerClient, IncidentKey } from '@w3f/monitoring-types';
+import { Logger, KeyValueStorageClient, NotificationSettings, IncidentHandlerClient, IncidentKey } from '@w3f/monitoring-types';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Chain } from '@w3f/monitoring-types';
 
@@ -120,7 +120,7 @@ export class TestIncidentHandler implements IncidentHandlerClient {
 
   async handle(
     message: string[],
-    alerts: AlertSettings,
+    notifications: NotificationSettings,
     incidentKey: IncidentKey,
     blockNumber: number,
     isFiring?: boolean
@@ -131,12 +131,12 @@ export class TestIncidentHandler implements IncidentHandlerClient {
     console.log(`${colors.cyan}Message: ${message.join('\n')}${colors.reset}`);
   }
 
-  wasIncidentCreated(wallet: string, groupId: string, handler: string): boolean {
-    return this.incidents.has(`${wallet}:${groupId}:${handler}`);
+  wasIncidentCreated(account: string, groupId: string, handlerType: string): boolean {
+    return this.incidents.has(`${account}:${groupId}:${handlerType}`);
   }
   
   private formatKey(incidentKey: IncidentKey): string {
-    return `${incidentKey.wallet}:${incidentKey.groupId}:${incidentKey.handler}`;
+    return `${incidentKey.account}:${incidentKey.groupId}:${incidentKey.handlerType}`;
   }
 }
 

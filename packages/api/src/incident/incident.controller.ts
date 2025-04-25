@@ -1,13 +1,6 @@
 import { Controller, Get, Post, Body, Param, Query, Logger } from '@nestjs/common';
 import { IncidentService } from './incident.service';
-import {
-  CreateIncidentDto,
-  AcknowledgeIncidentDto,
-  ResolveIncidentDto,
-  ResolveIncidentByIdDto,
-  GetIncidentsDto,
-  IncidentResponseDto,
-} from './dto';
+import { CreateIncidentDto, AcknowledgeIncidentDto, GetIncidentsDto, IncidentResponseDto } from './dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('incidents')
@@ -30,9 +23,9 @@ Filters:
 - Filter by status (open, acked, unacked)
 - Filter by date range (createdAfter, createdBefore)
 - Filter by blockchain network (chain)
-- Filter by wallet address, group ID, handler, or channel ID
-- Filter by acknowledgment status (ackRequired, acked)
-- Filter by resolution status (resolved)
+- Filter by account address, group ID, handler type, or channel ID
+- Filter by acknowledgment status (needsAck, isAcked)
+- Filter by resolution status (isResolved)
 
 Used by the notification service (Matrix) to display incidents.`,
   })
@@ -104,33 +97,9 @@ Used by the notification service (Matrix) for human acknowledgment of incidents.
     type: IncidentResponseDto,
   })
   @ApiParam({ name: 'id', description: 'Incident ID', type: 'number' })
-  @ApiBody({ type: ResolveIncidentByIdDto })
-  async resolveIncidentById(
-    @Param('id') id: number,
-    @Body() dto: ResolveIncidentByIdDto,
-  ): Promise<IncidentResponseDto> {
+  async resolveIncidentById(@Param('id') id: number): Promise<IncidentResponseDto> {
     this.logger.debug(`Resolving incident ${id} by ID`);
-    const incident = await this.incidentService.resolveIncidentById(id, dto.resolvedMessage);
-    return incident;
-  }
-
-  @Post('resolve')
-  @ApiOperation({
-    summary: 'Resolve an incident by criteria',
-    description: `Resolve an incident by matching criteria (wallet, chain, handler, groupId) instead of by ID.
-
-Used by Watcher service for automatic resolution of incidents since it's 
-stateless and do not store incident IDs.`,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'The incident has been successfully resolved',
-    type: IncidentResponseDto,
-  })
-  @ApiBody({ type: ResolveIncidentDto })
-  async resolveIncident(@Body() resolveIncidentDto: ResolveIncidentDto): Promise<IncidentResponseDto> {
-    this.logger.debug(`Resolving incident for ${resolveIncidentDto.wallet}`);
-    const incident = await this.incidentService.resolveIncident(resolveIncidentDto);
+    const incident = await this.incidentService.resolveIncidentById(id);
     return incident;
   }
 }

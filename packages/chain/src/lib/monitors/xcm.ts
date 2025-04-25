@@ -16,7 +16,7 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
   async xcmTransferEgress({
     eventRecord,
     blockNumber,
-    handler,
+    handlerType,
   }: EventHandlerParams<H.XcmTransferEgress>): Promise<void> {
     let transferInfo;
 
@@ -35,7 +35,7 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
       return;
     }
 
-    for (const { account, alerts, groupId } of this.reg.getAccounts(handler, origin)) {
+    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
       const message = this.fmt.message(
         [
           `${this.fmt.accountLink(account)} sent ${this.fmt.balance(amount)}`,
@@ -44,8 +44,8 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
         ],
         { blockNumber, phase: eventRecord.phase },
       );
-      const key = { wallet: account.ss58, groupId, handler };
-      await this.incidents.handle(message, alerts, key, blockNumber);
+      const key = { account: account.ss58, groupId, handlerType };
+      await this.incidents.handle(message, notifications, key, blockNumber);
     }
   }
 

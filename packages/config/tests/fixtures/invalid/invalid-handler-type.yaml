@@ -2,9 +2,9 @@ groups:
   - id: invalid-handler-type
     chains:
       - Polkadot
-    alerts:
+    notifications:
       messengerType: matrix
-      targets: ['!room:matrix.org']
+      channels: ['!room:matrix.org']
     monitors:
       - name: Staking
         commission: 10

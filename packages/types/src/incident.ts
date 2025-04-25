@@ -1,44 +1,40 @@
 import { Chain, MessengerType } from './constants';
 
-export interface AlertSettings {
+export interface NotificationSettings {
   messengerType: MessengerType;
-  targets: string[];
-  acknowledgement?: boolean;
-  repeatIntervalHours?: number;
+  channels: string[];
+  needsAck?: boolean;
+  repeatHours?: number;
+}
+
+export interface NotificationChannel {
+  channelId: string;
+  messengerType: MessengerType;
+  repeatHours?: number;
 }
 
 export interface CreateIncidentDto {
   message: string;
   chain: Chain;
   blockNumber: number;
-  wallet: string;
+  account: string;
   groupId: string;
-  handler: string;
-  channelId: string;
-  messengerType: MessengerType;
-  ackRequired?: boolean;
-  repeatIntervalHours?: number;
-  resolved?: boolean;
-}
-
-export interface ResolveIncidentDto {
-  chain: Chain;
-  groupId: string;
-  handler: string;
-  wallet: string;
-  resolvedMessage?: string;
+  handlerType: string;
+  notificationChannels: NotificationChannel[];
+  needsAck?: boolean;
+  isResolved?: boolean;
 }
 
 export interface IncidentKey {
   groupId: string;
-  wallet: string;
-  handler: string;
+  account: string;
+  handlerType: string;
 }
 
 export interface IncidentHandlerClient {
   handle(
     message: string[],
-    alerts: AlertSettings,
+    notifications: NotificationSettings,
     incidentKey: IncidentKey,
     blockNumber: number,
     isFiring?: boolean

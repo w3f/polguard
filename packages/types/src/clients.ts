@@ -11,7 +11,7 @@
  */
 
 import { TelemetryData } from './telemetry';
-import { CreateIncidentDto, ResolveIncidentDto } from './incident';
+import { CreateIncidentDto } from './incident';
 import { MonitoringGroup } from './monitor';
 import { Hash, Header, SignedBlock, EventRecord } from '@polkadot/types/interfaces';
 
@@ -48,8 +48,8 @@ export interface KeyValueStorageClient {
 
 /** Client for sending incidents to the incident management service */
 export interface IncidentApiClient {
-  createIncident(incident: CreateIncidentDto): Promise<boolean>;
-  resolveIncident(resolveData: ResolveIncidentDto): Promise<boolean>;
+  createIncident(incident: CreateIncidentDto): Promise<number>; // Returns incident ID
+  resolveIncident(id: number): Promise<boolean>;
 }
 
 /**

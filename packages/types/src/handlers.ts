@@ -12,7 +12,7 @@ export type TelemetryHandlerFunction = HandlerFunction<TelemetryHandlerParams>;
 
 export interface TelemetryHandlerParams<T extends HandlerType = HandlerType> {
   data: Record<string, NodeInfo[]>;
-  handler?: T;
+  handlerType?: T;
 }
 
 export interface CallHandlerParams<T extends HandlerType = HandlerType> {
@@ -20,18 +20,18 @@ export interface CallHandlerParams<T extends HandlerType = HandlerType> {
   origin: string;
   blockNumber: number;
   extrinsicIndex: number;
-  handler?: T;
+  handlerType?: T;
 }
 
 export interface EventHandlerParams<T extends HandlerType = HandlerType> {
   eventRecord: EventRecord;
   blockNumber: number;
-  handler?: T;
+  handlerType?: T;
 }
 
 export interface StateHandlerParams<T extends HandlerType = HandlerType> {
   blockNumber: number;
-  handler?: T;
+  handlerType?: T;
 }
 
 export type MonitorHandlerType = {

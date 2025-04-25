@@ -1,4 +1,4 @@
-import { IncidentApiClient, CreateIncidentDto, ResolveIncidentDto } from '@w3f/monitoring-types';
+import { IncidentApiClient, CreateIncidentDto } from '@w3f/monitoring-types';
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '../config/config.service';
@@ -20,19 +20,20 @@ export class IncidentApiService implements IncidentApiClient {
     this.resolveUrl = `${baseUrl}${endpoints.resolveIncident}`;
   }
 
-  async createIncident(incident: CreateIncidentDto): Promise<boolean> {
+  async createIncident(incident: CreateIncidentDto): Promise<number> {
     try {
-      await lastValueFrom(this.httpService.post(this.createUrl, incident));
-      return true;
+      const response = await lastValueFrom(this.httpService.post(this.createUrl, incident));
+      return response.data.id;
     } catch (error) {
       this.logger.error(`Failed to create incident: ${error.message}`);
       throw new Error(`Failed to create incident: ${error.message}`);
     }
   }
 
-  async resolveIncident(resolveData: ResolveIncidentDto): Promise<boolean> {
+  async resolveIncident(id: number): Promise<boolean> {
     try {
-      await lastValueFrom(this.httpService.post(this.resolveUrl, resolveData));
+      const url = this.resolveUrl.replace(':id', id.toString());
+      await lastValueFrom(this.httpService.post(url, {}));
       return true;
     } catch (error) {
       this.logger.error(`Failed to resolve incident: ${error.message}`);

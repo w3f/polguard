@@ -1,6 +1,17 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber, IsBoolean } from 'class-validator';
-import { Chain, MessengerType } from '@w3f/monitoring-types';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  ValidateNested,
+  ArrayMinSize,
+} from 'class-validator';
+import { Chain } from '@w3f/monitoring-types';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { NotificationChannelDto } from './notification-channel.dto';
 
 export class CreateIncidentDto {
   @ApiProperty({
@@ -27,12 +38,12 @@ export class CreateIncidentDto {
   blockNumber: number;
 
   @ApiProperty({
-    description: 'Wallet address associated with the incident',
+    description: 'Account address associated with the incident',
     example: '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5',
   })
   @IsString()
   @IsNotEmpty()
-  wallet: string;
+  account: string;
 
   @ApiProperty({
     description: 'Monitoring group ID that the incident belongs to',
@@ -43,28 +54,21 @@ export class CreateIncidentDto {
   groupId: string;
 
   @ApiProperty({
-    description: 'Handler that detected the incident',
+    description: 'Handler type that detected the incident',
     example: 'SlashReported',
   })
   @IsString()
   @IsNotEmpty()
-  handler: string;
+  handlerType: string;
 
   @ApiProperty({
-    description: 'Channel ID where notifications should be sent',
-    example: '!testroom:matrix.org',
+    description: 'Notification channels for this incident',
+    type: [NotificationChannelDto],
   })
-  @IsString()
-  @IsNotEmpty()
-  channelId: string;
-
-  @ApiProperty({
-    description: 'Type of messenger to use for notifications',
-    enum: MessengerType,
-    example: 'matrix',
-  })
-  @IsEnum(MessengerType)
-  messengerType: MessengerType;
+  @ValidateNested({ each: true })
+  @Type(() => NotificationChannelDto)
+  @ArrayMinSize(1)
+  notificationChannels: NotificationChannelDto[];
 
   @ApiProperty({
     description: 'Whether the incident requires acknowledgment',
@@ -74,16 +78,7 @@ export class CreateIncidentDto {
   })
   @IsOptional()
   @IsBoolean()
-  ackRequired?: boolean = false;
-
-  @ApiProperty({
-    description: 'Interval in hours for repeating notifications if the incident remains unresolved',
-    required: false,
-    example: 24,
-  })
-  @IsOptional()
-  @IsNumber()
-  repeatIntervalHours?: number;
+  needsAck?: boolean = false;
 
   @ApiProperty({
     description: 'Whether the incident is already resolved at creation time (one-time incident)',
@@ -93,5 +88,5 @@ export class CreateIncidentDto {
   })
   @IsOptional()
   @IsBoolean()
-  resolved?: boolean = false;
+  isResolved?: boolean = false;
 }

@@ -1,9 +1,10 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Incident } from '../database/incident.entity';
-import { CreateIncidentDto, GetIncidentsDto, ResolveIncidentDto } from './dto';
+import { Incident, IncidentNotification } from '../database/incident.entities';
+import { CreateIncidentDto, GetIncidentsDto } from './dto';
 import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '@w3f/monitoring-types';
 
 @Injectable()
 export class IncidentService {
@@ -12,87 +13,77 @@ export class IncidentService {
   constructor(
     @InjectRepository(Incident)
     private incidentRepository: Repository<Incident>,
+    @InjectRepository(IncidentNotification)
+    private notificationRepository: Repository<IncidentNotification>,
     private notificationService: NotificationService,
   ) {}
 
   async findIncidents(filters: GetIncidentsDto): Promise<Incident[]> {
     const queryBuilder = this.incidentRepository.createQueryBuilder('incident');
 
-    // Apply status filter
     if (filters.status) {
       switch (filters.status) {
         case 'open':
-          queryBuilder.andWhere('incident.resolved = false');
+          queryBuilder.andWhere('incident.isResolved = false');
           break;
         case 'acked':
-          queryBuilder.andWhere('incident.acked = true AND incident.resolved = false');
+          queryBuilder.andWhere('incident.isAcked = true AND incident.isResolved = false');
           break;
         case 'unacked':
-          queryBuilder.andWhere('incident.ackRequired = true AND incident.acked = false');
+          queryBuilder.andWhere('incident.needsAck = true AND incident.isAcked = false');
           break;
       }
     }
-
-    // Apply direct boolean filters
-    if (filters.ackRequired !== undefined) {
-      queryBuilder.andWhere('incident.ackRequired = :ackRequired', { ackRequired: filters.ackRequired });
+    if (filters.needsAck !== undefined) {
+      queryBuilder.andWhere('incident.needsAck = :needsAck', { needsAck: filters.needsAck });
     }
-
-    if (filters.acked !== undefined) {
-      queryBuilder.andWhere('incident.acked = :acked', { acked: filters.acked });
+    if (filters.isAcked !== undefined) {
+      queryBuilder.andWhere('incident.isAcked = :isAcked', { isAcked: filters.isAcked });
     }
-
-    if (filters.resolved !== undefined) {
-      queryBuilder.andWhere('incident.resolved = :resolved', { resolved: filters.resolved });
+    if (filters.isResolved !== undefined) {
+      queryBuilder.andWhere('incident.isResolved = :isResolved', { isResolved: filters.isResolved });
     }
-
-    // Apply other filters
     if (filters.createdAfter) {
       queryBuilder.andWhere('incident.createdAt >= :createdAfter', { createdAfter: filters.createdAfter });
     }
-
     if (filters.createdBefore) {
       queryBuilder.andWhere('incident.createdAt <= :createdBefore', { createdBefore: filters.createdBefore });
     }
-
     if (filters.chain) {
       queryBuilder.andWhere('incident.chain = :chain', { chain: filters.chain });
     }
-
-    if (filters.wallet) {
-      queryBuilder.andWhere('incident.wallet = :wallet', { wallet: filters.wallet });
+    if (filters.account) {
+      queryBuilder.andWhere('incident.account = :account', { account: filters.account });
     }
-
     if (filters.groupId) {
       queryBuilder.andWhere('incident.groupId = :groupId', { groupId: filters.groupId });
     }
-
-    if (filters.handler) {
-      queryBuilder.andWhere('incident.handler = :handler', { handler: filters.handler });
+    if (filters.handlerType) {
+      queryBuilder.andWhere('incident.handlerType = :handlerType', { handlerType: filters.handlerType });
     }
-
     if (filters.channelId) {
-      queryBuilder.andWhere('incident.channelId = :channelId', { channelId: filters.channelId });
+      queryBuilder
+        .innerJoin('incident.notifications', 'notification')
+        .andWhere('notification.channelId = :channelId', { channelId: filters.channelId });
     }
 
-    // Apply limit and order
     queryBuilder.orderBy('incident.createdAt', 'DESC');
     queryBuilder.limit(1000); // Hard limit for now
 
     return queryBuilder.getMany();
   }
 
-  async createIncident(createIncidentDto: CreateIncidentDto): Promise<Incident> {
-    // Check for existing unresolved incidents with the same identifier (chain+groupId+handler+wallet)
-    // to ensure idempotency. Skip for one-time incidents (events, extrinsics) that are immediately resolved.
-    if (!createIncidentDto.resolved) {
+  async createIncident(dto: CreateIncidentDto): Promise<Incident> {
+    // Check for existing unresolved incidents with the same identifier
+    // to ensure idempotency. Skip for one-time incidents that are immediately resolved.
+    if (!dto.isResolved) {
       const existingIncident = await this.incidentRepository.findOne({
         where: {
-          chain: createIncidentDto.chain,
-          groupId: createIncidentDto.groupId,
-          handler: createIncidentDto.handler,
-          wallet: createIncidentDto.wallet,
-          resolved: false,
+          chain: dto.chain,
+          groupId: dto.groupId,
+          handlerType: dto.handlerType,
+          account: dto.account,
+          isResolved: false,
         },
       });
 
@@ -101,21 +92,14 @@ export class IncidentService {
       }
     }
 
-    // Create new incident
-    const incident = this.incidentRepository.create(createIncidentDto);
-
-    // Set resolvedAt if the incident is created as resolved
-    if (incident.resolved) {
+    const { notificationChannels, ...incidentData } = dto;
+    const incident = this.incidentRepository.create(incidentData);
+    if (incident.isResolved) {
       incident.resolvedAt = new Date();
     }
 
     const savedIncident = await this.incidentRepository.save(incident);
-
-    // Send notification asynchronously
-    this.notificationService.sendAlertNotification(savedIncident).catch(error => {
-      this.logger.error(`Failed to send notification for incident ${savedIncident.id}`, error);
-    });
-
+    await this.notificationService.createNotifications(savedIncident, notificationChannels, NotificationType.Alert);
     return savedIncident;
   }
 
@@ -126,87 +110,46 @@ export class IncidentService {
       throw new NotFoundException(`Incident with ID ${id} not found`);
     }
 
-    // Validate channel ID
-    if (incident.channelId && incident.channelId !== channelId) {
-      throw new ForbiddenException('Channel ID does not match the incident');
+    // Validate channel ID by checking if there's a notification for this channel
+    const hasNotificationForChannel = await this.notificationRepository.findOne({
+      where: {
+        incident: { id },
+        channelId,
+      },
+    });
+    if (!hasNotificationForChannel) {
+      throw new ForbiddenException('Channel ID does not match any notification for this incident');
     }
 
     // Check if acknowledgment is required
-    if (!incident.ackRequired) {
+    if (!incident.needsAck) {
       throw new ForbiddenException(`Incident with ID ${id} does not require acknowledgment`);
     }
 
-    // Update acknowledgment information if not previously acknowledged
     if (!incident.ackedAt) {
-      incident.acked = true;
+      incident.isAcked = true;
       incident.ackedAt = new Date();
-      incident.ackedByUser = username;
+      incident.ackedBy = username;
     }
 
     return this.incidentRepository.save(incident);
   }
 
-  async resolveIncidentById(id: number, resolvedMessage?: string): Promise<Incident> {
+  async resolveIncidentById(id: number): Promise<Incident> {
     const incident = await this.incidentRepository.findOne({ where: { id } });
 
     if (!incident) {
       throw new NotFoundException(`Incident with ID ${id} not found`);
     }
-
-    // Check if incident is already resolved
     if (incident.resolvedAt) {
       throw new ForbiddenException(`Incident with ID ${id} is already resolved`);
     }
 
-    // Update resolution information
-    incident.resolved = true;
+    incident.isResolved = true;
     incident.resolvedAt = new Date();
-    if (resolvedMessage) {
-      incident.resolvedMessage = resolvedMessage;
-    }
-
     const savedIncident = await this.incidentRepository.save(incident);
 
-    // Send notification for resolved incident
-    this.notificationService.sendResolvedNotification(savedIncident).catch(error => {
-      this.logger.error(`Failed to send resolution notification for incident ${savedIncident.id}`, error);
-    });
-
-    return savedIncident;
-  }
-
-  async resolveIncident(resolveIncidentDto: ResolveIncidentDto): Promise<Incident> {
-    const { wallet, handler, chain, groupId, resolvedMessage } = resolveIncidentDto;
-
-    // Find the incident using the provided fields
-    const incident = await this.incidentRepository.findOne({
-      where: {
-        chain,
-        groupId,
-        handler,
-        wallet,
-        resolved: false,
-      },
-    });
-
-    if (!incident) {
-      throw new NotFoundException(`Incident not found for the provided criteria`);
-    }
-
-    // Update resolution information
-    incident.resolved = true;
-    incident.resolvedAt = new Date();
-    if (resolvedMessage) {
-      incident.resolvedMessage = resolvedMessage;
-    }
-
-    const savedIncident = await this.incidentRepository.save(incident);
-
-    // Send notification for resolved incident
-    this.notificationService.sendResolvedNotification(savedIncident).catch(error => {
-      this.logger.error(`Failed to send resolution notification for incident ${savedIncident.id}`, error);
-    });
-
+    await this.notificationService.createResolutionNotifications(savedIncident);
     return savedIncident;
   }
 
@@ -222,11 +165,11 @@ export class IncidentService {
       return 0;
     }
 
-    // Find all unresolved incidents where the wallet is NOT in the active accounts
+    // Find all unresolved incidents where the account is NOT in the active accounts
     const orphanedIncidents = await this.incidentRepository
       .createQueryBuilder('incident')
-      .where('incident.resolved = :resolved', { resolved: false })
-      .andWhere('incident.wallet NOT IN (:...activeAccounts)', { activeAccounts })
+      .where('incident.isResolved = :isResolved', { isResolved: false })
+      .andWhere('incident.account NOT IN (:...activeAccounts)', { activeAccounts })
       .getMany();
 
     if (orphanedIncidents.length === 0) {
@@ -237,21 +180,16 @@ export class IncidentService {
     this.logger.log(`Auto-resolving ${orphanedIncidents.length} orphaned incidents`);
 
     let resolvedCount = 0;
-
-    // Process all incidents
     for (const incident of orphanedIncidents) {
       try {
-        await this.resolveIncidentById(
-          incident.id,
-          'Auto-resolved: Account no longer present in monitoring configuration',
-        );
+        await this.resolveIncidentById(incident.id);
         resolvedCount++;
       } catch (error) {
         this.logger.error(`Failed to auto-resolve incident ${incident.id}`, error);
       }
     }
 
-    // TODO: In the future, consider handler in addition to wallet address
+    // TODO: In the future, consider handlerType in addition to account address
     // when determining if an incident should be auto-resolved
 
     return resolvedCount;

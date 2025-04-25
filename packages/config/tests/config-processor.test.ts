@@ -26,11 +26,11 @@ describe('ConfigProcessor', () => {
       // Test defaults inheritance
       const defaultGroup = result.find(g => g.id === 'validators-default' && g.chain === Chain.Polkadot);
       expect(defaultGroup).toBeDefined();
-      expect(defaultGroup?.alerts).toEqual({
+      expect(defaultGroup?.notifications).toEqual({
         messengerType: 'matrix',
-        targets: ['!defaultroom:matrix.org'],
-        acknowledgement: true,
-        repeatIntervalHours: 24
+        channels: ['!defaultroom:matrix.org'],
+        needsAck: true,
+        repeatHours: 24
       });
 
       // Test address transformation
@@ -137,7 +137,7 @@ describe('ConfigProcessor', () => {
     it('should throw on invalid alert configuration', () => {
       expect(() => {
         ConfigProcessor.processConfigs([
-          path.join(FIXTURES_DIR, 'invalid/invalid-alerts.yaml')
+          path.join(FIXTURES_DIR, 'invalid/invalid-notifications.yaml')
         ]);
       }).toThrow(/messengerType/);
     });
@@ -155,7 +155,7 @@ describe('ConfigProcessor', () => {
         ConfigProcessor.processConfigs([
           path.join(FIXTURES_DIR, 'invalid/invalid-defaults.yaml')
         ]);
-      }).toThrow(/must have (monitors|alerts) defined/);
+      }).toThrow(/must have (monitors|notifications) defined/);
     });
   
     describe('Invalid Configurations', () => {

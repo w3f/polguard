@@ -5,6 +5,8 @@ import { AppModule } from '../../src/app.module';
 import { MonitoringConfigService } from '../../src/monitoring-config/monitoring-config.service';
 import { ConfigService } from '../../src/config/config.service';
 import { NotificationService } from '../../src/notification/notification.service';
+import { HttpService } from '@nestjs/axios';
+import { of } from 'rxjs';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -95,11 +97,24 @@ export async function createTestApp(fixtureOptions?: {
     getLoggingLevel: jest.fn().mockReturnValue('info'),
     getEnvironment: jest.fn().mockReturnValue('test'),
   })
+  .overrideProvider(HttpService)
+  .useValue({
+    post: jest.fn().mockImplementation(() => {
+      return of({
+        status: 200,
+        statusText: 'OK',
+        data: { success: true }
+      });
+    })
+  })
+  // Mock the NotificationService to avoid database connection issues
   .overrideProvider(NotificationService)
   .useValue({
-    sendAlertNotification: jest.fn().mockResolvedValue(undefined),
-    sendResolvedNotification: jest.fn().mockResolvedValue(undefined),
-    retryFailedNotifications: jest.fn().mockResolvedValue(undefined),
+    createNotifications: jest.fn().mockResolvedValue(undefined),
+    createResolutionNotifications: jest.fn().mockResolvedValue(undefined),
+    processNotification: jest.fn().mockResolvedValue(undefined),
+    retryNotifications: jest.fn().mockResolvedValue(undefined),
+    sendNotification: jest.fn().mockResolvedValue(true),
   })
   .compile();
 

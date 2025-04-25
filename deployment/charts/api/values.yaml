@@ -40,10 +40,10 @@ config:
 
 monitoringConfig:
   defaults:
-    alerts:
-      repeatIntervalHours: 0.0083
+    notifications:
+      repeatHours: 0.0083
       messengerType: matrix
-      targets:
+      channels:
         - "!BabNKVNdOktKGafXzd:web3.foundation"
     chains:
       - Polkadot

@@ -1,6 +1,6 @@
 import {
   AccountSettings,
-  AlertSettings,
+  NotificationSettings,
   ConfigAccountSettings,
   MonitorHandlerType,
   MonitoringGroup,
@@ -10,7 +10,7 @@ import {
 
 type AccountConfig<T extends MonitorType> = {
   account: AccountSettings<T>;
-  alerts: AlertSettings;
+  notifications: NotificationSettings;
   groupId: string;
 };
 
@@ -39,12 +39,12 @@ export class AccountRegistry<T extends MonitorType> {
    *   "5GrwvaEF...": [
    *     {
    *       account: { ss58: "5GrwvaEF...", name: "Alice", ... },
-   *       alerts: { targets: ["room1"], ... },
+   *       notifications: { channels: ["room1"], ... },
    *       groupId: "validators-1"
    *     },
    *     {
    *       account: { ss58: "5GrwvaEF...", name: "Alice", ... },
-   *       alerts: { targets: ["room2"], ... },
+   *       notifications: { channels: ["room2"], ... },
    *       groupId: "validators-2"
    *     }
    *   ]
@@ -65,7 +65,7 @@ export class AccountRegistry<T extends MonitorType> {
             name: account.name,
             settings: account[this.monitorType] as MonitorSettings<T>,
           },
-          alerts: group.alerts,
+          notifications: group.notifications,
           groupId: group.id,
         });
       }
@@ -81,15 +81,15 @@ export class AccountRegistry<T extends MonitorType> {
    *
    * - Only configurations that include the handler in their handlers array are returned
    *
-   * @param handler - Handler type to check eligibility for
+   * @param handlerType - Handler type to check eligibility for
    * @param address - Account address to get configurations for
    * @returns Array of account configurations that are eligible for the handler
    */
-  getAccounts(handler: MonitorHandlerType[T], address: string): AccountConfig<T>[] {
+  getAccounts(handlerType: MonitorHandlerType[T], address: string): AccountConfig<T>[] {
     const accounts = this.accounts.get(address) || [];
     return accounts.filter(account => {
       const handlers = account.account.settings.handlers as MonitorHandlerType[T][];
-      return handlers.includes(handler);
+      return handlers.includes(handlerType);
     });
   }
 
@@ -102,7 +102,11 @@ export class AccountRegistry<T extends MonitorType> {
    */
   async forEachAccount(
     handlerType: MonitorHandlerType[T],
-    callback: (params: { account: AccountSettings<T>; alerts: AlertSettings; groupId: string }) => Promise<void>,
+    callback: (params: {
+      account: AccountSettings<T>;
+      notifications: NotificationSettings;
+      groupId: string;
+    }) => Promise<void>,
   ): Promise<void> {
     for (const address of this.uniqueAddresses) {
       for (const accountInfo of this.getAccounts(handlerType, address)) {

@@ -2,8 +2,8 @@ import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, Not, LessThan } from 'typeorm';
-import { MessageType, MessengerType } from '@w3f/monitoring-types';
-import { Incident } from '../database/incident.entity';
+import { MessageType, MessengerType, NotificationType } from '@w3f/monitoring-types';
+import { Incident, IncidentNotification } from '../database/incident.entities';
 import { MessageStyler } from './message-styler';
 import { ConfigService } from '../config/config.service';
 import { firstValueFrom } from 'rxjs';
@@ -16,136 +16,164 @@ export class NotificationService {
     private readonly httpService: HttpService,
     @InjectRepository(Incident)
     private incidentRepository: Repository<Incident>,
+    @InjectRepository(IncidentNotification)
+    private notificationRepository: Repository<IncidentNotification>,
     private readonly configService: ConfigService,
   ) {}
 
-  async sendAlertNotification(incident: Incident): Promise<void> {
-    this.logger.log(`Sending alert notification for incident ${incident.id}`);
-    const messageType = incident.resolved ? MessageType.OneTime : MessageType.Firing;
-    const styledMessage = MessageStyler.parseAndStyle(incident.message, messageType, 'html', incident.id);
-    await this.sendNotification(incident.channelId, incident.messengerType, styledMessage);
+  /**
+   * Create notifications for an incident
+   */
+  async createNotifications(
+    incident: Incident,
+    channels: { channelId: string; messengerType: MessengerType; repeatHours?: number }[],
+    type: NotificationType,
+  ): Promise<void> {
+    const notifications = channels.map(channel => ({
+      incident,
+      channelId: channel.channelId,
+      messengerType: channel.messengerType,
+      repeatHours: channel.repeatHours,
+      type,
+    }));
 
-    incident.alertNotificationSent = new Date();
-    await this.incidentRepository.save(incident);
+    const savedNotifications = await this.notificationRepository.save(notifications);
 
-    this.logger.log(`Alert notification sent for incident ${incident.id}`);
+    // Process each notification (don't wait for completion)
+    savedNotifications.forEach(notification => {
+      this.processNotification(notification).catch(error => {
+        this.logger.error(`Failed to process notification ${notification.id}`, error);
+      });
+    });
   }
 
-  async sendResolvedNotification(incident: Incident): Promise<void> {
-    this.logger.log(`Sending resolved notification for incident ${incident.id}`);
-    const messageType = MessageType.Resolved;
-    const styledMessage = MessageStyler.parseAndStyle(incident.message, messageType, 'html', incident.id);
-    await this.sendNotification(incident.channelId, incident.messengerType, styledMessage);
-
-    incident.resolvedNotificationSent = new Date();
-    await this.incidentRepository.save(incident);
-
-    this.logger.log(`Resolved notification sent for incident ${incident.id}`);
-  }
-
-  private async sendNotification(channelId: string, messengerType: MessengerType, message: string): Promise<void> {
-    const notificationConfig = this.configService.getNotificationConfig();
-
-    switch (messengerType) {
-      case MessengerType.Matrix:
-        const matrixUrl = notificationConfig.matrix.url;
-        await firstValueFrom(
-          this.httpService.post(matrixUrl, {
-            channelId: channelId,
-            message: message,
-          }),
-        );
-        break;
-
-      case MessengerType.Slack:
-        throw new NotImplementedException('Slack messenger is not implemented yet');
-
-      default:
-        throw new NotImplementedException(`Messenger type ${messengerType} is not implemented`);
-    }
-  }
-
-  async retryFailedNotifications(): Promise<void> {
-    await this.retryOneTimeNotifications();
-    await this.retryFiringNotifications();
-    await this.retryResolvedNotifications();
-  }
-
-  private async retryOneTimeNotifications(): Promise<void> {
-    const now = new Date();
-
-    // Find one-time incidents that were created as resolved but notification failed
-    const oneTimeIncidents = await this.incidentRepository.find({
+  /**
+   * Create resolution notifications for an incident
+   */
+  async createResolutionNotifications(incident: Incident): Promise<void> {
+    // Find all channels that received alert notifications for this incident
+    const alertNotifications = await this.notificationRepository.find({
       where: {
-        resolved: true,
-        alertNotificationSent: IsNull(),
-        createdAt: LessThan(
-          new Date(now.getTime() - 1 * 60 * 1000), // Created at least 1 minute ago
-        ),
+        incident: { id: incident.id },
+        type: NotificationType.Alert,
       },
     });
 
-    // Process one-time incidents
-    for (const incident of oneTimeIncidents) {
-      await this.sendAlertNotification(incident);
+    const channels = alertNotifications.map(alert => ({
+      channelId: alert.channelId,
+      messengerType: alert.messengerType,
+    }));
+
+    await this.createNotifications(incident, channels, NotificationType.Resolution);
+  }
+
+  /**
+   * Process a single notification
+   */
+  async processNotification(notification: IncidentNotification): Promise<void> {
+    const incident = await this.incidentRepository.findOne({
+      where: { id: notification.incident.id },
+    });
+
+    if (!incident) {
+      this.logger.error(`Incident ${notification.incident.id} not found for notification ${notification.id}`);
+      return;
+    }
+
+    const messageType =
+      notification.type === NotificationType.Alert
+        ? incident.isResolved
+          ? MessageType.OneTime
+          : MessageType.Firing
+        : MessageType.Resolved;
+
+    const styledMessage = MessageStyler.parseAndStyle(incident.message, messageType, 'html', incident.id);
+    const isDelivered = await this.sendNotification(notification.channelId, notification.messengerType, styledMessage);
+
+    notification.lastSentAt = new Date();
+    notification.isDelivered = isDelivered;
+    await this.notificationRepository.save(notification);
+
+    if (isDelivered) {
+      this.logger.log(`Successfully processed notification ${notification.id} for incident ${incident.id}`);
+    } else {
+      this.logger.error(`Failed to deliver notification ${notification.id} for incident ${incident.id}`);
     }
   }
 
-  private async retryFiringNotifications(): Promise<void> {
-    const now = new Date();
+  /**
+   * Send a notification to a specific channel
+   * @returns boolean indicating whether the notification was sent successfully
+   */
+  private async sendNotification(channelId: string, messengerType: MessengerType, message: string): Promise<boolean> {
+    const notificationConfig = this.configService.getNotificationConfig();
 
-    // Find firing incidents that need notification sending/retrying
-    const firingIncidents = await this.incidentRepository.find({
+    try {
+      switch (messengerType) {
+        case MessengerType.Matrix:
+          const matrixUrl = notificationConfig.matrix.url;
+          const response = await firstValueFrom(
+            this.httpService.post(matrixUrl, {
+              channelId: channelId,
+              message: message,
+            }),
+          );
+          if (response.status >= 200 && response.status < 300) {
+            return true;
+          } else {
+            this.logger.error(`Failed to send notification: Received status code ${response.status}`);
+            return false;
+          }
+
+        case MessengerType.Slack:
+          throw new NotImplementedException('Slack messenger is not implemented yet');
+
+        default:
+          throw new NotImplementedException(`Messenger type ${messengerType} is not implemented`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send notification to ${messengerType} channel ${channelId}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Retry failed notifications and handle repeating notifications
+   */
+  async retryNotifications(): Promise<void> {
+    const now = new Date();
+    const pendingNotifications = await this.notificationRepository.find({
       where: [
-        // Case 1: Never sent a notification (alertNotificationSent is null)
+        // Never delivered successfully
+        { isDelivered: false },
+
+        // Needs to be repeated based on interval
         {
-          resolved: false,
-          alertNotificationSent: IsNull(),
-          createdAt: LessThan(
-            new Date(now.getTime() - 1 * 60 * 1000), // Created at least 1 minute ago
+          isDelivered: true,
+          repeatHours: Not(IsNull()),
+          lastSentAt: LessThan(
+            new Date(now.getTime() - 60 * 1000), // At least 1 minute ago (safety buffer)
           ),
-        },
-        // Case 2: Failed to send recurring notification (alertNotificationSent + repeatIntervalHours has passed)
-        {
-          resolved: false,
-          repeatIntervalHours: Not(IsNull()),
-          alertNotificationSent: Not(IsNull()),
+          // Only repeat for unresolved incidents
+          incident: {
+            isResolved: false,
+          },
         },
       ],
+      relations: ['incident'],
     });
 
-    // Process firing incidents
-    for (const incident of firingIncidents) {
-      // For case 2 only, check if it's time to retry
-      if (incident.alertNotificationSent && incident.repeatIntervalHours) {
-        const nextNotificationTime = new Date(
-          incident.alertNotificationSent.getTime() + incident.repeatIntervalHours * 60 * 60 * 1000,
-        );
+    for (const notification of pendingNotifications) {
+      // For repeating notifications, check if the full interval has passed
+      if (notification.isDelivered && notification.repeatHours && notification.lastSentAt) {
+        const nextSendTime = new Date(notification.lastSentAt.getTime() + notification.repeatHours * 60 * 60 * 1000);
 
-        // Skip if it's not time yet
-        if (nextNotificationTime > now) {
+        if (nextSendTime > now) {
           continue;
         }
       }
 
-      await this.sendAlertNotification(incident);
-    }
-  }
-
-  private async retryResolvedNotifications(): Promise<void> {
-    // Find incidents that were resolved but resolution notification failed
-    const resolvedIncidents = await this.incidentRepository.find({
-      where: {
-        resolved: true,
-        resolvedNotificationSent: IsNull(),
-        resolvedMessage: Not(IsNull()),
-        resolvedAt: Not(IsNull()),
-      },
-    });
-
-    // Process resolved incidents
-    for (const incident of resolvedIncidents) {
-      await this.sendResolvedNotification(incident);
+      await this.processNotification(notification);
     }
   }
 }

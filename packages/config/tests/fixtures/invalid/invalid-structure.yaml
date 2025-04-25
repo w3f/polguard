@@ -1,5 +1,5 @@
 # Missing required groups field
 defaults:
-  alerts:
+  notifications:
     messengerType: matrix
-    targets: ['!room:matrix.org']
+    channels: ['!room:matrix.org']

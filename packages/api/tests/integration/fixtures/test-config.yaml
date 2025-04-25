@@ -1,13 +1,17 @@
 defaults:
   chains:
     - Polkadot
-  alerts:
+  notifications:
     messengerType: matrix
-    targets:
+    channels:
       - "!testroom:matrix.org"
   monitors:
     - name: Staking
       commission: 10
+      handlers:
+        - CommissionChanged
+        - SlashReported
+        - CommissionUnexpected
 
 groups:
   - id: validators-default

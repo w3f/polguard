@@ -1,14 +1,14 @@
 import { createHash } from 'crypto';
 import {
   Logger,
-  AlertSettings,
+  NotificationSettings,
   KeyValueStorageClient,
   IncidentHandlerClient,
   Chain,
   IncidentApiClient,
   CreateIncidentDto,
-  ResolveIncidentDto,
   IncidentKey,
+  NotificationChannel,
 } from '@w3f/monitoring-types';
 
 /**
@@ -31,85 +31,85 @@ export class IncidentHandler implements IncidentHandlerClient {
 
   async handle(
     message: string[],
-    alerts: AlertSettings,
+    notifications: NotificationSettings,
     incidentKey: IncidentKey,
     blockNumber: number,
     isFiring?: boolean,
   ): Promise<void> {
     // One-time incident (created as immediately resolved)
     if (isFiring === undefined) {
-      await this.createIncident(message, alerts, incidentKey, blockNumber, true);
+      await this.createIncident(message, notifications, incidentKey, blockNumber, true);
       return;
     }
 
     // Ongoing incident
-    const incidentId = this.getIncidentId(incidentKey);
-    const exists = await this.store.exists(incidentId);
+    const storeKey = this.getStoreKey(incidentKey);
+    const incidentId = await this.store.get<number>(storeKey);
 
-    if (isFiring && !exists) {
-      await this.createIncident(message, alerts, incidentKey, blockNumber, false);
-      await this.store.set(incidentId, 1);
-    } else if (!isFiring && exists) {
-      await this.resolveIncident(incidentKey);
-      await this.store.del(incidentId);
+    if (isFiring && !incidentId) {
+      const id = await this.createIncident(message, notifications, incidentKey, blockNumber, false);
+      await this.store.set(storeKey, id);
+    } else if (!isFiring && incidentId) {
+      await this.resolveIncident(incidentId);
+      await this.store.del(storeKey);
     }
   }
 
   private async createIncident(
     message: string[],
-    alerts: AlertSettings,
+    notifications: NotificationSettings,
     incidentKey: IncidentKey,
     blockNumber: number,
-    resolved: boolean = false,
-  ): Promise<void> {
+    isResolved: boolean = false,
+  ): Promise<number> {
+    // Create notification channels from notification settings
+    const notificationChannels: NotificationChannel[] = notifications.channels.map(channel => ({
+      channelId: channel,
+      messengerType: notifications.messengerType,
+      repeatHours: notifications.repeatHours,
+    }));
+
     // Create the incident DTO according to CreateIncidentDto
     const createIncidentDto: CreateIncidentDto = {
       message: message.join('\n'),
       chain: this.chain,
       blockNumber,
       // Required fields
-      wallet: incidentKey.wallet,
+      account: incidentKey.account,
       groupId: incidentKey.groupId,
-      handler: incidentKey.handler,
-      // From alerts
-      channelId: alerts.targets[0],
-      messengerType: alerts.messengerType,
+      handlerType: incidentKey.handlerType,
+      // Notification channels
+      notificationChannels,
       // Optional fields
-      ackRequired: alerts.acknowledgement || false,
-      repeatIntervalHours: alerts.repeatIntervalHours,
-      resolved: resolved,
+      needsAck: notifications.needsAck || false,
+      isResolved,
     };
 
     this.logger.debug(`Creating incident: ${JSON.stringify(createIncidentDto)}`);
 
     try {
-      await this.incidentApi.createIncident(createIncidentDto);
+      const incidentId = await this.incidentApi.createIncident(createIncidentDto);
+      this.logger.debug(`Created incident with ID: ${incidentId}`);
+      return incidentId;
     } catch (error) {
       this.logger.error(`Failed to create incident: ${error.message}`);
       throw new Error(`Failed to create incident: ${error.message}`);
     }
   }
 
-  private async resolveIncident(incidentKey: IncidentKey): Promise<void> {
-    const resolveIncidentDto: ResolveIncidentDto = {
-      chain: this.chain,
-      groupId: incidentKey.groupId,
-      handler: incidentKey.handler,
-      wallet: incidentKey.wallet,
-    };
-
-    this.logger.debug(`Resolving incident for ${incidentKey.wallet} in group ${incidentKey.groupId}`);
+  private async resolveIncident(incidentId: number): Promise<void> {
+    this.logger.debug(`Resolving incident with ID: ${incidentId}`);
 
     try {
-      await this.incidentApi.resolveIncident(resolveIncidentDto);
+      await this.incidentApi.resolveIncident(incidentId);
     } catch (error) {
       this.logger.error(`Failed to resolve incident: ${error.message}`);
       throw new Error(`Failed to resolve incident: ${error.message}`);
     }
   }
 
-  private getIncidentId(incidentKey: IncidentKey): string {
-    const key = `${incidentKey.wallet}:${incidentKey.groupId}:${incidentKey.handler}`;
+  private getStoreKey(incidentKey: IncidentKey): string {
+    const key = `${incidentKey.account}:${incidentKey.groupId}:${incidentKey.handlerType}`;
     const hash = createHash('md5').update(key).digest('hex').substring(0, 16);
     return `inc:${hash}`;
   }

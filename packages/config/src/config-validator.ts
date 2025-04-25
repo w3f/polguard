@@ -24,20 +24,20 @@ const decimalStringSchema = Joi.string()
   });
 
 
-const alertSchema = Joi.object({
+const notificationSchema = Joi.object({
   messengerType: Joi.string().valid(...Object.values(MessengerType)),
-  targets: Joi.array()
+  channels: Joi.array()
     // Pattern supports only Matrix rooms at the moment.
     .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
     .min(1)
     .required()
     .messages({
-      'array.min': 'At least one target is required',
-      'string.pattern.base': 'Invalid target format',
+      'array.min': 'At least one channel is required',
+      'string.pattern.base': 'Invalid channel format',
     })
     .required(),
-  acknowledgement: Joi.boolean(),
-  repeatIntervalHours: Joi.number(),
+  needsAck: Joi.boolean(),
+  repeatHours: Joi.number(),
 });
 
 /**
@@ -71,10 +71,10 @@ function createHandlerSchema(handlerEnum: Record<string, string>, monitorName: s
  * 
  * See validateValidatorMonitor, etc. for these checks.
  */
+// TODO: add validation for payee with the enum (Staked, Stash, etc.)
 const stakingMonitorSchema = Joi.object({
   commission: Joi.number().min(0).max(100),
   selfStake: decimalStringSchema,
-  // TODO: add validation with the enum (Staked, Stash, etc.)
   payee: Joi.string(),
   handlers: createHandlerSchema(StakingHandlerType, 'Staking')
 });
@@ -201,7 +201,7 @@ const defaultsSchema = Joi.object({
     .items(Joi.string().valid(...Object.values(Chain)))
     .optional(),
   monitors: Joi.array().items(monitorSchema).optional(),
-  alerts: alertSchema.optional(),
+  notifications: notificationSchema.optional(),
 });
 
 const groupSchema = Joi.object({
@@ -210,7 +210,7 @@ const groupSchema = Joi.object({
     .items(Joi.string().valid(...Object.values(Chain)))
     .optional(),
   monitors: Joi.array().items(monitorSchema).optional(),
-  alerts: alertSchema.optional(),
+  notifications: notificationSchema.optional(),
   accounts: Joi.array().items(accountSchema).min(1).required().messages({
     'array.min': 'At least one account is required in a group',
   }),
@@ -251,7 +251,7 @@ function validateGroup(group: any, defaults: any): void {
   const requiredProps = [
     { name: 'chains', check: (val: any) => val && val.length > 0 },
     { name: 'monitors', check: (val: any) => val && val.length > 0 },
-    { name: 'alerts', check: (val: any) => val !== undefined },
+    { name: 'notifications', check: (val: any) => val !== undefined },
   ];
 
   requiredProps.forEach(prop => {

@@ -47,7 +47,7 @@ export function Event(handler: HandlerType, chains: Chain[], eventNames: string 
     const originalMethod = descriptor.value;
     descriptor.value = async function (...args: any[]) {
       const params = args[0] || {};
-      params.handler = handler;
+      params.handlerType = handler;
       return await originalMethod.call(this, params);
     };
 
@@ -81,7 +81,7 @@ export function Call(handler: HandlerType, chains: Chain[], callNames: string | 
     const originalMethod = descriptor.value;
     descriptor.value = async function (...args: any[]) {
       const params = args[0] || {};
-      params.handler = handler;
+      params.handlerType = handler;
       return await originalMethod.call(this, params);
     };
 
@@ -108,7 +108,7 @@ export function State(handler: HandlerType, chains: Chain[]) {
     const originalMethod = descriptor.value;
     descriptor.value = async function (...args: any[]) {
       const params = args[0] || {};
-      params.handler = handler;
+      params.handlerType = handler;
       return await originalMethod.call(this, params);
     };
 

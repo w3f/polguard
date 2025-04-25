@@ -1,9 +1,9 @@
 defaults:
-  alerts:
+  notifications:
     # ~30 seconds between firing events (for testing purposes)
-    repeatIntervalHours: 0.0083
+    repeatHours: 0.0083
     messengerType: matrix
-    targets:
+    channels:
       # TestMonitoringPlatform room
       - "!BabNKVNdOktKGafXzd:web3.foundation"
   chains:
@@ -11,9 +11,17 @@ defaults:
   monitors:
     - name: Staking
       commission: 5
+      handlers:
+        - CommissionChanged
+        - SlashReported
+        - CommissionUnexpected
     - name: Telemetry
       minMemoryGB: 16
       minCores: 4
+      handlers:
+        - HardwareUnexpected
+        - TelemetryMissing
+        - VersionOutdated
 
 groups:
   - id: test-group-validator-1
