@@ -1,7 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import { MonitoringGroup, MonitoringConfigClient } from '@w3f/monitoring-types';
+import {
+  MonitoringGroup,
+  MonitoringConfigClient,
+  MonitorType,
+  MessengerType,
+  StakingHandlerType as H,
+  MonitorTypeSettings,
+} from '@w3f/monitoring-types';
 import { ConfigService } from '../config/config.service';
 import { MetricsService } from '../metrics/metrics.service';
 
@@ -15,12 +22,14 @@ export class MonitoringConfigService implements MonitoringConfigClient {
   ) {}
 
   async getMonitoringGroups(): Promise<MonitoringGroup[]> {
-    try {
-      const monitoringApi = this.configService.getMonitoringApi();
-      const configUrl = `${monitoringApi.baseUrl}${monitoringApi.endpoints.getConfig}`;
-      const groupIds = this.configService.getMonitoringGroupIds();
+    const monitoringApi = this.configService.getMonitoringApi();
+    const configUrl = `${monitoringApi.baseUrl}${monitoringApi.endpoints.getConfig}`;
+    const groupIds = this.configService.getMonitoringGroupIds();
 
-      const response = await lastValueFrom(
+    let response;
+
+    try {
+      response = await lastValueFrom(
         this.httpService.get(configUrl, {
           params: {
             chain: this.configService.getChain(),
@@ -28,31 +37,38 @@ export class MonitoringConfigService implements MonitoringConfigClient {
           },
         }),
       );
-
-      const groups = response.data.groups;
-
-      // Validate that we received the expected number of groups
-      if (groups.length !== groupIds.length) {
-        throw new Error(`Expected ${groupIds.length} monitoring groups but received ${groups.length}`);
-      }
-
-      // Validate that all requested group IDs are present
-      const receivedGroupIds = groups.map(group => group.id);
-      const missingGroupIds = groupIds.filter(id => !receivedGroupIds.includes(id));
-
-      if (missingGroupIds.length > 0) {
-        throw new Error(`Missing monitoring groups: ${missingGroupIds.join(', ')}`);
-      }
-
-      // Log detailed information and update metrics
-      this.logGroupDetails(groups);
-      this.updateMetrics(groups);
-
-      return groups;
     } catch (error) {
       this.logger.error(`Failed to fetch monitoring groups from IMS: ${error.message}`);
+
+      // In development environment, use hardcoded groups
+      if (this.configService.getEnvironment() === 'development') {
+        this.logger.warn('Using hardcoded monitoring groups for development environment');
+        return this.getDevMonitoringGroups();
+      }
+
       throw new Error(`Failed to fetch monitoring groups: ${error.message}`);
     }
+
+    const groups = response.data.groups;
+
+    // Validate that we received the expected number of groups
+    if (groups.length !== groupIds.length) {
+      throw new Error(`Expected ${groupIds.length} monitoring groups but received ${groups.length}`);
+    }
+
+    // Validate that all requested group IDs are present
+    const receivedGroupIds = groups.map(group => group.id);
+    const missingGroupIds = groupIds.filter(id => !receivedGroupIds.includes(id));
+
+    if (missingGroupIds.length > 0) {
+      throw new Error(`Missing monitoring groups: ${missingGroupIds.join(', ')}`);
+    }
+
+    // Log detailed information and update metrics
+    this.logGroupDetails(groups);
+    this.updateMetrics(groups);
+
+    return groups;
   }
 
   private logGroupDetails(groups: MonitoringGroup[]): void {
@@ -76,18 +92,42 @@ export class MonitoringConfigService implements MonitoringConfigClient {
     );
   }
 
+  private getDevMonitoringGroups(): MonitoringGroup[] {
+    const groupIds = this.configService.getMonitoringGroupIds();
+    return groupIds.map(groupId => ({
+      id: groupId,
+      chain: this.configService.getChain(),
+      monitors: [
+        {
+          name: MonitorType.Staking,
+          settings: {
+            handlers: [H.ActiveSetPresence],
+          } as MonitorTypeSettings[MonitorType.Staking],
+        },
+      ],
+      accounts: [
+        {
+          ss58: '12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ',
+          hex: '0x',
+          name: 'Development Test Account',
+        },
+      ],
+      alerts: {
+        messengerType: MessengerType.Matrix,
+        targets: ['#dev-alerts:matrix.org'],
+      },
+    }));
+  }
+
   private updateMetrics(groups: MonitoringGroup[]): void {
-    // Calculate metrics
     const totalGroups = groups.length;
     const totalAccounts = groups.reduce((acc, group) => acc + (group.accounts?.length || 0), 0);
     const monitorTypes = new Set<string>();
 
-    // Count unique monitor types
     groups.forEach(group => {
       group.monitors.forEach(monitor => monitorTypes.add(monitor.name));
     });
 
-    // Update metrics
     this.metrics.setMonitorGroupsCount(totalGroups);
     this.metrics.setMonitoredAccountsCount(totalAccounts);
     this.metrics.setMonitorsCount(monitorTypes.size);

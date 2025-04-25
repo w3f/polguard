@@ -19,7 +19,7 @@ export class IncidentService {
     const queryBuilder = this.incidentRepository.createQueryBuilder('incident');
 
     // Apply status filter
-    if (filters.status && filters.status !== 'all') {
+    if (filters.status) {
       switch (filters.status) {
         case 'open':
           queryBuilder.andWhere('incident.resolved = false');
@@ -29,9 +29,6 @@ export class IncidentService {
           break;
         case 'unacked':
           queryBuilder.andWhere('incident.ackRequired = true AND incident.acked = false');
-          break;
-        case 'resolved':
-          queryBuilder.andWhere('incident.resolved = true');
           break;
       }
     }
@@ -134,7 +131,12 @@ export class IncidentService {
       throw new ForbiddenException('Channel ID does not match the incident');
     }
 
-    // Always update acknowledgment information if not previously acknowledged
+    // Check if acknowledgment is required
+    if (!incident.ackRequired) {
+      throw new ForbiddenException(`Incident with ID ${id} does not require acknowledgment`);
+    }
+
+    // Update acknowledgment information if not previously acknowledged
     if (!incident.ackedAt) {
       incident.acked = true;
       incident.ackedAt = new Date();

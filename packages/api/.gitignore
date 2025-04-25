@@ -1,5 +1,5 @@
 # App
-/monitoring-configs
+/monitoring-configs/*.yaml
 /config/config.yaml
 
 # Compiled output

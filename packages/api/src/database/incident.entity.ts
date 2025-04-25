@@ -64,9 +64,6 @@ export class Incident {
   @Column({ name: 'resolved_at', nullable: true })
   resolvedAt: Date;
 
-  @Column({ name: 'resolution_notes', nullable: true })
-  resolutionNotes: string;
-
   @Column({ name: 'resolved_message', nullable: true })
   resolvedMessage: string;
 

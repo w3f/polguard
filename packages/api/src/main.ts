@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
 import * as JSONbig from 'json-bigint';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const logger = new Logger('Main');
@@ -27,6 +28,19 @@ async function bootstrap() {
     next();
   });
 
+  // Setup Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Monitoring API')
+    .setDescription('The Monitoring Platform API documentation')
+    .setVersion('1.0')
+    .addTag('incidents')
+    .addTag('monitoring-config')
+    .addTag('health')
+    .addTag('metrics')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api-docs', app, document);
+
   // Get server configuration
   const configService = app.get(ConfigService);
   const serverConfig = configService.getServerConfig();
@@ -35,6 +49,7 @@ async function bootstrap() {
   await app.init();
   await app.listen(serverConfig.port, serverConfig.host);
   logger.log(`HTTP server is listening on ${serverConfig.host}:${serverConfig.port}`);
+  logger.log(`Swagger documentation available at http://${serverConfig.host}:${serverConfig.port}/api-docs`);
 }
 
 bootstrap().catch(error => {

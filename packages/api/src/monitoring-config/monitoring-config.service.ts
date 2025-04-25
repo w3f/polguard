@@ -77,6 +77,11 @@ export class MonitoringConfigService implements OnModuleInit {
       return [];
     }
 
+    // If groupIds is empty, return all groups for the chain
+    if (groupIds.length === 0) {
+      return Object.values(this.monitoringConfigMap[chain]);
+    }
+
     return groupIds
       .map(id => {
         const group = this.monitoringConfigMap[chain][id];
@@ -91,6 +96,11 @@ export class MonitoringConfigService implements OnModuleInit {
   getAccounts(chain: Chain, groupIds: string[]): Record<string, string[]> {
     if (!this.accountsMap[chain]) {
       return {};
+    }
+
+    // If groupIds is empty, return all accounts for the chain
+    if (groupIds.length === 0) {
+      return this.accountsMap[chain];
     }
 
     return groupIds.reduce(
