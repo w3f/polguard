@@ -107,15 +107,6 @@ export async function createTestApp(fixtureOptions?: {
       });
     })
   })
-  // Mock the NotificationService to avoid database connection issues
-  .overrideProvider(NotificationService)
-  .useValue({
-    createNotifications: jest.fn().mockResolvedValue(undefined),
-    createResolutionNotifications: jest.fn().mockResolvedValue(undefined),
-    processNotification: jest.fn().mockResolvedValue(undefined),
-    retryNotifications: jest.fn().mockResolvedValue(undefined),
-    sendNotification: jest.fn().mockResolvedValue(true),
-  })
   .compile();
 
   const app = moduleFixture.createNestApplication();

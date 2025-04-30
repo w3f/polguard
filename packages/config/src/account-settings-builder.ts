@@ -57,18 +57,16 @@ export class AccountSettingsBuilder {
    * Gets the field names for a specific monitor type from its Joi schema.
    * This replaces the hardcoded list of fields with a dynamic approach that
    * extracts the fields from the validation schema.
-   * 
+   *
    * @param monitorType - The monitor type to get fields for
    * @returns An array of field names for the monitor type
    */
-  private static getMonitorTypeKeys<T extends MonitorType>(
-    monitorType: T
-  ): (keyof MonitorTypeSettings[T])[] {
+  private static getMonitorTypeKeys<T extends MonitorType>(monitorType: T): (keyof MonitorTypeSettings[T])[] {
     const schema = monitorSchemas[monitorType];
     if (!schema) {
       return [] as (keyof MonitorTypeSettings[T])[];
     }
-    
+
     return extractFieldsFromSchema(schema) as (keyof MonitorTypeSettings[T])[];
   }
 
@@ -90,13 +88,13 @@ export class AccountSettingsBuilder {
     monitorConfigs.forEach(monitor => {
       // Initialize settings object
       mergedSettings[monitor.name] = {};
-      
+
       // Get monitor settings without the handlers
       const { handlers, ...monitorSettings } = monitor.settings || {};
-      
+
       // Get relevant account settings
       const relevantKeys = this.getMonitorTypeKeys(monitor.name);
-      
+
       const relevantAccountSettings = Object.entries(accountSettings)
         .filter(([key]) => relevantKeys.includes(key as any))
         .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
@@ -105,7 +103,7 @@ export class AccountSettingsBuilder {
       mergedSettings[monitor.name] = {
         ...monitorSettings,
         ...relevantAccountSettings,
-        ...(handlers && { handlers })
+        ...(handlers && { handlers }),
       };
     });
 
@@ -117,14 +115,14 @@ export class AccountSettingsBuilder {
    * Currently handles:
    * - Staking monitor: selfStake field
    * - Balances monitor: threshold field
-   * 
+   *
    * @param settings - Merged settings
    * @param decimals - Chain-specific decimal places
    * @returns Settings with decimal strings converted to BigInt
    */
   private static transformDecimalBalances(
     settings: Record<MonitorType, Record<string, any>>,
-    decimals: number
+    decimals: number,
   ): Record<MonitorType, Record<string, any>> {
     const transformed = { ...settings };
 
@@ -133,8 +131,8 @@ export class AccountSettingsBuilder {
       transformed[MonitorType.Staking] = {
         ...rest,
         ...(selfStake && {
-          selfStake: this.atomizeBalance(selfStake, decimals)
-        })
+          selfStake: this.atomizeBalance(selfStake, decimals),
+        }),
       };
     }
 
@@ -143,8 +141,8 @@ export class AccountSettingsBuilder {
       transformed[MonitorType.Balances] = {
         ...rest,
         ...(threshold && {
-          threshold: this.atomizeBalance(threshold, decimals)
-        })
+          threshold: this.atomizeBalance(threshold, decimals),
+        }),
       };
     }
 
@@ -154,7 +152,7 @@ export class AccountSettingsBuilder {
   /**
    * Converts a decimal string balance to atomized BigInt value.
    * Example: "100.22" with 10 decimals -> 1002200000000n
-   * 
+   *
    * @param decimalBalance - Balance in decimal format (e.g. "100.22")
    * @throws {Error} If the input format is invalid
    * @returns BigInt representing the atomized balance
@@ -166,11 +164,9 @@ export class AccountSettingsBuilder {
     const isNeg = decimalBalance.startsWith('-');
     const value = isNeg ? decimalBalance.slice(1) : decimalBalance;
     const [intPart = '0', fracPart = ''] = value.split('.');
-    
-    const normalizedFrac = fracPart
-      .slice(0, decimals)
-      .padEnd(decimals, '0');
-  
+
+    const normalizedFrac = fracPart.slice(0, decimals).padEnd(decimals, '0');
+
     const atomicValueStr = (isNeg ? '-' : '') + intPart + normalizedFrac;
     return BigInt(atomicValueStr);
   }

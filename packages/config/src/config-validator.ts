@@ -7,22 +7,29 @@
  * It checks the structure and values of the config but does not apply any defaults
  * or transform the data in any way. Data transformation and default application
  * are handled separately in the config processor module.
- * 
+ *
  * The module also exports the monitor schemas to be used by other modules,
  * such as the AccountSettingsBuilder, to extract field names.
  */
 import * as Joi from 'joi';
-import { Chain, MessengerType, MonitorType, StakingHandlerType, IdentityHandlerType,
-         BalancesHandlerType, TelemetryHandlerType, GovernanceHandlerType, XcmHandlerType,
-         IDENTITY_FIELDS, PolkadotClientImpl } from '@w3f/monitoring-types';
+import {
+  Chain,
+  MessengerType,
+  MonitorType,
+  StakingHandlerType,
+  IdentityHandlerType,
+  BalancesHandlerType,
+  TelemetryHandlerType,
+  GovernanceHandlerType,
+  XcmHandlerType,
+  IDENTITY_FIELDS,
+  PolkadotClientImpl,
+} from '@w3f/monitoring-types';
 
 const decimalStringPattern = /^-?\d*\.?\d*$/;
-const decimalStringSchema = Joi.string()
-  .pattern(decimalStringPattern)
-  .messages({
-    'string.pattern.base': 'Invalid decimal format. Expected format: "123.456"'
-  });
-
+const decimalStringSchema = Joi.string().pattern(decimalStringPattern).messages({
+  'string.pattern.base': 'Invalid decimal format. Expected format: "123.456"',
+});
 
 const notificationSchema = Joi.object({
   messengerType: Joi.string().valid(...Object.values(MessengerType)),
@@ -52,23 +59,23 @@ function createHandlerSchema(handlerEnum: Record<string, string>, monitorName: s
       Joi.string()
         .valid(...Object.values(handlerEnum))
         .messages({
-          'any.only': `Invalid ${monitorName} handler type. Must be one of: ${Object.values(handlerEnum).join(', ')}`
-        })
+          'any.only': `Invalid ${monitorName} handler type. Must be one of: ${Object.values(handlerEnum).join(', ')}`,
+        }),
     )
     .min(1)
     .optional()
     .messages({
-      'array.min': `At least one handler is required for ${monitorName} monitor`
+      'array.min': `At least one handler is required for ${monitorName} monitor`,
     });
 }
 
 /**
  * Required fields can be provided either in monitor config or account settings,
  * this is validated separately in monitor-specific validation functions.
- * 
+ *
  * For example:
  * - Staking monitor requires 'commission' in either monitor or account config
- * 
+ *
  * See validateValidatorMonitor, etc. for these checks.
  */
 // TODO: add validation for payee with the enum (Staked, Stash, etc.)
@@ -76,19 +83,17 @@ const stakingMonitorSchema = Joi.object({
   commission: Joi.number().min(0).max(100),
   selfStake: decimalStringSchema,
   payee: Joi.string(),
-  handlers: createHandlerSchema(StakingHandlerType, 'Staking')
+  handlers: createHandlerSchema(StakingHandlerType, 'Staking'),
 });
 
 const identityMonitorSchema = Joi.object({
-  ...Object.fromEntries(
-    IDENTITY_FIELDS.map(field => [field, Joi.string()])
-  ),
-  handlers: createHandlerSchema(IdentityHandlerType, 'Identity')
+  ...Object.fromEntries(IDENTITY_FIELDS.map(field => [field, Joi.string()])),
+  handlers: createHandlerSchema(IdentityHandlerType, 'Identity'),
 });
 
 const balancesMonitorSchema = Joi.object({
   threshold: decimalStringSchema,
-  handlers: createHandlerSchema(BalancesHandlerType, 'Balances')
+  handlers: createHandlerSchema(BalancesHandlerType, 'Balances'),
 });
 
 const telemetryMonitorSchema = Joi.object({
@@ -96,21 +101,18 @@ const telemetryMonitorSchema = Joi.object({
   cpu: Joi.string(),
   minMemoryGB: Joi.number().min(1),
   minCores: Joi.number().min(1),
-  clientVersion: Joi.object().pattern(
-    Joi.string().valid(...Object.values(PolkadotClientImpl)),
-    Joi.string()
-  ),
+  clientVersion: Joi.object().pattern(Joi.string().valid(...Object.values(PolkadotClientImpl)), Joi.string()),
   provider: Joi.string(),
   sanctionedCountries: Joi.array().items(Joi.string()),
-  sanctionedRegions: Joi.array().items(Joi.string())
+  sanctionedRegions: Joi.array().items(Joi.string()),
 });
 
 const governanceMonitorSchema = Joi.object({
-  handlers: createHandlerSchema(GovernanceHandlerType, 'Governance')
+  handlers: createHandlerSchema(GovernanceHandlerType, 'Governance'),
 });
 
 const xcmMonitorSchema = Joi.object({
-  handlers: createHandlerSchema(XcmHandlerType, 'Xcm')
+  handlers: createHandlerSchema(XcmHandlerType, 'Xcm'),
 });
 
 /**
@@ -122,7 +124,7 @@ export const monitorSchemas = {
   [MonitorType.Balances]: balancesMonitorSchema,
   [MonitorType.Telemetry]: telemetryMonitorSchema,
   [MonitorType.Governance]: governanceMonitorSchema,
-  [MonitorType.Xcm]: xcmMonitorSchema
+  [MonitorType.Xcm]: xcmMonitorSchema,
 };
 
 /**
@@ -132,11 +134,11 @@ export const monitorSchemas = {
  */
 export function extractFieldsFromSchema(schema: Joi.Schema): string[] {
   const description = schema.describe();
-  
+
   if (description.type === 'object' && description.keys) {
     return Object.keys(description.keys);
   }
-  
+
   return [];
 }
 
@@ -148,7 +150,7 @@ export function extractFieldsFromSchema(schema: Joi.Schema): string[] {
 export function extractDefaultsFromSchema(schema: Joi.Schema): Record<string, any> {
   const description = schema.describe();
   const defaults: Record<string, any> = {};
-  
+
   if (description.type === 'object' && description.keys) {
     Object.entries(description.keys).forEach(([key, value]) => {
       // Type assertion for the value object
@@ -158,7 +160,7 @@ export function extractDefaultsFromSchema(schema: Joi.Schema): Record<string, an
       }
     });
   }
-  
+
   return defaults;
 }
 
@@ -169,8 +171,7 @@ const monitorSchema = Joi.object({
     .messages({
       'any.only': 'Invalid monitor type',
     }),
-})
-.when('.name', {
+}).when('.name', {
   switch: [
     { is: MonitorType.Staking, then: stakingMonitorSchema },
     { is: MonitorType.Identity, then: identityMonitorSchema },
@@ -178,7 +179,7 @@ const monitorSchema = Joi.object({
     { is: MonitorType.Telemetry, then: telemetryMonitorSchema },
     { is: MonitorType.Governance, then: governanceMonitorSchema },
     { is: MonitorType.Xcm, then: xcmMonitorSchema },
-  ]
+  ],
 });
 
 const addressPattern = /^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{47,48})$/;
@@ -266,7 +267,7 @@ function validateGroup(group: any, defaults: any): void {
 
 function validateMonitors(group: any, defaults: any): void {
   const monitors = group.monitors || defaults.monitors;
-  
+
   // Validate that each monitor has handlers defined
   monitors.forEach((monitor: any) => {
     if (!monitor.handlers || monitor.handlers.length === 0) {

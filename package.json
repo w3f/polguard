@@ -10,14 +10,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build:all": "yarn workspaces foreach -Wt run build",
+    "build": "yarn workspaces foreach -Wt run build",
     "build:types": "yarn workspace @w3f/monitoring-types build",
     "build:config": "yarn workspace @w3f/monitoring-config build",
     "build:chain": "yarn workspace @w3f/monitoring-chain build",
     "build:telemetry": "yarn workspace @w3f/monitoring-telemetry build",
     "build:matrix": "yarn workspace @w3f/monitoring-matrix build",
     "build:api": "yarn workspace @w3f/monitoring-api build",
-    "test:all": "yarn workspaces foreach -W run test",
+    "test": "yarn workspaces foreach -W run test",
     "test:types": "yarn workspace @w3f/monitoring-types test",
     "test:config": "yarn workspace @w3f/monitoring-config test",
     "test:chain": "yarn workspace @w3f/monitoring-chain test",

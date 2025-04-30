@@ -15,9 +15,10 @@ export class IncidentService implements IncidentServiceInterface {
 
   async getNonResolved(roomId: string): Promise<Incident[]> {
     try {
-      const baseUrl = this.configService.getMonitoringApi().baseUrl;
+      const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+      const url = `${baseUrl}${endpoints.getIncidents}`;
       const response = await firstValueFrom(
-        this.httpService.get(`${baseUrl}/incidents`, {
+        this.httpService.get(url, {
           params: {
             channelId: roomId,
             resolved: false,
@@ -33,9 +34,10 @@ export class IncidentService implements IncidentServiceInterface {
 
   async getNonAcked(roomId: string): Promise<Incident[]> {
     try {
-      const baseUrl = this.configService.getMonitoringApi().baseUrl;
+      const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+      const url = `${baseUrl}${endpoints.getIncidents}`;
       const response = await firstValueFrom(
-        this.httpService.get(`${baseUrl}/incidents`, {
+        this.httpService.get(url, {
           params: {
             channelId: roomId,
             ackRequired: true,
@@ -52,8 +54,9 @@ export class IncidentService implements IncidentServiceInterface {
 
   async getIncidentById(incidentId: number): Promise<Incident> {
     try {
-      const baseUrl = this.configService.getMonitoringApi().baseUrl;
-      const response = await firstValueFrom(this.httpService.get(`${baseUrl}/incidents/${incidentId}`));
+      const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+      const url = `${baseUrl}${endpoints.getIncident.replace(':id', incidentId.toString())}`;
+      const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to fetch incident details: ${error.message}`);
@@ -63,9 +66,10 @@ export class IncidentService implements IncidentServiceInterface {
 
   async acknowledgeIncident(incidentId: number, username: string, channelId: string): Promise<void> {
     try {
-      const baseUrl = this.configService.getMonitoringApi().baseUrl;
+      const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+      const url = `${baseUrl}${endpoints.acknowledgeIncident.replace(':id', incidentId.toString())}`;
       await firstValueFrom(
-        this.httpService.post(`${baseUrl}/incidents/${incidentId}/acknowledge`, {
+        this.httpService.post(url, {
           username,
           channelId,
         }),

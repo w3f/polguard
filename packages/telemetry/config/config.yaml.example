@@ -14,7 +14,7 @@ monitoringApi:
   baseUrl: http://localhost:8082
   endpoints:
     createIncident: /incidents
-    resolveIncident: /incidents/resolve
+    resolveIncident: /incidents/:id/resolve
     getConfig: /monitoring-config/groups
 
 environment: development

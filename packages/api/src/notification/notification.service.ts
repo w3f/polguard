@@ -38,13 +38,7 @@ export class NotificationService {
     }));
 
     const savedNotifications = await this.notificationRepository.save(notifications);
-
-    // Process each notification (don't wait for completion)
-    savedNotifications.forEach(notification => {
-      this.processNotification(notification).catch(error => {
-        this.logger.error(`Failed to process notification ${notification.id}`, error);
-      });
-    });
+    await Promise.all(savedNotifications.map(notification => this.processNotification(notification)));
   }
 
   /**

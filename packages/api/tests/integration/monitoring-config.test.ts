@@ -1,13 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { Chain } from '@w3f/monitoring-types';
-import { MonitoringConfigService } from '../../src/monitoring-config/monitoring-config.service';
-import { setupTestDatabase, createTestApp } from './test-utils';
 import { DataSource } from 'typeorm';
+import { setupTestDatabase, createTestApp } from './test-utils';
 
-describe('MonitoringConfigController (integration)', () => {
+describe('MonitoringConfig API (integration)', () => {
   let app: INestApplication;
-  let monitoringConfigService: MonitoringConfigService;
   let dataSource: DataSource;
   
   // Test data
@@ -18,7 +16,6 @@ describe('MonitoringConfigController (integration)', () => {
     await setupTestDatabase();
     const { app: testApp, moduleFixture } = await createTestApp();
     app = testApp;
-    monitoringConfigService = moduleFixture.get<MonitoringConfigService>(MonitoringConfigService);
     dataSource = moduleFixture.get<DataSource>(DataSource);
   });
   
@@ -29,8 +26,8 @@ describe('MonitoringConfigController (integration)', () => {
     }
   });
   
-  describe('Monitoring configuration endpoints', () => {
-    it('should retrieve monitoring groups with proper structure', async () => {
+  describe('GET /monitoring-config/groups', () => {
+    it('retrieves monitoring groups with proper structure', async () => {
       const response = await request(app.getHttpServer())
         .get('/monitoring-config/groups')
         .query({ chain: testChain, groupIds: testGroups })
@@ -38,6 +35,8 @@ describe('MonitoringConfigController (integration)', () => {
       
       expect(response.body).toHaveProperty('groups');
       expect(Array.isArray(response.body.groups)).toBe(true);
+      
+      // Verify at least one group is returned
       expect(response.body.groups.length).toBeGreaterThan(0);
       
       // Verify group structure
@@ -49,7 +48,37 @@ describe('MonitoringConfigController (integration)', () => {
       expect(Array.isArray(group.accounts)).toBe(true);
     });
     
-    it('should retrieve accounts for monitoring groups', async () => {
+    it('handles filtering by single group', async () => {
+      const singleGroup = testGroups[0];
+      const response = await request(app.getHttpServer())
+        .get('/monitoring-config/groups')
+        .query({ chain: testChain, groupIds: singleGroup })
+        .expect(200);
+      
+      const groupIds = response.body.groups.map(group => group.id);
+      expect(groupIds).toContain(singleGroup);
+      expect(groupIds.length).toBe(1);
+    });
+    
+    it('returns all groups when no groupIds provided', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/monitoring-config/groups')
+        .query({ chain: testChain })
+        .expect(200);
+      
+      expect(response.body.groups.length).toBeGreaterThan(0);
+    });
+    
+    it('returns 400 for invalid chain parameter', async () => {
+      await request(app.getHttpServer())
+        .get('/monitoring-config/groups')
+        .query({ chain: 'InvalidChain', groupIds: testGroups })
+        .expect(400);
+    });
+  });
+  
+  describe('GET /monitoring-config/accounts', () => {
+    it('retrieves accounts with proper structure', async () => {
       const response = await request(app.getHttpServer())
         .get('/monitoring-config/accounts')
         .query({ chain: testChain, groupIds: testGroups })
@@ -63,38 +92,32 @@ describe('MonitoringConfigController (integration)', () => {
         accounts => Array.isArray(accounts) && accounts.length > 0
       );
       expect(hasAccounts).toBe(true);
-      
-      // Verify account format (SS58 addresses)
-      for (const groupId in response.body.accounts) {
-        const accounts = response.body.accounts[groupId];
-        if (accounts.length > 0) {
-          expect(typeof accounts[0]).toBe('string');
-        }
-      }
     });
     
-    it('should handle filtering and validation', async () => {
-      // Test filtering by single group
+    it('handles filtering by single group', async () => {
       const singleGroup = testGroups[0];
-      const filteredResponse = await request(app.getHttpServer())
-        .get('/monitoring-config/groups')
+      const response = await request(app.getHttpServer())
+        .get('/monitoring-config/accounts')
         .query({ chain: testChain, groupIds: singleGroup })
         .expect(200);
       
-      const groupIds = filteredResponse.body.groups.map(group => group.id);
+      const groupIds = Object.keys(response.body.accounts);
       expect(groupIds).toContain(singleGroup);
-      
-      // Test empty groupIds (should return all groups)
-      const allGroupsResponse = await request(app.getHttpServer())
-        .get('/monitoring-config/groups')
-        .query({ chain: testChain, groupIds: [] })
+      expect(groupIds.length).toBe(1);
+    });
+    
+    it('returns all accounts when no groupIds provided', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/monitoring-config/accounts')
+        .query({ chain: testChain })
         .expect(200);
       
-      expect(allGroupsResponse.body.groups.length).toBeGreaterThan(0);
-      
-      // Test invalid chain parameter
+      expect(Object.keys(response.body.accounts).length).toBeGreaterThan(0);
+    });
+    
+    it('returns 400 for invalid chain parameter', async () => {
       await request(app.getHttpServer())
-        .get('/monitoring-config/groups')
+        .get('/monitoring-config/accounts')
         .query({ chain: 'InvalidChain', groupIds: testGroups })
         .expect(400);
     });

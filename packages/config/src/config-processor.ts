@@ -1,6 +1,14 @@
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
-import { MonitoringGroup, MonitorConfig, ConfigAccountSettings, Chain, getChainProperties, MonitorTypeSettings, MonitorType } from '@w3f/monitoring-types';
+import {
+  MonitoringGroup,
+  MonitorConfig,
+  ConfigAccountSettings,
+  Chain,
+  getChainProperties,
+  MonitorTypeSettings,
+  MonitorType,
+} from '@w3f/monitoring-types';
 import { RawConfig, RawMonitoringGroup } from './interfaces';
 import { validateConfig } from './config-validator';
 import { AddressTransformer } from './address-transformer';
@@ -14,7 +22,7 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  *    - Ensures required fields are present
  *    - Validates field formats and values
  *    - Checks cross-field dependencies
- * 
+ *
  * 2. Applying defaults:
  *    - Uses defaults.chains if group.chains not provided
  *    - Uses defaults.monitors if group.monitors not provided
@@ -25,7 +33,7 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  *    - Transforms addresses to chain-specific SS58 format
  *    - Merges monitor-level settings and account-level settings with priority to accounts
  *    - Converts decimal balance strings to chain-specific BigInt values
- * 
+ *
  * Output example:
  * [
  *   {
@@ -116,7 +124,7 @@ export class ConfigProcessor {
     chain: Chain,
     monitors: MonitorConfig[],
   ): ConfigAccountSettings {
-    const chainProps = getChainProperties(chain)
+    const chainProps = getChainProperties(chain);
     const accountId = AddressTransformer.transform(account.address, account.name, chainProps);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { address, name, ...accountSettings } = account;

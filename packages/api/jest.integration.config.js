@@ -24,7 +24,8 @@ module.exports = {
   coverageDirectory: "./coverage",
   testEnvironment: "node",
   moduleNameMapper: {
-    '^@w3f/monitoring-types$': '<rootDir>/../types/src'
+    '^@w3f/monitoring-types$': '<rootDir>/../types/src',
+    '^@w3f/monitoring-config$': '<rootDir>/../config/src'
   },
   roots: [
     "<rootDir>/tests/integration"

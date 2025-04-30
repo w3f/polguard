@@ -55,6 +55,11 @@ export class ConfigService {
       }).required(),
       monitoringApi: Joi.object({
         baseUrl: Joi.string().uri().required(),
+        endpoints: Joi.object({
+          getIncidents: Joi.string().required(),
+          getIncident: Joi.string().required(),
+          acknowledgeIncident: Joi.string().required(),
+        }).required(),
       }).required(),
       httpServer: Joi.object({
         port: Joi.number().default(3000),
@@ -79,6 +84,11 @@ export class ConfigService {
 
   getMonitoringApi(): {
     baseUrl: string;
+    endpoints: {
+      getIncidents: string;
+      getIncident: string;
+      acknowledgeIncident: string;
+    };
   } {
     return this.config.monitoringApi;
   }
@@ -97,6 +107,11 @@ interface AppConfig {
   matrix: MatrixConfig;
   monitoringApi: {
     baseUrl: string;
+    endpoints: {
+      getIncidents: string;
+      getIncident: string;
+      acknowledgeIncident: string;
+    };
   };
   httpServer: {
     port: number;

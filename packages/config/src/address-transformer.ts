@@ -55,5 +55,4 @@ export class AddressTransformer {
       throw new Error(`Invalid address format: ${address}`);
     }
   }
-
 }

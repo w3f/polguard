@@ -12,19 +12,19 @@ export interface ConfigSource {
 
 /**
  * Handles fetching and processing of monitoring configuration files.
- * 
+ *
  * This class provides functionality to:
  * 1. Fetch configuration files from remote sources
  * 2. Manage local configuration files
  * 3. Process configurations into monitoring groups
- * 
+ *
  * Example usage:
  * ```typescript
  * const sources = [
  *   { name: 'main', url: 'https://gitlab.com/config.yaml', authToken: 'token' }
  * ];
  * const targetDir = './monitoring-configs';
- * 
+ *
  * // Fetch and process configs
  * const groups = await ConfigFetcher.fetchAndProcessConfigs(sources, targetDir);
  * ```
@@ -33,7 +33,7 @@ export class ConfigFetcher {
   /**
    * Fetches configuration files from remote sources and processes them into monitoring groups.
    * This method combines fetching and processing operations in one convenient call.
-   * 
+   *
    * @param sources Array of configuration sources
    * @param targetDir Directory where configuration files will be saved
    * @returns Array of processed monitoring groups

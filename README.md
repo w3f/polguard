@@ -102,7 +102,7 @@ graph TD
 
 3. Build all packages:
    ```bash
-   yarn build:all
+   yarn build
    ```
 
 ### Configuration

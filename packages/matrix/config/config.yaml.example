@@ -15,6 +15,10 @@ matrix:
 
 monitoringApi:
   baseUrl: "http://localhost:8082"
+  endpoints:
+    getIncidents: /incidents
+    getIncident: /incidents/:id
+    acknowledgeIncident: /incidents/:id/acknowledge
 
 logging:
   level: info

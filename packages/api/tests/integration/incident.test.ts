@@ -1,0 +1,199 @@
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { Chain, MessengerType } from '@w3f/monitoring-types';
+import { DataSource } from 'typeorm';
+import { setupTestDatabase, createTestApp } from './test-utils';
+
+describe('Incident API (integration)', () => {
+  let app: INestApplication;
+  let dataSource: DataSource;
+  let notificationRepo: any;
+
+  // Test data
+  const testWallet = '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy';
+  
+  // Helper function to create test incidents
+  const createTestIncident = (overrides = {}) => ({
+    message: 'Test incident',
+    chain: Chain.Polkadot,
+    blockNumber: 12345,
+    account: testWallet,
+    groupId: 'test-group',
+    handlerType: 'test-handler',
+    notificationChannels: [
+      { channelId: 'test-channel', messengerType: MessengerType.Matrix }
+    ],
+    needsAck: true,
+    ...overrides
+  });
+  
+  beforeAll(async () => {
+    await setupTestDatabase();
+    const { app: testApp, moduleFixture } = await createTestApp();
+    app = testApp;
+    dataSource = moduleFixture.get<DataSource>(DataSource);
+    notificationRepo = dataSource.getRepository('incident_notifications');
+  });
+
+  afterAll(async () => {
+    await app.close();
+    if (dataSource && dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
+  });
+
+  it('handles one-time incident workflow with notifications', async () => {
+    // Create one-time incident (instantly resolved)
+    const createResponse = await request(app.getHttpServer())
+      .post('/incidents')
+      .send(createTestIncident({ isResolved: true }))
+      .expect(201);
+    
+    const id = createResponse.body.id;
+    expect(createResponse.body.isResolved).toBe(true);
+    
+    // Verify notification was created
+    const notifications = await notificationRepo.find({
+      where: { incident: { id } }
+    });
+    expect(notifications.length).toBeGreaterThan(0);
+    expect(notifications[0].channelId).toBe('test-channel');
+    
+    // Create notification record for acknowledgment
+    await notificationRepo.save({
+      incident: { id },
+      channelId: 'test-channel',
+      messengerType: MessengerType.Matrix,
+      type: 'alert',
+      isDelivered: true,
+      lastSentAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    // Acknowledge the incident
+    await request(app.getHttpServer())
+      .post(`/incidents/${id}/acknowledge`)
+      .send({ username: 'test-user', channelId: 'test-channel' })
+      .expect(201);
+    
+    // Verify incident state
+    const getResponse = await request(app.getHttpServer())
+      .get(`/incidents?isAcked=true`)
+      .expect(200);
+    
+    expect(getResponse.body.some(inc => inc.id === id)).toBe(true);
+  });
+
+  it('handles firing incident workflow with resolution notifications', async () => {
+    // Create firing incident (not instantly resolved)
+    const createResponse = await request(app.getHttpServer())
+      .post('/incidents')
+      .send(createTestIncident({ isResolved: false }))
+      .expect(201);
+    
+    const id = createResponse.body.id;
+    expect(createResponse.body.isResolved).toBe(false);
+    
+    // Create notification record for acknowledgment
+    await notificationRepo.save({
+      incident: { id },
+      channelId: 'test-channel',
+      messengerType: MessengerType.Matrix,
+      type: 'alert',
+      isDelivered: true,
+      lastSentAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    // Acknowledge the incident
+    await request(app.getHttpServer())
+      .post(`/incidents/${id}/acknowledge`)
+      .send({ username: 'test-user', channelId: 'test-channel' })
+      .expect(201);
+    
+    // Resolve the incident
+    await request(app.getHttpServer())
+      .post(`/incidents/${id}/resolve`)
+      .expect(201);
+    
+    // Verify resolution notification was created
+    const notifications = await notificationRepo.find({
+      where: { 
+        incident: { id },
+        type: 'resolution'
+      }
+    });
+    expect(notifications.length).toBeGreaterThan(0);
+    
+    // Verify incident state
+    const getResponse = await request(app.getHttpServer())
+      .get(`/incidents?isResolved=true`)
+      .expect(200);
+    
+    expect(getResponse.body.some(inc => inc.id === id)).toBe(true);
+  });
+
+  it('handles idempotent incident creation', async () => {
+    // Create first incident
+    const firstResponse = await request(app.getHttpServer())
+      .post('/incidents')
+      .send(createTestIncident({
+        message: 'Duplicate test',
+        handlerType: 'test-handler-idempotent'
+      }))
+      .expect(201);
+    
+    // Create duplicate incident with different message
+    const duplicateResponse = await request(app.getHttpServer())
+      .post('/incidents')
+      .send(createTestIncident({
+        message: 'Duplicate test - different message',
+        handlerType: 'test-handler-idempotent'
+      }))
+      .expect(201);
+    
+    // Verify same ID returned (idempotency)
+    expect(duplicateResponse.body.id).toBe(firstResponse.body.id);
+  });
+
+  it('handles error cases properly', async () => {
+    // Try to acknowledge non-existent incident
+    await request(app.getHttpServer())
+      .post('/incidents/99999/acknowledge')
+      .send({ username: 'test-user', channelId: 'test-channel' })
+      .expect(404);
+    
+    // Create incident that doesn't need acknowledgment
+    const noAckResponse = await request(app.getHttpServer())
+      .post('/incidents')
+      .send(createTestIncident({ needsAck: false }))
+      .expect(201);
+    
+    // Try to acknowledge incident that doesn't need it
+    await request(app.getHttpServer())
+      .post(`/incidents/${noAckResponse.body.id}/acknowledge`)
+      .send({ username: 'test-user', channelId: 'test-channel' })
+      .expect(403);
+  });
+
+  it('supports filtering incidents', async () => {
+    // Create incident with specific properties for filtering
+    await request(app.getHttpServer())
+      .post('/incidents')
+      .send(createTestIncident({ 
+        chain: Chain.Kusama,
+        account: 'test-account-kusama',
+        handlerType: 'test-handler-filter'
+      }))
+      .expect(201);
+    
+    // Test filtering by chain
+    const chainFilter = await request(app.getHttpServer())
+      .get(`/incidents?chain=${Chain.Kusama}`)
+      .expect(200);
+    
+    expect(chainFilter.body.some(inc => inc.account === 'test-account-kusama')).toBe(true);
+  });
+});
