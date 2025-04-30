@@ -1,40 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppModule } from '../../src/app.module';
 import { MonitoringConfigService } from '../../src/monitoring-config/monitoring-config.service';
 import { ConfigService } from '../../src/config/config.service';
-import { NotificationService } from '../../src/notification/notification.service';
 import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 import * as path from 'path';
 import * as fs from 'fs';
+import { Incident, IncidentNotification } from '../../src/database/incident.entities';
 
-/**
- * Sets up a test database for integration tests
- */
-export async function setupTestDatabase(): Promise<void> {
-  // Create a temporary connection to create/drop the test database
-  const tempDataSource = new DataSource({
-    type: 'postgres',
-    host: 'localhost',
-    port: 5432,
-    username: 'postgres',
-    password: 'postgres',
-    database: 'postgres', // Connect to default postgres database
-  });
+const workerId = process.env.JEST_WORKER_ID ?? '0';          // "0" when runInBand
+export const dbFile   = path.join(process.cwd(), `test-${workerId}.sqlite`);
 
-  await tempDataSource.initialize();
-
-  try {
-    await tempDataSource.query(`DROP DATABASE IF EXISTS monitoring_test`);
-    await tempDataSource.query(`CREATE DATABASE monitoring_test`);
-  } catch (error) {
-    console.error('Error setting up test database:', error);
-  } finally {
-    await tempDataSource.destroy();
-  }
-}
+const SQLITE_TEST_CONFIG = {
+  type: 'better-sqlite3' as const,
+  database: dbFile,
+  dropSchema: true,
+  synchronize: true,
+  keepConnectionAlive: true,
+  entities: [Incident, IncidentNotification],
+  extra: { pragmas: ['foreign_keys=ON'] },
+};
 
 /**
  * Creates a test fixture for monitoring groups using a YAML file
@@ -76,19 +63,16 @@ export async function createTestApp(fixtureOptions?: {
   // Create the test module
   const moduleFixture = await Test.createTestingModule({
     imports: [
+      TypeOrmModule.forRootAsync({
+        useFactory: () => (SQLITE_TEST_CONFIG),
+      }),
       AppModule,
     ],
   })
   .overrideProvider(ConfigService)
   .useValue({
     getMonitoringConfigSources: jest.fn().mockReturnValue([]),
-    getDatabaseConfig: jest.fn().mockReturnValue({
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'postgres',
-      database: 'monitoring_test',
-    }),
+    getDatabaseConfig: jest.fn().mockReturnValue(SQLITE_TEST_CONFIG),
     getNotificationConfig: jest.fn().mockReturnValue({
       matrix: {
         url: 'http://mock-matrix-server/api/notify'

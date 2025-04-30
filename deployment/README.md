@@ -10,6 +10,8 @@ The Monitoring Platform supports three deployment flows:
 2. **Manual Test Deployment**: Using Helmfile to deploy to a test namespace
 3. **Production Deployment**: Using ArgoCD for managed deployments
 
+The platform now uses a consolidated Docker image for all services, with different commands to run each service.
+
 ## Development Flow: Local
 
 For local development and testing, use the Docker Compose setup:
@@ -17,6 +19,9 @@ For local development and testing, use the Docker Compose setup:
 ```bash
 # Start all services
 docker-compose up -d
+
+# Or start a specific service
+docker-compose up -d api
 ```
 
 This will start all required services:
@@ -26,6 +31,8 @@ This will start all required services:
 - Telemetry service
 - Redis
 - PostgreSQL
+
+All services use the same Docker image (defined in the root Dockerfile) but with different commands to run each service. The Docker Compose configuration references this Dockerfile directly for local development.
 
 The `configs` directory contains example configurations used by Docker Compose for local development. The Docker Compose setup is only used for local development and is not intended for production use.
 

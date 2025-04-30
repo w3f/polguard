@@ -1,149 +1,214 @@
+# ──────────────────────────────────────────────────────────────────────────────
+#  CircleCI pipeline for “monitoring-platform”
+#
+#   • Node / Yarn 4.6:   run code-quality checks, unit + integration tests
+#   • Helm:              lint every chart in deployment/charts
+#   • Docker:            build & push images
+#                        – every commit → immutable <SHA> tag
+#                        – default branch (master) also → master & latest tags
+#   • Releases:          Git tags that look like v1.2.3
+#                        – retag SHA image as v1.2.3 and latest
+#                        – *no* extra major tag (1, 2, …)
+#   • Charts:            publish Helm charts on each release
+#
+#  NOTE ────────────────
+#   Jobs that must run on both branch and tag pipelines simply omit a filters:
+#   stanza.  Only the release_tag job declares filters because it should run
+#   exclusively on version tags.
+# ──────────────────────────────────────────────────────────────────────────────
 version: 2.1
 
+# ――― Orbs ―――———————————————————————————————————————————————————————
+orbs:
+  docker: circleci/docker@2.2.0        # docker/build & docker/push helpers
+  node:   circleci/node@5.2.0          # yarn-cache helpers, LTS Node image
+
+# ――― Executors ―――—————————————————————————————————————————————————————
 executors:
-  default-executor:
+  default:
     docker:
       - image: web3f/ci-commons:v3
-  node-executor:
+    working_directory: ~/project
+
+  node:
     docker:
-      - image: web3f/node-dind:v3
+      - image: cimg/node:lts           # currently Node 20.x
+    working_directory: ~/project
 
+# ――― Reusable commands ―――———————————————————————————————————————————
+commands:
+  #----------------------------------------------------------------------------#
+  # Yarn 4.6 install with deterministic caching; the cache key is tied to the  #
+  # yarn.lock checksum so dep changes bust the cache automatically.            #
+  #----------------------------------------------------------------------------#
+  yarn_install:
+    steps:
+      - restore_cache:
+          keys:
+            - yarn-v4-{{ checksum "yarn.lock" }}
+            - yarn-v4-
+      - run: yarn install --immutable       # fails if lockfile drift detected
+      - save_cache:
+          key: yarn-v4-{{ checksum "yarn.lock" }}
+          paths:
+            - ~/.cache/yarn                 # default cache dir
+            - .yarn/cache                   # Yarn-Berry offline-mirror
+
+  #----------------------------------------------------------------------------#
+  # Non-interactive Docker Hub login.  Using --password-stdin (rather than -p) #
+  # keeps the secret out of the process list / shell history & avoids Docker’s #
+  # deprecation warning about CLI passwords.                                   #
+  #----------------------------------------------------------------------------#
+  docker_login:
+    steps:
+      - run:
+          name: Docker login
+          command: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
+
+# ――― Jobs ―――———————————————————————————————————————————————————————
 jobs:
-  yarn_lint:
-    parameters:
-      module:
-        type: string
-    executor: node-executor
+  #------------------------------------------------------------------------#
+  # JS code builds, lints, unit & integration tests.                       #
+  #------------------------------------------------------------------------#
+  code_quality:
+    executor: node
     steps:
       - checkout
-      - run:
-          command: |
-            corepack enable && corepack prepare yarn@4.6.0 --activate
-            yarn install
-            yarn workspace @w3f/monitoring-<< parameters.module >> lint
+      - yarn_install
+      - run: yarn build
+      - run: yarn lint
+      - run: yarn test
+      - run: yarn test:integration
+      - persist_to_workspace:
+          root: .
+          paths: .
 
+  #------------------------------------------------------------------------#
+  # Helm static analysis for every chart in deployment/charts.             #
+  #------------------------------------------------------------------------#
   helm_lint:
-    parameters:
-      module:
-        type: string
-    executor: default-executor
+    executor: default
     steps:
       - checkout
       - run:
-          command: helm lint ./deployment/charts/"<< parameters.module >>"
+          name: Helm lint all charts
+          command: |
+            find deployment/charts -maxdepth 1 -type d -not -path '*/\.*' \
+              -exec helm lint {} \;
 
-  build_image:
-    parameters:
-      module:
-        type: string
-    executor: default-executor
+  #------------------------------------------------------------------------#
+  # Build Docker image for each commit.                                    #
+  #   • Always push <SHA>                                                  #
+  #   • If on master, also tag/push master & latest                        #
+  #   • No branch or short-SHA tags → keeps registry noise low             #
+  #------------------------------------------------------------------------#
+  docker_build:
+    executor: node
     steps:
-      - checkout
+      - attach_workspace:
+          at: ~/project
+      - docker_login
+
+      # Remote-Docker with layer caching for faster rebuilds
       - setup_remote_docker:
           docker_layer_caching: true
-      - run:
-          command: /scripts/build-image.sh web3f/mp-"<< parameters.module >>" . -f packages/"<< parameters.module >>"/Dockerfile
 
-  publish_image:
-    parameters:
-      module:
-        type: string
-    executor: default-executor
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          command: /scripts/publish-image.sh web3f/mp-"<< parameters.module >>"
+      # Build the image (compile happens in Dockerfile)
+      - docker/build:
+          image: web3f/monitoring-platform
+          tag: ${CIRCLE_SHA1}
 
+      # Push immutable SHA tag
+      - docker/push:
+          image: web3f/monitoring-platform
+          tag: ${CIRCLE_SHA1}
+
+      # Extra aliases only for default branch
+      - when:
+          condition:
+            equal: ["master", << pipeline.git.branch >>]
+          steps:
+            - run:
+                name: Tag master & latest
+                command: |
+                  for t in master latest; do
+                    docker tag web3f/monitoring-platform:${CIRCLE_SHA1} web3f/monitoring-platform:$t
+                    docker push web3f/monitoring-platform:$t
+                  done
+
+  #------------------------------------------------------------------------#
+  # End-to-end tests on a KIND cluster (Docker-in-Docker).                 #
+  #------------------------------------------------------------------------#
   integration_tests:
-    executor: default-executor
+    executor: default
     steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          description: run integration tests
-          command: /scripts/integration-tests.sh kindest/node:v1.23.4
+      - attach_workspace:
+          at: ~/project
+      - setup_remote_docker              # DinD for KIND
+      - run: /scripts/integration-tests.sh kindest/node:v1.23.4
 
+  #------------------------------------------------------------------------#
+  # Release job – runs *only* on tags like v1.2.3.                         #
+  # Tags SHA image as v1.2.3 + latest (no major tag).                      #
+  #------------------------------------------------------------------------#
+  release_tag:
+    executor: default
+    steps:
+      - docker_login
+      - run:
+          name: Retag SHA image as exact version & latest
+          command: |
+            docker pull web3f/monitoring-platform:${CIRCLE_SHA1}
+            docker tag web3f/monitoring-platform:${CIRCLE_SHA1} web3f/monitoring-platform:${CIRCLE_TAG}   # v1.2.3
+            docker tag web3f/monitoring-platform:${CIRCLE_SHA1} web3f/monitoring-platform:latest
+            docker push web3f/monitoring-platform:${CIRCLE_TAG}
+            docker push web3f/monitoring-platform:latest
+
+  #------------------------------------------------------------------------#
+  # Publish Helm charts (target repo is chosen inside the script).         #
+  #------------------------------------------------------------------------#
   publish_charts:
-    executor: default-executor
+    executor: default
     environment:
       HELM_CHARTS_SOURCE: /root/project/deployment/charts
     steps:
-      - checkout
-      - run:
-          command: /scripts/publish-chart.sh
+      - attach_workspace:
+          at: ~/project
+      - run: /scripts/publish-chart.sh
 
-filters:
-  all_tags: &all_tags
-    tags:
-      only: /.*/
-  release_tags: &release_tags
-    branches:
-      ignore: /.*/
-    tags:
-      only: /^v\d+\.\d+\.\d+.*/
-
+# ――― Workflow orchestration ―――———————————————————————————————————————
 workflows:
   test_and_publish:
     jobs:
-      # Yarn lint jobs for all modules
-      - yarn_lint:
-          name: yarn-lint-<< matrix.module >>
-          matrix:
-            parameters:
-              module: ["api", "chain", "telemetry", "matrix"]
-          filters: *all_tags
+      # fast-fail: don’t lint Helm or build Docker if JS fails
+      - code_quality
 
-      # Helm lint jobs for all modules
       - helm_lint:
-          name: helm-lint-<< matrix.module >>
-          matrix:
-            parameters:
-              module: ["api", "chain", "telemetry", "matrix"]
-          filters: *all_tags
+          requires: [code_quality]
 
-      # Build jobs for all modules
-      - build_image:
-          name: build-<< matrix.module >>
+      - docker_build:
           context: dockerhub-bot
-          matrix:
-            parameters:
-              module: ["api", "chain", "telemetry", "matrix"]
-          requires:
-            - yarn-lint-api
-            - yarn-lint-chain
-            - yarn-lint-telemetry
-            - yarn-lint-matrix
-            - helm-lint-api
-            - helm-lint-chain
-            - helm-lint-telemetry
-            - helm-lint-matrix
-          filters: *all_tags
+          requires: [helm_lint]
 
-      # Integration tests
       - integration_tests:
           context: ci-matrixbot
-          requires:
-            - build-api
-            - build-chain
-            - build-telemetry
-            - build-matrix
-          filters: *all_tags
+          requires: [docker_build]
 
-      # Publish jobs for all modules
-      - publish_image:
-          name: publish-<< matrix.module >>
+      # ── Release-only jobs ────────────────────────────────────────────────
+      - release_tag:
           context: dockerhub-bot
-          matrix:
-            parameters:
-              module: ["api", "chain", "telemetry", "matrix"]
-          requires:
-            - integration_tests
-          filters: *release_tags
+          requires: [integration_tests]
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+$/
 
-      # Publish charts
       - publish_charts:
           context: github-bot
-          requires:
-            - integration_tests
-          filters: *release_tags
+          requires: [integration_tests]
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+$/

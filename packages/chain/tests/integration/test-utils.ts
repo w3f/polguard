@@ -1,59 +1,15 @@
 import { Logger, KeyValueStorageClient, NotificationSettings, IncidentHandlerClient, IncidentKey } from '@w3f/monitoring-types';
-import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Chain } from '@w3f/monitoring-types';
 
-/**
- * Manages blockchain API connections for testing
- */
-export class ApiConnectionManager {
-  private connections = new Map<Chain, ApiPromise>();
-  
-  constructor(private rpcEndpoints: Record<Chain, string>) {}
-  
-  async getApi(chain: Chain): Promise<ApiPromise> {
-    if (!this.connections.has(chain)) {
-      await this.createConnection(chain);
-    }
-    
-    return this.connections.get(chain);
-  }
-  
-  private async createConnection(chain: Chain): Promise<void> {
-    const endpoint = this.rpcEndpoints[chain];
-    if (!endpoint) {
-      throw new Error(`No RPC endpoint configured for chain: ${chain}`);
-    }
-    
-    console.log(`Connecting to ${chain} at ${endpoint}`);
-    const api = await ApiPromise.create({ 
-      provider: new WsProvider(endpoint), 
-      noInitWarn: true 
-    });
-    
-    await api.isReady;
-    this.connections.set(chain, api);
-  }
-  
-  async closeAll(): Promise<void> {
-    await Promise.all(
-      Array.from(this.connections.entries()).map(([chain, api]) => {
-        console.log(`Disconnecting from ${chain}`);
-        return api.disconnect();
-      })
-    );
-    
-    this.connections.clear();
-  }
-}
-
-/**
- * Simple console logger adapter for testing
- */
 export class LoggerAdapter implements Logger {
-  constructor(private console: Console = global.console) {}
+  constructor(
+    private console: Console = global.console,
+    private debugMode: boolean = false
+  ) {}
 
   log(message: string, ...args: any[]): void {
-    this.console.log(message, ...args);
+    if (this.debugMode || message.includes('Error') || message.includes('error')) {
+      this.console.log(message, ...args);
+    }
   }
 
   error(message: string, ...args: any[]): void {
@@ -61,25 +17,22 @@ export class LoggerAdapter implements Logger {
   }
 
   warn(message: string, ...args: any[]): void {
-    this.console.warn(message, ...args);
+    if (this.debugMode) this.console.warn(message, ...args);
   }
-
+  
   debug(message: string, ...args: any[]): void {
-    this.console.debug(message, ...args);
+    if (this.debugMode) this.console.debug(message, ...args);
   }
-
+  
   verbose(message: string, ...args: any[]): void {
-    this.console.debug(`[VERBOSE] ${message}`, ...args);
+    if (this.debugMode) this.console.debug(`[VERBOSE] ${message}`, ...args);
   }
-
+  
   fatal(message: string, ...args: any[]): void {
     this.console.error(`[FATAL] ${message}`, ...args);
   }
 }
 
-/**
- * Simple in-memory storage implementation for testing
- */
 export class MockKeyValueStorage implements KeyValueStorageClient {
   private storage = new Map<string, any>();
   
@@ -112,11 +65,10 @@ export class MockKeyValueStorage implements KeyValueStorageClient {
   }
 }
 
-/**
- * Test incident handler for tracking created incidents
- */
 export class TestIncidentHandler implements IncidentHandlerClient {
   private incidents: Set<string> = new Set();
+  
+  constructor(private testId?: string) {}
 
   async handle(
     message: string[],
@@ -128,7 +80,10 @@ export class TestIncidentHandler implements IncidentHandlerClient {
     if (isFiring === false) return;
     
     this.incidents.add(this.formatKey(incidentKey));
-    console.log(`${colors.cyan}Message: ${message.join('\n')}${colors.reset}`);
+    
+    const testId = this.testId || 'Unknown';
+    const formattedMessage = message.join('\n  ');
+    console.log(`${colors.yellow}${testId}${colors.reset}\n  ${colors.cyan}${formattedMessage}${colors.reset}`);
   }
 
   wasIncidentCreated(account: string, groupId: string, handlerType: string): boolean {

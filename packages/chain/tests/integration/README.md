@@ -31,12 +31,23 @@ tests:
 To run the integration tests:
 
 ```bash
-# From the chain package directory
+# Run all tests
 yarn test:integration
 
-# Or directly with ts-node
-npx ts-node tests/integration/index.ts
+# Run tests for a specific monitor
+yarn test:integration Staking
+
+# Run a specific test handler
+yarn test:integration Staking.SelfStakeUnexpected
+
+# Run tests with debug output (shows application logs)
+yarn test:integration --debug
+
+# Combine filtering and debug mode
+yarn test:integration Staking.SelfStakeUnexpected --debug
 ```
+
+Tests run in parallel by default, grouped by chain to optimize API connections.
 
 ## Adding New Tests
 
@@ -48,11 +59,14 @@ npx ts-node tests/integration/index.ts
 
 The framework:
 
-1. Connects to the specified blockchain node
-2. Creates a test monitoring group with the specified account and handler
-3. Initializes the ChainWatcher with the test group
-4. Processes the specified block
-5. Checks if an incident was created for the account and handler
+1. Groups tests by chain and runs them in parallel
+2. Creates a single API connection per chain for all tests
+3. Creates a test monitoring group with the specified account and handler
+4. Initializes the ChainWatcher with the test group
+5. Processes the specified block
+6. Checks if an incident was created for the account and handler
+
+By default, application logs are suppressed to keep the output clean. Use the `--debug` flag to see all logs.
 
 ## Test Results
 

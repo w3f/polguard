@@ -1,6 +1,7 @@
 image:
-  repo: web3f/mp-chain
+  repo: web3f/monitoring-platform
   # tag: xy
+command: ["start:chain"]
 
 httpPort: 3000
 

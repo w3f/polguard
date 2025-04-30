@@ -1,10 +1,9 @@
+command: ["start:chain"]
+
 {{ if eq .Environment.Name "ci" }}
 image:
+  repo: web3f/monitoring-platform
   tag: {{ env "CIRCLE_SHA1" | default "kind" }}
-{{ else if eq .Environment.Name "local" }}
-image:
-  repo: localhost:5000/mp-chain
-  tag: latest
 {{ end }}
 
 {{ if eq .Environment.Name "ci" }}
@@ -13,6 +12,7 @@ resources: null
 
 {{ if eq .Environment.Name "test" }}
 image:
+  repo: web3f/monitoring-platform
   tag: {{ env "IMAGE_TAG" }}
   imagePullPolicy: Always
 monitoringConfig: null

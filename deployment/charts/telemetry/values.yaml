@@ -1,6 +1,7 @@
 image:
-  repo: web3f/mp-telemetry
+  repo: web3f/monitoring-platform
   # tag: xy
+command: ["start:telemetry"]
 
 httpPort: 3000
 

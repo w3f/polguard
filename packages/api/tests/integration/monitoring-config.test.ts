@@ -2,7 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { Chain } from '@w3f/monitoring-types';
 import { DataSource } from 'typeorm';
-import { setupTestDatabase, createTestApp } from './test-utils';
+import { createTestApp, dbFile } from './test-utils';
+import fs from 'fs';
 
 describe('MonitoringConfig API (integration)', () => {
   let app: INestApplication;
@@ -13,7 +14,7 @@ describe('MonitoringConfig API (integration)', () => {
   const testGroups = ['validators-default', 'validators-custom'];
   
   beforeAll(async () => {
-    await setupTestDatabase();
+    // No need to call setupTestDatabase() as we're using SQLite in-memory database
     const { app: testApp, moduleFixture } = await createTestApp();
     app = testApp;
     dataSource = moduleFixture.get<DataSource>(DataSource);
@@ -24,6 +25,7 @@ describe('MonitoringConfig API (integration)', () => {
     if (dataSource && dataSource.isInitialized) {
       await dataSource.destroy();
     }
+    try { fs.unlinkSync(dbFile); } catch (_) {}
   });
   
   describe('GET /monitoring-config/groups', () => {

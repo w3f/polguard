@@ -31,7 +31,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
         // TODO: We will implement a flexible value definition system so we can use BalanceChange
         // instead of two BalanceDecrease, BalanceIncrease
         // See: https://github.com/w3f/monitoring-platform/issues/69
-        if (currentBalance >= previousBalance) {
+        if (currentBalance < previousBalance) {
           const key = { account: account.ss58, groupId, handlerType };
           await this.incidents.handle(message, notifications, key, blockNumber);
         }

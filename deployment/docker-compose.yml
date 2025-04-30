@@ -2,7 +2,8 @@ services:
   chain:
     build:
       context: ..
-      dockerfile: packages/chain/Dockerfile
+      dockerfile: Dockerfile
+    command: start:chain
     volumes:
       - ./configs/chain.yaml:/app/packages/chain/config/config.yaml
     ports:
@@ -13,7 +14,8 @@ services:
   telemetry:
     build:
       context: ..
-      dockerfile: packages/telemetry/Dockerfile
+      dockerfile: Dockerfile
+    command: start:telemetry
     volumes:
       - ./configs/telemetry.yaml:/app/packages/telemetry/config/config.yaml
     ports:
@@ -24,7 +26,8 @@ services:
   matrix:
     build:
       context: ..
-      dockerfile: packages/matrix/Dockerfile
+      dockerfile: Dockerfile
+    command: start:matrix
     environment:
       - MATRIX_PASSWORD
     volumes:
@@ -38,7 +41,8 @@ services:
   api:
     build:
       context: ..
-      dockerfile: packages/api/Dockerfile
+      dockerfile: Dockerfile
+    command: start:api
     volumes:
       - ./configs/api.yaml:/app/packages/api/config/config.yaml
       - ./configs/monitoring-groups.yaml:/app/packages/api/monitoring-configs/config.yaml

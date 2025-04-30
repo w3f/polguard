@@ -1,6 +1,7 @@
 image:
-  repo: web3f/mp-api
+  repo: web3f/monitoring-platform
   # tag: xy
+command: ["start:api"]
 
 httpPort: 3000
 

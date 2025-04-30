@@ -12,7 +12,7 @@ import {
 import { Chain, MessengerType, NotificationType } from '@w3f/monitoring-types';
 
 @Entity('incidents')
-@Index(['chain', 'account', 'groupId', 'handlerType'], { where: 'is_resolved = false' })
+@Index(['chain', 'account', 'groupId', 'handlerType'])
 export class Incident {
   @PrimaryGeneratedColumn()
   id: number;
@@ -24,7 +24,7 @@ export class Incident {
   blockNumber: number;
 
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: Chain,
   })
   chain: Chain;
@@ -79,13 +79,13 @@ export class IncidentNotification {
   channelId: string;
 
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: MessengerType,
   })
   messengerType: MessengerType;
 
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: NotificationType,
   })
   type: NotificationType;

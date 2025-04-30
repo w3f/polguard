@@ -2,7 +2,9 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { Chain, MessengerType } from '@w3f/monitoring-types';
 import { DataSource } from 'typeorm';
-import { setupTestDatabase, createTestApp } from './test-utils';
+import { createTestApp } from './test-utils';
+import path from 'path';
+import fs from 'fs';
 
 describe('Incident API (integration)', () => {
   let app: INestApplication;
@@ -28,7 +30,6 @@ describe('Incident API (integration)', () => {
   });
   
   beforeAll(async () => {
-    await setupTestDatabase();
     const { app: testApp, moduleFixture } = await createTestApp();
     app = testApp;
     dataSource = moduleFixture.get<DataSource>(DataSource);
@@ -40,6 +41,9 @@ describe('Incident API (integration)', () => {
     if (dataSource && dataSource.isInitialized) {
       await dataSource.destroy();
     }
+    // remove the SQLite backing file if it exists
+    const tmpDb = path.join(process.cwd(), 'file:tests?mode=memory');
+    if (fs.existsSync(tmpDb)) fs.unlinkSync(tmpDb);
   });
 
   it('handles one-time incident workflow with notifications', async () => {
