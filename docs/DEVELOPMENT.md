@@ -34,6 +34,10 @@ Telemetry is not focused on real-time processing like the chain monitoring. It r
 
 ## Future Considerations and Known Issues
 
+### Storage Implementation
+
+Initially, the platform used Redis for key-value storage. To simplify infrastructure requirements, we replaced it with node-persist, a file-based storage solution. This works well for our current needs (a few hundred keys), but be aware that node-persist lacks file-level locking, which could cause data corruption if multiple processes access the same storage directory.
+
 ### Runtime Environment
 
 Long-term, we may consider moving from Node.js to Deno for the following reasons:

@@ -24,8 +24,6 @@ serviceMonitor:
 
 config:
   environment: development
-  redis:
-    url: redis://redis-master:6379/0
   chain: Polkadot
   rpc:
     url: wss://rpc-polkadot.luckyfriday.io

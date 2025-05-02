@@ -189,9 +189,6 @@ export class IncidentService {
       }
     }
 
-    // TODO: In the future, consider handlerType in addition to account address
-    // when determining if an incident should be auto-resolved
-
     return resolvedCount;
   }
 }

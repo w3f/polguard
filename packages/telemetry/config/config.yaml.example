@@ -3,8 +3,6 @@ pollingIntervalMs: 60000  # 1 minute for testing
 monitoringGroupIds:
   - test-group-validator-1
 
-redis:
-  url: redis://localhost:6379/0
 telemetryExporterApi:
   url: https://telemetry-exporter.w3f.community/feed/filtered
   basicAuth:

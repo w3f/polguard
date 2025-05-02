@@ -17,8 +17,6 @@ image:
   imagePullPolicy: Always
 {{ end }}
 config:
-  redis:
-    url: redis://redis-master:6379/0
   matrix:
     userId: "{{ env "MATRIX_USER" }}"
     password: "{{ env "MATRIX_PASS" }}"

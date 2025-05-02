@@ -194,7 +194,7 @@ workflows:
           context: ci-matrixbot
           requires: [docker_build]
 
-      # ── Release-only jobs ────────────────────────────────────────────────
+      # ── Release-only jobs ───────────────────────────────────────────
       - release_tag:
           context: dockerhub-bot
           requires: [integration_tests]
@@ -206,7 +206,7 @@ workflows:
 
       - publish_charts:
           context: github-bot
-          requires: [integration_tests]
+          requires: [integration_tests, helm_lint]
           filters:
             branches:
               ignore: /.*/

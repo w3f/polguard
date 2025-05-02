@@ -33,7 +33,7 @@ export class LoggerAdapter implements Logger {
   }
 }
 
-export class MockKeyValueStorage implements KeyValueStorageClient {
+export class InMemoryKeyValueStorage implements KeyValueStorageClient {
   private storage = new Map<string, any>();
   
   async get<T>(key: string): Promise<T | null> {
@@ -56,12 +56,12 @@ export class MockKeyValueStorage implements KeyValueStorageClient {
     return this.storage.has(key);
   }
   
-  async keys(pattern: string): Promise<string[]> {
-    return Array.from(this.storage.keys()).filter(k => k.includes(pattern));
-  }
-  
   async mget<T>(keys: string[]): Promise<(T | null)[]> {
     return keys.map(k => this.storage.get(k) || null);
+  }
+  
+  async flush(): Promise<void> {
+    this.storage.clear();
   }
 }
 

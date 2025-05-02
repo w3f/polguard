@@ -8,8 +8,6 @@ services:
       - ./configs/chain.yaml:/app/packages/chain/config/config.yaml
     ports:
       - "127.0.0.1:8080:3000"
-    depends_on:
-      - redis
 
   telemetry:
     build:
@@ -20,8 +18,6 @@ services:
       - ./configs/telemetry.yaml:/app/packages/telemetry/config/config.yaml
     ports:
       - "127.0.0.1:8083:3000"
-    depends_on:
-      - redis
 
   matrix:
     build:
@@ -35,8 +31,6 @@ services:
       - ../packages/matrix/matrix-storage:/app/packages/matrix/matrix-storage/
     ports:
       - "127.0.0.1:8081:3000"
-    depends_on:
-      - redis
 
   api:
     build:
@@ -50,15 +44,6 @@ services:
       - "127.0.0.1:8082:3000"
     depends_on:
       - postgres
-
-  redis:
-    image: redis:alpine
-    ports:
-      - "127.0.0.1:6379:6379"
-    volumes:
-      - redis-data:/data
-    command: redis-server --save 1 1
-    restart: always
     
   postgres:
     image: postgres:17-alpine
@@ -72,5 +57,4 @@ services:
     restart: always
 
 volumes:
-  redis-data:
   postgres-data:

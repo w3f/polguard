@@ -53,7 +53,12 @@ spec:
         - name: config
           mountPath: /app/packages/chain/config/
           readOnly: true
+        - name: data
+          mountPath: /app/data
       volumes:
       - name: config
         configMap:
           name: {{ include "app.name" . }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ include "app.name" . }}

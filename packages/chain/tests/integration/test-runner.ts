@@ -3,7 +3,7 @@ import * as yaml from 'js-yaml';
 import { createChainDataProvider } from '../../src/lib/data-provider';
 import { ChainWatcher } from '../../src/lib/watcher';
 import { Chain, MonitorType, MonitoringGroup, MessengerType, getChainProperties, ChainApiClient } from '@w3f/monitoring-types';
-import { LoggerAdapter, MockKeyValueStorage, TestIncidentHandler, colors } from './test-utils';
+import { InMemoryKeyValueStorage, LoggerAdapter, TestIncidentHandler, colors } from './test-utils';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 
 export interface TestCase {
@@ -128,7 +128,7 @@ export class TestRunner {
     
     try {
       const logger = new LoggerAdapter(console, debug);
-      const storage = new MockKeyValueStorage();
+      const storage = new InMemoryKeyValueStorage();
       const incidentHandler = new TestIncidentHandler(testId);
       
       const chainProvider = createChainDataProvider(api, storage, logger);

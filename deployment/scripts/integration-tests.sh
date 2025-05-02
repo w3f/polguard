@@ -7,7 +7,6 @@ source /scripts/bootstrap-helm.sh
 run_tests() {
     echo Running tests...
 
-    wait_pod_ready redis-master
     wait_pod_ready api
     wait_pod_ready chain
     wait_pod_ready telemetry

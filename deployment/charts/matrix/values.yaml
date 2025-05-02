@@ -3,7 +3,6 @@ image:
   # tag: xy
 command: ["start:matrix"]
 
-# TODO: Make port configurable for the services, changing port here will cause an issue
 httpPort: 3000
 
 resources: {}
@@ -12,9 +11,6 @@ resources: {}
 
 config:
   environment: test
-
-  redis:
-    url: redis://redis-master:6379/0
 
   matrix:
     url: "https://matrix.web3.foundation"

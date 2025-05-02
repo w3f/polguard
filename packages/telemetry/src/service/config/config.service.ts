@@ -44,9 +44,6 @@ export class ConfigService {
         .default(30 * 60 * 1000)
         .description('Telemetry polling interval in milliseconds'),
       environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
-      redis: Joi.object({
-        url: Joi.string().uri().required(),
-      }).required(),
       monitoringGroupIds: Joi.array().items(Joi.string()).required(),
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
@@ -83,15 +80,6 @@ export class ConfigService {
 
   getEnvironment(): string {
     return this.config.environment;
-  }
-
-  getRedisConfig(): { host: string; port: number; db: number } {
-    const redisUrl = new URL(this.config.redis.url);
-    return {
-      host: redisUrl.hostname,
-      port: Number(redisUrl.port) || 6379,
-      db: Number(redisUrl.pathname.split('/')[1]) || 0,
-    };
   }
 
   getLoggingLevel(): string {
@@ -131,9 +119,6 @@ export class ConfigService {
 interface Config {
   chain: Chain;
   pollingIntervalMs: number;
-  redis: {
-    url: string;
-  };
   monitoringGroupIds: string[];
   telemetryExporterApi: {
     url: string;

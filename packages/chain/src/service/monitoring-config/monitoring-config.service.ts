@@ -110,6 +110,9 @@ export class MonitoringConfigService implements MonitoringConfigClient {
           ss58: '12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ',
           hex: '0x',
           name: 'Development Test Account',
+          [MonitorType.Staking]: {
+            handlers: [H.ActiveSetPresence],
+          },
         },
       ],
       notifications: {

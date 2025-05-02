@@ -1,71 +1,79 @@
-import { Injectable, Inject } from '@nestjs/common';
-import Redis from 'ioredis';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import type { LocalStorage } from 'node-persist';
+import * as nodePersist from 'node-persist';
 import { KeyValueStorageClient } from '@w3f/monitoring-types';
-import { ConfigService } from '../config/config.service';
 import { parse, stringify } from 'json-bigint';
+import * as path from 'path';
 
+/**
+ * NOTE ON CONCURRENCY: node-persist writes one JSON file per key. Running multiple Node
+ * processes that share the same directory will corrupt data because there's no file-level
+ * locking. In case of horizontal scaling, switch back to Redis.
+ */
 @Injectable()
-export class StorageService implements KeyValueStorageClient {
-  private readonly namespace: string;
+export class StorageService implements KeyValueStorageClient, OnModuleInit, OnModuleDestroy {
+  private readonly storage: LocalStorage<any>;
 
-  constructor(
-    @Inject('REDIS_CLIENT') private readonly client: Redis,
-    private readonly configService: ConfigService,
-  ) {
-    this.namespace = this.configService.getChain();
+  constructor(private namespace: string) {
+    this.storage = nodePersist.create();
+  }
+
+  async onModuleInit() {
+    await this.storage.init({
+      dir: path.join(process.cwd(), 'data'),
+      stringify,
+      parse,
+    });
+  }
+
+  async onModuleDestroy() {
+    // Ensures any pending writes finish
+    await this.storage.persist();
   }
 
   private applyNamespace(key: string): string {
     return `${this.namespace}:${key}`;
   }
 
-  private serialize(value: any): string {
-    return stringify(value);
-  }
-
-  private deserialize(value: string): any {
-    return parse(value);
-  }
-
   async get<T>(key: string): Promise<T | null> {
     const namespacedKey = this.applyNamespace(key);
-    const value = await this.client.get(namespacedKey);
-    if (value === null) {
-      return null;
-    }
-    return this.deserialize(value) as T;
+    const result = await this.storage.getItem(namespacedKey);
+    return result === undefined ? null : result;
   }
 
   async set(key: string, value: any): Promise<void> {
     const namespacedKey = this.applyNamespace(key);
-    await this.client.set(namespacedKey, this.serialize(value));
+    await this.storage.setItem(namespacedKey, value);
   }
 
   async setex(key: string, seconds: number, value: any): Promise<void> {
     const namespacedKey = this.applyNamespace(key);
-    await this.client.setex(namespacedKey, seconds, this.serialize(value));
+    await this.storage.setItem(namespacedKey, value, { ttl: seconds * 1000 });
   }
 
   async del(key: string): Promise<void> {
     const namespacedKey = this.applyNamespace(key);
-    await this.client.del(namespacedKey);
+    await this.storage.removeItem(namespacedKey);
   }
 
   async exists(key: string): Promise<boolean> {
     const namespacedKey = this.applyNamespace(key);
-    const exists = await this.client.exists(namespacedKey);
-    return !!exists;
+    // More efficient than full getItem
+    return (await this.storage.valuesWithKeyMatch(namespacedKey)).length > 0;
   }
 
-  async keys(pattern: string): Promise<string[]> {
-    const namespacedPattern = this.applyNamespace(pattern);
-    return await this.client.keys(namespacedPattern);
-  }
-
+  /**
+   * Gets multiple values by keys.
+   * NOTE: This performs N separate get operations, so it's O(N) complexity.
+   */
   async mget<T>(keys: string[]): Promise<(T | null)[]> {
     if (keys.length === 0) return [];
     const namespacedKeys = keys.map(key => this.applyNamespace(key));
-    const values = await this.client.mget(namespacedKeys);
-    return values.map(value => (value ? (this.deserialize(value) as T) : null));
+    const values = await Promise.all(namespacedKeys.map(key => this.storage.getItem(key)));
+    return values.map(value => (value === undefined ? null : value));
+  }
+
+  async flush(): Promise<void> {
+    await this.storage.clear();
   }
 }

@@ -4,8 +4,6 @@ chain: Polkadot
 monitoringGroupIds:
   - test-group-validator-1
 
-redis:
-  url: redis://localhost:6379/0
 rpc:
   url: wss://rpc-polkadot.luckyfriday.io
 monitoringApi:

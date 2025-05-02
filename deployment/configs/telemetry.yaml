@@ -8,8 +8,6 @@ telemetryExporterApi:
   basicAuth:
     username: api
     password: password
-redis:
-  url: redis://redis:6379/0
 monitoringApi:
   baseUrl: http://api:3000
   endpoints:

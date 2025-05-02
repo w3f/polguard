@@ -36,9 +36,6 @@ export class ConfigService {
       }).required(),
       startBlock: Joi.number().integer().min(0).optional(),
       environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
-      redis: Joi.object({
-        url: Joi.string().uri().required(),
-      }).required(),
       monitoringGroupIds: Joi.array().items(Joi.string()).required(),
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
@@ -81,15 +78,6 @@ export class ConfigService {
     return this.config.environment;
   }
 
-  getRedisConfig(): { host: string; port: number; db: number } {
-    const redisUrl = new URL(this.config.redis.url);
-    return {
-      host: redisUrl.hostname,
-      port: Number(redisUrl.port) || 6379,
-      db: Number(redisUrl.pathname.split('/')[1]) || 0,
-    };
-  }
-
   getLoggingLevel(): string {
     return this.config.logging?.level || 'info';
   }
@@ -120,9 +108,6 @@ interface Config {
     url: string;
   };
   startBlock?: number;
-  redis: {
-    url: string;
-  };
   monitoringGroupIds: string[];
   monitoringApi: {
     baseUrl: string;
