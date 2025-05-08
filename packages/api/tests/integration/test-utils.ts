@@ -8,7 +8,7 @@ import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Incident, IncidentNotification } from '../../src/database/incident.entities';
+import { Incident, IncidentNotification } from '../../src/database/incident.entity';
 
 const workerId = process.env.JEST_WORKER_ID ?? '0';          // "0" when runInBand
 export const dbFile   = path.join(process.cwd(), `test-${workerId}.sqlite`);

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -8,13 +8,39 @@ import * as Joi from 'joi';
 export class ConfigService {
   private readonly config: AppConfig;
 
-  constructor() {
+  constructor(private readonly logger: Logger) {
     const configPath = this.getConfigPath();
     const rawConfig: any = this.loadConfig(configPath);
-    if (!rawConfig?.matrix?.password && process.env.MATRIX_PASSWORD) {
-      rawConfig.matrix.password = process.env.MATRIX_PASSWORD;
+    
+    // Handle GitLab token for monitoring config sources
+    if (rawConfig?.monitoringConfigSources) {
+      for (const source of rawConfig.monitoringConfigSources) {
+        if (source.name === 'gitlab') {
+          if (!source.authToken && !process.env.GITLAB_TOKEN) {
+            throw new Error(
+              "Missing GitLab token: set GITLAB_TOKEN env var or provide it in config."
+            );
+          }
+          
+          source.authToken = process.env.GITLAB_TOKEN ?? source.authToken;
+        }
+      }
     }
+    
     this.config = this.validateConfig(rawConfig);
+    
+    // Log configuration with sensitive data masked
+    this.logger.debug(`Configuration: ${JSON.stringify({
+      ...this.config,
+      database: {
+        ...this.config.database,
+        password: this.config.database.password ? '***' : undefined
+      },
+      monitoringConfigSources: this.config.monitoringConfigSources?.map(source => ({
+        ...source,
+        authToken: source.authToken ? '***' : undefined
+      }))
+    }, null, 2)}`);
   }
 
   private getConfigPath(): string {

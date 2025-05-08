@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -9,13 +9,29 @@ import { MatrixConfig } from '@lib/interfaces';
 export class ConfigService {
   private readonly config: AppConfig;
 
-  constructor() {
+  constructor(private readonly logger: Logger) {
     const configPath = this.getConfigPath();
     const rawConfig: any = this.loadConfig(configPath);
-    if (!rawConfig?.matrix?.password && process.env.MATRIX_PASSWORD) {
-      rawConfig.matrix.password = process.env.MATRIX_PASSWORD;
+    
+    if (!rawConfig?.matrix?.password && !process.env.MATRIX_PASSWORD) {
+      throw new Error(
+        "Missing Matrix password: set MATRIX_PASSWORD env var or provide it in config."
+      );
     }
+    
+    rawConfig.matrix.password = 
+      process.env.MATRIX_PASSWORD ?? rawConfig.matrix.password;
+    
     this.config = this.validateConfig(rawConfig);
+    
+    // Log configuration with sensitive data masked
+    this.logger.debug(`Configuration: ${JSON.stringify({
+      ...this.config,
+      matrix: {
+        ...this.config.matrix,
+        password: this.config.matrix.password ? '***' : undefined
+      }
+    }, null, 2)}`);
   }
 
   private getConfigPath(): string {

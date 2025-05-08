@@ -20,26 +20,21 @@ export class MonitoringConfigService implements OnModuleInit {
   }
 
   async refreshConfigurations(): Promise<void> {
-    try {
-      const sources = this.configService.getMonitoringConfigSources();
-      this.monitoringGroups = await ConfigFetcher.fetchAndProcessConfigs(sources, this.configsDir);
+    const sources = this.configService.getMonitoringConfigSources();
+    this.monitoringGroups = await ConfigFetcher.fetchAndProcessConfigs(sources, this.configsDir);
 
-      // Check if any monitoring groups were loaded
-      if (this.monitoringGroups.length === 0) {
-        throw new Error(
-          'No monitoring groups were loaded. Please check your configuration sources ' +
-            'or add valid YAML files to the monitoring-configs directory.',
-        );
-      }
-
-      // Build lookup dictionaries with uniqueness check
-      this.buildLookupDictionaries();
-
-      this.logger.log(`Loaded ${this.monitoringGroups.length} monitoring groups`);
-    } catch (error) {
-      this.logger.error('Failed to refresh monitoring configurations:', error);
-      throw error; // Re-throw to prevent service from starting with invalid config
+    // Check if any monitoring groups were loaded
+    if (this.monitoringGroups.length === 0) {
+      throw new Error(
+        'No monitoring groups were loaded. Please check your configuration sources ' +
+          'or add valid YAML files to the monitoring-configs directory.',
+      );
     }
+
+    // Build lookup dictionaries with uniqueness check
+    this.buildLookupDictionaries();
+
+    this.logger.log(`Loaded ${this.monitoringGroups.length} monitoring groups`);
   }
 
   private buildLookupDictionaries(): void {

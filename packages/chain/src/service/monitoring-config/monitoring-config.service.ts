@@ -38,7 +38,7 @@ export class MonitoringConfigService implements MonitoringConfigClient {
         }),
       );
     } catch (error) {
-      this.logger.error(`Failed to fetch monitoring groups from IMS: ${error.message}`);
+      this.logger.error(`Failed to fetch monitoring groups from api service: ${error.message}`);
 
       // In development environment, use hardcoded groups
       if (this.configService.getEnvironment() === 'development') {
@@ -72,7 +72,7 @@ export class MonitoringConfigService implements MonitoringConfigClient {
   }
 
   private logGroupDetails(groups: MonitoringGroup[]): void {
-    this.logger.log(`Fetched ${groups.length} monitoring groups from IMS:`);
+    this.logger.log(`Fetched ${groups.length} monitoring groups from api service:`);
 
     // Log details for each group
     for (const group of groups) {

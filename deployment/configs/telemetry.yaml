@@ -7,7 +7,7 @@ telemetryExporterApi:
   url: https://telemetry-exporter.w3f.community/feed/filtered
   basicAuth:
     username: api
-    password: password
+    # password is provided via TELEMETRY_PASSWORD environment variable
 monitoringApi:
   baseUrl: http://api:3000
   endpoints:

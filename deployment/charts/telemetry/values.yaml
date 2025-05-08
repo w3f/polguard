@@ -1,7 +1,7 @@
 image:
   repo: web3f/monitoring-platform
   # tag: xy
-command: ["start:telemetry"]
+args: ["start:telemetry"]
 
 httpPort: 3000
 
@@ -22,25 +22,8 @@ serviceMonitor:
     group: w3f
     release: prometheus-operator
 
-config:
-  environment: development
-  chain: Polkadot
-  telemetryExporterApi:
-    url: https://telemetry-exporter.w3f.community/feed/filtered
-    basicAuth:
-      username: api
-      password: password
-  pollingIntervalMs: 60000
-  monitoringGroupIds:
-    - test-group-validator-1
-  monitoringApi:
-    baseUrl: http://api:3000
-    endpoints:
-      createIncident: /incidents
-      resolveIncident: /incidents/resolve
-      getConfig: /monitoring-config/groups
-  httpServer:
-    port: 3000
-    host: 0.0.0.0
-  logging:
-    level: debug
+config: {}
+
+# Secrets configuration
+secrets:
+  TELEMETRY_PASSWORD: ""

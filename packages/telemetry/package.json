@@ -1,12 +1,14 @@
 {
   "name": "@w3f/monitoring-telemetry",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/telemetry/src/service/main.js",
   "version": "0.0.8",
   "description": "",
   "author": "W3F SecOps Team <devops@web3.foundation>",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "nest build",
     "start": "node dist/telemetry/src/service/main",

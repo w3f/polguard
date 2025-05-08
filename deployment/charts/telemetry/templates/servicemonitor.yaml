@@ -1,14 +1,14 @@
-{{ if and .Values.serviceMonitor.enabled ( ne .Values.config.environment "ci" ) }}
+{{- if and (.Values.serviceMonitor) (.Values.serviceMonitor.enabled) (ne .Values.config.environment "ci") }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "app.name" . }}
   labels:
-{{ toYaml .Values.serviceMonitor.labels | indent 4 }}
+    {{- toYaml .Values.serviceMonitor.labels | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      app: {{ include "app.name" . }}
+      {{- include "app.selectorLabels" . | nindent 6 }}
   endpoints:
-  - port: metrics
-{{ end }}
+    - port: metrics
+{{- end }}

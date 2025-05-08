@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: {{ include "app.name" . }}
   labels:
-    app: {{ include "app.name" . }}
+    {{- include "app.labels" . | nindent 4 }}
 spec:
   ports:
-  - name: http
-    port: {{ .Values.httpPort }}
+    - name: http
+      port: {{ .Values.httpPort }}
   selector:
-    app: {{ include "app.name" . }}
+    {{- include "app.selectorLabels" . | nindent 4 }}

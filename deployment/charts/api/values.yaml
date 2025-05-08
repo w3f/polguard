@@ -1,7 +1,8 @@
 image:
   repo: web3f/monitoring-platform
   # tag: xy
-command: ["start:api"]
+# If we scaled to multiple pods (race conditions, schema conflicts during updates)
+args: ["start:with-migrations"]
 
 httpPort: 3000
 
@@ -22,39 +23,8 @@ serviceMonitor:
     group: w3f
     release: prometheus-operator
 
-config:
-  environment: development
-  database:
-    host: mypg-postgresql
-    port: 5432
-    username: postgres
-    password: postgres
-    database: monitoring
-  httpServer:
-    port: 3000
-    host: 0.0.0.0
-  notificationApi:
-    matrix:
-      url: http://matrix:3000/notifications
-  logging:
-    level: info
+config: {}
 
-monitoringConfig:
-  defaults:
-    notifications:
-      repeatHours: 0.0083
-      messengerType: matrix
-      channels:
-        - "!BabNKVNdOktKGafXzd:web3.foundation"
-    chains:
-      - Polkadot
-    monitors:
-      - name: Staking
-        commission: 5
-      - name: Telemetry
-        minMemoryGB: 16
-        minCores: 4
-  groups:
-    - id: test-group-validator-1
-      accounts:
-        - address: 15tEXHHDjEv6VKR2MhpnfeJZnKQnTyMPVvGH51BJvBXNoCNK
+# Secrets configuration
+secrets:
+  GITLAB_TOKEN: ""

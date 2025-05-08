@@ -10,13 +10,7 @@ export class IncidentController {
   @Post()
   async sendNotification(@Body() notification: { channelId: string; message: string }) {
     this.logger.log(`Received notification request for channel ${notification.channelId}`);
-
-    try {
-      await this.matrixBot.sendMessage(notification.channelId, notification.message);
-      return { success: true };
-    } catch (error) {
-      this.logger.error(`Failed to send notification: ${error.message}`);
-      throw error;
-    }
+    await this.matrixBot.sendMessage(notification.channelId, notification.message);
+    return { success: true };
   }
 }

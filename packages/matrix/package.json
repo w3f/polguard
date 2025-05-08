@@ -1,10 +1,14 @@
 {
   "name": "@w3f/monitoring-matrix",
+  "main": "dist/matrix/src/service/main.js",
   "version": "0.0.2",
   "description": "",
   "author": "W3F SecOps Team <devops@web3.foundation>",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "nest build",
     "start": "node dist/matrix/src/service/main",

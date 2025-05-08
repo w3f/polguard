@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Incident, IncidentNotification } from '../database/incident.entities';
+import { Incident, IncidentNotification } from '../database/incident.entity';
 import { CreateIncidentDto, GetIncidentsDto } from './dto';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '@w3f/monitoring-types';

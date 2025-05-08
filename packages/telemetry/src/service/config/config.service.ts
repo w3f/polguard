@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -9,10 +9,34 @@ import { Chain } from '@w3f/monitoring-types';
 export class ConfigService {
   private readonly config: Config;
 
-  constructor() {
+  constructor(private readonly logger: Logger) {
     const configPath = this.getConfigPath();
-    const rawConfig = this.loadConfig(configPath);
+    const rawConfig: any = this.loadConfig(configPath);
+    
+    if (rawConfig?.telemetryExporterApi?.basicAuth) {
+      if (!rawConfig.telemetryExporterApi.basicAuth.password && !process.env.TELEMETRY_PASSWORD) {
+        throw new Error(
+          "Missing Telemetry password: set TELEMETRY_PASSWORD env var or provide it in config."
+        );
+      }
+      
+      rawConfig.telemetryExporterApi.basicAuth.password = 
+        process.env.TELEMETRY_PASSWORD ?? rawConfig.telemetryExporterApi.basicAuth.password;
+    }
+    
     this.config = this.validateConfig(rawConfig);
+    
+    // Log configuration with sensitive data masked
+    this.logger.debug(`Configuration: ${JSON.stringify({
+      ...this.config,
+      telemetryExporterApi: {
+        ...this.config.telemetryExporterApi,
+        basicAuth: this.config.telemetryExporterApi.basicAuth ? {
+          ...this.config.telemetryExporterApi.basicAuth,
+          password: this.config.telemetryExporterApi.basicAuth.password ? '***' : undefined
+        } : undefined
+      }
+    }, null, 2)}`);
   }
 
   private getConfigPath(): string {
@@ -35,7 +59,7 @@ export class ConfigService {
         url: Joi.string().uri().required(),
         basicAuth: Joi.object({
           username: Joi.string().required(),
-          password: Joi.string().required(),
+          password: Joi.string().optional(), // Password can be provided via env var
         }).optional(),
       }).required(),
       pollingIntervalMs: Joi.number()

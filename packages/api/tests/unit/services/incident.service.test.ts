@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IncidentService } from '../../../src/incident/incident.service';
 import { Repository } from 'typeorm';
-import { Incident, IncidentNotification } from '../../../src/database/incident.entities';
+import { Incident, IncidentNotification } from '../../../src/database/incident.entity';
 import { NotificationService } from '../../../src/notification/notification.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';

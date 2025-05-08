@@ -30,16 +30,11 @@ export class MatrixClient {
   }
 
   async init() {
-    try {
-      global.Olm = olm;
-      this.client = await this.createClient();
-      await this.setupClientAndSync();
-      this.setupEventHandlers();
-      this.logger.log('Matrix client initialized successfully');
-    } catch (error) {
-      this.logger.error(`Failed to initialize Matrix client: ${error.message}`);
-      throw error;
-    }
+    global.Olm = olm;
+    this.client = await this.createClient();
+    await this.setupClientAndSync();
+    this.setupEventHandlers();
+    this.logger.log('Matrix client initialized successfully');
   }
 
   private async setupClientAndSync(): Promise<void> {
@@ -208,20 +203,15 @@ export class MatrixClient {
   }
 
   public async sendMessage(roomId: string, message: string) {
-    try {
-      const content: any = {
-        msgtype: MsgType.Text,
-        body: message,
-        format: 'org.matrix.custom.html',
-        formatted_body: message,
-      };
+    const content: any = {
+      msgtype: MsgType.Text,
+      body: message,
+      format: 'org.matrix.custom.html',
+      formatted_body: message,
+    };
 
-      await this.client.sendMessage(roomId, content);
-      this.logger.debug(`Sent message to room ${roomId}`);
-    } catch (error) {
-      this.logger.error(`Failed to send message to room ${roomId}: ${error.message}`);
-      throw error;
-    }
+    await this.client.sendMessage(roomId, content);
+    this.logger.debug(`Sent message to room ${roomId}`);
   }
 
   public async stop() {

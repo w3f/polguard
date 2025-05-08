@@ -14,69 +14,49 @@ export class IncidentService implements IncidentServiceInterface {
   ) {}
 
   async getNonResolved(roomId: string): Promise<Incident[]> {
-    try {
-      const { baseUrl, endpoints } = this.configService.getMonitoringApi();
-      const url = `${baseUrl}${endpoints.getIncidents}`;
-      const response = await firstValueFrom(
-        this.httpService.get(url, {
-          params: {
-            channelId: roomId,
-            resolved: false,
-          },
-        }),
-      );
-      return response.data;
-    } catch (error) {
-      this.logger.error(`Failed to fetch non-resolved incidents: ${error.message}`);
-      throw new Error(`Failed to fetch non-resolved incidents: ${error.message}`);
-    }
+    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const url = `${baseUrl}${endpoints.getIncidents}`;
+    const response = await firstValueFrom(
+      this.httpService.get(url, {
+        params: {
+          channelId: roomId,
+          resolved: false,
+        },
+      }),
+    );
+    return response.data;
   }
 
   async getNonAcked(roomId: string): Promise<Incident[]> {
-    try {
-      const { baseUrl, endpoints } = this.configService.getMonitoringApi();
-      const url = `${baseUrl}${endpoints.getIncidents}`;
-      const response = await firstValueFrom(
-        this.httpService.get(url, {
-          params: {
-            channelId: roomId,
-            ackRequired: true,
-            acked: false,
-          },
-        }),
-      );
-      return response.data;
-    } catch (error) {
-      this.logger.error(`Failed to fetch non-acknowledged incidents: ${error.message}`);
-      throw new Error(`Failed to fetch non-acknowledged incidents: ${error.message}`);
-    }
+    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const url = `${baseUrl}${endpoints.getIncidents}`;
+    const response = await firstValueFrom(
+      this.httpService.get(url, {
+        params: {
+          channelId: roomId,
+          ackRequired: true,
+          acked: false,
+        },
+      }),
+    );
+    return response.data;
   }
 
   async getIncidentById(incidentId: number): Promise<Incident> {
-    try {
-      const { baseUrl, endpoints } = this.configService.getMonitoringApi();
-      const url = `${baseUrl}${endpoints.getIncident.replace(':id', incidentId.toString())}`;
-      const response = await firstValueFrom(this.httpService.get(url));
-      return response.data;
-    } catch (error) {
-      this.logger.error(`Failed to fetch incident details: ${error.message}`);
-      throw new Error(`Failed to fetch incident details: ${error.message}`);
-    }
+    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const url = `${baseUrl}${endpoints.getIncident.replace(':id', incidentId.toString())}`;
+    const response = await firstValueFrom(this.httpService.get(url));
+    return response.data;
   }
 
   async acknowledgeIncident(incidentId: number, username: string, channelId: string): Promise<void> {
-    try {
-      const { baseUrl, endpoints } = this.configService.getMonitoringApi();
-      const url = `${baseUrl}${endpoints.acknowledgeIncident.replace(':id', incidentId.toString())}`;
-      await firstValueFrom(
-        this.httpService.post(url, {
-          username,
-          channelId,
-        }),
-      );
-    } catch (error) {
-      this.logger.error(`Failed to acknowledge incident: ${error.message}`);
-      throw new Error(`Failed to acknowledge incident: ${error.message}`);
-    }
+    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const url = `${baseUrl}${endpoints.acknowledgeIncident.replace(':id', incidentId.toString())}`;
+    await firstValueFrom(
+      this.httpService.post(url, {
+        username,
+        channelId,
+      }),
+    );
   }
 }

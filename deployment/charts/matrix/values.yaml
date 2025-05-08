@@ -1,7 +1,7 @@
 image:
   repo: web3f/monitoring-platform
   # tag: xy
-command: ["start:matrix"]
+args: ["start:matrix"]
 
 httpPort: 3000
 
@@ -9,25 +9,8 @@ resources: {}
 
 # nameOverride: xy
 
-config:
-  environment: test
+config: {}
 
-  matrix:
-    url: "https://matrix.web3.foundation"
-    userId: "@xxx:web3.foundation"
-    password: "xxx"
-    rooms:
-      # TestMonitoringPlatform room
-      - id: "!BabNKVNdOktKGafXzd:web3.foundation"
-    logging:
-      level: warn
-
-  monitoringApi:
-    baseUrl: "http://api:3000"
-
-  server:
-    port: 3000
-    host: "0.0.0.0"
-
-  logging:
-    level: info
+# Secrets configuration
+secrets:
+  MATRIX_PASSWORD: ""

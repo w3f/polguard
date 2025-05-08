@@ -5,6 +5,7 @@ monitoringGroupIds:
 
 rpc: 
   url: wss://rpc-polkadot.luckyfriday.io
+
 monitoringApi:
   baseUrl: http://api:3000
   endpoints:

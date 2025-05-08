@@ -21,23 +21,13 @@ export class IncidentApiService implements IncidentApiClient {
   }
 
   async createIncident(incident: CreateIncidentDto): Promise<number> {
-    try {
-      const response = await lastValueFrom(this.httpService.post(this.createUrl, incident));
-      return response.data.id;
-    } catch (error) {
-      this.logger.error(`Failed to create incident: ${error.message}`);
-      throw new Error(`Failed to create incident: ${error.message}`);
-    }
+    const response = await lastValueFrom(this.httpService.post(this.createUrl, incident));
+    return response.data.id;
   }
 
   async resolveIncident(id: number): Promise<boolean> {
-    try {
-      const url = this.resolveUrl.replace(':id', id.toString());
-      await lastValueFrom(this.httpService.post(url, {}));
-      return true;
-    } catch (error) {
-      this.logger.error(`Failed to resolve incident: ${error.message}`);
-      throw new Error(`Failed to resolve incident: ${error.message}`);
-    }
+    const url = this.resolveUrl.replace(':id', id.toString());
+    await lastValueFrom(this.httpService.post(url, {}));
+    return true;
   }
 }

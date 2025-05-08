@@ -90,8 +90,11 @@ export class IncidentNotification {
   })
   type: NotificationType;
 
-  @Column({ name: 'repeat_hours', nullable: true })
-  repeatHours?: number;
+  @Column({
+    name: 'repeat_hours',
+    type: 'double precision',
+  })
+  repeatHours: number;
 
   @Column({ name: 'last_sent_at', nullable: true })
   lastSentAt: Date;

@@ -66,3 +66,7 @@ As the platform evolves, we may need to implement proper API authorization for e
 
 - Dashboards for incident visualization
 - Third-party services interested in monitoring configurations (ex. [payout claimer](https://github.com/w3f/polkadot-k8s-payouts), [telemetry exporter](https://github.com/w3f/telemetry-exporter))
+
+### Database Migrations
+
+We use `start:with-migrations` script in production with a single pod deployment. This approach runs migrations before starting the API service, which is simple but would have limitations if we scaled to multiple pods (race conditions, schema conflicts during updates). For now, this approach is sufficient for our needs.

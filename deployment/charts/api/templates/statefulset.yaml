@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "app.name" . }}
+  name: {{ include "app.fullname" . }}
   labels:
-    app: {{ include "app.name" . }}
+    {{- include "app.labels" . | nindent 4 }}
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -12,14 +12,15 @@ spec:
   podManagementPolicy: Parallel
   selector:
     matchLabels:
-      app: {{ include "app.name" . }}
+      {{- include "app.selectorLabels" . | nindent 6 }}
   serviceName: {{ include "app.name" . }}
   template:
     metadata:
       labels:
-        app: {{ include "app.name" . }}
+        {{- include "app.selectorLabels" . | nindent 8 }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config: {{ .Values.config | toYaml | sha256sum }}
+        checksum/secrets: {{ .Values.secrets | toYaml | sha256sum }}
     spec:
     {{- with .Values.affinity }}
       affinity:
@@ -29,11 +30,26 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      initContainers:
+        - name: wait-for-postgresql
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgresql 5432; do
+                echo "Waiting for postgres...";
+                sleep 2;
+              done;
+              echo "Postgres is ready.";
       containers:
-      - name: {{ include "app.name" . }}
+      - name: {{ include "app.fullname" . }}
         image: {{ .Values.image.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.image.imagePullPolicy }}
-        command: {{ .Values.command | toJson }}
+        args: {{ .Values.args | toJson }}
+        envFrom:
+          - secretRef:
+              name: {{ include "app.fullname" . }}-secrets
         ports:
         - name: http
           containerPort: {{ .Values.httpPort }}
@@ -53,13 +69,7 @@ spec:
         - name: config
           mountPath: /app/packages/api/config/
           readOnly: true
-        - name: monitoring-config
-          mountPath: /app/packages/api/monitoring-configs/
-          readOnly: true
       volumes:
       - name: config
         configMap:
-          name: {{ include "app.name" . }}
-      - name: monitoring-config
-        configMap:
-          name: {{ include "app.name" . }}-monitoring
+          name: {{ include "app.fullname" . }}

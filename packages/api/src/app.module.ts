@@ -19,7 +19,7 @@ import { MonitoringConfigModule } from './monitoring-config/monitoring-config.mo
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         ...configService.getDatabaseConfig(),
-        entities: [__dirname + '/**/*.entity{.ts,.js}', __dirname + '/database/incident.entities.ts'],
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: configService.getEnvironment() !== 'production', // Auto-create tables in non-production
       }),
     }),

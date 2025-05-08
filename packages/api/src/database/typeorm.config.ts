@@ -1,8 +1,11 @@
 import { DataSource } from 'typeorm';
 import { ConfigService } from '../config/config.service';
-import { Incident, IncidentNotification } from './incident.entities';
+import { Logger } from '@nestjs/common';
+import { Incident, IncidentNotification } from './incident.entity';
+import * as path from 'path';
 
-const configService = new ConfigService();
+const logger = new Logger('ConfigService');
+const configService = new ConfigService(logger);
 const dbConfig = configService.getDatabaseConfig();
 
 export default new DataSource({
@@ -13,6 +16,6 @@ export default new DataSource({
   password: dbConfig.password,
   database: dbConfig.database,
   entities: [Incident, IncidentNotification],
-  migrations: ['src/database/migrations/*.ts'],
+  migrations: [path.join(__dirname, 'migrations/**/*{.ts,.js}')],
   synchronize: configService.getEnvironment() !== 'production',
 });

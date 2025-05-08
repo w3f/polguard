@@ -87,25 +87,14 @@ export class IncidentHandler implements IncidentHandlerClient {
 
     this.logger.debug(`Creating incident: ${JSON.stringify(createIncidentDto)}`);
 
-    try {
-      const incidentId = await this.incidentApi.createIncident(createIncidentDto);
-      this.logger.debug(`Created incident with ID: ${incidentId}`);
-      return incidentId;
-    } catch (error) {
-      this.logger.error(`Failed to create incident: ${error.message}`);
-      throw new Error(`Failed to create incident: ${error.message}`);
-    }
+    const incidentId = await this.incidentApi.createIncident(createIncidentDto);
+    this.logger.debug(`Created incident with ID: ${incidentId}`);
+    return incidentId;
   }
 
   private async resolveIncident(incidentId: number): Promise<void> {
     this.logger.debug(`Resolving incident with ID: ${incidentId}`);
-
-    try {
-      await this.incidentApi.resolveIncident(incidentId);
-    } catch (error) {
-      this.logger.error(`Failed to resolve incident: ${error.message}`);
-      throw new Error(`Failed to resolve incident: ${error.message}`);
-    }
+    await this.incidentApi.resolveIncident(incidentId);
   }
 
   private getStoreKey(incidentKey: IncidentKey): string {

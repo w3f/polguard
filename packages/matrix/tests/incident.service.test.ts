@@ -88,9 +88,7 @@ describe('IncidentService', () => {
         throwError(() => new Error(errorMessage)),
       );
 
-      await expect(service.getNonResolved('test-room')).rejects.toThrow(
-        `Failed to fetch non-resolved incidents: ${errorMessage}`,
-      );
+      await expect(service.getNonResolved('test-room')).rejects.toThrow(errorMessage);
     });
   });
 

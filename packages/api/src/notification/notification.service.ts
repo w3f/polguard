@@ -1,9 +1,9 @@
 import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, Not, LessThan } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { MessageType, MessengerType, NotificationType } from '@w3f/monitoring-types';
-import { Incident, IncidentNotification } from '../database/incident.entities';
+import { Incident, IncidentNotification } from '../database/incident.entity';
 import { MessageStyler } from './message-styler';
 import { ConfigService } from '../config/config.service';
 import { firstValueFrom } from 'rxjs';
@@ -26,7 +26,7 @@ export class NotificationService {
    */
   async createNotifications(
     incident: Incident,
-    channels: { channelId: string; messengerType: MessengerType; repeatHours?: number }[],
+    channels: { channelId: string; messengerType: MessengerType; repeatHours: number }[],
     type: NotificationType,
   ): Promise<void> {
     const notifications = channels.map(channel => ({
@@ -56,6 +56,7 @@ export class NotificationService {
     const channels = alertNotifications.map(alert => ({
       channelId: alert.channelId,
       messengerType: alert.messengerType,
+      repeatHours: alert.repeatHours,
     }));
 
     await this.createNotifications(incident, channels, NotificationType.Resolution);
@@ -144,7 +145,6 @@ export class NotificationService {
         // Needs to be repeated based on interval
         {
           isDelivered: true,
-          repeatHours: Not(IsNull()),
           lastSentAt: LessThan(
             new Date(now.getTime() - 60 * 1000), // At least 1 minute ago (safety buffer)
           ),
@@ -159,7 +159,7 @@ export class NotificationService {
 
     for (const notification of pendingNotifications) {
       // For repeating notifications, check if the full interval has passed
-      if (notification.isDelivered && notification.repeatHours && notification.lastSentAt) {
+      if (notification.isDelivered && notification.lastSentAt) {
         const nextSendTime = new Date(notification.lastSentAt.getTime() + notification.repeatHours * 60 * 60 * 1000);
 
         if (nextSendTime > now) {

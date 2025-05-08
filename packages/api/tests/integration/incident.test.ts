@@ -23,7 +23,7 @@ describe('Incident API (integration)', () => {
     groupId: 'test-group',
     handlerType: 'test-handler',
     notificationChannels: [
-      { channelId: 'test-channel', messengerType: MessengerType.Matrix }
+      { channelId: 'test-channel', messengerType: MessengerType.Matrix, repeatHours: 1.0 }
     ],
     needsAck: true,
     ...overrides
@@ -69,6 +69,7 @@ describe('Incident API (integration)', () => {
       channelId: 'test-channel',
       messengerType: MessengerType.Matrix,
       type: 'alert',
+      repeatHours: 1.0,
       isDelivered: true,
       lastSentAt: new Date(),
       createdAt: new Date(),
@@ -105,6 +106,7 @@ describe('Incident API (integration)', () => {
       channelId: 'test-channel',
       messengerType: MessengerType.Matrix,
       type: 'alert',
+      repeatHours: 1.0,
       isDelivered: true,
       lastSentAt: new Date(),
       createdAt: new Date(),

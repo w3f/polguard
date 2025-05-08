@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsNumber } from 'class-validator';
 import { MessengerType } from '@w3f/monitoring-types';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -21,10 +21,10 @@ export class NotificationChannelDto {
 
   @ApiProperty({
     description: 'Interval in hours for repeating notifications if the incident remains unresolved',
-    required: false,
-    example: 24,
+    type: Number,
+    format: 'float',
+    example: 1.5,
   })
-  @IsOptional()
-  @IsNumber()
-  repeatHours?: number;
+  @IsNumber({ allowInfinity: false, allowNaN: false })
+  repeatHours: number;
 }

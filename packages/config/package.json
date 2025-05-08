@@ -20,6 +20,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "rimraf dist && tsc",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
