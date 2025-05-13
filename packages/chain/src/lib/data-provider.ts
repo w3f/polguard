@@ -1,7 +1,10 @@
 import { ApiPromise } from '@polkadot/api';
 import { Data, Struct } from '@polkadot/types';
-import type { Option } from '@polkadot/types-codec';
+import type { Option, Vec } from '@polkadot/types-codec';
+import type { Codec } from '@polkadot/types-codec/types';
 import type { H160 } from '@polkadot/types/interfaces';
+import { AccountInfo } from '@polkadot/types/interfaces/system';
+
 import { ChainDataProvider, KeyValueStorageClient, IdentityInfo, Logger } from '@w3f/monitoring-types';
 import { createCachedQueryDecorator } from './decorators';
 
@@ -69,7 +72,8 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       const result: Record<string, string | null> = {};
 
       addresses.forEach((address, index) => {
-        const bondedAddress = bondedInfo[index].isSome ? bondedInfo[index].unwrap().toString() : null;
+        const info = bondedInfo[index] as Option<Codec>;
+        const bondedAddress = info.isSome ? info.unwrap().toString() : null;
 
         if (!bondedAddress) {
           this.logger.debug(`No bonded address found for validator ${address} at block ${blockNumber}`);
@@ -87,7 +91,8 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       const result: Record<string, bigint | null> = {};
 
       addresses.forEach((address, index) => {
-        if (ledgers[index].isNone) {
+        const ledger = ledgers[index] as Option<Codec>;
+        if (ledger.isNone) {
           this.logger.debug(`No staking ledger found for controller ${address} at block ${blockNumber}`);
           result[address] = null;
         } else {
@@ -105,7 +110,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       const result: Record<string, string | null> = {};
 
       addresses.forEach((address, index) => {
-        const payee = payees[index];
+        const payee = payees[index] as Option<Codec>;
         if (payee.isNone) {
           this.logger.debug(
             `Account ${address} has no payee set (not bonded for staking) ` +
@@ -130,7 +135,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
     @Cached()
     async sessionValidators(blockNumber: number): Promise<Record<string, boolean>> {
       const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
-      const validators = await apiAt.query.session.validators();
+      const validators = (await apiAt.query.session.validators()) as Vec<Codec>;
       const result: Record<string, boolean> = {};
 
       validators.forEach(validator => {
@@ -147,7 +152,8 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       const result: Record<string, bigint> = {};
 
       addresses.forEach((address, index) => {
-        result[address] = accounts[index].data.free.toBigInt();
+        const account = accounts[index] as unknown as AccountInfo;
+        result[address] = account.data.free.toBigInt();
       });
 
       return result;
@@ -160,7 +166,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       const result: Record<string, IdentityInfo | null> = {};
 
       addresses.forEach((address, index) => {
-        const identity = identities[index];
+        const identity = identities[index] as Option<Codec>;
         if (identity.isNone) {
           result[address] = null;
         } else {
@@ -179,7 +185,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       const superIds = await apiAt.query.identity.superOf.multi(addresses);
 
       addresses.forEach((address, index) => {
-        const superOf = superIds[index];
+        const superOf = superIds[index] as Option<Codec>;
         result[address] = superOf.isSome ? superOf.unwrap()[0].toString() : null;
       });
 

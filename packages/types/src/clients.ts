@@ -13,7 +13,8 @@
 import { TelemetryData } from './telemetry';
 import { CreateIncidentDto } from './incident';
 import { MonitoringGroup } from './monitor';
-import { Hash, Header, SignedBlock, EventRecord } from '@polkadot/types/interfaces';
+import { Hash, Header, SignedBlock } from '@polkadot/types/interfaces';
+import { ApiDecoration } from '@polkadot/api/types';
 
 export interface MonitoringConfigClient {
   getMonitoringGroups(): Promise<MonitoringGroup[]>;
@@ -66,11 +67,5 @@ export interface ChainApiClient {
     }
   };
   
-  at(blockHash: Hash): Promise<{
-    query: {
-      system: {
-        events(): Promise<EventRecord[]>;
-      }
-    }
-  }>;
+  at(blockHash: Hash): Promise<ApiDecoration<"promise">>;
 }

@@ -142,7 +142,7 @@ export class TestRunner {
       const watcher = new ChainWatcher(
         logger,
         { getMonitoringGroups: async () => [group] },
-        api as ChainApiClient,
+        api,
         incidentHandler,
         storage,
         getChainProperties(testCase.chain),

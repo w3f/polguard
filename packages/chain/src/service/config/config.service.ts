@@ -13,7 +13,7 @@ export class ConfigService {
     const configPath = this.getConfigPath();
     const rawConfig = this.loadConfig(configPath);
     this.config = this.validateConfig(rawConfig);
-    
+
     this.logger.debug(`Configuration: ${JSON.stringify(this.config, null, 2)}`);
   }
 

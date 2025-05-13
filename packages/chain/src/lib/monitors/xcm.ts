@@ -5,7 +5,6 @@ import { encodeAddress } from '@polkadot/util-crypto';
 import { StagingXcmV4Location, StagingXcmV4Xcm, StagingXcmV4Asset } from '@polkadot/types/lookup';
 import { Event } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
-import { Codec } from '@polkadot/types-codec/types';
 
 export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
   @Event(
@@ -50,9 +49,9 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
   }
 
   private extractXcmTransferInfo(
-    rawOrigin: Codec,
-    rawDestination: Codec,
-    rawMessage: Codec,
+    rawOrigin: unknown,
+    rawDestination: unknown,
+    rawMessage: unknown,
     blockNumber: number,
   ): {
     origin?: string;

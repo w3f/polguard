@@ -1,5 +1,6 @@
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
+import { EventRecord } from '@polkadot/types/interfaces';
 
 import {
   Logger,
@@ -206,7 +207,7 @@ export class ChainWatcher {
     }
 
     // Apply event handlers: process event payload
-    const records = await apiAt.query.system.events();
+    const records = (await apiAt.query.system.events()) as unknown as EventRecord[];
     for (const eventRecord of records) {
       for (const monitor of this.monitors) {
         await monitor.processEvent({ blockNumber, eventRecord });
@@ -238,22 +239,40 @@ export class ChainWatcher {
     origin: string,
     extrinsicIndex: number,
   ): Promise<void> {
-    // Process the current call
-    for (const monitor of this.monitors) {
-      await monitor.processCall({ blockNumber, call, origin, extrinsicIndex });
+    // Proxy: override origin to `real`
+    if (call.section === 'proxy' && call.method === 'proxy') {
+      const real = call.args[1].toString(); // real: AccountIdLookup
+      const innerCall = call.args[3] as CallBase<AnyTuple>;
+      await this.traverseCallTree(blockNumber, innerCall, real, extrinsicIndex);
+      return;
     }
 
-    // Process nested calls
-    for (const arg of call.args) {
-      if (arg && typeof arg === 'object' && 'callIndex' in arg) {
-        await this.traverseCallTree(blockNumber, arg as CallBase<AnyTuple>, origin, extrinsicIndex);
-      } else if (Array.isArray(arg)) {
-        for (const subArg of arg) {
-          if (subArg && typeof subArg === 'object' && 'callIndex' in subArg) {
-            await this.traverseCallTree(blockNumber, subArg as CallBase<AnyTuple>, origin, extrinsicIndex);
-          }
-        }
+    // Utility: batch
+    if (call.section === 'utility' && ['batch', 'batchAll', 'forceBatch'].includes(call.method)) {
+      const calls = call.args[0] as unknown as CallBase<AnyTuple>[];
+      for (const innerCall of calls) {
+        await this.traverseCallTree(blockNumber, innerCall, origin, extrinsicIndex);
       }
+      return;
+    }
+
+    // Utility: as_derivative (origin is already correct)
+    if (call.section === 'utility' && call.method === 'asDerivative') {
+      const innerCall = call.args[1] as CallBase<AnyTuple>;
+      await this.traverseCallTree(blockNumber, innerCall, origin, extrinsicIndex);
+      return;
+    }
+
+    // Multisig: as_multi
+    if (call.section === 'multisig' && call.method === 'asMulti') {
+      const innerCall = call.args[4] as CallBase<AnyTuple>;
+      await this.traverseCallTree(blockNumber, innerCall, origin, extrinsicIndex);
+      return;
+    }
+
+    // Base case: process this call with the current origin
+    for (const monitor of this.monitors) {
+      await monitor.processCall({ blockNumber, call, origin, extrinsicIndex });
     }
   }
 }

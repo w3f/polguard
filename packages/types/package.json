@@ -25,8 +25,8 @@
     "test": "echo \"No tests required for types package\" && exit 0"
   },
   "dependencies": {
-    "@polkadot/api-augment": "^12.4.2",
-    "@polkadot/types": "^12.4.2"
+    "@polkadot/api-augment": "^15.9.3",
+    "@polkadot/types": "^15.9.3"
   },
   "devDependencies": {
     "typescript": "~5.7.3"
