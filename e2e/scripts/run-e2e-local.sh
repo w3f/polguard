@@ -14,7 +14,11 @@ command_exists() { command -v "$1" &>/dev/null; }
 
 cleanup() {
   command_exists kubectl || return 0
-  command_exists helm && helm -n "$NAMESPACE" list | grep -q "$RELEASE_NAME" && helm delete "$RELEASE_NAME" -n "$NAMESPACE" || true
+  if command_exists helm; then
+    for release in $(helm -n "$NAMESPACE" list -q); do
+      helm delete "$release" -n "$NAMESPACE" || true
+    done
+  fi
   if kubectl get ns "$NAMESPACE" &>/dev/null; then
     kubectl -n "$NAMESPACE" delete all,cm,secret,pvc --all --grace-period=0 --force || true
     kubectl delete ns "$NAMESPACE" --wait=false || true
@@ -22,7 +26,9 @@ cleanup() {
   command_exists kind && kind get clusters --quiet | grep -q "^dev$" && kind delete cluster --name dev || true
 }
 
-$CLEANUP && { cleanup; exit 0; }
+cleanup
+
+$CLEANUP && { exit 0; }
 
 for t in docker kind kubectl helm; do
   command_exists "$t" || { echo "$t missing"; exit 1; }
@@ -38,6 +44,7 @@ kind load docker-image web3f/monitoring-platform-e2e:"$IMAGE_TAG" --name dev
 
 kubectl create ns "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
+helm dependency update ./deployment/chart
 helm dependency update ./e2e/chart
 helm lint ./e2e/chart
 
@@ -47,13 +54,15 @@ helm upgrade --install "$RELEASE_NAME" ./e2e/chart \
   --set tests.image.repository=web3f/monitoring-platform-e2e \
   --set tests.image.tag="$IMAGE_TAG" \
   --set tests.image.pullPolicy=IfNotPresent \
-  --set mp-api.image.tag="$IMAGE_TAG" \
-  --set mp-api.secrets.GITLAB_TOKEN="$GITLAB_TOKEN" \
-  --set mp-matrix.image.tag="$IMAGE_TAG" \
-  --set mp-matrix.secrets.MATRIX_PASSWORD="$MATRIX_PASSWORD" \
-  --set mp-chain.image.tag="$IMAGE_TAG" \
-  --set secrets.MATRIX_PASSWORD="$MATRIX_PASSWORD" \
-  --set secrets.GITLAB_TOKEN="$GITLAB_TOKEN" \
+  --set api.image.tag="$IMAGE_TAG" \
+  --set api.secrets.GITLAB_TOKEN="$GITLAB_TOKEN" \
+  --set api.fullnameOverride="api" \
+  --set matrix.image.tag="$IMAGE_TAG" \
+  --set matrix.secrets.MATRIX_TOKEN="$MATRIX_TOKEN" \
+  --set matrix.fullnameOverride="matrix" \
+  --set chain.image.tag="$IMAGE_TAG" \
+  --set chain.fullnameOverride="chain" \
+  --set secrets.MATRIX_TOKEN="$MATRIX_TOKEN" \
   --wait
 
 helm test "$RELEASE_NAME" -n "$NAMESPACE"

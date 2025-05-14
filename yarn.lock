@@ -1139,13 +1139,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@matrix-org/matrix-sdk-crypto-wasm@npm:^14.0.1":
-  version: 14.1.0
-  resolution: "@matrix-org/matrix-sdk-crypto-wasm@npm:14.1.0"
-  checksum: 10c0/b3f4b58cb84015bacedc440301c4c8d53e54f8f5b0e2da7b2986b3899d2c55ef4a18dea269f410a629f69aa8c3f76cbd5176879aeaa296c09af98c565647e4cc
-  languageName: node
-  linkType: hard
-
 "@matrix-org/matrix-sdk-crypto-wasm@npm:^4.9.0":
   version: 4.10.0
   resolution: "@matrix-org/matrix-sdk-crypto-wasm@npm:4.10.0"
@@ -1153,7 +1146,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@matrix-org/olm@npm:3.2.15, @matrix-org/olm@npm:^3.2.15":
+"@matrix-org/olm@npm:^3.2.15":
   version: 3.2.15
   resolution: "@matrix-org/olm@npm:3.2.15"
   checksum: 10c0/82a40d6e4e632a90670d4f15e8962272e302f4b9deed4fc78455c5ca78422c13bde6b53ebfc406630336926c9574386c9d9069c9c023db1c3d143117985c1e50
@@ -2553,15 +2546,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/matrix-js-sdk@npm:^11.1.0":
-  version: 11.1.0
-  resolution: "@types/matrix-js-sdk@npm:11.1.0"
-  dependencies:
-    matrix-js-sdk: "npm:*"
-  checksum: 10c0/66bbb4ba597d71ef0a37321f6e746d8ab8654b6c2bfa77b03635caa40c046db2bc239076e1700cd7ce53a3785febf7c736a38ec1e040c7a54ca5ea22e39719f6
-  languageName: node
-  linkType: hard
-
 "@types/methods@npm:^1.1.4":
   version: 1.1.4
   resolution: "@types/methods@npm:1.1.4"
@@ -2970,14 +2954,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@w3f/monitoring-e2e@workspace:e2e"
   dependencies:
-    "@matrix-org/olm": "npm:^3.2.15"
     "@types/js-yaml": "npm:^4.0.9"
-    "@types/matrix-js-sdk": "npm:^11.1.0"
     "@types/node": "npm:^22.15.3"
     axios: "npm:^1.9.0"
     joi: "npm:^17.12.0"
     js-yaml: "npm:^4.1.0"
-    matrix-js-sdk: "npm:^37.4.0"
     ts-node: "npm:^10.9.2"
     typescript: "npm:^5.8.3"
   languageName: unknown
@@ -3615,13 +3596,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"base-x@npm:^5.0.0":
-  version: 5.0.1
-  resolution: "base-x@npm:5.0.1"
-  checksum: 10c0/4ab6b02262b4fd499b147656f63ce7328bd5f895450401ce58a2f9e87828aea507cf0c320a6d8725389f86e8a48397562661c0bca28ef3276a22821b30f7a713
-  languageName: node
-  linkType: hard
-
 "base64-js@npm:^1.3.1":
   version: 1.5.1
   resolution: "base64-js@npm:1.5.1"
@@ -3762,15 +3736,6 @@ __metadata:
   dependencies:
     base-x: "npm:^4.0.0"
   checksum: 10c0/0d1b05630b11db48039421b5975cb2636ae0a42c62f770eec257b2e5c7d94cb5f015f440785f3ec50870a6e9b1132b35bd0a17c7223655b22229f24b2a3491d1
-  languageName: node
-  linkType: hard
-
-"bs58@npm:^6.0.0":
-  version: 6.0.0
-  resolution: "bs58@npm:6.0.0"
-  dependencies:
-    base-x: "npm:^5.0.0"
-  checksum: 10c0/61910839746625ee4f69369f80e2634e2123726caaa1da6b3bcefcf7efcd9bdca86603360fed9664ffdabe0038c51e542c02581c72ca8d44f60329fe1a6bc8f4
   languageName: node
   linkType: hard
 
@@ -6483,7 +6448,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"loglevel@npm:^1.7.1, loglevel@npm:^1.9.2":
+"loglevel@npm:^1.7.1":
   version: 1.9.2
   resolution: "loglevel@npm:1.9.2"
   checksum: 10c0/1e317fa4648fe0b4a4cffef6de037340592cee8547b07d4ce97a487abe9153e704b98451100c799b032c72bb89c9366d71c9fb8192ada8703269263ae77acdc7
@@ -6587,29 +6552,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"matrix-js-sdk@npm:*, matrix-js-sdk@npm:^37.4.0":
-  version: 37.5.0
-  resolution: "matrix-js-sdk@npm:37.5.0"
-  dependencies:
-    "@babel/runtime": "npm:^7.12.5"
-    "@matrix-org/matrix-sdk-crypto-wasm": "npm:^14.0.1"
-    "@matrix-org/olm": "npm:3.2.15"
-    another-json: "npm:^0.2.0"
-    bs58: "npm:^6.0.0"
-    content-type: "npm:^1.0.4"
-    jwt-decode: "npm:^4.0.0"
-    loglevel: "npm:^1.9.2"
-    matrix-events-sdk: "npm:0.0.1"
-    matrix-widget-api: "npm:^1.10.0"
-    oidc-client-ts: "npm:^3.0.1"
-    p-retry: "npm:4"
-    sdp-transform: "npm:^2.14.1"
-    unhomoglyph: "npm:^1.0.6"
-    uuid: "npm:11"
-  checksum: 10c0/a40872382d08d56d23066da4f1b623b5a779c44154e7b57404a399119bfc16be30788f14226ff3f4091b20b9e8d22a8aaf5f8a27e87162ca90e87b27321df80c
-  languageName: node
-  linkType: hard
-
 "matrix-js-sdk@npm:^32.0":
   version: 32.4.0
   resolution: "matrix-js-sdk@npm:32.4.0"
@@ -6632,7 +6574,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"matrix-widget-api@npm:^1.10.0, matrix-widget-api@npm:^1.6.0":
+"matrix-widget-api@npm:^1.6.0":
   version: 1.13.1
   resolution: "matrix-widget-api@npm:1.13.1"
   dependencies:
@@ -9081,21 +9023,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"uuid@npm:11, uuid@npm:^11.0.1, uuid@npm:^11.1.0":
-  version: 11.1.0
-  resolution: "uuid@npm:11.1.0"
-  bin:
-    uuid: dist/esm/bin/uuid
-  checksum: 10c0/34aa51b9874ae398c2b799c88a127701408cd581ee89ec3baa53509dd8728cbb25826f2a038f9465f8b7be446f0fbf11558862965b18d21c993684297628d4d3
-  languageName: node
-  linkType: hard
-
 "uuid@npm:9":
   version: 9.0.1
   resolution: "uuid@npm:9.0.1"
   bin:
     uuid: dist/bin/uuid
   checksum: 10c0/1607dd32ac7fc22f2d8f77051e6a64845c9bce5cd3dd8aa0070c074ec73e666a1f63c7b4e0f4bf2bc8b9d59dc85a15e17807446d9d2b17c8485fbc2147b27f9b
+  languageName: node
+  linkType: hard
+
+"uuid@npm:^11.0.1, uuid@npm:^11.1.0":
+  version: 11.1.0
+  resolution: "uuid@npm:11.1.0"
+  bin:
+    uuid: dist/esm/bin/uuid
+  checksum: 10c0/34aa51b9874ae398c2b799c88a127701408cd581ee89ec3baa53509dd8728cbb25826f2a038f9465f8b7be446f0fbf11558862965b18d21c993684297628d4d3
   languageName: node
   linkType: hard
 

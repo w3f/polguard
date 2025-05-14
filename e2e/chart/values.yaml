@@ -6,23 +6,25 @@ tests:
   config:
     timeoutSeconds: 120
     api:
-      url: http://mp-api:3000
+      url: http://api:3000
       incident:
         handlerType: "TransferEgress"
     chain:
-      url: http://mp-chain:3000
+      url: http://chain:3000
       targetBlock: 25700136
     matrix:
       homeserver: https://matrix.web3.foundation
-      roomId: "!BabNKVNdOktKGafXzd:web3.foundation"
-      userId: "@mpbot:web3.foundation"
-      # password is provided via MATRIX_PASSWORD environment variable
+      # MonitoringPlatformCI non-encrypted room
+      roomId: "!qheQMilERwmQosvZnI:web3.foundation"
+      userId: "@cibot:web3.foundation"
+      tokenAuth:
+        deviceId: YWSWHPBARX
+      # accessToken is provided via MATRIX_TOKEN environment variable
       messagePattern: "sent 11.8985 DOT"
 
 # Secrets configuration
 secrets:
-  GITLAB_TOKEN: ""
-  MATRIX_PASSWORD: ""
+  MATRIX_TOKEN: ""
 
 postgresql:
   auth:
@@ -40,10 +42,18 @@ postgresql:
         cpu: 500m
         memory: 256Mi
 
-mp-api:
-  image:
-    repository: web3f/monitoring-platform
-    tag: latest
+# API service configuration
+api:
+  imageTag: latest
+  containerArgs: ["start:api"]
+  initContainers:
+    - name: wait-for-postgresql
+      image: busybox:1.28
+      command: ['sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;']
+  service:
+    port: 3000
+  mountPaths:
+    config: /app/packages/api/config
   config:
     database:
       host: postgresql
@@ -53,7 +63,7 @@ mp-api:
       database: monitoring
     notificationApi:
       matrix:
-        url: http://mp-matrix:3000/notifications
+        url: http://matrix:3000/notifications
     monitoringConfigSources:
       - name: gitlab
         # E2E Test project
@@ -62,21 +72,35 @@ mp-api:
     environment: test
     logging:
       level: debug
+  secrets:
+    GITLAB_TOKEN: ""
 
-mp-chain:
-  image:
-    repository: web3f/monitoring-platform
-    tag: latest
+# Chain service configuration
+chain:
+  imageTag: latest
+  containerArgs: ["start:chain"]
+  initContainers:
+    - name: wait-for-api
+      image: busybox:1.28
+      command: ['sh', '-c', 'until nc -z api 3000; do echo waiting for api; sleep 2; done;']
+  service:
+    port: 3000
+  persistence:
+    enabled: true
+    size: 50Mi
+  mountPaths:
+    config: /app/packages/chain/config
+    data: /app/packages/chain/data
   config:
     chain: Polkadot
-    # Event is at block 25700136, we need this time to run test hook and connect to matrix
-    startBlock: 25700050
+    # Target Event is at block 25700136
+    startBlock: 25700135
     monitoringGroupIds:
       - test-group-finance-1
     rpc: 
       url: wss://rpc-polkadot.luckyfriday.io
     monitoringApi:
-      baseUrl: http://mp-api:3000
+      baseUrl: http://api:3000
       endpoints:
         createIncident: /incidents
         resolveIncident: /incidents/resolve
@@ -85,22 +109,36 @@ mp-chain:
     logging:
       level: debug
 
-mp-matrix:
-  image:
-    repository: web3f/monitoring-platform
-    tag: latest
+# Matrix service configuration
+matrix:
+  imageTag: latest
+  containerArgs: ["start:matrix"]
+  initContainers:
+    - name: wait-for-api
+      image: busybox:1.28
+      command: ['sh', '-c', 'until nc -z api 3000; do echo waiting for api; sleep 2; done;']
+  service:
+    port: 3000
+  persistence:
+    enabled: true
+    size: 50Mi
+  mountPaths:
+    config: /app/packages/matrix/config
+    data: /app/packages/matrix/matrix-storage
   config:
     matrix:
       url: "https://matrix.web3.foundation"
-      userId: "@mpbot:web3.foundation"
-      # password is provided via MATRIX_PASSWORD environment variable
+      userId: "@cibot:web3.foundation"
+      tokenAuth:
+        deviceId: YWSWHPBARX
+      # accessToken is provided via MATRIX_TOKEN environment variable
       rooms:
-        # TestMonitoringPlatform room
-        - id: "!BabNKVNdOktKGafXzd:web3.foundation"
+        # MonitoringPlatformCI non-encrypted room
+        - id: "!qheQMilERwmQosvZnI:web3.foundation"
       logging:
         level: warn
     monitoringApi:
-      baseUrl: "http://mp-api:3000"
+      baseUrl: "http://api:3000"
       endpoints:
         getIncidents: "/incidents"
         getIncident: "/incidents/:id"
@@ -108,4 +146,5 @@ mp-matrix:
     environment: test
     logging:
       level: debug
-
+  secrets:
+    MATRIX_TOKEN: ""

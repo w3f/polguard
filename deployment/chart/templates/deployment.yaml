@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  labels:
+    {{ include "common.labels.standard" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{ include "common.labels.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{ include "common.labels.matchLabels" . | nindent 8 }}
+      annotations:
+        checksum/config:  {{ toYaml .Values.config   | sha256sum }}
+        checksum/secrets: {{ toYaml .Values.secrets | sha256sum }}
+    spec:
+      # ── imagePullSecrets ─────────────────────────────────────────────────────
+      {{- with (include "common.images.renderPullSecrets" (dict "images" (list .Values.image) "context" .)) }}
+      imagePullSecrets:
+{{ . | indent 8 }}
+      {{- end }}
+
+      # ── optional initContainers ─────────────────────────────────────────────
+      {{- if .Values.initContainers }}
+      initContainers:
+{{ tpl (toYaml .Values.initContainers) . | indent 8 }}
+      {{- end }}
+
+      containers:
+        - name: {{ include "common.names.fullname" . }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+          args: {{ toYaml .Values.containerArgs | nindent 12 }}
+
+          # ── container ports ────────────────────────────────────────────────────
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+
+          # ── liveness & readiness probes ────────────────────────────────────────
+          # livenessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: {{ .Values.service.port }}
+          #   initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds | default 30 }}
+          #   periodSeconds:       {{ .Values.probes.liveness.periodSeconds | default 10 }}
+          # readinessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: {{ .Values.service.port }}
+          #   initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds | default 5 }}
+          #   periodSeconds:       {{ .Values.probes.readiness.periodSeconds | default 5 }}
+
+          envFrom:
+            {{- if .Values.secrets }}
+            - secretRef:
+                name: {{ include "common.names.fullname" . }}-secrets
+            {{- end }}
+
+          volumeMounts:
+            - name: config
+              mountPath: {{ .Values.mountPaths.config }}
+              readOnly: true
+            {{- if .Values.persistence.enabled }}
+            - name: data
+              mountPath: {{ .Values.mountPaths.data }}
+            {{- end }}
+
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "common.names.fullname" . }}
+        {{- if .Values.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "common.names.fullname" . }}
+        {{- end }}

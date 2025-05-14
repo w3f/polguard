@@ -1,6 +1,4 @@
 /config/config.yaml
-/matrix-storage
-/chart/charts
 Chart.lock
 
 # Compiled output

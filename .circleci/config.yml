@@ -70,7 +70,7 @@ jobs:
       - run:
           name: Helm lint charts
           command: |
-            find deployment/charts -maxdepth 1 -type d -not -path '*/\.*' -exec helm lint {} \;
+            find deployment/chart -maxdepth 1 -type d -not -path '*/\.*' -exec helm lint {} \;
 
   docker_build:
     executor: node
@@ -111,7 +111,7 @@ jobs:
 
       # kubectl, helm, kind — download once, then served from cache
       - restore_cache:
-          keys: [kube-tools-v2]
+          keys: [kube-tools-v3]
       - run:
           name: Install kube tools
           command: |
@@ -122,7 +122,7 @@ jobs:
               install -m 0755 kubectl ~/.local/bin
             }
             [ -x ~/.local/bin/helm ] || {
-              curl -sSL https://get.helm.sh/helm-v3.15.1-linux-amd64.tar.gz | tar -xz
+              curl -sSL https://get.helm.sh/helm-v3.17.3-linux-amd64.tar.gz | tar -xz
               install -m 0755 linux-amd64/helm ~/.local/bin/helm
             }
             [ -x ~/.local/bin/kind ] || {
@@ -132,8 +132,14 @@ jobs:
             # make PATH stick for all following steps
             echo "export PATH=$HOME/.local/bin:\$PATH" >> $BASH_ENV
       
+      - run:
+          name: Add Helm chart repos
+          command: |
+            helm repo add bitnami https://charts.bitnami.com/bitnami
+            helm repo update
+      
       - save_cache:
-          key: kube-tools-v2
+          key: kube-tools-v3
           paths: [~/.local/bin]
 
       - run:
@@ -141,10 +147,6 @@ jobs:
           command: |
             docker build -t web3f/monitoring-platform-e2e:${CIRCLE_SHA1} -f e2e/Dockerfile .
             docker push web3f/monitoring-platform-e2e:${CIRCLE_SHA1}
-
-      - run:
-          name: Lint e2e chart
-          command: helm lint e2e/chart
 
       - run:
           name: Create KinD cluster
@@ -160,8 +162,16 @@ jobs:
             kind load docker-image web3f/monitoring-platform-e2e:${CIRCLE_SHA1} --name=ci
       
       - run:
-          name: Build Helm chart dependencies
-          command: helm dependency build e2e/chart
+          name: Update and build Helm chart dependencies
+          command: |
+            helm dependency update deployment/chart
+            helm dependency update e2e/chart
+            helm dependency build deployment/chart
+            helm dependency build e2e/chart
+      
+      - run:
+          name: Lint e2e chart
+          command: helm lint e2e/chart
 
       - run:
           name: Install e2e chart
@@ -171,13 +181,15 @@ jobs:
               -n e2e --create-namespace \
               --set tests.image.repository=web3f/monitoring-platform-e2e \
               --set tests.image.tag=${CIRCLE_SHA1} \
-              --set mp-api.image.tag=${CIRCLE_SHA1} \
-              --set mp-chain.image.tag=${CIRCLE_SHA1} \
-              --set mp-matrix.image.tag=${CIRCLE_SHA1} \
-              --set mp-matrix.secrets.MATRIX_PASSWORD=$MATRIX_PASSWORD \
-              --set mp-api.secrets.GITLAB_TOKEN=$GITLAB_TOKEN \
-              --set secrets.MATRIX_PASSWORD=$MATRIX_PASSWORD \
-              --set secrets.GITLAB_TOKEN=$GITLAB_TOKEN \
+              --set api.image.tag=${CIRCLE_SHA1} \
+              --set api.fullnameOverride="api" \
+              --set chain.image.tag=${CIRCLE_SHA1} \
+              --set chain.fullnameOverride="chain" \
+              --set matrix.image.tag=${CIRCLE_SHA1} \
+              --set matrix.fullnameOverride="matrix" \
+              --set matrix.secrets.MATRIX_TOKEN=$MATRIX_TOKEN \
+              --set api.secrets.GITLAB_TOKEN=$GITLAB_TOKEN \
+              --set secrets.MATRIX_TOKEN=$MATRIX_TOKEN \
               --wait
 
       - run:

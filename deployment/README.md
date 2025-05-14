@@ -49,23 +49,11 @@ This is a temporary solution for testing deployments. In the future, CI/CD will 
 
 ## Production Flow
 
-Production deployments use Helm charts and ArgoCD:
+Production deployments use Helm chart and ArgoCD:
 
-1. The `charts` directory contains Helm charts for each service
+1. The `chart` directory contains a unified Helm chart for the monitoring platform
 2. Deployment to production is handled via ArgoCD
 3. The deployment process is managed through the ArgoCD interface or CLI
 
 The ArgoCD configuration is maintained in a separate repository:
 https://gitlab.w3f.tech/infrastructure/argocd-deployment
-
-## Directory Structure
-
-- `charts/`: Helm charts for each service
-  - `api/`: API service chart
-  - `chain/`: Chain service chart
-  - `matrix/`: Matrix service chart
-  - `telemetry/`: Telemetry service chart
-- `configs/`: Example configurations used by Docker Compose
-- `helmfile.d/`: Helmfile configurations
-  - `config/`: Values files for Helmfile
-- `scripts/`: Utility scripts

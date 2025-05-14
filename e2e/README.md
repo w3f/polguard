@@ -41,8 +41,8 @@ The e2e tests are configured using the `e2e/configs/e2e.yaml` file. This file co
 For CI and local testing, the following environment variables are required:
 
 ```bash
-export MATRIX_PASSWORD="your-matrix-password"  # Required for Matrix authentication
-export GITLAB_TOKEN="your-gitlab-token"        # Required for API service
+export MATRIX_TOKEN="your-matrix-token"  # Required for Matrix authentication
+export GITLAB_TOKEN="your-gitlab-token"  # Required for API service
 ```
 
 ## Running Tests Locally
@@ -61,12 +61,13 @@ This script will:
 3. Create a KinD cluster (or use an existing one)
 4. Load the Docker images into the KinD cluster
 5. Create necessary Kubernetes secrets
-6. Update Helm dependencies and deploy the e2e chart from `e2e/chart`
-7. Run the e2e tests
+6. Update Helm dependencies for both the deployment chart and e2e chart
+7. Deploy the e2e chart with all components (API, Chain, Matrix, PostgreSQL)
+8. Run the e2e tests
 
 ## CI/CD Integration
 
-The e2e tests are integrated into the CircleCI pipeline in the `integration_tests` job. The CI pipeline uses the same Helm chart from `e2e/chart` to deploy and run the tests.
+The e2e tests are integrated into the CircleCI pipeline in the `end_to_end_tests` job. The CI pipeline uses the same Helm chart from `e2e/chart` to deploy and run the tests.
 
 ## Troubleshooting
 

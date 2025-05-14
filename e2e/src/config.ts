@@ -19,7 +19,10 @@ export interface E2EConfig {
     homeserver: string;
     roomId: string;
     userId: string;
-    password: string;
+    tokenAuth: {
+      deviceId: string;
+      accessToken?: string;
+    };
     messagePattern: string;
   };
 }
@@ -30,16 +33,16 @@ export class ConfigService {
   constructor() {
     const configPath = this.getConfigPath();
     const rawConfig: any = this.loadConfig(configPath);
-    if (!rawConfig.matrix?.password && !process.env.MATRIX_PASSWORD) {
+    if (!rawConfig.matrix?.tokenAuth?.accessToken && !process.env.MATRIX_TOKEN) {
       throw new Error(
-        "Missing Matrix password: set MATRIX_PASSWORD env var or provide it in config."
+        "Missing Matrix access token: set MATRIX_TOKEN env var or provide it in config."
       );
     }
 
-    // Set password from env var if available, otherwise use config value
-    if (rawConfig.matrix) {
-      rawConfig.matrix.password =
-        process.env.MATRIX_PASSWORD ?? rawConfig.matrix.password;
+    // Set accessToken from env var if available, otherwise use config value
+    if (rawConfig.matrix?.tokenAuth) {
+      rawConfig.matrix.tokenAuth.accessToken =
+        process.env.MATRIX_TOKEN ?? rawConfig.matrix.tokenAuth.accessToken;
     }
     
     this.config = this.validateConfig(rawConfig);
@@ -73,7 +76,10 @@ export class ConfigService {
         homeserver: Joi.string().required(),
         roomId: Joi.string().required(),
         userId: Joi.string().required(),
-        password: Joi.string().required(),
+        tokenAuth: Joi.object({
+          deviceId: Joi.string().required(),
+          accessToken: Joi.string().required(),
+        }).required(),
         messageLimit: Joi.number().default(20),
         messagePattern: Joi.string().required(),
       }).required(),

@@ -12,17 +12,23 @@ The Monitoring Platform is designed to monitor Polkadot, Kusama, and related par
 
 ```mermaid
 graph TD
-    subgraph "Services"
-        API[API Service<br>Central control for incident and configuration management]
-        Chain[Chain Service<br>Blockchain monitoring]
-        Telemetry[Telemetry Service<br>Node telemetry monitoring]
-        Matrix[Matrix Service<br>Notification delivery]
-    end
+    API[API<br><br>Incident and Configuration management]:::service
+    Chain[Chain<br><br>Blockchain monitoring, one instance per chain]:::service
+    Matrix[Matrix<br><br>Notification delivery]:::service
+    Room((Matrix Room))
+    GitLab[/GitLab: config.yaml/]
+    Postgres[(PostgreSQL DB<br><br>Incident storage)]:::database
 
-    Chain -- "Create incidents<br>Get monitoring config" --> API
-    Telemetry -- "Create incidents<br>Get monitoring config" --> API
-    API -- "Send notifications" --> Matrix
-    Matrix -- "Acknowledge incidents" --> API
+    Chain -- "CREATE/RESOLVE Incident<br>GET Config 🔄" --> API
+    API -- "Notification" --> Matrix
+    Matrix -- "GET/ACK Incident" --> API
+    Matrix -- "Notification" --> Room
+    Room -- "Bot command" --> Matrix
+    API -- "GET Config 🔄" --> GitLab
+    API --> Postgres
+    
+    classDef service fill:#FFF2CC
+    classDef database fill:#D4E8D4
 ```
 
 ## Key Features

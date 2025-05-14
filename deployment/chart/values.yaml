@@ -1,0 +1,45 @@
+image:
+  repository: docker.io/web3f/monitoring-platform
+  tag: latest
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+service:
+  port: 3000
+
+containerArgs: ["start:chain"]
+
+# REQUIRED runtime configuration
+config: {}
+
+# Optional init containers
+initContainers: []
+
+# Optional secrets map
+secrets: {}
+
+persistence:
+  enabled: false
+  size: 100Mi
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+
+# Mount points for volumes
+mountPaths:
+  config: /app/packages/chain/config
+  data:   /app/packages/chain/data          # used only if persistence.enabled=true
+
+# Probe configuration
+probes:
+  liveness:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+serviceMonitor:
+  enabled: false
+  labels: {}
+  endpointPort: http

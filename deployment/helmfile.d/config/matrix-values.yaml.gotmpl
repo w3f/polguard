@@ -1,4 +1,4 @@
-args: ["start:matrix"]
+containerArgs: ["start:matrix"]
 
 {{ if eq .Environment.Name "ci" }}
 image:
@@ -18,17 +18,20 @@ image:
 {{ end }}
 config:
   matrix:
-    userId: "{{ env "MATRIX_USER" }}"
-    password: "{{ env "MATRIX_PASS" }}"
     url: "https://matrix.web3.foundation"
+    userId: "{{ env "MATRIX_USER" }}"
+    tokenAuth:
+      deviceId: "{{ env "MATRIX_DEVICE" }}"
+      authToken: "{{ env "MATRIX_TOKEN" }}"
     rooms:
       - id: "!BabNKVNdOktKGafXzd:web3.foundation"
     logging:
       level: warn
   monitoringApi:
     baseUrl: "http://api:3000"
-  server:
-    port: 3000
-    host: "0.0.0.0"
+    endpoints:
+      getIncidents: "/incidents"
+      getIncident: "/incidents/:id"
+      acknowledgeIncident: "/incidents/:id/acknowledge"
   logging:
-    level: info
+    level: debug

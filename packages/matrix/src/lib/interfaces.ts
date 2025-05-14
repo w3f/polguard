@@ -1,9 +1,22 @@
+export interface PasswordAuth {
+  password: string;
+}
+
+export interface TokenAuth {
+  accessToken: string;
+  deviceId: string;
+}
+
 export interface MatrixConfig {
   url: string;
   userId: string;
-  password: string;
   logging: { level: 'trace' | 'debug' | 'info' | 'warn' | 'error' };
   rooms: { id: string; acknowledgement: boolean }[];
+  enableEncryption?: boolean;
+  
+  // One of these must be provided
+  passwordAuth?: PasswordAuth;
+  tokenAuth?: TokenAuth;
 }
 
 export interface Incident {

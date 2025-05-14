@@ -1,0 +1,12 @@
+apiVersion: v2
+name: monitoring
+description: Monitoring Platform - single-replica Deployment
+type: application
+version: 0.3.0
+appVersion: 0.0.8
+
+dependencies:
+  - name: common
+    repository: https://charts.bitnami.com/bitnami
+    version: ">=2.0.0"
+    type: library

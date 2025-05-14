@@ -5,15 +5,22 @@ type: application
 version: 0.1.0
 appVersion: "1.0.0"
 dependencies:
-  - name: mp-api
-    repository: file://../../deployment/charts/api
-    version: "*"
-  - name: mp-chain
-    repository: file://../../deployment/charts/chain
-    version: "*"
-  - name: mp-matrix
-    repository: file://../../deployment/charts/matrix
-    version: "*"
+  - name: common
+    repository: https://charts.bitnami.com/bitnami
+    version: ">=2.0.0"
+    type: library
   - name: postgresql
     repository: https://charts.bitnami.com/bitnami
     version: "16.6.3"
+  - name: monitoring
+    repository: file://../../deployment/chart
+    version: "*"
+    alias: api
+  - name: monitoring
+    repository: file://../../deployment/chart
+    version: "*"
+    alias: chain
+  - name: monitoring
+    repository: file://../../deployment/chart
+    version: "*"
+    alias: matrix

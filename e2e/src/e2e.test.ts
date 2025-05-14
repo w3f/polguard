@@ -1,14 +1,10 @@
 import axios from 'axios';
 import { setTimeout as sleep } from 'timers/promises';
 import { ConfigService } from './config.js';
-import { createClient, RoomEvent, MatrixEvent, IContent, EventType, MatrixEventEvent, MatrixClient, Direction } from 'matrix-js-sdk';
-import { webcrypto } from 'node:crypto';
-
-(globalThis as any).crypto ??= webcrypto as unknown as Crypto;
 
 const config = new ConfigService().getConfig();
 console.log(`Configuration: ${JSON.stringify({
-  ...config, matrix: { ...config.matrix, password: config.matrix.password ? '***' : undefined }
+  ...config, matrix: { ...config.matrix, tokenAuth: { ...config.matrix.tokenAuth, accessToken: '***' } }
 }, null, 2)}`);
 
 const timeoutMs = (config.timeoutSeconds || 180) * 1000;
@@ -19,13 +15,6 @@ global.setTimeout(() => {
 
 async function runE2ETest() {
   try {
-    const matrixClient = await createMatrixClient({
-      homeserver: config.matrix.homeserver,
-      userId: config.matrix.userId,
-      password: config.matrix.password || '',
-      roomId: config.matrix.roomId
-    });
-    
     // Wait for chain block
     console.log(`Waiting for chain to process block ${config.chain.targetBlock}...`);
     await waitForChainBlock(config.chain.targetBlock);
@@ -39,9 +28,8 @@ async function runE2ETest() {
     // Wait for Matrix notification
     console.log(`Checking Matrix notifications for message pattern "${config.matrix.messagePattern}"...`);
     
-    await waitForMatrixNotification(matrixClient, config.matrix.roomId, config.matrix.messagePattern);
+    await waitForMatrixNotification(config.matrix.roomId, config.matrix.messagePattern);
     
-    matrixClient.stopClient();
     console.log('✅ Matrix notification found\n✅ All E2E tests passed successfully');
     process.exit(0);
   } catch (error) {
@@ -85,55 +73,60 @@ async function waitForIncident(handlerType: string): Promise<void> {
   }
 }
 
-async function waitForMatrixNotification(
-  client: MatrixClient,
-  roomId: string,
-  messagePattern: string,
-  historyDepth = 10,
-): Promise<void> {
-  const re = new RegExp(messagePattern);
-  while (true) {
-    const room = client.getRoom(roomId);
-    if (room) {
-      const recent: MatrixEvent[] =
-        room.getLiveTimeline().getEvents().slice(-historyDepth);
-      for (const ev of recent) {
-        if (ev.getRoomId() !== roomId || ev.getType() !== EventType.RoomMessage)
-          continue;
-
-        if (ev.isEncrypted()) {
-          await client.decryptEventIfNeeded(ev);
-        }
-        const body = ev.getContent<{ body?: string }>().body ?? "";
-        if (re.test(body)) return;
-      }
-    }
-    console.log('Waiting for Matrix notification…');
-    await sleep(5_000);
-  }
+interface MatrixMessage {
+  event_id: string;
+  sender: string;
+  content: {
+    body: string;
+    msgtype: string;
+  };
+  type: string;
+  origin_server_ts: number;
 }
 
-
-
-
-async function createMatrixClient(config: { homeserver: string; userId: string; password: string; roomId: string }): Promise<MatrixClient> {
-  const authClient = createClient({ baseUrl: config.homeserver });
-  const { access_token, user_id, device_id } = await authClient.loginRequest({
-    type: 'm.login.password',
-    identifier: { type: 'm.id.user', user: config.userId },
-    password: config.password,
-  });
-
-  const client = createClient({
-    baseUrl: config.homeserver,
-    accessToken: access_token,
-    userId: user_id,
-    deviceId: device_id,
-  });
-
-  await client.initRustCrypto({ useIndexedDB: false });
-  await client.joinRoom(config.roomId).catch(() => {});
-  await client.startClient();
-  
-  return client;
+async function waitForMatrixNotification(
+  roomId: string,
+  messagePattern: string,
+): Promise<void> {
+  const re = new RegExp(messagePattern);
+  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+  while (true) {
+    try {
+      const response = await axios.get(
+        `${config.matrix.homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/messages`, 
+        {
+          params: {
+            limit: 20,
+            dir: 'b', // backwards from the most recent event
+            from: '', // empty string to start from the most recent event
+          },
+          headers: {
+            Authorization: `Bearer ${config.matrix.tokenAuth.accessToken}`,
+          },
+        }
+      );
+      const messages: MatrixMessage[] = response.data.chunk || [];
+      
+      // Filter for recent messages (last 5 minutes)
+      const recentMessages = messages.filter(msg => 
+        msg.origin_server_ts > fiveMinutesAgo && 
+        msg.type === 'm.room.message' && 
+        msg.content.msgtype === 'm.text'
+      );
+      
+      // Check if any message matches the pattern
+      for (const msg of recentMessages) {
+        if (re.test(msg.content.body)) {
+          console.log(`Found matching message: ${msg.content.body}`);
+          return;
+        }
+      }
+      
+      console.log('Waiting for Matrix notification…');
+    } catch (error) {
+      console.warn('Error checking Matrix messages:', String(error));
+    }
+    
+    await sleep(5_000);
+  }
 }

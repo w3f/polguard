@@ -2,16 +2,29 @@ environment: development
 
 matrix:
   url: "https://matrix.web3.foundation"
-  userId: "@your-user-id:web3.foundation"
-  # password is provided via env variable MATRIX_PASSWORD
-  # Default logging level is warn for matrix sdk, console logs are not suppresed for debug level only
-  # logging:
-    # level: debug
   rooms:
     - id: "!roomId:web3.foundation"
+  
+  # Token Authentication
+  enableEncryption: false  # Required for token auth
+  tokenAuth:
+    userId: "@your-user-id:web3.foundation"
+    # accessToken can be provided via env variable MATRIX_TOKEN
+    # accessToken: "your-access-token"
+    deviceId: "your-device-id"
+  
+  # Password Authentication (it creates new sessions, avoid for dev/ci)
+  # passwordAuth:
+  #   userId: "@your-user-id:web3.foundation"
+  #   # password can be provided via env variable MATRIX_PASSWORD
+  #   # password: "your-password"
+  
+  # Default logging level is warn for matrix sdk, console logs are not suppresed for debug level only
+  logging:
+    level: debug
 
 monitoringApi:
-  baseUrl: "http://localhost:8082"
+  baseUrl: "http://localhost:3000"
   endpoints:
     getIncidents: /incidents
     getIncident: /incidents/:id

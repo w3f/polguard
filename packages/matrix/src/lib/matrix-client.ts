@@ -8,6 +8,7 @@ import {
   RoomEvent,
   MsgType,
   CryptoEvent,
+  ICreateClientOpts,
 } from 'matrix-js-sdk';
 import { VerificationRequestEvent, VerifierEvent } from 'matrix-js-sdk/lib/crypto-api/verification';
 import { KnownMembership } from 'matrix-js-sdk/lib/@types/membership.js';
@@ -30,7 +31,10 @@ export class MatrixClient {
   }
 
   async init() {
-    global.Olm = olm;
+    if (this.config.enableEncryption) {
+      global.Olm = olm;
+    }
+    
     this.client = await this.createClient();
     await this.setupClientAndSync();
     this.setupEventHandlers();
@@ -38,28 +42,42 @@ export class MatrixClient {
   }
 
   private async setupClientAndSync(): Promise<void> {
-    await this.client.initCrypto();
-    this.client.setGlobalErrorOnUnknownDevices(false);
+    if (this.config.enableEncryption) {
+      await this.client.initCrypto();
+      this.client.setGlobalErrorOnUnknownDevices(false);
+    }
+    
     await this.client.startClient({ initialSyncLimit: 10 });
     await this.waitForSync();
   }
 
   private setupEventHandlers(): void {
     this.setupMessageHandler();
-    this.setupVerificationHandler();
+    if (this.config.enableEncryption) {
+      this.setupVerificationHandler();
+    }
+    
     this.setupAutoJoinHandler();
   }
 
   private async createClient(): Promise<SDKMatrixClient> {
-    const { accessToken, deviceId } = this.getCredentials();
-
+    if (this.config.tokenAuth) {
+      return this.createClientWithToken(
+        this.config.userId,
+        this.config.tokenAuth.deviceId,
+        this.config.tokenAuth.accessToken,
+      );
+    }
+    
+    const userId = this.config.userId;
+    const { accessToken, deviceId } = this.getCredentials(userId);
     if (accessToken && deviceId) {
-      return this.createClientWithToken(accessToken, deviceId);
+      return this.createClientWithToken(userId, deviceId, accessToken);
     }
 
     const { newAccessToken, newDeviceId } = await this.performLogin();
-    await this.storeCredentials(newAccessToken, newDeviceId);
-    return this.createClientWithToken(newAccessToken, newDeviceId);
+    await this.storeCredentials(userId, newDeviceId, newAccessToken);
+    return this.createClientWithToken(userId, newDeviceId, newAccessToken);
   }
 
   private async performLogin(): Promise<{ newAccessToken: string; newDeviceId: string }> {
@@ -67,7 +85,7 @@ export class MatrixClient {
     try {
       const response = await loginClient.login('m.login.password', {
         user: this.config.userId,
-        password: this.config.password,
+        password: this.config.passwordAuth.password,
       });
       return {
         newAccessToken: response.access_token,
@@ -78,30 +96,35 @@ export class MatrixClient {
     }
   }
 
-  private getCredentials(): { accessToken: string | null; deviceId: string | null } {
+  private getCredentials(userId: string): { accessToken: string | null; deviceId: string | null } {
     return {
-      accessToken: this.localStorage.getItem(`token-${this.config.userId}`),
-      deviceId: this.localStorage.getItem(`device-${this.config.userId}`),
+      accessToken: this.localStorage.getItem(`token-${userId}`),
+      deviceId: this.localStorage.getItem(`device-${userId}`),
     };
   }
 
-  private async storeCredentials(accessToken: string, deviceId: string): Promise<void> {
-    this.localStorage.setItem(`token-${this.config.userId}`, accessToken);
-    this.localStorage.setItem(`device-${this.config.userId}`, deviceId);
+  private async storeCredentials(userId: string, deviceId: string, accessToken: string): Promise<void> {
+    this.localStorage.setItem(`token-${userId}`, accessToken);
+    this.localStorage.setItem(`device-${userId}`, deviceId);
   }
 
-  private createClientWithToken(accessToken: string, deviceId: string): SDKMatrixClient {
-    const cryptoStore = new LocalStorageCryptoStore(this.localStorage);
+  private createClientWithToken(userId: string, deviceId: string, accessToken: string): SDKMatrixClient {
     matrixLogger.setDefaultLevel(this.config.logging.level);
 
-    return createClient({
+    const options: ICreateClientOpts = {
       baseUrl: this.config.url,
       accessToken,
-      userId: this.config.userId,
+      userId,
       deviceId,
-      cryptoStore,
       logger: matrixLogger,
-    });
+    };
+
+    if (this.config.enableEncryption) {
+      const cryptoStore = new LocalStorageCryptoStore(this.localStorage);
+      options.cryptoStore = cryptoStore;
+    }
+
+    return createClient(options);
   }
 
   private async waitForSync(): Promise<void> {
@@ -192,15 +215,15 @@ export class MatrixClient {
   }
 
   private setupAutoJoinHandler() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.client.on(RoomEvent.MyMembership, function (room, membership, prevMembership) {
-      if (membership === KnownMembership.Invite) {
-        this.client.joinRoom(room.roomId).then(function () {
-          console.log('Auto-joined %s', room.roomId);
-        });
-      }
-    });
-  }
+  this.client.on(RoomEvent.MyMembership, (room, membership /*, prevMembership*/) => {
+    if (membership === KnownMembership.Invite) {
+      this.client
+        .joinRoom(room.roomId)
+        .then(() => this.logger.log(`Auto-joined ${room.roomId}`))
+        .catch(err => this.logger.error(`Auto-join failed for ${room.roomId}:`, err));
+    }
+  });
+}
 
   public async sendMessage(roomId: string, message: string) {
     const content: any = {

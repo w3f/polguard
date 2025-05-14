@@ -22,7 +22,7 @@
     "start:matrix:dev": "yarn workspace @w3f/monitoring-matrix start:dev",
     "start:matrix": "yarn workspace @w3f/monitoring-matrix start",
     "start:api:dev": "yarn workspace @w3f/monitoring-api start:dev",
-    "start:api": "yarn workspace @w3f/monitoring-api start",
+    "start:api": "yarn workspace @w3f/monitoring-api start:with-migrations",
     "clean": "yarn workspaces foreach -W run clean",
     "clean:all": "rm -rf node_modules && yarn workspaces foreach -W run clean"
   },
