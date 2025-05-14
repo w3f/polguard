@@ -11,24 +11,48 @@ The Monitoring Platform is designed to monitor Polkadot, Kusama, and related par
 ## Architecture
 
 ```mermaid
-graph TD
-    API[API<br><br>Incident and Configuration management]:::service
-    Chain[Chain<br><br>Blockchain monitoring, one instance per chain]:::service
-    Matrix[Matrix<br><br>Notification delivery]:::service
-    Room((Matrix Room))
-    GitLab[/GitLab: config.yaml/]
-    Postgres[(PostgreSQL DB<br><br>Incident storage)]:::database
+graph LR
+    %% Core Services
+    subgraph Services
+        subgraph "Chain services"
+            Chain1[Chain service 1<br>Polkadot]:::service
+            Chain2[Chain service N<br>AssetHub]:::service
 
-    Chain -- "CREATE/RESOLVE Incident<br>GET Config 🔄" --> API
-    API -- "Notification" --> Matrix
-    Matrix -- "GET/ACK Incident" --> API
-    Matrix -- "Notification" --> Room
-    Room -- "Bot command" --> Matrix
-    API -- "GET Config 🔄" --> GitLab
+        end
+        API[API service<br>Incident & config management]:::service
+        Matrix[Matrix service<br>Bot & notifications]:::service
+    end
+    
+    %% External Components
+    Postgres[(PostgreSQL<br><br>)]:::database
+    
+    subgraph "Distributed configuration"
+        GitLab1[GitLab repo 1<br>config.yaml]:::config
+        GitLab2[GitLab repo N<br>config.yaml]:::config
+    end
+    
+    Room((Matrix Room)):::external
+    
+    %% Connections with simplified labels
+    Chain1 & Chain2 -->|Creates/resolves<br>incidents| API
+    Chain1 & Chain2 -.->|Gets config| API
+    API -->|Sends notifications| Matrix
+    Matrix -->|Gets/acks incidents| API
+    Matrix <-->|Two-way communication| Room
+    API -.->|Fetches configs| GitLab1 & GitLab2
     API --> Postgres
     
-    classDef service fill:#FFF2CC
-    classDef database fill:#D4E8D4
+    %% Styling
+    classDef service fill:#FFF2CC,stroke:#D6B656,stroke-width:1px
+    classDef database fill:#D4E8D4,stroke:#82B366,stroke-width:1px
+    classDef config fill:#DAE8FC,stroke:#6C8EBF,stroke-width:1px
+    classDef external fill:#F5F5F5,stroke:#666666,stroke-width:1px
+    
+    %% Clickable links to README files
+    click Chain1 "packages/chain/README.md" "Chain Service Documentation"
+    click Chain2 "packages/chain/README.md" "Chain Service Documentation"
+    click API "packages/api/README.md" "API Service Documentation"
+    click Matrix "packages/matrix/README.md" "Matrix Service Documentation"
 ```
 
 ## Key Features
