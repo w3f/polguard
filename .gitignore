@@ -1,9 +1,7 @@
 # Compiled output
-/dist
-/node_modules
-/build
-/e2e/node_modules
-/e2e/dist
+**/dist
+**/build
+**/node_modules
 
 # Helm
 **/charts/

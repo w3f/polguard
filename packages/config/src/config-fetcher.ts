@@ -62,7 +62,7 @@ export class ConfigFetcher {
       if (source.authToken) {
         headers['PRIVATE-TOKEN'] = source.authToken;
       }
-      
+
       try {
         const response = await axios.get(source.url, { headers });
         const fileName = `${source.name}.yaml`;
@@ -71,10 +71,12 @@ export class ConfigFetcher {
       } catch (error) {
         // Handle Axios errors
         if (error.response) {
-          const maskedToken = source.authToken 
-            ? source.authToken.substring(0, 1) + '*'.repeat(source.authToken.length - 1) 
+          const maskedToken = source.authToken
+            ? source.authToken.substring(0, 1) + '*'.repeat(source.authToken.length - 1)
             : 'none';
-          throw new Error(`Received non-normal status code ${error.response.status} from ${source.url} (authToken: ${maskedToken})`);
+          throw new Error(
+            `Received non-normal status code ${error.response.status} from ${source.url} (authToken: ${maskedToken})`,
+          );
         }
         // Re-throw other errors
         throw error;

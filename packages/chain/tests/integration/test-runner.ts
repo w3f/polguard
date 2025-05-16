@@ -131,7 +131,7 @@ export class TestRunner {
       const storage = new InMemoryKeyValueStorage();
       const incidentHandler = new TestIncidentHandler(testId);
       
-      const chainProvider = createChainDataProvider(api, storage, logger);
+      const chainProvider = createChainDataProvider(api, storage, logger, testCase.chain);
       const group = this.createMonitoringGroup(
         testCase.chain, 
         testCase.monitor, 
@@ -152,10 +152,14 @@ export class TestRunner {
       await watcher.initializeMonitors();
       await watcher.processBlock(testCase.block);
       
+      const assetsMonitor = watcher.monitors[0] as any;
+      const token = assetsMonitor.reg.getUniqueTokens()[0];
+
       const success = incidentHandler.wasIncidentCreated(
         testCase.account.address,
         group.id,
-        testCase.handlerType
+        testCase.handlerType,
+        token
       );
       
       return {

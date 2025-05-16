@@ -14,7 +14,7 @@ import {
   StateHandlerParams,
 } from '@w3f/monitoring-types';
 import { Formatter } from '../formatter';
-import { AccountRegistry } from '../account-registry';
+import { ConfigRegistry } from '../config-registry';
 
 /**
  * Base class for all chain monitors in the monitoring platform.
@@ -35,7 +35,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
   };
 
   protected fmt: Formatter;
-  protected reg: AccountRegistry<T>;
+  protected reg: ConfigRegistry<T>;
 
   constructor(
     protected logger: Logger,
@@ -46,7 +46,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     protected monitorType: T,
   ) {
     this.fmt = new Formatter(this.chainProps);
-    this.reg = new AccountRegistry<T>(groups, monitorType);
+    this.reg = new ConfigRegistry<T>(groups, monitorType);
     this.initializeHandlers();
   }
 

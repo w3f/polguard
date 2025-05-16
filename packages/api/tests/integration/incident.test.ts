@@ -26,6 +26,7 @@ describe('Incident API (integration)', () => {
       { channelId: 'test-channel', messengerType: MessengerType.Matrix, repeatHours: 1.0 }
     ],
     needsAck: true,
+    idempotencyKey: `test-key-${Date.now()}`, // Default unique key
     ...overrides
   });
   
@@ -142,21 +143,22 @@ describe('Incident API (integration)', () => {
   });
 
   it('handles idempotent incident creation', async () => {
+    const idempotencyKey = 'test-idempotency-key-fixed';
+    
     // Create first incident
     const firstResponse = await request(app.getHttpServer())
       .post('/incidents')
       .send(createTestIncident({
         message: 'Duplicate test',
-        handlerType: 'test-handler-idempotent'
+        idempotencyKey
       }))
       .expect(201);
     
-    // Create duplicate incident with different message
     const duplicateResponse = await request(app.getHttpServer())
       .post('/incidents')
       .send(createTestIncident({
         message: 'Duplicate test - different message',
-        handlerType: 'test-handler-idempotent'
+        idempotencyKey
       }))
       .expect(201);
     

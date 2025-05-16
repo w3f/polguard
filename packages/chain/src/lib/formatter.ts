@@ -1,6 +1,6 @@
 import { Phase } from '@polkadot/types/interfaces';
 import { formatBalance } from '@polkadot/util';
-import { AccountId, ChainProperties } from '@w3f/monitoring-types';
+import { AccountId, CHAIN_TOKENS, ChainProperties } from '@w3f/monitoring-types';
 
 export class Formatter {
   constructor(private chainProps: ChainProperties) {}
@@ -33,6 +33,15 @@ export class Formatter {
     return formatBalance(amount, {
       decimals: this.chainProps.chainDecimals,
       withUnit: this.chainProps.chainToken,
+      withSi: true,
+      forceUnit: '-',
+    });
+  }
+
+  assetBalance(amount: number | string | bigint, tokenName: string): string {
+    return formatBalance(amount, {
+      decimals: CHAIN_TOKENS[this.chainProps.chain][tokenName].decimals,
+      withUnit: tokenName,
       withSi: true,
       forceUnit: '-',
     });

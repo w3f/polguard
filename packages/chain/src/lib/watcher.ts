@@ -15,7 +15,14 @@ import {
   Monitor,
   ChainApiClient,
 } from '@w3f/monitoring-types';
-import { IdentityMonitor, BalancesMonitor, GovernanceMonitor, StakingMonitor, XcmMonitor } from './monitors';
+import {
+  IdentityMonitor,
+  BalancesMonitor,
+  GovernanceMonitor,
+  StakingMonitor,
+  XcmMonitor,
+  AssetsMonitor,
+} from './monitors';
 
 /**
  * ChainWatcher is responsible for monitoring blockchain activities and coordinating monitors.
@@ -44,7 +51,7 @@ import { IdentityMonitor, BalancesMonitor, GovernanceMonitor, StakingMonitor, Xc
  *    - Persists processing progress
  */
 export class ChainWatcher {
-  private monitors: Monitor[] = [];
+  monitors: Monitor[] = [];
   private isRunning = false;
   private readonly configRefreshIntervalMs = 15 * 60 * 1000; // 15 minutes
   private latestBlockNumber = 0;
@@ -55,6 +62,7 @@ export class ChainWatcher {
     [MonitorType.Balances, BalancesMonitor],
     [MonitorType.Identity, IdentityMonitor],
     [MonitorType.Xcm, XcmMonitor],
+    [MonitorType.Assets, AssetsMonitor],
   ];
 
   constructor(

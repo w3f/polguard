@@ -89,4 +89,12 @@ export class CreateIncidentDto {
   @IsOptional()
   @IsBoolean()
   isResolved?: boolean = false;
+
+  @ApiProperty({
+    description: 'Idempotency key to prevent duplicate incidents',
+    required: true,
+  })
+  @IsString()
+  @IsNotEmpty()
+  idempotencyKey: string;
 }

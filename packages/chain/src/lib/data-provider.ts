@@ -3,10 +3,14 @@ import { Data, Struct } from '@polkadot/types';
 import type { Option, Vec } from '@polkadot/types-codec';
 import type { Codec } from '@polkadot/types-codec/types';
 import type { H160 } from '@polkadot/types/interfaces';
+import type { PalletAssetsAssetAccount } from '@polkadot/types/lookup';
+import { CHAIN_TOKENS, Chain, TokenBalances } from '@w3f/monitoring-types';
 import { AccountInfo } from '@polkadot/types/interfaces/system';
 
 import { ChainDataProvider, KeyValueStorageClient, IdentityInfo, Logger } from '@w3f/monitoring-types';
 import { createCachedQueryDecorator } from './decorators';
+
+// TODO: Optimise getBlockHash(blockNumber)
 
 /**
  * Creates a chain data provider that implements chain queries with caching layer.
@@ -17,13 +21,14 @@ import { createCachedQueryDecorator } from './decorators';
  * @param logger - Logger instance
  * @returns DataProvider
  */
-export function createChainDataProvider(api: ApiPromise, client: KeyValueStorageClient, logger: Logger) {
+export function createChainDataProvider(api: ApiPromise, client: KeyValueStorageClient, logger: Logger, chain: Chain) {
   const Cached = createCachedQueryDecorator(client);
 
   class DataProvider implements ChainDataProvider {
     constructor(
       public api: ApiPromise,
       public logger: Logger,
+      public chain: Chain,
     ) {}
 
     /**
@@ -211,9 +216,56 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       }
       return undefined;
     }
+
+    @Cached()
+    async assetsAccountBalance(addresses: string[], tokenNames: string[], blockNumber: number): Promise<TokenBalances> {
+      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const result: TokenBalances = {};
+
+      for (const tokenName of tokenNames) {
+        result[tokenName] = {};
+        const assetId = CHAIN_TOKENS[this.chain][tokenName].id;
+        const keys = addresses.map(address => [assetId, address]);
+        const assetAccounts = await apiAt.query.assets.account.multi(keys);
+
+        addresses.forEach((address, index) => {
+          const assetAccount = assetAccounts[index] as Option<PalletAssetsAssetAccount>;
+          if (assetAccount.isNone) {
+            result[tokenName][address] = BigInt(0);
+          } else {
+            result[tokenName][address] = assetAccount.unwrap().balance.toBigInt();
+          }
+        });
+      }
+      return result;
+    }
+
+    @Cached()
+    async ormlTokensAccountBalance(
+      addresses: string[],
+      tokenNames: string[],
+      blockNumber: number,
+    ): Promise<TokenBalances> {
+      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const result: TokenBalances = {};
+
+      for (const tokenName of tokenNames) {
+        result[tokenName] = {};
+        const currencyId = CHAIN_TOKENS[this.chain][tokenName].id;
+        const keys = addresses.map(address => [address, JSON.parse(currencyId)]);
+        const tokenAccounts = await apiAt.query.ormlTokens.accounts.multi(keys);
+
+        addresses.forEach((address, idx) => {
+          const acct = tokenAccounts[idx] as Struct & { free: Data };
+          result[tokenName][address] = BigInt(acct.free.toString());
+        });
+      }
+
+      return result;
+    }
   }
 
-  return new DataProvider(api, logger);
+  return new DataProvider(api, logger, chain);
 }
 
 /**

@@ -14,4 +14,6 @@ export interface ChainDataProvider {
   systemAccountBalance(addresses: string[], blockNumber: number): Promise<Record<string, bigint>>;
   identityOf(addresses: string[], blockNumber: number): Promise<Record<string, IdentityInfo | null>>;
   identitySuperOf(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
+  assetsAccountBalance(addresses: string[], tokenNames: string[], blockNumber: number): Promise<Record<string, Record<string, bigint>>>;
+  ormlTokensAccountBalance(addresses: string[], tokenNames: string[], blockNumber: number): Promise<Record<string, Record<string, bigint>>>;
 }

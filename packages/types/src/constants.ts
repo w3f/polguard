@@ -1,4 +1,10 @@
-import { ChainProperties } from '.';
+export interface ChainProperties {
+  chain: Chain,
+  specName: string;
+  chainDecimals: number;
+  chainToken: string;
+  ss58Format: number;
+}
 
 export enum Chain {
   Polkadot = 'Polkadot',
@@ -7,7 +13,6 @@ export enum Chain {
   AssetHubKusama = 'AssetHubKusama',
   PeoplePolkadot = 'PeoplePolkadot',
   PeopleKusama = 'PeopleKusama',
-  // Centrifuge is currently not supported
   Centrifuge = 'Centrifuge',
 }
 
@@ -18,6 +23,7 @@ export enum MonitorType {
   Governance = 'Governance',
   Telemetry = 'Telemetry',
   Xcm = 'Xcm',
+  Assets = 'Assets',
 }
 
 export enum MessageType {
@@ -78,6 +84,13 @@ export enum GovernanceHandlerType {
 
 export enum XcmHandlerType {
   XcmTransferEgress = 'XcmTransferEgress',
+}
+
+export enum AssetsHandlerType {
+  AssetBalanceDecrease = 'AssetBalanceDecrease',
+  AssetBalanceThreshold = 'AssetBalanceThreshold',
+  AssetTransferIngress = 'AssetTransferIngress',
+  AssetTransferEgress = 'AssetTransferEgress',
 }
 
 export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
@@ -230,3 +243,29 @@ export const parachainNames = {
     "3344": "Xode"
   }
 };
+
+export const CHAIN_TOKENS: Record<Chain, Record<string, { id: string; decimals: number }>> = {
+  [Chain.AssetHubPolkadot]: {
+    USDC: { id: '1337', decimals: 6 },
+    USDT: { id: '1984', decimals: 6 },
+  },
+  [Chain.AssetHubKusama]: {
+    USDT: { id: '1984', decimals: 6 },
+  },
+  [Chain.Polkadot]: {},
+  [Chain.Kusama]: {},
+  [Chain.PeoplePolkadot]: {},
+  [Chain.PeopleKusama]: {},
+  [Chain.Centrifuge]: {
+    localUSDC: { id: '{"localAsset":1}', decimals: 6 },
+  },
+};
+
+export const ID_TOKEN_MAP: Record<Chain, Record<string, string>> = Object.fromEntries(
+  Object.entries(CHAIN_TOKENS).map(([chain, tokenMetas]) => [
+    chain,
+    Object.fromEntries(
+      Object.entries(tokenMetas).map(([symbol, { id }]) => [id, symbol])
+    ),
+  ])
+) as Record<Chain, Record<string, string>>;

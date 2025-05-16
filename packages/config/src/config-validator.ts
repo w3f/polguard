@@ -22,8 +22,10 @@ import {
   TelemetryHandlerType,
   GovernanceHandlerType,
   XcmHandlerType,
+  AssetsHandlerType,
   IDENTITY_FIELDS,
   PolkadotClientImpl,
+  CHAIN_TOKENS,
 } from '@w3f/monitoring-types';
 
 const decimalStringPattern = /^-?\d*\.?\d*$/;
@@ -115,6 +117,12 @@ const xcmMonitorSchema = Joi.object({
   handlers: createHandlerSchema(XcmHandlerType, 'Xcm'),
 });
 
+const assetsMonitorSchema = Joi.object({
+  tokens: Joi.array().items(Joi.string()),
+  tokenThresholds: Joi.array().items(Joi.array().ordered(Joi.string(), decimalStringSchema).length(2)),
+  handlers: createHandlerSchema(AssetsHandlerType, 'Assets'),
+});
+
 /**
  * Map of monitor types to their schemas
  */
@@ -125,6 +133,7 @@ export const monitorSchemas = {
   [MonitorType.Telemetry]: telemetryMonitorSchema,
   [MonitorType.Governance]: governanceMonitorSchema,
   [MonitorType.Xcm]: xcmMonitorSchema,
+  [MonitorType.Assets]: assetsMonitorSchema,
 };
 
 /**
@@ -179,6 +188,7 @@ const monitorSchema = Joi.object({
     { is: MonitorType.Telemetry, then: telemetryMonitorSchema },
     { is: MonitorType.Governance, then: governanceMonitorSchema },
     { is: MonitorType.Xcm, then: xcmMonitorSchema },
+    { is: MonitorType.Assets, then: assetsMonitorSchema },
   ],
 });
 
@@ -195,7 +205,8 @@ const accountSchema = Joi.object({
   .concat(balancesMonitorSchema)
   .concat(telemetryMonitorSchema)
   .concat(governanceMonitorSchema)
-  .concat(xcmMonitorSchema);
+  .concat(xcmMonitorSchema)
+  .concat(assetsMonitorSchema);
 
 const defaultsSchema = Joi.object({
   chains: Joi.array()
@@ -273,5 +284,34 @@ function validateMonitors(group: any, defaults: any): void {
     if (!monitor.handlers || monitor.handlers.length === 0) {
       throw new Error(`Monitor ${monitor.name} in group "${group.id}" must have at least one handler defined`);
     }
+
+    if (monitor.name === MonitorType.Assets) {
+      const chains: Chain[] = group.chains || defaults.chains;
+      validateAssetsMonitor(monitor, chains, group.id);
+    }
+  });
+}
+
+function validateAssetsMonitor(monitor: any, chains: Chain[], groupId: string) {
+  const { tokens = [], tokenThresholds = [] } = monitor;
+
+  chains.forEach(chain => {
+    const supported = Object.keys(CHAIN_TOKENS[chain] || {});
+    // 1. any tokens list
+    tokens.forEach((t: string) => {
+      if (!supported.includes(t)) {
+        throw new Error(
+          `Assets monitor in group "${groupId}" references token "${t}" which is not supported on chain "${chain}".`,
+        );
+      }
+    });
+    // 2. tokenThresholds first‐elements
+    tokenThresholds.forEach(([t]: [string, any]) => {
+      if (!supported.includes(t)) {
+        throw new Error(
+          `Assets monitor in group "${groupId}" has a threshold entry for token "${t}", which is not supported on chain "${chain}".`,
+        );
+      }
+    });
   });
 }

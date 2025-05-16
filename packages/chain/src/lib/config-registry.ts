@@ -6,6 +6,7 @@ import {
   MonitoringGroup,
   MonitorSettings,
   MonitorType,
+  AssetsSettings,
 } from '@w3f/monitoring-types';
 
 type AccountConfig<T extends MonitorType> = {
@@ -14,9 +15,10 @@ type AccountConfig<T extends MonitorType> = {
   groupId: string;
 };
 
-export class AccountRegistry<T extends MonitorType> {
+export class ConfigRegistry<T extends MonitorType> {
   private accounts: Map<string, AccountConfig<T>[]> = new Map();
   private uniqueAddresses: string[];
+  private uniqueTokens: Set<string> = new Set();
 
   constructor(
     private groups: MonitoringGroup[],
@@ -24,6 +26,11 @@ export class AccountRegistry<T extends MonitorType> {
   ) {
     this.buildAccountLookup();
     this.uniqueAddresses = Array.from(this.accounts.keys());
+
+    // TODO: Should be redisigned. It's related to the problem of using data provider optimally (less RPC queries)
+    if (this.monitorType === MonitorType.Assets) {
+      this.collectAllTokens();
+    }
   }
 
   /**
@@ -72,6 +79,24 @@ export class AccountRegistry<T extends MonitorType> {
     }
   }
 
+  private collectAllTokens(): void {
+    for (const accountConfigs of this.accounts.values()) {
+      for (const { account } of accountConfigs) {
+        const settings = account.settings as AssetsSettings;
+        if (settings.tokens) {
+          for (const token of settings.tokens) {
+            this.uniqueTokens.add(token);
+          }
+        }
+        if (settings.tokenThresholds) {
+          for (const [token, _threshold] of settings.tokenThresholds) {
+            this.uniqueTokens.add(token);
+          }
+        }
+      }
+    }
+  }
+
   /**
    * Gets account configurations filtered by handler eligibility.
    *
@@ -87,6 +112,7 @@ export class AccountRegistry<T extends MonitorType> {
    */
   getAccounts(handlerType: MonitorHandlerType[T], address: string): AccountConfig<T>[] {
     const accounts = this.accounts.get(address) || [];
+
     return accounts.filter(account => {
       const handlers = account.account.settings.handlers as MonitorHandlerType[T][];
       return handlers.includes(handlerType);
@@ -122,5 +148,9 @@ export class AccountRegistry<T extends MonitorType> {
    */
   getUniqueAddresses(): string[] {
     return this.uniqueAddresses;
+  }
+
+  getUniqueTokens(): string[] {
+    return Array.from(this.uniqueTokens);
   }
 }

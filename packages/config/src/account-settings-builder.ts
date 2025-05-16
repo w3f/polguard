@@ -146,6 +146,14 @@ export class AccountSettingsBuilder {
       };
     }
 
+    if (transformed[MonitorType.Assets] && transformed[MonitorType.Assets].tokenThresholds) {
+      const tokenThresholds = transformed[MonitorType.Assets].tokenThresholds;
+      transformed[MonitorType.Assets].tokenThresholds = tokenThresholds.map(([token, threshold]: [string, string]) => [
+        token,
+        this.atomizeBalance(threshold, decimals),
+      ]);
+    }
+
     return transformed;
   }
 

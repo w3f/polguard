@@ -12,7 +12,7 @@ export class ConfigService {
   constructor(private readonly logger: Logger) {
     const configPath = this.getConfigPath();
     const rawConfig: any = this.loadConfig(configPath);
-    
+
     // Handle env vars
     if (rawConfig?.matrix?.passwordAuth && !rawConfig.matrix.passwordAuth.password) {
       rawConfig.matrix.passwordAuth.password = process.env.MATRIX_PASSWORD;
@@ -20,16 +20,16 @@ export class ConfigService {
     if (rawConfig?.matrix?.tokenAuth && !rawConfig.matrix.tokenAuth.accessToken && process.env.MATRIX_TOKEN) {
       rawConfig.matrix.tokenAuth.accessToken = process.env.MATRIX_TOKEN;
     }
-    
+
     // Set default enableEncryption depending on the auth
     if (rawConfig?.matrix?.tokenAuth) {
       rawConfig.matrix.enableEncryption = false;
     } else if (rawConfig?.matrix?.passwordAuth) {
       rawConfig.matrix.enableEncryption = true;
     }
-    
+
     this.config = this.validateConfig(rawConfig);
-    
+
     // Log masked config
     const maskedConfig = JSON.parse(JSON.stringify(this.config));
     if (maskedConfig.matrix.passwordAuth) {
@@ -83,19 +83,19 @@ export class ConfigService {
           deviceId: Joi.string().required(),
         }).optional(),
       })
-      .required()
-      .xor('passwordAuth', 'tokenAuth')
-      .messages({
-        'object.xor': 'Either passwordAuth or tokenAuth must be provided, but not both.',
-      })
-      .custom((value, helpers) => {
-        if (value.tokenAuth && value.enableEncryption !== false) {
-          return helpers.error('any.invalid', { 
-            message: 'When using tokenAuth, enableEncryption must be set to false' 
-          });
-        }
-        return value;
-      }),
+        .required()
+        .xor('passwordAuth', 'tokenAuth')
+        .messages({
+          'object.xor': 'Either passwordAuth or tokenAuth must be provided, but not both.',
+        })
+        .custom((value, helpers) => {
+          if (value.tokenAuth && value.enableEncryption !== false) {
+            return helpers.error('any.invalid', {
+              message: 'When using tokenAuth, enableEncryption must be set to false',
+            });
+          }
+          return value;
+        }),
       monitoringApi: Joi.object({
         baseUrl: Joi.string().uri().required(),
         endpoints: Joi.object({

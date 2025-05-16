@@ -74,15 +74,12 @@ export class IncidentService {
   }
 
   async createIncident(dto: CreateIncidentDto): Promise<Incident> {
-    // Check for existing unresolved incidents with the same identifier
+    // Check for existing unresolved incidents with the same idempotency key
     // to ensure idempotency. Skip for one-time incidents that are immediately resolved.
     if (!dto.isResolved) {
       const existingIncident = await this.incidentRepository.findOne({
         where: {
-          chain: dto.chain,
-          groupId: dto.groupId,
-          handlerType: dto.handlerType,
-          account: dto.account,
+          idempotencyKey: dto.idempotencyKey,
           isResolved: false,
         },
       });

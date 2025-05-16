@@ -1,13 +1,5 @@
-import { Chain, MonitorType } from './constants';
+import { MonitorType } from './constants';
 import { MonitorSettings } from './monitor';
-
-export interface ChainProperties {
-  chain: Chain,
-  specName: string;
-  chainDecimals: number;
-  chainToken: string;
-  ss58Format: number;
-}
 
 export interface Logger {
   log(message: string, ...args: any[]): void;
@@ -17,6 +9,8 @@ export interface Logger {
   verbose(message: string, ...args: any[]): void;
   fatal(message: string, ...args: any[]): void;
 }
+
+export type TokenBalances = Record<string, Record<string, bigint>>;
 
 export interface AccountId {
   ss58: string;

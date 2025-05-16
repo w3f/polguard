@@ -78,6 +78,7 @@ export class IncidentHandler implements IncidentHandlerClient {
       account: incidentKey.account,
       groupId: incidentKey.groupId,
       handlerType: incidentKey.handlerType,
+      idempotencyKey: this.getStoreKey(incidentKey),
       // Notification channels
       notificationChannels,
       // Optional fields
@@ -98,7 +99,8 @@ export class IncidentHandler implements IncidentHandlerClient {
   }
 
   private getStoreKey(incidentKey: IncidentKey): string {
-    const key = `${incidentKey.account}:${incidentKey.groupId}:${incidentKey.handlerType}`;
+    const { account, groupId, handlerType, token } = incidentKey;
+    const key = `${account}:${groupId}:${handlerType}:${token || 'none'}`;
     const hash = createHash('md5').update(key).digest('hex').substring(0, 16);
     return `inc:${hash}`;
   }

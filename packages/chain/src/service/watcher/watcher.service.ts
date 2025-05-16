@@ -38,7 +38,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     const startBlock = this.config.getStartBlock();
 
     this.api = await this.createApi(rpc, chainProps.specName);
-    const chainDataProvider = createChainDataProvider(this.api, this.storage, this.logger);
+    const chainDataProvider = createChainDataProvider(this.api, this.storage, this.logger, chainProps.chain);
     const incidentHandler = new IncidentHandler(this.logger, this.storage, this.incidents, chainProps.chain);
 
     this.watcher = new ChainWatcher(

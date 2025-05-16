@@ -1,5 +1,5 @@
-import { ChainProperties, ConfigAccountSettings, Logger, IdentityField, ChainDataProvider } from '.';
-import { Chain, MonitorType, PolkadotClientImpl } from './constants';
+import { ConfigAccountSettings, Logger, IdentityField, ChainDataProvider } from '.';
+import { Chain, ChainProperties, MonitorType, PolkadotClientImpl } from './constants';
 import { NotificationSettings, IncidentHandlerClient } from './incident';
 import { CallHandlerParams, EventHandlerParams, StateHandlerParams, MonitorHandlerType, TelemetryHandlerParams } from './handlers';
 
@@ -63,6 +63,12 @@ export interface XcmSettings {
   handlers: MonitorHandlerType[MonitorType.Xcm][];
 }
 
+export interface AssetsSettings {
+  tokens?: string[];
+  tokenThresholds?: [string, bigint][];
+  handlers: MonitorHandlerType[MonitorType.Assets][];
+}
+
 export type MonitorTypeSettings = {
   [MonitorType.Staking]: StakingSettings;
   [MonitorType.Governance]: GovernanceSettings;
@@ -70,6 +76,7 @@ export type MonitorTypeSettings = {
   [MonitorType.Identity]: IdentitySettings;
   [MonitorType.Telemetry]: TelemetrySettings;
   [MonitorType.Xcm]: XcmSettings;
+  [MonitorType.Assets]: AssetsSettings;
 };
 
 export type MonitorSettings<T extends MonitorType> = MonitorTypeSettings[T];

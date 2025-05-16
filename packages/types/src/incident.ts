@@ -23,12 +23,14 @@ export interface CreateIncidentDto {
   notificationChannels: NotificationChannel[];
   needsAck?: boolean;
   isResolved?: boolean;
+  idempotencyKey: string;
 }
 
 export interface IncidentKey {
   groupId: string;
   account: string;
   handlerType: string;
+  token?: string;
 }
 
 export interface IncidentHandlerClient {

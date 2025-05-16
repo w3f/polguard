@@ -12,7 +12,7 @@ import {
 import { Chain, MessengerType, NotificationType } from '@w3f/monitoring-types';
 
 @Entity('incidents')
-@Index(['chain', 'account', 'groupId', 'handlerType'])
+@Index(['idempotencyKey', 'isResolved'])
 export class Incident {
   @PrimaryGeneratedColumn()
   id: number;
@@ -37,6 +37,9 @@ export class Incident {
 
   @Column({ name: 'handler_type' })
   handlerType: string;
+
+  @Column({ name: 'idempotency_key' })
+  idempotencyKey: string;
 
   @Column({ name: 'needs_ack', default: false })
   needsAck: boolean;

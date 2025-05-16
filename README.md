@@ -3,6 +3,7 @@
 # Monitoring Platform
 
 A comprehensive monitoring solution for the Polkadot ecosystem, focusing on real-time detection and alerting.
+Built with NestJS and Polkadot.js.
 
 ## Overview
 
@@ -15,20 +16,19 @@ graph LR
     %% Core Services
     subgraph Services
         subgraph "Chain services"
-            Chain1[Chain service 1<br>Polkadot]:::service
-            Chain2[Chain service N<br>AssetHub]:::service
-
+            Chain1["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain service</a> 1<br>Polkadot"]:::service
+            Chain2["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain service</a> N<br>AssetHub"]:::service
         end
-        API[API service<br>Incident & config management]:::service
-        Matrix[Matrix service<br>Bot & notifications]:::service
+        API["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/api/README.md' title='API Service Documentation'>API service</a><br>Incident & config management"]:::service
+        Matrix["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/matrix/README.md' title='Matrix Service Documentation'>Matrix service</a><br>Bot & notifications"]:::service
     end
     
     %% External Components
     Postgres[(PostgreSQL<br><br>)]:::database
     
     subgraph "Distributed configuration"
-        GitLab1[GitLab repo 1<br>config.yaml]:::config
-        GitLab2[GitLab repo N<br>config.yaml]:::config
+        GitLab1["GitLab repo 1<br><a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>config.yaml</a>"]:::config
+        GitLab2["GitLab repo N<br><a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>config.yaml</a>"]:::config
     end
     
     Room((Matrix Room)):::external
@@ -47,37 +47,14 @@ graph LR
     classDef database fill:#D4E8D4,stroke:#82B366,stroke-width:1px
     classDef config fill:#DAE8FC,stroke:#6C8EBF,stroke-width:1px
     classDef external fill:#F5F5F5,stroke:#666666,stroke-width:1px
-    
-    %% Clickable links to README files
-    click Chain1 "packages/chain/README.md" "Chain Service Documentation"
-    click Chain2 "packages/chain/README.md" "Chain Service Documentation"
-    click API "packages/api/README.md" "API Service Documentation"
-    click Matrix "packages/matrix/README.md" "Matrix Service Documentation"
 ```
-
-## Key Features
-
-- **Chain Monitoring**: Some of the monitoring features include:
-  - Account balance tracking and balance transfer detection
-  - Cross-chain assets transfers
-  - Staking commission changes, slashes, and active set presence
-  - Identity changes and verification
-  - Referenda and voting activities
-
-- **Flexible Monitoring Configuration**: Define monitoring groups with specific chains, accounts, and alert settings using YAML files stored in the repository
-
-- **Incident Management**: Create, track, acknowledge, and resolve incidents
-
-- **Matrix Integration**: Send notifications to Matrix rooms and interact with a Matrix bot
-
-- **Extensible Architecture**: Modular design allows for adding new monitoring subjects and notification channels
 
 ## Packages
 
 ### Services
 
 - [**API Service**](packages/api/README.md): Central control service that manages incidents, configurations, and notifications
-  - Stores and manages incidents through a REST API
+  - Enables creating, tracking, acknowledging, and resolving incidents through a REST API
   - Provides centralized monitoring configuration for other services
   - Schedules notification retries and configuration refreshes
   - Handles automatic resolution of orphaned incidents
@@ -85,6 +62,12 @@ graph LR
 - [**Chain Service**](packages/chain/README.md): Monitors blockchain activities and generates incidents
   - Processes blockchain events, extrinsic calls and state changes
   - Creates incidents when issues are detected, resolves incidents
+  - Some of the monitoring features:
+    - Account balance tracking and balance transfer detection
+    - Cross-chain assets transfers
+    - Staking commission changes, slashes, and active set presence
+    - Identity changes and verification
+    - Referenda and voting activities
 
 - [**Matrix Service**](packages/matrix/README.md): Handles sending notifications to Matrix rooms
   - Delivers incident notifications to Matrix rooms
@@ -102,6 +85,7 @@ graph LR
   - Provides type safety and consistency across packages
 
 - [**Config Package**](packages/config/README.md): Monitoring configuration processing and validation
+  - Enables defining monitoring groups with specific chains, accounts, and alert settings
   - Loads and validates YAML monitoring configuration files
   - Transforms raw configuration into structured monitoring groups
   - Provides utilities for address transformation and settings building
@@ -114,26 +98,17 @@ graph LR
 
 - Node.js 20+
 - Yarn 4.6.0+
-- PostgreSQL (persistence for API service)
+- PostgreSQL
 - Redis
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/w3f/monitoring-platform.git
-   cd monitoring-platform
-   ```
-
-2. Install dependencies:
-   ```bash
-   yarn install
-   ```
-
-3. Build all packages:
-   ```bash
-   yarn build
-   ```
+```bash
+git clone https://github.com/w3f/monitoring-platform.git
+cd monitoring-platform
+yarn install
+yarn build
+```
 
 ### Configuration
 
@@ -150,13 +125,8 @@ Example application configurations can be found in the `config` directory of eac
 Start individual services in development mode:
 
 ```bash
-# Start API service
 yarn start:api:dev
-
-# Start Chain service
 yarn start:chain:dev
-
-# Start Matrix service
 yarn start:matrix:dev
 ```
 
@@ -167,12 +137,17 @@ For more details on configuring and running each service, refer to the README in
 The project includes deployment configurations in the `deployment` folder:
 
 - Docker Compose setup for local development
-- Helm charts for Kubernetes deployment
+- Helm chart for Kubernetes deployment
 
 For more details on deployment options, see the [Deployment Guide](deployment/README.md).
+
+## End-to-End Tests
+
+The project includes end-to-end tests that verify the complete flow from chain events to API incidents to Matrix notifications. These tests can be run locally using KinD or as part of the CI/CD pipeline.
+
+For more details, see the [E2E Tests Documentation](e2e/README.md).
 
 ## Development
 
 For development guidelines and notes, see the [Development Notes](docs/DEVELOPMENT.md).
-
 For information on publishing packages, see the [Publishing Guide](docs/PUBLISHING.md).

@@ -8,7 +8,7 @@ import {
   TelemetryHandlerParams,
   TelemetryMonitor,
 } from '@w3f/monitoring-types';
-import { AccountRegistry } from '../account-registry';
+import { ConfigRegistry } from '../config-registry';
 
 /**
  * Base class for all chain monitors in the monitoring platform.
@@ -25,7 +25,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Telemetr
   protected handlers = {
     telemetry: new Set<TelemetryHandlerFunction>(),
   };
-  protected reg: AccountRegistry<T>;
+  protected reg: ConfigRegistry<T>;
 
   constructor(
     protected logger: Logger,
@@ -34,7 +34,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Telemetr
     protected chainProps: ChainProperties,
     protected monitorType: T,
   ) {
-    this.reg = new AccountRegistry<T>(groups, monitorType);
+    this.reg = new ConfigRegistry<T>(groups, monitorType);
     this.initializeHandlers();
   }
 

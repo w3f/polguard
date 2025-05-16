@@ -86,12 +86,14 @@ export class TestIncidentHandler implements IncidentHandlerClient {
     console.log(`${colors.yellow}${testId}${colors.reset}\n  ${colors.cyan}${formattedMessage}${colors.reset}`);
   }
 
-  wasIncidentCreated(account: string, groupId: string, handlerType: string): boolean {
-    return this.incidents.has(`${account}:${groupId}:${handlerType}`);
+  wasIncidentCreated(account: string, groupId: string, handlerType: string, token?: string): boolean {
+    const key = this.formatKey({ account, groupId, handlerType, token });
+    return this.incidents.has(key);
   }
   
   private formatKey(incidentKey: IncidentKey): string {
-    return `${incidentKey.account}:${incidentKey.groupId}:${incidentKey.handlerType}`;
+    const { account, groupId, handlerType, token } = incidentKey;
+    return `${account}:${groupId}:${handlerType}:${token || 'none'}`;
   }
 }
 

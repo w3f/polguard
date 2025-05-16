@@ -34,7 +34,7 @@ export class MatrixClient {
     if (this.config.enableEncryption) {
       global.Olm = olm;
     }
-    
+
     this.client = await this.createClient();
     await this.setupClientAndSync();
     this.setupEventHandlers();
@@ -46,7 +46,7 @@ export class MatrixClient {
       await this.client.initCrypto();
       this.client.setGlobalErrorOnUnknownDevices(false);
     }
-    
+
     await this.client.startClient({ initialSyncLimit: 10 });
     await this.waitForSync();
   }
@@ -56,7 +56,7 @@ export class MatrixClient {
     if (this.config.enableEncryption) {
       this.setupVerificationHandler();
     }
-    
+
     this.setupAutoJoinHandler();
   }
 
@@ -68,7 +68,7 @@ export class MatrixClient {
         this.config.tokenAuth.accessToken,
       );
     }
-    
+
     const userId = this.config.userId;
     const { accessToken, deviceId } = this.getCredentials(userId);
     if (accessToken && deviceId) {
@@ -215,15 +215,15 @@ export class MatrixClient {
   }
 
   private setupAutoJoinHandler() {
-  this.client.on(RoomEvent.MyMembership, (room, membership /*, prevMembership*/) => {
-    if (membership === KnownMembership.Invite) {
-      this.client
-        .joinRoom(room.roomId)
-        .then(() => this.logger.log(`Auto-joined ${room.roomId}`))
-        .catch(err => this.logger.error(`Auto-join failed for ${room.roomId}:`, err));
-    }
-  });
-}
+    this.client.on(RoomEvent.MyMembership, (room, membership /*, prevMembership*/) => {
+      if (membership === KnownMembership.Invite) {
+        this.client
+          .joinRoom(room.roomId)
+          .then(() => this.logger.log(`Auto-joined ${room.roomId}`))
+          .catch(err => this.logger.error(`Auto-join failed for ${room.roomId}:`, err));
+      }
+    });
+  }
 
   public async sendMessage(roomId: string, message: string) {
     const content: any = {

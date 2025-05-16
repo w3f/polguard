@@ -13,7 +13,7 @@ export interface MatrixConfig {
   logging: { level: 'trace' | 'debug' | 'info' | 'warn' | 'error' };
   rooms: { id: string; acknowledgement: boolean }[];
   enableEncryption?: boolean;
-  
+
   // One of these must be provided
   passwordAuth?: PasswordAuth;
   tokenAuth?: TokenAuth;

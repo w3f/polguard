@@ -2,6 +2,8 @@ rpcEndpoints:
   Polkadot: wss://rpc-polkadot.luckyfriday.io
   Kusama: wss://rpc-kusama.luckyfriday.io
   PeoplePolkadot: wss://rpc-people-polkadot.luckyfriday.io
+  AssetHubPolkadot: wss://rpc-asset-hub-polkadot.luckyfriday.io
+  Centrifuge: wss://rpc-centrifuge.luckyfriday.io
 
 tests:
   Staking:
@@ -182,3 +184,56 @@ tests:
         block: 24673667
         account:
           address: HCksmaxivAsisGDkWtm5dhdAt3Ti2e5P2Gt7JXZYFiEHMSH
+  Assets:
+    AssetBalanceDecrease:
+      - description: "State (assets.account). Balance decreased"
+        chain: AssetHubPolkadot
+        block: 8855547
+        account:
+          tokens: [USDT]
+          address: 13vg3Mrxm3GL9eXxLsGgLYRueiwFCiMbkdHBL4ZN5aob5D4N
+      - description: "State (ormlTokens.account). Balance decreased"
+        chain: Centrifuge
+        block: 7903251
+        account:
+          tokens: [localUSDC]
+          address: 4dtAmm2K7vs75h3AfyjEtsbseR9dmN3PPzVsxAsCiEgHCeKZ
+    AssetBalanceThreshold:
+      - description: "State (assets.account)"
+        chain: AssetHubPolkadot
+        block: 8855547
+        account:
+          address: 13vg3Mrxm3GL9eXxLsGgLYRueiwFCiMbkdHBL4ZN5aob5D4N
+          tokenThresholds: [[USDT, 4190000000000]]
+      - description: "State (ormlTokens.account)"
+        chain: Centrifuge
+        block: 7903251
+        account:
+          address: 4diz9ZYpk1Q6RxpwQ1vtBEvcHfcCy1eoonkUBY9FPYUd9pCw
+          tokenThresholds: [[localUSDC, 101000000]]
+    AssetTransferIngress:
+      - description: "Event (assets.Transferred)"
+        chain: AssetHubPolkadot
+        block: 8850814
+        account:
+          tokens: [USDT]
+          address: 14AdgyPgMFPD9yXxK4x6uxmzecuT3re1ivetp1obqjeQQyWY
+      - description: "Event (ormlTokens.Transfer)"
+        chain: Centrifuge
+        block: 7903251
+        account:
+          tokens: [localUSDC]
+          address: 4diz9ZYpk1Q6RxpwQ1vtBEvcHfcCy1eoonkUBY9FPYUd9pCw
+    AssetTransferEgress:
+      - description: "Event (assets.Transferred)"
+        chain: AssetHubPolkadot
+        block: 8850814
+        account:
+          tokens: [USDT]
+          address: 145hGifupWS3vw14W8AFtDyZFNthdsZA2ZMGtfchWi8hddnD
+      - description: "Event (ormlTokens.Transfer)"
+        chain: Centrifuge
+        block: 7903251
+        account:
+          tokens: [localUSDC]
+          address: 4dtAmm2K7vs75h3AfyjEtsbseR9dmN3PPzVsxAsCiEgHCeKZ

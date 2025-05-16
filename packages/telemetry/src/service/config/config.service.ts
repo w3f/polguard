@@ -12,31 +12,37 @@ export class ConfigService {
   constructor(private readonly logger: Logger) {
     const configPath = this.getConfigPath();
     const rawConfig: any = this.loadConfig(configPath);
-    
+
     if (rawConfig?.telemetryExporterApi?.basicAuth) {
       if (!rawConfig.telemetryExporterApi.basicAuth.password && !process.env.TELEMETRY_PASSWORD) {
-        throw new Error(
-          "Missing Telemetry password: set TELEMETRY_PASSWORD env var or provide it in config."
-        );
+        throw new Error('Missing Telemetry password: set TELEMETRY_PASSWORD env var or provide it in config.');
       }
-      
-      rawConfig.telemetryExporterApi.basicAuth.password = 
+
+      rawConfig.telemetryExporterApi.basicAuth.password =
         process.env.TELEMETRY_PASSWORD ?? rawConfig.telemetryExporterApi.basicAuth.password;
     }
-    
+
     this.config = this.validateConfig(rawConfig);
-    
+
     // Log configuration with sensitive data masked
-    this.logger.debug(`Configuration: ${JSON.stringify({
-      ...this.config,
-      telemetryExporterApi: {
-        ...this.config.telemetryExporterApi,
-        basicAuth: this.config.telemetryExporterApi.basicAuth ? {
-          ...this.config.telemetryExporterApi.basicAuth,
-          password: this.config.telemetryExporterApi.basicAuth.password ? '***' : undefined
-        } : undefined
-      }
-    }, null, 2)}`);
+    this.logger.debug(
+      `Configuration: ${JSON.stringify(
+        {
+          ...this.config,
+          telemetryExporterApi: {
+            ...this.config.telemetryExporterApi,
+            basicAuth: this.config.telemetryExporterApi.basicAuth
+              ? {
+                  ...this.config.telemetryExporterApi.basicAuth,
+                  password: this.config.telemetryExporterApi.basicAuth.password ? '***' : undefined,
+                }
+              : undefined,
+          },
+        },
+        null,
+        2,
+      )}`,
+    );
   }
 
   private getConfigPath(): string {

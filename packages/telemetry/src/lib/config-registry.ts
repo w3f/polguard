@@ -14,7 +14,7 @@ type AccountConfig<T extends MonitorType> = {
   groupId: string;
 };
 
-export class AccountRegistry<T extends MonitorType> {
+export class ConfigRegistry<T extends MonitorType> {
   private accounts: Map<string, AccountConfig<T>[]> = new Map();
   private uniqueAddresses: string[];
 
@@ -87,7 +87,6 @@ export class AccountRegistry<T extends MonitorType> {
    */
   getAccounts(handlerType: MonitorHandlerType[T], address: string): AccountConfig<T>[] {
     const accounts = this.accounts.get(address) || [];
-
     return accounts.filter(account => {
       const handlers = account.account.settings.handlers as MonitorHandlerType[T][];
       return handlers.includes(handlerType);

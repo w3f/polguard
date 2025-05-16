@@ -8,6 +8,7 @@ The platform includes several specialized monitors, each responsible for trackin
 
 - **Staking Monitor**: Tracks validator activities, commission rates, staking parameters
 - **Balances Monitor**: Monitors account balances and transfers
+- **Assets Monitor**: Monitors asset/token balances and transfers
 - **Identity Monitor**: Tracks on-chain identity information
 - **Governance Monitor**: Monitors governance activities like referenda and voting
 - **XCM Monitor**: Tracks cross-chain asset transfers
@@ -125,6 +126,56 @@ monitors:
 accounts:
   - address: "..."
     threshold: "500.0"  # Account-specific threshold
+```
+
+## Assets Monitor
+
+Monitors asset/token balances and transfers.
+
+### Handlers
+
+#### AssetBalanceDecrease
+- **Type**: State (`assets.account`, `ormlTokens.accounts`)
+- **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
+- **Description**: Detects any asset balance decreases between blocks
+- **Config Keys**:
+  - `tokens`: (array) List of token names to monitor
+
+#### AssetBalanceThreshold
+- **Type**: State (`assets.account`, `ormlTokens.accounts`)
+- **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
+- **Description**: Alerts when asset balance falls below a threshold
+- **Config Keys**:
+  - `tokenThresholds`: (array) Array of [token, threshold] pairs where threshold is a decimal string
+
+#### AssetTransferIngress
+- **Type**: Event (`assets.Transferred`, `ormlTokens.Transfer`)
+- **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
+- **Description**: Detects incoming asset transfers
+- **Config Keys**:
+  - `tokens`: (array) List of token names to monitor
+
+#### AssetTransferEgress
+- **Type**: Event (`assets.Transferred`, `ormlTokens.Transfer`)
+- **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
+- **Description**: Detects outgoing asset transfers
+- **Config Keys**:
+  - `tokens`: (array) List of token names to monitor
+
+### Example Configuration
+
+```yaml
+monitors:
+  - name: Assets
+    handlers:
+      - AssetBalanceThreshold
+      - AssetTransferIngress
+      - AssetTransferEgress
+
+accounts:
+  - address: "..."
+    tokens: ["DOT", "KSM"]
+    tokenThresholds: [["DOT", "100.0"], ["KSM", "10.0"]]
 ```
 
 ## Identity Monitor

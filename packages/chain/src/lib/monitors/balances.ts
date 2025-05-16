@@ -12,12 +12,14 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
   @State(H.BalanceDecrease, [Chain.Polkadot, Chain.Kusama])
   async balanceDecrease({ blockNumber, handlerType }: StateHandlerParams<H.BalanceDecrease>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
-    const currentBalances = await this.chain.systemAccountBalance(addresses, blockNumber);
-    const previousBalances = await this.chain.systemAccountBalance(addresses, blockNumber - 1);
+    const [curr, prev] = await Promise.all([
+      await this.chain.systemAccountBalance(addresses, blockNumber),
+      await this.chain.systemAccountBalance(addresses, blockNumber - 1),
+    ]);
 
     for (const address of addresses) {
-      const currentBalance = currentBalances[address];
-      const previousBalance = previousBalances[address];
+      const currentBalance = curr[address];
+      const previousBalance = prev[address];
 
       for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
         const message = this.fmt.message(
@@ -42,10 +44,10 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
   @State(H.BalanceThreshold, [Chain.Polkadot, Chain.Kusama])
   async balanceThreshold({ blockNumber, handlerType }: StateHandlerParams<H.BalanceThreshold>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
-    const currentBalances = await this.chain.systemAccountBalance(addresses, blockNumber);
+    const cur = await this.chain.systemAccountBalance(addresses, blockNumber);
 
     for (const address of addresses) {
-      const currentBalance = currentBalances[address];
+      const currentBalance = cur[address];
       for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
         if (!account.settings.threshold) continue;
 
