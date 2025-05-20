@@ -46,6 +46,7 @@ export enum NotificationType {
 export enum StakingHandlerType {
   SlashReported = 'SlashReported',
   CommissionChanged = 'CommissionChanged',
+  Unbonded = 'Unbonded',
   DestinationChanged = 'DestinationChanged',
   CommissionUnexpected = 'CommissionUnexpected',
   DestinationUnexpected = 'DestinationUnexpected',

@@ -19,6 +19,12 @@ tests:
         block: 25687816
         account:
           address: 15ZvLonEseaWZNy8LDkXXj3Y8bmAjxCjwvpy4pXWSL4nGSBs
+    Unbonded:
+      - description: "Event (staking.Unbonded)"
+        chain: Polkadot
+        block: 26090579
+        account:
+          address: 13UVJyLnbVp8c4FQeiGHuwQmjryMLyKsETR9mRHNkeHEwnPe
     DestinationChanged:
       - description: "Call (staking.setPayee)"
         chain: Polkadot
