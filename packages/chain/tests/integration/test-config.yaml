@@ -184,6 +184,11 @@ tests:
         block: 24673667
         account:
           address: HCksmaxivAsisGDkWtm5dhdAt3Ti2e5P2Gt7JXZYFiEHMSH
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. USDT token transfer"
+        chain: AssetHubPolkadot
+        block: 8764910
+        account:
+          address: 12NpELGHzDaMspRH3E5zThqNpW24KeZ3TMjXdYVxmEH4caCS
   Assets:
     AssetBalanceDecrease:
       - description: "State (assets.account). Balance decreased"

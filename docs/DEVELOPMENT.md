@@ -47,7 +47,7 @@ Long-term, we may consider moving from Node.js to Deno for the following reasons
 - Modern JavaScript features
 - Improved dependency management
 
-However, this would require significant changes to the codebase and would need to address the NestJS compatibility issues.
+However, this would require some changes to the codebase and would need to address the NestJS compatibility issues.
 
 ### Matrix SDK Limitations
 

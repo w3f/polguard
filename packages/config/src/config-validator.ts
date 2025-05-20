@@ -297,7 +297,7 @@ function validateAssetsMonitor(monitor: any, chains: Chain[], groupId: string) {
 
   chains.forEach(chain => {
     const supported = Object.keys(CHAIN_TOKENS[chain] || {});
-    // 1. any tokens list
+
     tokens.forEach((t: string) => {
       if (!supported.includes(t)) {
         throw new Error(
@@ -305,7 +305,7 @@ function validateAssetsMonitor(monitor: any, chains: Chain[], groupId: string) {
         );
       }
     });
-    // 2. tokenThresholds first‐elements
+
     tokenThresholds.forEach(([t]: [string, any]) => {
       if (!supported.includes(t)) {
         throw new Error(

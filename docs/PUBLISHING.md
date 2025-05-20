@@ -1,7 +1,5 @@
 # Package Publishing Guide
 
-## Overview
-
 This project contains both public and private packages:
 
 **Public packages**:

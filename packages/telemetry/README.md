@@ -1,9 +1,5 @@
 # @w3f/monitoring-telemetry
 
-Telemetry monitoring service for the Monitoring Platform.
-
-## Overview
-
 The Telemetry service is responsible for monitoring node telemetry data and generating or resolving incidents based on detected conditions. It processes information about node hardware, software, location, and other telemetry metrics to ensure nodes meet expected requirements.
 
 Note: This service is a temporary solution and will be removed in the future.

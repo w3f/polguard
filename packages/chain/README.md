@@ -1,9 +1,5 @@
 # @w3f/monitoring-chain
 
-Blockchain monitoring service for the Monitoring Platform.
-
-## Overview
-
 The Chain service is responsible for monitoring blockchain activities and generating or resolving incidents based on detected conditions. It processes blockchain events, extrinsic calls, and state changes to track various on-chain activities across the Polkadot ecosystem.
 
 ## Key Features

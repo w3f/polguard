@@ -1,9 +1,5 @@
 # @w3f/monitoring-matrix
 
-Matrix notification service for the Monitoring Platform.
-
-## Overview
-
 The Matrix service is responsible for delivering incident notifications to Matrix rooms and providing a bot interface for incident management. It receives notification requests from the API service and sends them to the appropriate Matrix rooms.
 
 ## Key Features

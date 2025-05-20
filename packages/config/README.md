@@ -1,9 +1,5 @@
 # @w3f/monitoring-config
 
-Configuration processing and validation for the Monitoring Platform.
-
-## Overview
-
 The Config package is responsible for loading, validating, and processing monitoring configuration files. It transforms raw YAML configurations into structured monitoring groups that can be used by the monitoring services.
 
 ## Documentation

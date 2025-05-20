@@ -1,9 +1,5 @@
 # Monitors & Handlers Reference
 
-This document provides a comprehensive reference of all monitors and handlers available in the Monitoring Platform.
-
-## Overview
-
 The platform includes several specialized monitors, each responsible for tracking different aspects of blockchain networks:
 
 - **Staking Monitor**: Tracks validator activities, commission rates, staking parameters

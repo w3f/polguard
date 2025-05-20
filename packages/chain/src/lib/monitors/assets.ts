@@ -51,16 +51,14 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
     handlerType,
   }: EventHandlerParams<H.AssetTransferIngress>): Promise<void> {
     const [rawId, from, to, amount] = eventRecord.event.data.map(d => d.toString());
-    console.log(rawId);
     const token = ID_TOKEN_MAP[this.chainProps.chain][rawId];
-    console.log(token);
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, to)) {
       if (!account.settings.tokens?.includes(token)) continue;
 
       const message = this.fmt.message(
         [
-          `${this.fmt.accountLink(account)} received ${this.fmt.assetBalance(amount, token)}`,
+          `${this.fmt.accountLink(account)} received ${this.fmt.balance(amount, token)}`,
           `From: ${this.fmt.accountLink({ ss58: from, name: from, hex: '' })}`,
         ],
         { blockNumber, phase: eventRecord.phase },
@@ -86,7 +84,7 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
 
       const message = this.fmt.message(
         [
-          `${this.fmt.accountLink(account)} sent ${this.fmt.assetBalance(amount, token)}`,
+          `${this.fmt.accountLink(account)} sent ${this.fmt.balance(amount, token)}`,
           `To: ${this.fmt.accountLink({ ss58: to, name: to, hex: '' })}`,
         ],
         { blockNumber, phase: eventRecord.phase },
@@ -124,8 +122,8 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
             const msg = this.fmt.message(
               [
                 `${token} balance decreased for ${this.fmt.accountLink(account)}`,
-                `Previous: ${this.fmt.assetBalance(previousBalance, token)}`,
-                `Current:  ${this.fmt.assetBalance(currentBalance, token)}`,
+                `Previous: ${this.fmt.balance(previousBalance, token)}`,
+                `Current:  ${this.fmt.balance(currentBalance, token)}`,
               ],
               { blockNumber },
             );
@@ -163,8 +161,8 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
             const message = this.fmt.message(
               [
                 `${token} balance for ${this.fmt.accountLink(account)} is below threshold.`,
-                `Current balance: ${this.fmt.assetBalance(currentBalance, token)}`,
-                `Threshold: ${this.fmt.assetBalance(threshold, token)}`,
+                `Current balance: ${this.fmt.balance(currentBalance, token)}`,
+                `Threshold: ${this.fmt.balance(threshold, token)}`,
               ],
               { blockNumber },
             );

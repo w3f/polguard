@@ -1,9 +1,5 @@
 # @w3f/monitoring-api
 
-Central control service for the Monitoring Platform.
-
-## Overview
-
 The API service serves as the central control point for the Monitoring Platform, managing incidents, configurations, and notifications. It provides a REST API for incident creation, acknowledgment, and resolution, as well as endpoints for retrieving monitoring configurations.
 
 ## Key Features

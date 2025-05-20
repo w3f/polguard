@@ -1,9 +1,5 @@
 # @w3f/monitoring-types
 
-Common types, interfaces, and constants used across the Monitoring Platform packages.
-
-## Overview
-
 The Types package serves as the foundation for the entire Monitoring Platform, providing shared type definitions, interfaces, enums, and constants. It ensures type safety and consistency across all packages and services.
 
 This package is used by:

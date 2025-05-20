@@ -29,22 +29,32 @@ export class Formatter {
     return this.link(account.name, this.getAccountURL(account.ss58));
   }
 
-  balance(amount: number | string | bigint): string {
-    return formatBalance(amount, {
-      decimals: this.chainProps.chainDecimals,
-      withUnit: this.chainProps.chainToken,
-      withSi: true,
-      forceUnit: '-',
-    });
+  balance(amount: number | string | bigint, tokenName?: string): string {
+    // If no token is provided, use native token
+    if (!tokenName) {
+      return formatBalance(amount, {
+        decimals: this.chainProps.chainDecimals,
+        withUnit: this.chainProps.chainToken,
+        withSi: true,
+        forceUnit: '-',
+      });
+    }
+
+    if (CHAIN_TOKENS[this.chainProps.chain][tokenName]) {
+      return formatBalance(amount, {
+        decimals: CHAIN_TOKENS[this.chainProps.chain][tokenName].decimals,
+        withUnit: tokenName,
+        withSi: true,
+        forceUnit: '-',
+      });
+    }
+
+    return `${amount.toString()} token ${tokenName}`;
   }
 
+  // Keep assetBalance for backward compatibility, but delegate to balance
   assetBalance(amount: number | string | bigint, tokenName: string): string {
-    return formatBalance(amount, {
-      decimals: CHAIN_TOKENS[this.chainProps.chain][tokenName].decimals,
-      withUnit: tokenName,
-      withSi: true,
-      forceUnit: '-',
-    });
+    return this.balance(amount, tokenName);
   }
 
   message(
