@@ -103,8 +103,7 @@ export class ConfigProcessor {
         monitors: transformedMonitors,
         accounts: group.accounts.map(account => this.transformAccount(account, chain, transformedMonitors)),
         notifications: group.notifications,
-        // TODO: Remove or redesign, this key doesn't belong to monitoring
-        enablePayout: group?.enablePayout || false,
+        annotations: group.annotations,
       }));
     });
   }

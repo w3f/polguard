@@ -31,6 +31,11 @@ describe('ConfigProcessor', () => {
         repeatHours: 24,
       });
 
+      // Test group-level annotations
+      expect(defaultGroup?.annotations).toEqual({
+        enablePayout: true,
+      });
+
       // Test address transformation
       const hexAccount = defaultGroup?.accounts.find(a => a.name === 'Bob-Hex');
       expect(hexAccount).toBeDefined();
@@ -47,6 +52,9 @@ describe('ConfigProcessor', () => {
         commission: 3, // Overridden from account
         selfStake: 1000500000000000n, // Converted to BigInt
         handlers: [StakingHandlerType.CommissionChanged, StakingHandlerType.DestinationChanged],
+        annotations: {
+          tag: 'group-R', // Overridden from account
+        },
       });
 
       // Check Balances monitor settings
@@ -63,6 +71,9 @@ describe('ConfigProcessor', () => {
       });
       expect(bobAccount?.[MonitorType.Identity].handlers).toBeDefined();
       expect(Array.isArray(bobAccount?.[MonitorType.Identity].handlers)).toBe(true);
+      expect(bobAccount?.[MonitorType.Identity].annotations).toEqual({
+        tag: 'group-R',
+      });
     });
 
     it('should process minimal valid config', () => {

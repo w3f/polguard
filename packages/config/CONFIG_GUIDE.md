@@ -151,6 +151,27 @@ groups:
         commission: 3  # Override for this specific validator
 ```
 
+## Annotations
+
+The configuration supports an `annotations` field at the group, monitor, and account levels. This field allows external tools to store arbitrary metadata in the monitoring configuration.
+
+```yaml
+groups:
+  - name: validators
+    annotations:
+      enablePayout: true
+    monitors:
+      - name: Staking
+        annotations:
+          tag: group-N
+    accounts:
+      - address: "..."
+        annotations:
+          tag: group-R  # Overrides monitor's tag
+```
+
+The `annotations` field bypasses validation and follows the same override rules as other settings.
+
 ## Configuration Example
 
 ```yaml

@@ -16,6 +16,8 @@ defaults:
 
 groups:
   - id: validators-default  # This group will be created for both Polkadot and Kusama
+    annotations:
+      enablePayout: true
     accounts:
       - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
         name: "Alice"
@@ -38,6 +40,8 @@ groups:
         handlers:
           - CommissionChanged
           - DestinationChanged
+        annotations:
+          tag: group-N
       - name: Balances
         threshold: "500.75"
         handlers:
@@ -56,3 +60,6 @@ groups:
         email: "validator@email.com"
         # Balances settings
         threshold: "750.25"
+        # Annotations
+        annotations:
+          tag: group-R

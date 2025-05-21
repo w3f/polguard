@@ -22,6 +22,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "build:watch": "tsc --watch",
     "test": "echo \"No tests required for types package\" && exit 0"
   },
   "dependencies": {

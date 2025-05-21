@@ -86,16 +86,19 @@ const stakingMonitorSchema = Joi.object({
   selfStake: decimalStringSchema,
   payee: Joi.string(),
   handlers: createHandlerSchema(StakingHandlerType, 'Staking'),
+  annotations: Joi.object().optional(),
 });
 
 const identityMonitorSchema = Joi.object({
   ...Object.fromEntries(IDENTITY_FIELDS.map(field => [field, Joi.string()])),
   handlers: createHandlerSchema(IdentityHandlerType, 'Identity'),
+  annotations: Joi.object().optional(),
 });
 
 const balancesMonitorSchema = Joi.object({
   threshold: decimalStringSchema,
   handlers: createHandlerSchema(BalancesHandlerType, 'Balances'),
+  annotations: Joi.object().optional(),
 });
 
 const telemetryMonitorSchema = Joi.object({
@@ -107,20 +110,24 @@ const telemetryMonitorSchema = Joi.object({
   provider: Joi.string(),
   sanctionedCountries: Joi.array().items(Joi.string()),
   sanctionedRegions: Joi.array().items(Joi.string()),
+  annotations: Joi.object().optional(),
 });
 
 const governanceMonitorSchema = Joi.object({
   handlers: createHandlerSchema(GovernanceHandlerType, 'Governance'),
+  annotations: Joi.object().optional(),
 });
 
 const xcmMonitorSchema = Joi.object({
   handlers: createHandlerSchema(XcmHandlerType, 'Xcm'),
+  annotations: Joi.object().optional(),
 });
 
 const assetsMonitorSchema = Joi.object({
   tokens: Joi.array().items(Joi.string()),
   tokenThresholds: Joi.array().items(Joi.array().ordered(Joi.string(), decimalStringSchema).length(2)),
   handlers: createHandlerSchema(AssetsHandlerType, 'Assets'),
+  annotations: Joi.object().optional(),
 });
 
 /**
@@ -180,6 +187,8 @@ const monitorSchema = Joi.object({
     .messages({
       'any.only': 'Invalid monitor type',
     }),
+  // Annotations field bypasses validation
+  annotations: Joi.object().optional(),
 }).when('.name', {
   switch: [
     { is: MonitorType.Staking, then: stakingMonitorSchema },
@@ -199,6 +208,8 @@ const accountSchema = Joi.object({
     'string.pattern.base': 'Invalid address format',
   }),
   name: Joi.string().optional(),
+  // Annotations field bypasses validation
+  annotations: Joi.object().optional(),
 })
   .concat(stakingMonitorSchema)
   .concat(identityMonitorSchema)
@@ -226,8 +237,8 @@ const groupSchema = Joi.object({
   accounts: Joi.array().items(accountSchema).min(1).required().messages({
     'array.min': 'At least one account is required in a group',
   }),
-  // TODO: Remove or redesign, this key doesn't belong to monitoring
-  enablePayout: Joi.boolean(),
+  // Annotations field bypasses validation
+  annotations: Joi.object().optional(),
 });
 
 const configSchema = Joi.object({

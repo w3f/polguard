@@ -46,26 +46,18 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
   }
 
   @Event(H.Unbonded, [Chain.Polkadot, Chain.Kusama], 'staking.Unbonded')
-  async unbonded({
-    eventRecord,
-    blockNumber,
-    handlerType,
-  }: EventHandlerParams<H.Unbonded>): Promise<void> {
+  async unbonded({ eventRecord, blockNumber, handlerType }: EventHandlerParams<H.Unbonded>): Promise<void> {
     const [stash, amount] = eventRecord.event.data.map(d => d.toString());
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, stash)) {
       const message = this.fmt.message(
-        [
-          `Unbond detected for ${this.fmt.accountLink(account)}.`,
-          `Amount: ${this.fmt.balance(amount)}`,
-        ],
+        [`Unbond detected for ${this.fmt.accountLink(account)}.`, `Amount: ${this.fmt.balance(amount)}`],
         { blockNumber, phase: eventRecord.phase },
       );
       const key = { account: account.ss58, groupId, handlerType };
       await this.incidents.handle(message, notifications, key, blockNumber);
     }
   }
-
 
   @Call(H.DestinationChanged, [Chain.Polkadot, Chain.Kusama], ['staking.setPayee', 'staking.bond'])
   async destinationChanged({

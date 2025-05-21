@@ -26,18 +26,22 @@ export type MonitorConstructor<T extends MonitorType> = new (
   monitorType: T
 ) => Monitor;
 
-export interface StakingSettings {
+export interface BaseMonitorSettings {
+  annotations?: Record<string, any>;
+}
+
+export interface StakingSettings extends BaseMonitorSettings {
   commission: number;
   selfStake?: bigint;
   payee?: string;
   handlers: MonitorHandlerType[MonitorType.Staking][];
 }
 
-export interface GovernanceSettings {
+export interface GovernanceSettings extends BaseMonitorSettings {
   handlers: MonitorHandlerType[MonitorType.Governance][];
 }
 
-export interface BalancesSettings {
+export interface BalancesSettings extends BaseMonitorSettings {
   threshold?: bigint;
   handlers: MonitorHandlerType[MonitorType.Balances][];
 }
@@ -46,9 +50,9 @@ export type IdentitySettings = {
   [K in IdentityField]?: string;
 } & {
   handlers: MonitorHandlerType[MonitorType.Identity][];
-};
+} & BaseMonitorSettings;
 
-export interface TelemetrySettings {
+export interface TelemetrySettings extends BaseMonitorSettings {
   handlers: MonitorHandlerType[MonitorType.Telemetry][];
   cpu?: string;
   minMemoryGB?: number;
@@ -59,11 +63,11 @@ export interface TelemetrySettings {
   sanctionedRegions?: string[];
 }
 
-export interface XcmSettings {
+export interface XcmSettings extends BaseMonitorSettings {
   handlers: MonitorHandlerType[MonitorType.Xcm][];
 }
 
-export interface AssetsSettings {
+export interface AssetsSettings extends BaseMonitorSettings {
   tokens?: string[];
   tokenThresholds?: [string, bigint][];
   handlers: MonitorHandlerType[MonitorType.Assets][];
@@ -87,8 +91,7 @@ export interface MonitoringGroup {
   monitors: MonitorConfig[];
   accounts: ConfigAccountSettings[];
   notifications: NotificationSettings;
-  // TODO: Remove or redesign, this key doesn't belong to monitoring
-  enablePayout?: boolean;
+  annotations?: Record<string, any>;
 }
 
 export interface MonitorConfig {
