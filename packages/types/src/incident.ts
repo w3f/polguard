@@ -28,8 +28,8 @@ export interface CreateIncidentDto {
 
 export interface IncidentKey {
   groupId: string;
-  account: string;
   handlerType: string;
+  account?: string;
   token?: string;
 }
 

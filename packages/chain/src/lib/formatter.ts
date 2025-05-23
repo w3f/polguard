@@ -1,6 +1,6 @@
 import { Phase } from '@polkadot/types/interfaces';
 import { formatBalance } from '@polkadot/util';
-import { AccountId, CHAIN_TOKENS, ChainProperties } from '@w3f/monitoring-types';
+import { CHAIN_TOKENS, ChainProperties } from '@w3f/monitoring-types';
 
 export class Formatter {
   constructor(private chainProps: ChainProperties) {}
@@ -25,8 +25,8 @@ export class Formatter {
     return `[${title}](${url})`;
   }
 
-  accountLink(account: AccountId): string {
-    return this.link(account.name, this.getAccountURL(account.ss58));
+  accountLink(name: string, address: string): string {
+    return this.link(name, this.getAccountURL(address));
   }
 
   balance(amount: number | string | bigint, tokenName?: string): string {
@@ -52,11 +52,6 @@ export class Formatter {
     return `${amount.toString()} token ${tokenName}`;
   }
 
-  // Keep assetBalance for backward compatibility, but delegate to balance
-  assetBalance(amount: number | string | bigint, tokenName: string): string {
-    return this.balance(amount, tokenName);
-  }
-
   message(
     rows: string[],
     options?: {
@@ -77,7 +72,7 @@ export class Formatter {
       }
     }
 
-    result.push(`Network: ${this.chainProps.chain}`);
+    result.push(`Chain: ${this.chainProps.chain}`);
     return result;
   }
 }

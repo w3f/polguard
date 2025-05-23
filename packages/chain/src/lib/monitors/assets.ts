@@ -58,8 +58,8 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
 
       const message = this.fmt.message(
         [
-          `${this.fmt.accountLink(account)} received ${this.fmt.balance(amount, token)}`,
-          `From: ${this.fmt.accountLink({ ss58: from, name: from, hex: '' })}`,
+          `${this.fmt.accountLink(account.name, account.ss58)} received ${this.fmt.balance(amount, token)}`,
+          `From: ${this.fmt.accountLink(from, from)}`,
         ],
         { blockNumber, phase: eventRecord.phase },
       );
@@ -84,8 +84,8 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
 
       const message = this.fmt.message(
         [
-          `${this.fmt.accountLink(account)} sent ${this.fmt.balance(amount, token)}`,
-          `To: ${this.fmt.accountLink({ ss58: to, name: to, hex: '' })}`,
+          `${this.fmt.accountLink(account.name, account.ss58)} sent ${this.fmt.balance(amount, token)}`,
+          `To: ${this.fmt.accountLink(to, to)}`,
         ],
         { blockNumber, phase: eventRecord.phase },
       );
@@ -121,7 +121,7 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
           if (currentBalance < previousBalance) {
             const msg = this.fmt.message(
               [
-                `${token} balance decreased for ${this.fmt.accountLink(account)}`,
+                `Balance decreased for ${this.fmt.accountLink(account.name, account.ss58)}`,
                 `Previous: ${this.fmt.balance(previousBalance, token)}`,
                 `Current:  ${this.fmt.balance(currentBalance, token)}`,
               ],
@@ -160,7 +160,7 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
           if (currentBalance < threshold) {
             const message = this.fmt.message(
               [
-                `${token} balance for ${this.fmt.accountLink(account)} is below threshold.`,
+                `Balance for ${this.fmt.accountLink(account.name, account.ss58)} is below threshold.`,
                 `Current balance: ${this.fmt.balance(currentBalance, token)}`,
                 `Threshold: ${this.fmt.balance(threshold, token)}`,
               ],

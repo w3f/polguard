@@ -1,4 +1,8 @@
 import { IdentityField } from '.';
+import '@polkadot/api-augment/polkadot';
+import { PalletReferendaReferendumInfo } from '@polkadot/types/lookup';
+import { Call, H256 } from '@polkadot/types/interfaces/runtime';
+import { Bytes } from '@polkadot/types';
 
 export type IdentityInfo = {
   [K in IdentityField]?: string;
@@ -16,4 +20,6 @@ export interface ChainDataProvider {
   identitySuperOf(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
   assetsAccountBalance(addresses: string[], tokenNames: string[], blockNumber: number): Promise<Record<string, Record<string, bigint>>>;
   ormlTokensAccountBalance(addresses: string[], tokenNames: string[], blockNumber: number): Promise<Record<string, Record<string, bigint>>>;
+  referendaInfoFor(referendumIndex: string | number, blockNumber: number): Promise<PalletReferendaReferendumInfo | null>;
+  referendaTrack(trackId: number | string, blockNumber: number): Promise<string>;
 }

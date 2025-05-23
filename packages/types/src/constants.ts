@@ -60,6 +60,7 @@ export enum BalancesHandlerType {
   BalanceThreshold = 'BalanceThreshold',
   TransferIngress = 'TransferIngress',
   TransferEgress = 'TransferEgress',
+  Transfer = 'Transfer',
 }
 
 export enum IdentityHandlerType {
@@ -80,7 +81,7 @@ export enum TelemetryHandlerType {
 
 export enum GovernanceHandlerType {
   ReferendaSubmitted = 'ReferendaSubmitted',
-  ConvictionVoted = 'ConvictionVoted',
+  ConvictionVote = 'ConvictionVote',
 }
 
 export enum XcmHandlerType {

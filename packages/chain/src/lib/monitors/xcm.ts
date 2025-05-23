@@ -41,9 +41,9 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
           const formattedBalance =
             token === this.chainProps.chainToken ? this.fmt.balance(amount) : this.fmt.balance(amount, token);
 
-          messageLines.push(`${this.fmt.accountLink(account)} sent ${formattedBalance}`);
+          messageLines.push(`${this.fmt.accountLink(account.name, account.ss58)} sent ${formattedBalance}`);
         } else {
-          messageLines.push(`${this.fmt.accountLink(account)} sent XCM transfer`);
+          messageLines.push(`${this.fmt.accountLink(account.name, account.ss58)} sent XCM transfer`);
         }
 
         messageLines.push(`To: ${destination ?? 'Unknown'}`, `Destination chain: ${destinationChain ?? 'Unknown'}`);

@@ -27,7 +27,9 @@ export class ConfigRegistry<T extends MonitorType> {
     this.buildAccountLookup();
     this.uniqueAddresses = Array.from(this.accounts.keys());
 
-    // TODO: Should be redisigned. It's related to the problem of using data provider optimally (less RPC queries)
+    // TODO: ConfigRegistry redisign.
+    // 1. collectAllTokens related to the problem of using data provider optimally (less RPC queries)
+    // 2. getGroupsByHandler lookups
     if (this.monitorType === MonitorType.Assets) {
       this.collectAllTokens();
     }
@@ -152,5 +154,28 @@ export class ConfigRegistry<T extends MonitorType> {
 
   getUniqueTokens(): string[] {
     return Array.from(this.uniqueTokens);
+  }
+
+  /**
+   * Gets all groups that have a specific handler type enabled.
+   * This is useful for handlers that don't need specific accounts,
+   * like ReferendaSubmitted in the Governance monitor.
+   *
+   * @param handlerType - Handler type to check for
+   * @returns Array of objects containing group ID and notifications
+   */
+  getGroupsByHandler(handlerType: MonitorHandlerType[T]): { groupId: string; notifications: NotificationSettings }[] {
+    return this.groups
+      .filter(group => {
+        const monitorConfig = group.monitors.find(monitor => monitor.name === this.monitorType);
+        if (!monitorConfig) return false;
+
+        const handlers = monitorConfig.settings.handlers as MonitorHandlerType[T][];
+        return handlers.includes(handlerType);
+      })
+      .map(group => ({
+        groupId: group.id,
+        notifications: group.notifications,
+      }));
   }
 }

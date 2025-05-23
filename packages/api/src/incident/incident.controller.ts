@@ -64,7 +64,7 @@ Used by Watcher service to automatically create incidents when issues are detect
     summary: 'Acknowledge an incident by ID',
     description: `Mark an incident as acknowledged by a specific user.
 
-Used by the notification service (Matrix) for human acknowledgment of incidents.`,
+Used by the notification service (Matrix) for incident acknowledgment.`,
   })
   @ApiResponse({
     status: 200,

@@ -96,6 +96,12 @@ tests:
         block: 25700136
         account:
           address: 13hyXGa1E6Gprm1RQo56WwTGuvZWw4q2MoQHBPXFiGfVRx4f
+    Transfer:
+      - description: "Call (balances.Transfer). Nested call: multisig -> proxy -> balances.transfer. Should generate two incidents"
+        chain: Kusama
+        block: 21441337
+        account:
+          address: ESVfLhWFe7pAePrxctqDPEx8jEZFPCWxfmyuGAzn8gAJdPU
 
   Identity:
     IdentityUnexpected:
@@ -248,3 +254,16 @@ tests:
         account:
           tokens: [localUSDC]
           address: 4dtAmm2K7vs75h3AfyjEtsbseR9dmN3PPzVsxAsCiEgHCeKZ
+  Governance:
+    ReferendaSubmitted:
+      - description: "Event (referenda.Submitted)"
+        chain: Polkadot
+        block: 25764772
+        account:
+          address: ''
+    ConvictionVote:
+      - description: "Call (convictionVoting.vote)"
+        chain: Polkadot
+        block: 25771956
+        account:
+          address: 16GMHo9HZv8CcJy4WLoMaU9qusgzx2wxKDLbXStEBvt5274B

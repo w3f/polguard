@@ -237,8 +237,8 @@ Monitors governance activities.
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects when new referenda are submitted
 
-#### ConvictionVoted
-- **Type**: Event (`convictionVoting.Voted`)
+#### ConvictionVote
+- **Type**: Call (`convictionVoting.vote`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects conviction voting activities
 
@@ -249,7 +249,7 @@ monitors:
   - name: Governance
     handlers:
       - ReferendaSubmitted
-      - ConvictionVoted
+      - ConvictionVote
 ```
 
 ## XCM Monitor

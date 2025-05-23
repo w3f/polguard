@@ -263,6 +263,34 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
       return result;
     }
+
+    @Cached()
+    async referendaInfoFor(referendumIndex: string | number, blockNumber: number): Promise<any> {
+      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const info = await apiAt.query.referenda.referendumInfoFor(referendumIndex);
+      if (info.isNone) {
+        return null;
+      }
+      return info.unwrap();
+    }
+
+    @Cached()
+    async referendaTrack(trackId: number | string, blockNumber: number): Promise<string> {
+      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+
+      const rawTracks = apiAt.consts.referenda.tracks as any;
+      const idToFind = typeof trackId === 'string' ? parseInt(trackId, 10) : trackId;
+
+      for (const entry of rawTracks as Array<[Codec, any]>) {
+        const [idCodec, info] = entry;
+        const id = (idCodec as any).toNumber();
+        if (id === idToFind) {
+          return info.name.toString();
+        }
+      }
+
+      return `#${idToFind}`;
+    }
   }
 
   return new DataProvider(api, logger, chain);

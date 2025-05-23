@@ -210,16 +210,12 @@ export class ChainWatcher {
     const apiAt = await this.api.at(blockHash);
 
     // Apply every block handlers: process custom logic, usually storage calls
-    for (const monitor of this.monitors) {
-      await monitor.processState({ blockNumber });
-    }
+    await Promise.all(this.monitors.map(m => m.processState({ blockNumber })));
 
     // Apply event handlers: process event payload
     const records = (await apiAt.query.system.events()) as unknown as EventRecord[];
     for (const eventRecord of records) {
-      for (const monitor of this.monitors) {
-        await monitor.processEvent({ blockNumber, eventRecord });
-      }
+      await Promise.all(this.monitors.map(m => m.processEvent({ blockNumber, eventRecord })));
     }
 
     // Apply call handlers: process call signature
@@ -247,40 +243,38 @@ export class ChainWatcher {
     origin: string,
     extrinsicIndex: number,
   ): Promise<void> {
-    // Proxy: override origin to `real`
-    if (call.section === 'proxy' && call.method === 'proxy') {
-      const real = call.args[1].toString(); // real: AccountIdLookup
-      const innerCall = call.args[3] as CallBase<AnyTuple>;
-      await this.traverseCallTree(blockNumber, innerCall, real, extrinsicIndex);
-      return;
+    if (!call.meta?.args) return;
+
+    const { section, method } = call;
+    const metaArgs = call.meta.args;
+    // Find the index of a param by name
+    const idxOf = (name: string) => metaArgs.findIndex(a => a.name.toString() === name);
+
+    // 1. Proxy pallet: unwrap call & override origin
+    if (section === 'proxy' && method === 'proxy') {
+      const real = call.args[idxOf('real')].toString();
+      const inner = call.args[idxOf('call')] as unknown as CallBase<AnyTuple>;
+      return this.traverseCallTree(blockNumber, inner, real, extrinsicIndex);
     }
 
-    // Utility: batch
-    if (call.section === 'utility' && ['batch', 'batchAll', 'forceBatch'].includes(call.method)) {
-      const calls = call.args[0] as unknown as CallBase<AnyTuple>[];
-      for (const innerCall of calls) {
-        await this.traverseCallTree(blockNumber, innerCall, origin, extrinsicIndex);
+    // 2. Generic Vec<RuntimeCall>: batch-style wrappers (e.g. utility.batch, etc.)
+    const callsIdx = idxOf('calls');
+    if (callsIdx >= 0) {
+      const innerCalls = call.args[callsIdx] as unknown as CallBase<AnyTuple>[];
+      for (const c of innerCalls) {
+        await this.traverseCallTree(blockNumber, c, origin, extrinsicIndex);
       }
       return;
     }
 
-    // Utility: as_derivative (origin is already correct)
-    if (call.section === 'utility' && call.method === 'asDerivative') {
-      const innerCall = call.args[1] as CallBase<AnyTuple>;
-      await this.traverseCallTree(blockNumber, innerCall, origin, extrinsicIndex);
-      return;
+    // 3. Generic Box<RuntimeCall>: single-call wrappers (e.g. multisig.asMulti, sudo, scheduler.execute, etc.)
+    const callIdx = idxOf('call');
+    if (callIdx >= 0) {
+      const inner = call.args[callIdx] as unknown as CallBase<AnyTuple>;
+      return this.traverseCallTree(blockNumber, inner, origin, extrinsicIndex);
     }
 
-    // Multisig: as_multi
-    if (call.section === 'multisig' && call.method === 'asMulti') {
-      const innerCall = call.args[4] as CallBase<AnyTuple>;
-      await this.traverseCallTree(blockNumber, innerCall, origin, extrinsicIndex);
-      return;
-    }
-
-    // Base case: process this call with the current origin
-    for (const monitor of this.monitors) {
-      await monitor.processCall({ blockNumber, call, origin, extrinsicIndex });
-    }
+    // 4. LEAF → dispatch to all monitors
+    await Promise.all(this.monitors.map(m => m.processCall({ blockNumber, call, origin, extrinsicIndex })));
   }
 }

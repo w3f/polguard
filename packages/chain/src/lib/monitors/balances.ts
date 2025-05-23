@@ -4,8 +4,9 @@ import {
   MonitorType,
   BalancesHandlerType as H,
   EventHandlerParams,
+  CallHandlerParams,
 } from '@w3f/monitoring-types';
-import { Event, State } from '../decorators';
+import { Call, Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 
 export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
@@ -24,7 +25,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
       for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
         const message = this.fmt.message(
           [
-            `Balance changed for ${this.fmt.accountLink(account)}`,
+            `Balance changed for ${this.fmt.accountLink(account.name, account.ss58)}`,
             `Previous: ${this.fmt.balance(previousBalance)}`,
             `Current: ${this.fmt.balance(currentBalance)}`,
           ],
@@ -53,7 +54,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
 
         const message = this.fmt.message(
           [
-            `Balance for ${this.fmt.accountLink(account)} is below threshold.`,
+            `Balance for ${this.fmt.accountLink(account.name, account.ss58)} is below threshold.`,
             `Current balance: ${this.fmt.balance(currentBalance)}`,
             `Threshold: ${this.fmt.balance(account.settings.threshold)}`,
           ],
@@ -63,6 +64,31 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
         const isFiring = currentBalance < account.settings.threshold;
         await this.incidents.handle(message, notifications, key, blockNumber, isFiring);
       }
+    }
+  }
+
+  // This handler was added just for testing purposes (multisig, proxy, nested calls)
+  // TODO: Should follow same approach as event-based handler: Ingress, Egress
+  @Call(H.Transfer, [Chain.Polkadot, Chain.Kusama], 'balances.transfer')
+  async balancesTransfer({
+    call,
+    origin,
+    blockNumber,
+    extrinsicIndex,
+    handlerType,
+  }: CallHandlerParams<H.Transfer>): Promise<void> {
+    const [to, amount] = call.args.map(arg => arg.toString());
+    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
+      const message = this.fmt.message(
+        [
+          `${this.fmt.accountLink(account.name, account.ss58)} initiated a transfer of ${this.fmt.balance(amount)}`,
+          `To: ${this.fmt.accountLink(to, to)}`,
+        ],
+        { blockNumber, extrinsicIndex },
+      );
+
+      const key = { account: account.ss58, groupId, handlerType };
+      await this.incidents.handle(message, notifications, key, blockNumber);
     }
   }
 
@@ -77,8 +103,8 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, to)) {
       const message = this.fmt.message(
         [
-          `${this.fmt.accountLink(account)} received ${this.fmt.balance(amount)}`,
-          `From: ${this.fmt.accountLink({ ss58: from, name: from, hex: '' })}`,
+          `${this.fmt.accountLink(account.name, account.ss58)} received ${this.fmt.balance(amount)}`,
+          `From: ${this.fmt.accountLink(from, from)}`,
         ],
         { blockNumber, phase: eventRecord.phase },
       );
@@ -98,8 +124,8 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, from)) {
       const message = this.fmt.message(
         [
-          `${this.fmt.accountLink(account)} sent ${this.fmt.balance(amount)}`,
-          `To: ${this.fmt.accountLink({ ss58: to, name: to, hex: '' })}`,
+          `${this.fmt.accountLink(account.name, account.ss58)} sent ${this.fmt.balance(amount)}`,
+          `To: ${this.fmt.accountLink(to, to)}`,
         ],
         { blockNumber, phase: eventRecord.phase },
       );
