@@ -1,4 +1,4 @@
-# Missing required groups field
+# Missing required groups field and accounts section
 defaults:
   notifications:
     messengerType: matrix

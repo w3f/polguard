@@ -48,13 +48,13 @@ graph LR
 
 ### Services
 
-- [**API Service**](packages/api/README.md): central control service that manages incidents, configurations, and notifications
+- [**API**](packages/api/README.md): central control service that manages incidents, configurations, and notifications
   - Enables creating, tracking, acknowledging, and resolving incidents through a REST API
   - Provides centralized monitoring configuration for other services
   - Schedules notification retries and configuration refreshes
   - Handles automatic resolution of orphaned incidents
 
-- [**Chain Service**](packages/chain/README.md): monitors blockchain activities and generates incidents
+- [**Chain**](packages/chain/README.md): monitors blockchain activities and generates incidents
   - Processes blockchain events, extrinsic calls and state changes
   - Creates incidents when issues are detected, resolves incidents
   - Some of the monitoring features:
@@ -64,28 +64,28 @@ graph LR
     - Identity changes and verification
     - Referenda and voting activities
 
-- [**Matrix Service**](packages/matrix/README.md): handles sending notifications to Matrix rooms
+- [**Matrix**](packages/matrix/README.md): handles sending notifications to Matrix rooms
   - Delivers incident notifications to Matrix rooms
   - Provides a bot interface for incident management
   - Supports incident acknowledgment via commands
 
-- [**Telemetry Service**](packages/telemetry/README.md): monitors node telemetry data (short-term solution to be removed in the future)
+- [**Telemetry**](packages/telemetry/README.md): monitors node telemetry data (short-term solution to be removed in the future)
   - Processes telemetry data, tracks node hardware, software, location information
   - Creates incidents when issues are detected, resolves incidents
 
 ### Supporting Packages
 
-- [**Types Package**](packages/types/README.md): common types, interfaces, and constants used across all packages
+- [**Types**](packages/types/README.md): common types, interfaces, and constants used across all packages
   - Defines core data structures and enums
   - Provides type safety and consistency across packages
 
-- [**Config Package**](packages/config/README.md): monitoring configuration processing and validation
-  - Enables defining monitoring groups with specific chains, accounts, and alert settings
+- [**Config**](packages/config/README.md): monitoring configuration processing and validation
+  - Enables defining monitoring groups with specific chains, accounts, and notification settings
   - Loads and validates YAML monitoring configuration files
   - Transforms raw configuration into structured monitoring groups
   - Provides utilities for address transformation and settings building
-  - [Configuration Guide](packages/config/CONFIG_GUIDE.md): Detailed guide to the YAML configuration format
-  - [Monitors & Handlers Reference](packages/config/MONITORS.md): Comprehensive list of all monitors and handlers
+  - [Configuration Guide](packages/config/CONFIG_GUIDE.md): detailed guide to the YAML configuration format
+  - [Monitors & Handlers Reference](packages/config/MONITORS.md): comprehensive list of all monitors and handlers
 
 ## Getting Started
 
@@ -108,9 +108,9 @@ yarn build
 
 There are two types of configuration in this project:
 
-1. **Application Configuration**: Each service has its own application configuration file in its `config` directory. These files configure the service's behavior, connections, and runtime parameters. Example application configurations can be found in the `config` directory of each package.
+1. **Application configuration**: each service has its own application configuration file in its `config` directory. These files configure the service's behavior, connections, and runtime parameters. Example application configurations can be found in the `config` directory of each package.
 
-2. **Monitoring Configuration**: Separate from application configuration, this defines what to monitor (accounts, chains, thresholds, etc.) and is processed by the Config package and served by the API service.
+2. **Monitoring configuration**: separate from application configuration, this defines what to monitor (accounts, chains, thresholds, etc.) and is processed by the Config package and served by the API service.
 
 ### Running Services
 

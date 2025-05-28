@@ -20,7 +20,7 @@ describe('Incident API (integration)', () => {
     chain: Chain.Polkadot,
     blockNumber: 12345,
     account: testWallet,
-    groupId: 'test-group',
+    groupId: 'validators-test-group',
     handlerType: 'test-handler',
     notificationChannels: [
       { channelId: 'test-channel', messengerType: MessengerType.Matrix, repeatHours: 1.0 }

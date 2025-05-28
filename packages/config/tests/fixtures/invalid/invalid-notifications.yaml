@@ -1,3 +1,7 @@
+accountSets:
+  invalid-notifications:
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+
 groups:
   - id: invalid-notifications
     chains:
@@ -8,5 +12,6 @@ groups:
     monitors:
       - name: Staking
         commission: 10
-    accounts:
-      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+        handlers:
+          - CommissionChanged
+    accountSet: invalid-notifications

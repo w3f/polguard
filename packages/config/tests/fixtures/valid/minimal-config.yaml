@@ -1,3 +1,7 @@
+accountSets:
+  minimal-validators:
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+
 groups:
   - id: minimal-validators
     chains:
@@ -13,5 +17,4 @@ groups:
       - name: Xcm
         handlers:
           - XcmTransferEgress
-    accounts:
-      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+    accountSet: minimal-validators

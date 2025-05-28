@@ -23,7 +23,10 @@ defaults:
         - TelemetryMissing
         - VersionOutdated
 
+accountSets:
+  validator-accounts:
+    - address: 15tEXHHDjEv6VKR2MhpnfeJZnKQnTyMPVvGH51BJvBXNoCNK
+
 groups:
   - id: test-group-validator-1
-    accounts:
-      - address: 15tEXHHDjEv6VKR2MhpnfeJZnKQnTyMPVvGH51BJvBXNoCNK
+    accountSet: validator-accounts

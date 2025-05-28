@@ -67,7 +67,7 @@ describe('MonitoringConfigService', () => {
   const mockMonitoringGroups: MonitoringGroup[] = [
     createMonitoringGroup('validators-default', Chain.Polkadot, [alice, bob]),
     createMonitoringGroup('validators-custom', Chain.Polkadot, [charlie]),
-    createMonitoringGroup('test-group', Chain.Kusama, [testWallet]),
+    createMonitoringGroup('validators-test-group', Chain.Kusama, [testWallet]),
   ];
 
   beforeEach(async () => {

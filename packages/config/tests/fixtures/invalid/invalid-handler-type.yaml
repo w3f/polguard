@@ -1,3 +1,7 @@
+accountSets:
+  invalid-handler-type:
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+
 groups:
   - id: invalid-handler-type
     chains:
@@ -10,5 +14,4 @@ groups:
         commission: 10
         handlers:
           - InvalidHandlerType  # Invalid handler type
-    accounts:
-      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+    accountSet: invalid-handler-type

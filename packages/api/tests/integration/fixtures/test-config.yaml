@@ -13,16 +13,21 @@ defaults:
         - SlashReported
         - CommissionUnexpected
 
+accountSets:
+  validators-default-accounts:
+    - address: 15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5  # Alice
+    - address: 14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3  # Bob
+  validators-custom-accounts:
+    - address: 14Gjs1TD93gnwEBfDMHoCgsuf1s2TVKUP6Z1qKmAZnZ8cW5q  # Charlie
+  test-group-accounts:
+    - address: 126TwBzBM4jUEK2gTphmW4oLoBWWnYvPp8hygmduTr4uds57  # Test wallet
+
 groups:
   - id: validators-default
-    accounts:
-      - address: "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5"  # Alice
-      - address: "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"  # Bob
+    accountSet: validators-default-accounts
 
   - id: validators-custom
-    accounts:
-      - address: "14Gjs1TD93gnwEBfDMHoCgsuf1s2TVKUP6Z1qKmAZnZ8cW5q"  # Charlie
+    accountSet: validators-custom-accounts
 
-  - id: test-group
-    accounts:
-      - address: "126TwBzBM4jUEK2gTphmW4oLoBWWnYvPp8hygmduTr4uds57"  # Test wallet
+  - id: validators-test-group
+    accountSet: test-group-accounts

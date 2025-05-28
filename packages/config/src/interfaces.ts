@@ -1,15 +1,5 @@
 import { Chain, MonitorType, NotificationSettings } from '@w3f/monitoring-types';
 
-export interface RawConfig {
-  version: string;
-  defaults: {
-    chains: Chain[];
-    monitors: RawMonitorSettings[];
-    notifications: NotificationSettings;
-  };
-  groups: RawMonitoringGroup[];
-}
-
 export interface RawMonitoringGroup {
   id: string;
   chains?: Chain[];

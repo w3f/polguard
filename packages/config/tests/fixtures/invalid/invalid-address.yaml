@@ -1,3 +1,9 @@
+accountSets:
+  invalid-addresses:
+    - address: "invalid-address"  # Invalid format
+    - address: "5GrwvaEF"        # Too short SS58
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQYYY"  # Invalid SS58
+
 groups:
   - id: invalid-addresses
     chains:
@@ -11,7 +17,4 @@ groups:
         handlers:
           - CommissionChanged
           - SlashReported
-    accounts:
-      - address: "invalid-address"  # Invalid format
-      - address: "5GrwvaEF"        # Too short SS58
-      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQYYY"  # Invalid SS58
+    accountSet: invalid-addresses

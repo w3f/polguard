@@ -28,9 +28,8 @@ yarn npm whoami
 Before publishing, ensure all tests pass and packages build correctly:
 
 ```bash
-yarn build:all
-yarn test:all
-yarn test:config
+yarn build
+yarn test
 ```
 
 ### 3. Version Management
@@ -39,18 +38,14 @@ We use semantic versioning for our public packages. To update versions:
 
 ```bash
 # Update package version (patch, minor, or major)
-yarn version:types patch
-yarn version:config patch
+yarn version patch
 ```
 
 ### 4. Publishing Process
 
-Public packages must be published in the correct order due to dependencies:
+Public packages must be published in the correct order due to dependencies: types, then config.
 
 ```bash
-yarn build:types
-yarn publish:types
-
-yarn build:config
-yarn publish:config
+yarn build
+yarn npm publish
 ```

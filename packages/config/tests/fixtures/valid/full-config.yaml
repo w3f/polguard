@@ -1,3 +1,27 @@
+accountSets:
+  validators-default:
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+      name: "Alice"
+      selfStake: "5000.25"
+    - address: "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+      name: "Bob-Hex"
+      commission: 5
+      
+  validators-custom:
+    - address: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
+      name: "Bob"
+      # Staking settings
+      commission: 3
+      selfStake: "1000.5"
+      # Identity settings
+      matrix: "@validator:matrix.org"
+      email: "validator@email.com"
+      # Balances settings
+      threshold: "750.25"
+      # Annotations
+      annotations:
+        tag: group-R
+
 defaults:
   notifications:
     messengerType: matrix
@@ -18,13 +42,7 @@ groups:
   - id: validators-default  # This group will be created for both Polkadot and Kusama
     annotations:
       enablePayout: true
-    accounts:
-      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
-        name: "Alice"
-        selfStake: "5000.25"
-      - address: "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-        name: "Bob-Hex"
-        commission: 5
+    accountSet: validators-default
 
   - id: validators-custom
     chains:
@@ -49,17 +67,4 @@ groups:
       - name: Identity
         handlers:
           - IdentityChanged
-    accounts:
-      - address: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
-        name: "Bob"
-        # Staking settings
-        commission: 3
-        selfStake: "1000.5"
-        # Identity settings
-        matrix: "@validator:matrix.org"
-        email: "validator@email.com"
-        # Balances settings
-        threshold: "750.25"
-        # Annotations
-        annotations:
-          tag: group-R
+    accountSet: validators-custom

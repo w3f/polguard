@@ -1,3 +1,7 @@
+accountSets:
+  invalid-handlers:
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+
 groups:
   - id: invalid-handlers
     chains:
@@ -9,5 +13,4 @@ groups:
       - name: Staking
         commission: 10
         handlers: []         # Invalid: handlers array cannot be empty
-    accounts:
-      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+    accountSet: invalid-handlers

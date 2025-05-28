@@ -1,9 +1,12 @@
 # Missing required fields in both defaults and group
+accountSets:
+  missing-required-accounts:
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+
 defaults:
   chains:
     - Polkadot
 
 groups:
-  - id: missing-required
-    accounts:
-      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+  - id: missing-required-fields-group
+    accountSet: missing-required-accounts

@@ -228,20 +228,41 @@ const defaultsSchema = Joi.object({
 });
 
 const groupSchema = Joi.object({
-  id: Joi.string().required(),
+  id: Joi.string()
+    .pattern(/^[a-z][a-z0-9-]*$/)
+    .min(17)
+    .required()
+    .messages({
+      'string.pattern.base':
+        'Group ID must be in slug format (lowercase letters, numbers, and hyphens, starting with a letter)',
+      'string.min': 'Group ID must be more than 16 characters long',
+    }),
   chains: Joi.array()
     .items(Joi.string().valid(...Object.values(Chain)))
     .optional(),
   monitors: Joi.array().items(monitorSchema).optional(),
   notifications: notificationSchema.optional(),
-  accounts: Joi.array().items(accountSchema).min(1).required().messages({
-    'array.min': 'At least one account is required in a group',
+  accountSet: Joi.string().required().messages({
+    'any.required': 'accountSet field is required and must reference an account set name',
   }),
   // Annotations field bypasses validation
   annotations: Joi.object().optional(),
 });
 
 const configSchema = Joi.object({
+  accountSets: Joi.object()
+    .pattern(
+      Joi.string(),
+      Joi.array().items(accountSchema).min(1).messages({
+        'array.min': 'Each account set must contain at least one account',
+      }),
+    )
+    .min(1)
+    .required()
+    .messages({
+      'object.min': 'At least one account set is required',
+      'any.required': 'accountSets section is required',
+    }),
   defaults: defaultsSchema.optional(),
   groups: Joi.array().items(groupSchema).min(1).required().messages({
     'array.min': 'At least one group is required in the configuration',
@@ -266,6 +287,15 @@ export function validateConfig(config: any): void {
       throw new Error(`Duplicate group ID found: "${group.id}". All group IDs must be unique.`);
     }
     groupIds.add(group.id);
+
+    // Validate that account set reference exists
+    const accountSetName = group.accountSet;
+    if (!validatedConfig.accountSets[accountSetName]) {
+      throw new Error(
+        `Group "${group.id}" references account set "${accountSetName}" which does not exist in accountSets section`,
+      );
+    }
+
     validateGroup(group, defaults);
   });
 }

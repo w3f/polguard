@@ -30,7 +30,7 @@ const createTestIncidentDto = (overrides = {}) => ({
   chain: Chain.Polkadot,
   blockNumber: 12345,
   account: 'test-account',
-  groupId: 'test-group',
+  groupId: 'validators-test-group',
   handlerType: 'test-handler',
   notificationChannels: [{ channelId: 'test-channel', messengerType: MessengerType.Matrix }],
   needsAck: true,

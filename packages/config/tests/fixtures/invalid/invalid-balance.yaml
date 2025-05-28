@@ -1,3 +1,8 @@
+accountSets:
+  invalid-balances:
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+      selfStake: "1.2.3"          # Invalid decimal format
+
 groups:
   - id: invalid-balances
     chains:
@@ -10,6 +15,4 @@ groups:
         threshold: "invalid.number"  # Invalid decimal format
         handlers:
           - BalanceThreshold
-    accounts:
-      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
-        selfStake: "1.2.3"          # Invalid decimal format
+    accountSet: invalid-balances

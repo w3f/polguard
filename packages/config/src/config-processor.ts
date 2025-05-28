@@ -9,7 +9,7 @@ import {
   MonitorTypeSettings,
   MonitorType,
 } from '@w3f/monitoring-types';
-import { RawConfig, RawMonitoringGroup } from './interfaces';
+import { RawMonitoringGroup } from './interfaces';
 import { validateConfig } from './config-validator';
 import { AddressTransformer } from './address-transformer';
 import { AccountSettingsBuilder } from './account-settings-builder';
@@ -70,11 +70,11 @@ export class ConfigProcessor {
     return this.transformGroups(extractedGroups);
   }
 
-  private static loadAndValidateConfigs(configFiles: string[]): RawConfig[] {
+  private static loadAndValidateConfigs(configFiles: string[]): any[] {
     return configFiles.map(filePath => {
       try {
         const fileContents = fs.readFileSync(filePath, 'utf8');
-        const config = yaml.load(fileContents) as RawConfig;
+        const config = yaml.load(fileContents) as any;
         validateConfig(config);
         return config;
       } catch (error) {
@@ -83,14 +83,17 @@ export class ConfigProcessor {
     });
   }
 
-  private static extractGroupsAndApplyDefaults(rawConfigs: RawConfig[]): RawMonitoringGroup[] {
+  private static extractGroupsAndApplyDefaults(rawConfigs: any[]): RawMonitoringGroup[] {
     return rawConfigs.flatMap(config =>
-      config.groups.map(group => ({
-        ...group,
-        chains: group.chains || config.defaults?.chains,
-        monitors: group.monitors || config.defaults?.monitors,
-        notifications: group.notifications || config.defaults?.notifications,
-      })),
+      config.groups.map((group: any) => {
+        return {
+          ...group,
+          accounts: config.accountSets[group.accountSet],
+          chains: group.chains || config.defaults?.chains,
+          monitors: group.monitors || config.defaults?.monitors,
+          notifications: group.notifications || config.defaults?.notifications,
+        };
+      }),
     );
   }
 

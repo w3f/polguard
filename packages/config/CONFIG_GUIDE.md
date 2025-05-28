@@ -4,15 +4,23 @@ This guide explains how to configure the monitoring platform using YAML configur
 
 ## Configuration Structure
 
-A configuration file consists of two main sections:
+A configuration file consists of three main sections:
+- `accountSets` - Named account sets that can be referenced by groups
 - `defaults` - Default settings applied to all groups
 - `groups` - List of monitoring groups with their specific settings
 
 ```yaml
 defaults:
   # Default settings
+
+accountSets:
+  account-set-name:
+    - address: "..."
+    # ... more accounts
+
 groups:
   - name: group1
+    accountSet: account-set-name
     # Group settings
 ```
 
@@ -20,11 +28,12 @@ groups:
 
 Every configuration must have:
 1. At least one group
-2. Each group must have:
+2. At least one account set in the `accountSets` section
+3. Each group must have:
    - `chains` (directly or from defaults)
    - `monitors` (directly or from defaults)
    - `notifications` (directly or from defaults)
-   - At least one account
+   - `accountSet` field referencing an account set name
 
 ## Default Settings
 
@@ -48,9 +57,24 @@ defaults:
         - SlashReported
 ```
 
+## Account Sets
+
+Account sets allow you to define groups of accounts once and reference them across multiple monitoring groups:
+
+```yaml
+accountSets:
+  validators-set:
+    - address: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
+      name: "Validator1"
+      commission: 3
+      selfStake: "1000.5"
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+      name: "Validator2"
+```
+
 ## Group Configuration
 
-Each group defines a set of accounts to monitor with specific settings:
+Each group references an account set and defines monitoring settings:
 
 ```yaml
 groups:
@@ -69,11 +93,7 @@ groups:
         threshold: "500.75"
       - name: Identity
     
-    accounts:
-      - address: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
-        name: "Validator1"
-        commission: 3
-        selfStake: "1000.5"
+    accountSet: validators-set
 ```
 
 ## Value Formats & Validation
@@ -175,6 +195,13 @@ The `annotations` field bypasses validation and follows the same override rules 
 ## Configuration Example
 
 ```yaml
+accountSets:
+  validators-set:
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+      name: "Alice Validator"
+      commission: 3
+      selfStake: "5000.0"
+
 defaults:
   chains:
     - Polkadot
@@ -184,7 +211,7 @@ defaults:
     needsAck: true
 
 groups:
-  - name: validators
+  - name: validators-staking-with-ack
     monitors:
       - name: Staking
         commission: 5
@@ -196,11 +223,19 @@ groups:
         handlers:
           - BalanceThreshold
           - TransferIngress
-    accounts:
-      - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
-        name: "Alice Validator"
-        commission: 3
-        selfStake: "5000.0"
+    accountSet: validators-set
+
+  - name: validators-balances-no-ack
+    monitors:
+      - name: Balances
+        handlers:
+          - TransferEgress
+    notifications:
+      messengerType: matrix
+      channels: ['!roomid:matrix.org']
+      needsAck: false
+      repeatHours: 12
+    accountSet: validators-set
 ```
 
 For a complete reference of all available monitors and handlers, see the [Monitors & Handlers Reference](./MONITORS.md).
