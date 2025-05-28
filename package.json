@@ -17,8 +17,6 @@
     "lint": "yarn workspaces foreach -W run lint",
     "start:chain:dev": "yarn workspace @w3f/monitoring-chain start:dev",
     "start:chain": "yarn workspace @w3f/monitoring-chain start",
-    "start:telemetry:dev": "yarn workspace @w3f/monitoring-telemetry start:dev",
-    "start:telemetry": "yarn workspace @w3f/monitoring-telemetry start",
     "start:matrix:dev": "yarn workspace @w3f/monitoring-matrix start:dev",
     "start:matrix": "yarn workspace @w3f/monitoring-matrix start",
     "start:api:dev": "yarn workspace @w3f/monitoring-api start:dev",

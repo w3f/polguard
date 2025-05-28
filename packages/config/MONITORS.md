@@ -8,7 +8,6 @@ The platform includes several specialized monitors, each responsible for trackin
 - **Identity Monitor**: Tracks on-chain identity information
 - **Governance Monitor**: Monitors governance activities like referenda and voting
 - **XCM Monitor**: Tracks cross-chain asset transfers
-- **Telemetry Monitor**: Monitors node telemetry data (hardware, software, location)
 
 Each monitor contains multiple handlers that process specific events, calls, or state changes.
 
@@ -272,71 +271,6 @@ monitors:
       - XcmTransferEgress
 ```
 
-## Telemetry Monitor
-
-Monitors node telemetry data.
-
-### Handlers
-
-#### LocationUnexpected
-- **Type**: Telemetry
-- **Chains**: Polkadot, Kusama
-- **Description**: Alerts when node location doesn't match expectations
-- **Config Keys**:
-  - `sanctionedCountries`: (string[]) List of countries where nodes should not be located
-  - `sanctionedRegions`: (string[]) List of regions where nodes should not be located
-
-#### ProviderUnexpected
-- **Type**: Telemetry
-- **Chains**: Polkadot, Kusama
-- **Description**: Alerts when node provider doesn't match expectations
-- **Config Keys**:
-  - `provider`: (string) Expected cloud/hosting provider name
-
-#### VersionOutdated
-- **Type**: Telemetry
-- **Chains**: Polkadot, Kusama
-- **Description**: Alerts when node software version is outdated
-- **Config Keys**:
-  - `clientVersion`: (object) Object mapping client implementations to minimum versions
-    - `Polkadot`: (string) Minimum version for Parity Polkadot client (semver format)
-    - `KagomeNode`: (string) Minimum version for Kagome Node client (semver format)
-
-#### HardwareUnexpected
-- **Type**: Telemetry
-- **Chains**: Polkadot, Kusama
-- **Description**: Alerts when node hardware doesn't meet requirements
-- **Config Keys**:
-  - `cpu`: (string) Expected CPU model
-  - `minMemoryGB`: (number) Minimum memory in GB
-  - `minCores`: (number) Minimum number of CPU cores
-
-#### TelemetryMissing
-- **Type**: Telemetry
-- **Chains**: Polkadot, Kusama
-- **Description**: Alerts when telemetry data is missing
-
-#### IpSpoofing
-- **Type**: Telemetry
-- **Chains**: Polkadot, Kusama
-- **Description**: Detects potential IP spoofing
-
-### Example Configuration
-
-```yaml
-monitors:
-  - name: Telemetry
-    handlers:
-      - VersionOutdated
-      - TelemetryMissing
-    clientVersion:
-      Polkadot: "v1.0.0"
-    provider: "AWS"
-    minMemoryGB: 32
-    minCores: 4
-    sanctionedCountries: ["Country1"]
-```
-
 ## Handler Types
 
 Handlers are categorized by the type of blockchain data they process:
@@ -344,7 +278,6 @@ Handlers are categorized by the type of blockchain data they process:
 - **Event Handlers**: Process specific blockchain events
 - **Call Handlers**: Process extrinsic calls
 - **State Handlers**: Execute periodically on every block to check blockchain state
-- **Telemetry Handlers**: Process node telemetry data
 
 ## Handler Configuration
 

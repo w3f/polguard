@@ -9,16 +9,6 @@ services:
     ports:
       - "127.0.0.1:8080:3000"
 
-  telemetry:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-    command: start:telemetry
-    volumes:
-      - ./configs/telemetry.yaml:/app/packages/telemetry/config/config.yaml
-    ports:
-      - "127.0.0.1:8083:3000"
-
   matrix:
     build:
       context: ..

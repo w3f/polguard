@@ -69,10 +69,6 @@ graph LR
   - Provides a bot interface for incident management
   - Supports incident acknowledgment via commands
 
-- [**Telemetry**](packages/telemetry/README.md): monitors node telemetry data (short-term solution to be removed in the future)
-  - Processes telemetry data, tracks node hardware, software, location information
-  - Creates incidents when issues are detected, resolves incidents
-
 ### Supporting Packages
 
 - [**Types**](packages/types/README.md): common types, interfaces, and constants used across all packages

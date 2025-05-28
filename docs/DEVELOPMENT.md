@@ -28,10 +28,6 @@ The decorators store metadata about handlers on the class prototype at class def
 
 This design decision prioritizes a simple interface for defining handlers over simpler initialization logic. While the decorator-based approach makes the code more readable and maintainable for developers implementing new monitors, it requires careful management of the prototype chain.
 
-### Telemetry and Chain Separation
-
-Telemetry is not focused on real-time processing like the chain monitoring. It remains part of the repository as we don't yet have general batch processing tools, or offline reports/dashboards for non-real-time data analysis. The code duplication between telemetry and chain watcher implementations is considered acceptable given the temporary nature of the current telemetry implementation.
-
 ## Future Considerations and Known Issues
 
 ### Storage Implementation

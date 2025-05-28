@@ -103,7 +103,7 @@ chain:
       baseUrl: http://api:3000
       endpoints:
         createIncident: /incidents
-        resolveIncident: /incidents/resolve
+        resolveIncident: "/incidents/:id/resolve"
         getConfig: /monitoring-config/groups
     environment: test
     logging:

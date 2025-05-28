@@ -21,7 +21,6 @@ export enum MonitorType {
   Identity = 'Identity',
   Staking = 'Staking',
   Governance = 'Governance',
-  Telemetry = 'Telemetry',
   Xcm = 'Xcm',
   Assets = 'Assets',
 }
@@ -68,15 +67,6 @@ export enum IdentityHandlerType {
   IdentityChanged = 'IdentityChanged',
   IdentityMissing = 'IdentityMissing',
   IdentityFieldsMissing = 'IdentityFieldsMissing',
-}
-
-export enum TelemetryHandlerType {
-  LocationUnexpected = 'LocationUnexpected',
-  ProviderUnexpected = 'ProviderUnexpected',
-  VersionOutdated = 'VersionOutdated',
-  HardwareUnexpected = 'HardwareUnexpected',
-  TelemetryMissing = 'TelemetryMissing',
-  IpSpoofing = 'IpSpoofing'
 }
 
 export enum GovernanceHandlerType {
@@ -153,11 +143,6 @@ export function getChainProperties(chain: Chain): ChainProperties {
     throw new Error(`Unsupported chain: ${chain}`);
   }
   return props;
-}
-
-export enum PolkadotClientImpl {
-  ParityPolkadot = 'Parity Polkadot',
-  KagomeNode = 'Kagome Node'
 }
 
 export const IDENTITY_FIELDS = [

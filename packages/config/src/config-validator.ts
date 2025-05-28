@@ -19,12 +19,10 @@ import {
   StakingHandlerType,
   IdentityHandlerType,
   BalancesHandlerType,
-  TelemetryHandlerType,
   GovernanceHandlerType,
   XcmHandlerType,
   AssetsHandlerType,
   IDENTITY_FIELDS,
-  PolkadotClientImpl,
   CHAIN_TOKENS,
 } from '@w3f/monitoring-types';
 
@@ -101,18 +99,6 @@ const balancesMonitorSchema = Joi.object({
   annotations: Joi.object().optional(),
 });
 
-const telemetryMonitorSchema = Joi.object({
-  handlers: createHandlerSchema(TelemetryHandlerType, 'Telemetry'),
-  cpu: Joi.string(),
-  minMemoryGB: Joi.number().min(1),
-  minCores: Joi.number().min(1),
-  clientVersion: Joi.object().pattern(Joi.string().valid(...Object.values(PolkadotClientImpl)), Joi.string()),
-  provider: Joi.string(),
-  sanctionedCountries: Joi.array().items(Joi.string()),
-  sanctionedRegions: Joi.array().items(Joi.string()),
-  annotations: Joi.object().optional(),
-});
-
 const governanceMonitorSchema = Joi.object({
   handlers: createHandlerSchema(GovernanceHandlerType, 'Governance'),
   annotations: Joi.object().optional(),
@@ -137,7 +123,6 @@ export const monitorSchemas = {
   [MonitorType.Staking]: stakingMonitorSchema,
   [MonitorType.Identity]: identityMonitorSchema,
   [MonitorType.Balances]: balancesMonitorSchema,
-  [MonitorType.Telemetry]: telemetryMonitorSchema,
   [MonitorType.Governance]: governanceMonitorSchema,
   [MonitorType.Xcm]: xcmMonitorSchema,
   [MonitorType.Assets]: assetsMonitorSchema,
@@ -194,7 +179,6 @@ const monitorSchema = Joi.object({
     { is: MonitorType.Staking, then: stakingMonitorSchema },
     { is: MonitorType.Identity, then: identityMonitorSchema },
     { is: MonitorType.Balances, then: balancesMonitorSchema },
-    { is: MonitorType.Telemetry, then: telemetryMonitorSchema },
     { is: MonitorType.Governance, then: governanceMonitorSchema },
     { is: MonitorType.Xcm, then: xcmMonitorSchema },
     { is: MonitorType.Assets, then: assetsMonitorSchema },
@@ -214,7 +198,6 @@ const accountSchema = Joi.object({
   .concat(stakingMonitorSchema)
   .concat(identityMonitorSchema)
   .concat(balancesMonitorSchema)
-  .concat(telemetryMonitorSchema)
   .concat(governanceMonitorSchema)
   .concat(xcmMonitorSchema)
   .concat(assetsMonitorSchema);

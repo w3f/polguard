@@ -25,6 +25,15 @@ export class ConfigService {
       }
     }
 
+    // Handle PostgreSQL password from environment variable
+    if (rawConfig?.database) {
+      if (!rawConfig.database.password && !process.env.POSTGRES_PASSWORD) {
+        throw new Error('Missing PostgreSQL password: set POSTGRES_PASSWORD env var or provide it in config.');
+      }
+
+      rawConfig.database.password = process.env.POSTGRES_PASSWORD ?? rawConfig.database.password;
+    }
+
     this.config = this.validateConfig(rawConfig);
 
     // Log configuration with sensitive data masked
@@ -65,7 +74,7 @@ export class ConfigService {
         host: Joi.string().required(),
         port: Joi.number().default(5432),
         username: Joi.string().required(),
-        password: Joi.string().required(),
+        password: Joi.string().optional(),
         database: Joi.string().required(),
       }).required(),
       httpServer: Joi.object({
@@ -130,7 +139,7 @@ interface AppConfig {
     host: string;
     port: number;
     username: string;
-    password: string;
+    password?: string;
     database: string;
   };
   httpServer?: {

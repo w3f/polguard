@@ -23,7 +23,6 @@ This will start all required services:
 - API service
 - Chain service
 - Matrix service
-- Telemetry service
 - PostgreSQL
 
 All services use the same Docker image (defined in the root Dockerfile) but with different commands to run each service. The Docker Compose configuration references this Dockerfile directly for local development.

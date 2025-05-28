@@ -5,12 +5,10 @@
  * - EventEmitterClient: Represents a client for emitting events (e.g., Redis Streams)
  * - MetricsClient: Represents a client for recording metrics (e.g., Prometheus)
  * - KeyValueStorageClient: Represents a client for caching and storing data (e.g., Redis)
- * - TelemetryClient: Represents a client for fetching telemetry data from nodes
  * - IncidentApiClient: Represents a client for sending incidents to the incident management service
  * - MonitoringConfigClient: Represents a client for fetching monitoring configuration
  */
 
-import { TelemetryData } from './telemetry';
 import { CreateIncidentDto } from './incident';
 import { MonitoringGroup } from './monitor';
 import { Hash, Header, SignedBlock } from '@polkadot/types/interfaces';
@@ -18,10 +16,6 @@ import { ApiDecoration } from '@polkadot/api/types';
 
 export interface MonitoringConfigClient {
   getMonitoringGroups(): Promise<MonitoringGroup[]>;
-}
-
-export interface TelemetryClient {
-  getTelemetry(): Promise<TelemetryData>;
 }
 
 export interface EventEmitterClient {

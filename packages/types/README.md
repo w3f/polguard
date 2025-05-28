@@ -4,7 +4,6 @@ The Types package serves as the foundation for the entire Monitoring Platform, p
 
 This package is used by:
 - @w3f/monitoring-chain
-- @w3f/monitoring-telemetry
 - @w3f/monitoring-matrix
 - @w3f/monitoring-api
 - @w3f/monitoring-config

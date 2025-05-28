@@ -15,13 +15,6 @@ defaults:
         - CommissionChanged
         - SlashReported
         - CommissionUnexpected
-    - name: Telemetry
-      minMemoryGB: 16
-      minCores: 4
-      handlers:
-        - HardwareUnexpected
-        - TelemetryMissing
-        - VersionOutdated
 
 accountSets:
   validator-accounts:

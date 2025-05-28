@@ -9,7 +9,6 @@ This project contains both public and private packages:
 **Private packages**:
 - `@w3f/monitoring-api`: Central control service
 - `@w3f/monitoring-chain`: Blockchain monitoring service
-- `@w3f/monitoring-telemetry`: Telemetry monitoring service
 - `@w3f/monitoring-matrix`: Matrix notification service
 
 ## Publishing Workflow

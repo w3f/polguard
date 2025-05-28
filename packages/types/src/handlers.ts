@@ -1,19 +1,12 @@
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
-import { AssetsHandlerType, BalancesHandlerType, GovernanceHandlerType, IdentityHandlerType, MonitorType, StakingHandlerType, TelemetryHandlerType, XcmHandlerType } from './constants';
-import { NodeInfo } from './telemetry';
+import { AssetsHandlerType, BalancesHandlerType, GovernanceHandlerType, IdentityHandlerType, MonitorType, StakingHandlerType, XcmHandlerType } from './constants';
 
 export type HandlerFunction<T> = (params: T) => Promise<void>;
 export type EventHandlerFunction = HandlerFunction<EventHandlerParams>;
 export type CallHandlerFunction = HandlerFunction<CallHandlerParams>;
 export type StateHandlerFunction = HandlerFunction<StateHandlerParams>;
-export type TelemetryHandlerFunction = HandlerFunction<TelemetryHandlerParams>;
-
-export interface TelemetryHandlerParams<T extends HandlerType = HandlerType> {
-  data: Record<string, NodeInfo[]>;
-  handlerType?: T;
-}
 
 export interface CallHandlerParams<T extends HandlerType = HandlerType> {
   call: CallBase<AnyTuple>;
@@ -39,7 +32,6 @@ export type MonitorHandlerType = {
   [MonitorType.Identity]: IdentityHandlerType;
   [MonitorType.Staking]: StakingHandlerType;
   [MonitorType.Governance]: GovernanceHandlerType;
-  [MonitorType.Telemetry]: TelemetryHandlerType;
   [MonitorType.Xcm]: XcmHandlerType;
   [MonitorType.Assets]: AssetsHandlerType;
 };
@@ -49,6 +41,5 @@ export type HandlerType =
   | BalancesHandlerType
   | GovernanceHandlerType
   | IdentityHandlerType
-  | TelemetryHandlerType
   | XcmHandlerType
   | AssetsHandlerType;

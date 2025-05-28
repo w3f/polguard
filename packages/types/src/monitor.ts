@@ -1,16 +1,12 @@
 import { ConfigAccountSettings, Logger, IdentityField, ChainDataProvider } from '.';
-import { Chain, ChainProperties, MonitorType, PolkadotClientImpl } from './constants';
+import { Chain, ChainProperties, MonitorType } from './constants';
 import { NotificationSettings, IncidentHandlerClient } from './incident';
-import { CallHandlerParams, EventHandlerParams, StateHandlerParams, MonitorHandlerType, TelemetryHandlerParams } from './handlers';
+import { CallHandlerParams, EventHandlerParams, StateHandlerParams, MonitorHandlerType } from './handlers';
 
 export interface Monitor {
   processState(params: StateHandlerParams): Promise<void>;
   processEvent(params: EventHandlerParams): Promise<void>;
   processCall(params: CallHandlerParams): Promise<void>;
-}
-
-export interface TelemetryMonitor {
-  processTelemetry(params: TelemetryHandlerParams): Promise<void>;
 }
 
 /**
@@ -52,17 +48,6 @@ export type IdentitySettings = {
   handlers: MonitorHandlerType[MonitorType.Identity][];
 } & BaseMonitorSettings;
 
-export interface TelemetrySettings extends BaseMonitorSettings {
-  handlers: MonitorHandlerType[MonitorType.Telemetry][];
-  cpu?: string;
-  minMemoryGB?: number;
-  minCores?: number;
-  clientVersion?: Partial<Record<PolkadotClientImpl, string>>;
-  provider?: string;
-  sanctionedCountries?: string[];
-  sanctionedRegions?: string[];
-}
-
 export interface XcmSettings extends BaseMonitorSettings {
   handlers: MonitorHandlerType[MonitorType.Xcm][];
 }
@@ -78,7 +63,6 @@ export type MonitorTypeSettings = {
   [MonitorType.Governance]: GovernanceSettings;
   [MonitorType.Balances]: BalancesSettings;
   [MonitorType.Identity]: IdentitySettings;
-  [MonitorType.Telemetry]: TelemetrySettings;
   [MonitorType.Xcm]: XcmSettings;
   [MonitorType.Assets]: AssetsSettings;
 };
