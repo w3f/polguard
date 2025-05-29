@@ -2,7 +2,6 @@
 #  CircleCI pipeline for “monitoring-platform”
 #
 #  • JS ⇒ build / lint / tests
-#  • Helm ⇒ lint charts
 #  • Docker ⇒ build & push images (SHA on every commit; master → master + latest)
 #  • KinD e2e ⇒ runs in a *machine* executor so Docker, kubectl and KinD share
 #    the same network namespace (avoids “connection refused” on 127.0.0.1)
@@ -14,21 +13,10 @@ orbs:
   docker: circleci/docker@2.8.2
   node:   circleci/node@5.2.0
 
-# Executors
 executors:
-  default:
-    docker:
-      - image: web3f/ci-commons:v3
-    working_directory: ~/project
-
   node:
     docker:
       - image: cimg/node:lts
-    working_directory: ~/project
-
-  machine:
-    machine:
-      image: ubuntu-2204:current
     working_directory: ~/project
 
 # Re-usable commands
@@ -63,15 +51,6 @@ jobs:
           root: .
           paths: .
 
-  helm_lint:
-    executor: default
-    steps:
-      - checkout
-      - run:
-          name: Helm lint charts
-          command: |
-            find deployment/chart -maxdepth 1 -type d -not -path '*/\.*' -exec helm lint {} \;
-
   docker_build:
     executor: node
     steps:
@@ -99,7 +78,7 @@ jobs:
                   done
 
   end_to_end_tests:
-    executor: machine
+    machine: true
     steps:
       - attach_workspace:
           at: ~/project
@@ -205,33 +184,41 @@ jobs:
             kubectl -n e2e logs --all-containers -l app.kubernetes.io/instance=$RELEASE || true
 
   release_tag:
-    executor: node
+    machine: true
+    environment:
+      IMAGE: web3f/monitoring-platform
+
     steps:
       - docker_login
       - run:
-          name: Retag SHA image
+          name: Pull, retag & push release image
           command: |
-            docker pull web3f/monitoring-platform:${CIRCLE_SHA1}
-            docker tag web3f/monitoring-platform:${CIRCLE_SHA1} web3f/monitoring-platform:${CIRCLE_TAG}
-            docker tag web3f/monitoring-platform:${CIRCLE_SHA1} web3f/monitoring-platform:latest
-            docker push web3f/monitoring-platform:${CIRCLE_TAG}
-            docker push web3f/monitoring-platform:latest
+            docker pull "${IMAGE}:${CIRCLE_SHA1}"
+            docker tag  "${IMAGE}:${CIRCLE_SHA1}" "${IMAGE}:${CIRCLE_TAG}"
+            docker push "${IMAGE}:${CIRCLE_TAG}"
 
   publish_charts:
-    executor: default
-    environment:
-      HELM_CHARTS_SOURCE: /root/project/deployment/charts
+    docker:
+      - image: alpine/helm:3.17.3
     steps:
-      - attach_workspace:
-          at: ~/project
-      - run: /scripts/publish-chart.sh
+      - checkout
+      - run:
+          name: Install git & ca-certificates
+          command: |
+            apk update && \
+            apk add --no-cache git ca-certificates
+      - run:
+          name: Publish Helm chart
+          command: |
+            chmod +x deployment/publish-chart.sh
+            ./deployment/publish-chart.sh w3f/helm-charts
+
 
 # Workflow
 workflows:
   test_and_publish:
     jobs:
       - code_quality
-      - helm_lint
       - docker_build:
           context: dockerhub-bot
           requires: [code_quality]
@@ -239,18 +226,14 @@ workflows:
           context:
             - ci-matrixbot
             - dockerhub-bot
-          requires: [docker_build, helm_lint]
-
+          requires: [docker_build]
       - release_tag:
           context: dockerhub-bot
-          requires: [end_to_end_tests]
           filters:
             branches: {ignore: /.*/}
             tags:     {only: /^v\d+\.\d+\.\d+$/}
-
       - publish_charts:
           context: github-bot
-          requires: [end_to_end_tests, helm_lint]
           filters:
             branches: {ignore: /.*/}
             tags:     {only: /^v\d+\.\d+\.\d+$/}

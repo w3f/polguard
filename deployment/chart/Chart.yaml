@@ -2,8 +2,8 @@ apiVersion: v2
 name: monitoring
 description: Monitoring Platform - single-replica Deployment
 type: application
-version: 0.3.0
-appVersion: 0.0.8
+version: 1.0.0
+appVersion: 1.0.0
 
 dependencies:
   - name: common
