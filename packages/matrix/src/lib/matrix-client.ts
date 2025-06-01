@@ -24,10 +24,10 @@ export class MatrixClient {
   protected logger: Logger;
   protected localStorage: LocalStorage;
 
-  constructor(config: MatrixConfig, logger: Logger) {
+  constructor(config: MatrixConfig, logger: Logger, dataPath: string = 'data') {
     this.config = config;
     this.logger = logger;
-    this.localStorage = new LocalStorage('matrix-storage');
+    this.localStorage = new LocalStorage(dataPath);
   }
 
   async init() {

@@ -171,7 +171,8 @@ export class ChainWatcher {
    * @param startBlock Optional starting block number
    */
   private async startBlockProcessingLoop(startBlock?: number): Promise<void> {
-    let nextBlockToProcess = startBlock ? startBlock : (await this.store.get<number>('last_processed_block')) + 1;
+    const lastProcessedBlock = await this.store.get<number>('last_processed_block');
+    let nextBlockToProcess = startBlock ?? (lastProcessedBlock ? lastProcessedBlock + 1 : this.latestBlockNumber);
     let lastConfigRefreshTime = Date.now();
 
     while (this.isRunning) {
@@ -204,7 +205,7 @@ export class ChainWatcher {
    * @param blockNumber The block number to process
    */
   async processBlock(blockNumber: number): Promise<void> {
-    this.logger.debug(`Processing block: #${blockNumber}`);
+    this.logger.log(`Processing block: #${blockNumber}`);
     const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
     const block = await this.api.rpc.chain.getBlock(blockHash);
     const apiAt = await this.api.at(blockHash);

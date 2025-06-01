@@ -15,7 +15,8 @@ export class StorageModule {
           provide: StorageService,
           useFactory: (configService: ConfigService) => {
             const chain = configService.getChain();
-            return new StorageService(chain);
+            const dataPath = configService.getStorageDataPath();
+            return new StorageService(chain, dataPath);
           },
           inject: [ConfigService],
         },

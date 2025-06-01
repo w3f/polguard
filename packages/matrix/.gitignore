@@ -1,6 +1,6 @@
 # App
 /config/config.yaml
-matrix-storage/
+data/
 
 # Compiled output
 /dist

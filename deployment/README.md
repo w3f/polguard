@@ -1,13 +1,8 @@
 # Deployment
 
-The Monitoring Platform supports three deployment flows:
-
-1. **Local Development**: Using Docker Compose for local testing
-2. **Production Deployment**: Using ArgoCD for managed deployments
-
 The platform now uses a consolidated Docker image for all services, with different commands to run each service.
 
-## Development Flow: Local
+## Development Flow
 
 For local development and testing, use the Docker Compose setup:
 
@@ -31,11 +26,8 @@ The `configs` directory contains example configurations used by Docker Compose f
 
 ## Production Flow
 
-Production deployments use Helm chart and ArgoCD:
-
-1. The `chart` directory contains a unified Helm chart for the monitoring platform
-2. Deployment to production is handled via ArgoCD
-3. The deployment process is managed through the ArgoCD interface or CLI
+Production deployments use Helm chart and ArgoCD. The `chart` directory contains a unified Helm chart for the monitoring platform.
+Deployment to production is handled via ArgoCD.
 
 The ArgoCD configuration is maintained in a separate repository:
 https://gitlab.w3f.tech/infrastructure/argocd-deployment

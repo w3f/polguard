@@ -6,8 +6,8 @@ import { MatrixEvent } from 'matrix-js-sdk';
 export class MatrixBot extends MatrixClient {
   private incidentService: IncidentServiceInterface;
 
-  constructor(config: MatrixConfig, logger: Logger, incidentService: IncidentServiceInterface) {
-    super(config, logger);
+  constructor(config: MatrixConfig, logger: Logger, incidentService: IncidentServiceInterface, dataPath?: string) {
+    super(config, logger, dataPath);
     this.incidentService = incidentService;
   }
 

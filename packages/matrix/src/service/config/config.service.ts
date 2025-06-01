@@ -111,6 +111,9 @@ export class ConfigService {
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
       }).optional(),
+      storage: Joi.object({
+        dataPath: Joi.string().default('data'),
+      }).optional(),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -143,6 +146,10 @@ export class ConfigService {
   getServerConfig() {
     return this.config.httpServer || { port: 3000, host: '0.0.0.0' };
   }
+
+  getStorageDataPath(): string {
+    return this.config.storage?.dataPath || 'data';
+  }
 }
 
 interface AppConfig {
@@ -162,5 +169,8 @@ interface AppConfig {
   };
   logging?: {
     level: string;
+  };
+  storage?: {
+    dataPath: string;
   };
 }

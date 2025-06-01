@@ -21,7 +21,6 @@ secrets: {}
 persistence:
   enabled: false
   size: 100Mi
-  storageClass: ""
   accessModes:
     - ReadWriteOnce
 

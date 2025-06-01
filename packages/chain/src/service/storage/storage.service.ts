@@ -14,13 +14,13 @@ import * as path from 'path';
 export class StorageService implements KeyValueStorageClient, OnModuleInit, OnModuleDestroy {
   private readonly storage: LocalStorage<any>;
 
-  constructor(private namespace: string) {
+  constructor(private namespace: string, private dataPath: string = 'data') {
     this.storage = nodePersist.create();
   }
 
   async onModuleInit() {
     await this.storage.init({
-      dir: path.join(process.cwd(), 'data'),
+      dir: path.join(process.cwd(), this.dataPath),
       stringify,
       parse,
     });

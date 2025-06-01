@@ -1,15 +1,6 @@
 import { MonitorType } from './constants';
 import { MonitorSettings } from './monitor';
 
-export interface Logger {
-  log(message: string, ...args: any[]): void;
-  error(message: string, ...args: any[]): void;
-  warn(message: string, ...args: any[]): void;
-  debug(message: string, ...args: any[]): void;
-  verbose(message: string, ...args: any[]): void;
-  fatal(message: string, ...args: any[]): void;
-}
-
 export type TokenBalances = Record<string, Record<string, bigint>>;
 
 export interface AccountId {
@@ -32,3 +23,4 @@ export * from './handlers';
 export * from './clients';
 export * from './constants';
 export * from './data-provider';
+export * from './logging';

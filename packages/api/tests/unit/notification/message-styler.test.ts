@@ -51,7 +51,7 @@ describe('MessageStyler', () => {
 
     it('should style EVENT messages correctly', () => {
       const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html');
-      expect(result).toContain('<font color="red">EVENT: </font>');
+      expect(result).toContain('<font color="black"></font>');
     });
   });
 
@@ -60,7 +60,7 @@ describe('MessageStyler', () => {
       const messageContent = 'Test Title\nDetail 1\nDetail 2';
       const result = MessageStyler.parseAndStyle(messageContent, MessageType.OneTime, 'html');
       
-      expect(result).toContain('<b><font color="red">EVENT: </font>Test Title</b>');
+      expect(result).toContain('<b><font color="black"></font>Test Title</b>');
       expect(result).toContain('<li>Detail 1</li>');
       expect(result).toContain('<li>Detail 2</li>');
     });
@@ -69,21 +69,21 @@ describe('MessageStyler', () => {
       const messageContent = 'Test Title\nDetail 1';
       const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 123);
       
-      expect(result).toContain('<b><font color="red">FIRING: </font>123. Test Title</b>');
+      expect(result).toContain('<b><font color="red">FIRING: </font>#123<br>Test Title</b>');
     });
     
     it('should handle empty message content', () => {
       const messageContent = '';
       const result = MessageStyler.parseAndStyle(messageContent, MessageType.Resolved, 'html', 456);
       
-      expect(result).toContain('<b><font color="green">RESOLVED: </font>456. </b>');
+      expect(result).toContain('<b><font color="green">RESOLVED: </font>#456<br></b>');
     });
     
     it('should handle message with only title (no details)', () => {
       const messageContent = 'Just a title';
       const result = MessageStyler.parseAndStyle(messageContent, MessageType.OneTime, 'markdown', 789);
       
-      expect(result).toContain('**EVENT: 789. Just a title**');
+      expect(result).toContain('**#789\nJust a title**');
       expect(result).not.toContain('-'); // No details, so no list items
     });
   });

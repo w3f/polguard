@@ -38,7 +38,6 @@ export class ConfigService {
       }).required(),
       startBlock: Joi.number().integer().min(0).optional(),
       environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
-      monitoringGroupIds: Joi.array().items(Joi.string()).required(),
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
       }).optional(),
@@ -53,6 +52,9 @@ export class ConfigService {
       httpServer: Joi.object({
         port: Joi.number().default(3000),
         host: Joi.string().default('0.0.0.0'),
+      }).optional(),
+      storage: Joi.object({
+        dataPath: Joi.string().default('data'),
       }).optional(),
     });
 
@@ -84,9 +86,7 @@ export class ConfigService {
     return this.config.logging?.level || 'info';
   }
 
-  getMonitoringGroupIds(): string[] {
-    return this.config.monitoringGroupIds;
-  }
+
 
   getMonitoringApi(): {
     baseUrl: string;
@@ -102,6 +102,10 @@ export class ConfigService {
   getServerConfig(): { host: string; port: number } {
     return this.config.httpServer || { host: '0.0.0.0', port: 3000 };
   }
+
+  getStorageDataPath(): string {
+    return this.config.storage?.dataPath || 'data';
+  }
 }
 
 interface Config {
@@ -110,7 +114,6 @@ interface Config {
     url: string;
   };
   startBlock?: number;
-  monitoringGroupIds: string[];
   monitoringApi: {
     baseUrl: string;
     endpoints: {
@@ -126,5 +129,8 @@ interface Config {
   environment: string;
   logging?: {
     level: string;
+  };
+  storage?: {
+    dataPath: string;
   };
 }

@@ -4,10 +4,6 @@ import { lastValueFrom } from 'rxjs';
 import {
   MonitoringGroup,
   MonitoringConfigClient,
-  MonitorType,
-  MessengerType,
-  StakingHandlerType as H,
-  MonitorTypeSettings,
 } from '@w3f/monitoring-types';
 import { ConfigService } from '../config/config.service';
 import { MetricsService } from '../metrics/metrics.service';
@@ -24,7 +20,6 @@ export class MonitoringConfigService implements MonitoringConfigClient {
   async getMonitoringGroups(): Promise<MonitoringGroup[]> {
     const monitoringApi = this.configService.getMonitoringApi();
     const configUrl = `${monitoringApi.baseUrl}${monitoringApi.endpoints.getConfig}`;
-    const groupIds = this.configService.getMonitoringGroupIds();
 
     let response;
 
@@ -33,35 +28,19 @@ export class MonitoringConfigService implements MonitoringConfigClient {
         this.httpService.get(configUrl, {
           params: {
             chain: this.configService.getChain(),
-            groupIds: groupIds.join(','),
           },
         }),
       );
     } catch (error) {
       this.logger.error(`Failed to fetch monitoring groups from api service: ${error.message}`);
-
-      // In development environment, use hardcoded groups
-      if (this.configService.getEnvironment() === 'development') {
-        this.logger.warn('Using hardcoded monitoring groups for development environment');
-        return this.getDevMonitoringGroups();
-      }
-
       throw new Error(`Failed to fetch monitoring groups: ${error.message}`);
     }
 
     const groups = response.data.groups;
 
-    // Validate that we received the expected number of groups
-    if (groups.length !== groupIds.length) {
-      throw new Error(`Expected ${groupIds.length} monitoring groups but received ${groups.length}`);
-    }
-
-    // Validate that all requested group IDs are present
-    const receivedGroupIds = groups.map(group => group.id);
-    const missingGroupIds = groupIds.filter(id => !receivedGroupIds.includes(id));
-
-    if (missingGroupIds.length > 0) {
-      throw new Error(`Missing monitoring groups: ${missingGroupIds.join(', ')}`);
+    // Validate that we received at least one group
+    if (!groups || groups.length === 0) {
+      throw new Error('No monitoring groups received from API');
     }
 
     // Log detailed information and update metrics
@@ -92,35 +71,7 @@ export class MonitoringConfigService implements MonitoringConfigClient {
     );
   }
 
-  private getDevMonitoringGroups(): MonitoringGroup[] {
-    const groupIds = this.configService.getMonitoringGroupIds();
-    return groupIds.map(groupId => ({
-      id: groupId,
-      chain: this.configService.getChain(),
-      monitors: [
-        {
-          name: MonitorType.Staking,
-          settings: {
-            handlers: [H.ActiveSetPresence],
-          } as MonitorTypeSettings[MonitorType.Staking],
-        },
-      ],
-      accounts: [
-        {
-          ss58: '12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ',
-          hex: '0x',
-          name: 'Development Test Account',
-          [MonitorType.Staking]: {
-            handlers: [H.ActiveSetPresence],
-          },
-        },
-      ],
-      notifications: {
-        messengerType: MessengerType.Matrix,
-        channels: ['#dev-alerts:matrix.org'],
-      },
-    }));
-  }
+
 
   private updateMetrics(groups: MonitoringGroup[]): void {
     const totalGroups = groups.length;

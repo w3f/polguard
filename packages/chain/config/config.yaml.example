@@ -1,9 +1,6 @@
 chain: Polkadot
 # startBlock: 24283300
 
-monitoringGroupIds:
-  - test-group-validator-1
-
 rpc:
   url: wss://rpc-polkadot.luckyfriday.io
 monitoringApi:

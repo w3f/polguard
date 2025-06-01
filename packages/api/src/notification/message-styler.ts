@@ -31,7 +31,7 @@ export class MessageStyler {
 
     // Prepend incident ID to title if provided
     if (incidentId !== undefined) {
-      title = `${incidentId}. ${title}`;
+      title = `#${incidentId}\n${title}`;
     }
 
     // Apply style to message and return
@@ -49,7 +49,9 @@ export class MessageStyler {
     const linkedTitle = this.styleLinks(title, styleType);
     switch (styleType) {
       case 'html':
-        return `<b><font color="${color}">${prefix}</font>${linkedTitle}</b>`;
+        // Convert newlines to <br> tags for HTML
+        const htmlTitle = linkedTitle.replace(/\n/g, '<br>');
+        return `<b><font color="${color}">${prefix}</font>${htmlTitle}</b>`;
       case 'markdown':
         return `**${prefix}${linkedTitle}**`;
       case 'plain':
@@ -79,7 +81,7 @@ export class MessageStyler {
       case MessageType.Resolved:
         return { prefix: 'RESOLVED: ', color: 'green' };
       case MessageType.OneTime:
-        return { prefix: 'EVENT: ', color: 'red' };
+        return { prefix: '', color: 'black' };
     }
   }
 

@@ -15,13 +15,10 @@ export class ConfigService {
     // Handle GitLab token for monitoring config sources
     if (rawConfig?.monitoringConfigSources) {
       for (const source of rawConfig.monitoringConfigSources) {
-        if (source.name === 'gitlab') {
-          if (!source.authToken && !process.env.GITLAB_TOKEN) {
-            throw new Error('Missing GitLab token: set GITLAB_TOKEN env var or provide it in config.');
-          }
-
-          source.authToken = process.env.GITLAB_TOKEN ?? source.authToken;
+        if (!source.authToken && !process.env.GITLAB_TOKEN) {
+          throw new Error('Missing GitLab token: set GITLAB_TOKEN env var or provide it in config.');
         }
+        source.authToken = process.env.GITLAB_TOKEN ?? source.authToken;
       }
     }
 
