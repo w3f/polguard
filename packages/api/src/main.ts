@@ -8,11 +8,11 @@ import { getLogLevels } from '@w3f/monitoring-types';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   const configService = app.get(ConfigService);
   const logLevel = configService.getLoggingLevel();
   Logger.overrideLogger(getLogLevels(logLevel));
-  
+
   const logger = new Logger('Main');
 
   app.useGlobalPipes(

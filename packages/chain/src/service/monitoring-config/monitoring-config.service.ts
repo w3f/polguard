@@ -1,10 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import {
-  MonitoringGroup,
-  MonitoringConfigClient,
-} from '@w3f/monitoring-types';
+import { MonitoringGroup, MonitoringConfigClient } from '@w3f/monitoring-types';
 import { ConfigService } from '../config/config.service';
 import { MetricsService } from '../metrics/metrics.service';
 
@@ -70,8 +67,6 @@ export class MonitoringConfigService implements MonitoringConfigClient {
       `Summary: ${groups.length} groups with ${totalAccounts} accounts and ${monitorTypes.size} monitor types (${Array.from(monitorTypes).join(', ')})`,
     );
   }
-
-
 
   private updateMetrics(groups: MonitoringGroup[]): void {
     const totalGroups = groups.length;

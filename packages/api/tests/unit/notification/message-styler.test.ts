@@ -12,12 +12,11 @@ describe('MessageStyler', () => {
 
     it('should style HTML messages correctly', () => {
       const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html');
-      expect(result).toContain('<b>');
-      expect(result).toContain('</b>');
       expect(result).toContain('<ul>');
       expect(result).toContain('<li>Detail 1</li>');
       expect(result).toContain('<li>Detail 2</li>');
       expect(result).toContain('</ul>');
+      expect(result).toContain('ℹ️');
     });
 
     it('should style Markdown messages correctly', () => {
@@ -25,14 +24,15 @@ describe('MessageStyler', () => {
       expect(result).toContain('**');
       expect(result).toContain('- Detail 1');
       expect(result).toContain('- Detail 2');
+      expect(result).toContain('ℹ️');
     });
 
     it('should style Plain text messages correctly', () => {
       const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'plain');
       expect(result).not.toContain('**');
-      expect(result).not.toContain('<b>');
       expect(result).toContain('Detail 1');
       expect(result).toContain('Detail 2');
+      expect(result).toContain('ℹ️');
     });
   });
 
@@ -41,17 +41,17 @@ describe('MessageStyler', () => {
 
     it('should style FIRING messages correctly', () => {
       const result = MessageStyler.applyStyle(title, details, MessageType.Firing, 'html');
-      expect(result).toContain('<font color="red">FIRING: </font>');
+      expect(result).toContain('🔥');
     });
 
     it('should style RESOLVED messages correctly', () => {
       const result = MessageStyler.applyStyle(title, details, MessageType.Resolved, 'html');
-      expect(result).toContain('<font color="green">RESOLVED: </font>');
+      expect(result).toContain('✅');
     });
 
-    it('should style EVENT messages correctly', () => {
+    it('should style OneTime messages correctly', () => {
       const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html');
-      expect(result).toContain('<font color="black"></font>');
+      expect(result).toContain('ℹ️');
     });
   });
 
@@ -60,7 +60,8 @@ describe('MessageStyler', () => {
       const messageContent = 'Test Title\nDetail 1\nDetail 2';
       const result = MessageStyler.parseAndStyle(messageContent, MessageType.OneTime, 'html');
       
-      expect(result).toContain('<b><font color="black"></font>Test Title</b>');
+      expect(result).toContain('ℹ️');
+      expect(result).toContain('Test Title');
       expect(result).toContain('<li>Detail 1</li>');
       expect(result).toContain('<li>Detail 2</li>');
     });
@@ -69,22 +70,45 @@ describe('MessageStyler', () => {
       const messageContent = 'Test Title\nDetail 1';
       const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 123);
       
-      expect(result).toContain('<b><font color="red">FIRING: </font>#123<br>Test Title</b>');
+      expect(result).toContain('🔥');
+      expect(result).toContain('[#123]');
+      expect(result).toContain('Test Title');
     });
     
     it('should handle empty message content', () => {
       const messageContent = '';
       const result = MessageStyler.parseAndStyle(messageContent, MessageType.Resolved, 'html', 456);
       
-      expect(result).toContain('<b><font color="green">RESOLVED: </font>#456<br></b>');
+      expect(result).toContain('✅');
+      expect(result).toContain('[#456]');
     });
     
     it('should handle message with only title (no details)', () => {
       const messageContent = 'Just a title';
       const result = MessageStyler.parseAndStyle(messageContent, MessageType.OneTime, 'markdown', 789);
       
-      expect(result).toContain('**#789\nJust a title**');
+      expect(result).toContain('**ℹ️ [#789] Just a title**');
       expect(result).not.toContain('-'); // No details, so no list items
+    });
+
+    it('should add ack badge when needsAck is true', () => {
+      const messageContent = 'Test Title\nDetail 1';
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 123, true);
+      
+      expect(result).toContain('🔥');
+      expect(result).toContain('[#123]');
+      expect(result).toContain('Test Title');
+      expect(result).toContain('❗');
+    });
+
+    it('should not add ack badge when needsAck is false', () => {
+      const messageContent = 'Test Title\nDetail 1';
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 123, false);
+      
+      expect(result).toContain('🔥');
+      expect(result).toContain('[#123]');
+      expect(result).toContain('Test Title');
+      expect(result).not.toContain('❗');
     });
   });
 
@@ -98,7 +122,7 @@ describe('MessageStyler', () => {
 
       expect(htmlResult).toContain('<a href="https://example.com">Simple Link</a>');
       expect(markdownResult).toContain('[Simple Link](https://example.com)');
-      expect(plainResult).toContain('Simple Link (https://example.com)');
+      expect(plainResult).toContain('[Simple Link](https://example.com)');
     });
 
     it('should handle links with nested brackets', () => {
@@ -110,7 +134,7 @@ describe('MessageStyler', () => {
 
       expect(htmlResult).toContain('<a href="https://polkadot.subscan.io/account/123">Staker Space [3]</a>');
       expect(markdownResult).toContain('[Staker Space [3]](https://polkadot.subscan.io/account/123)');
-      expect(plainResult).toContain('Staker Space [3] (https://polkadot.subscan.io/account/123)');
+      expect(plainResult).toContain('[Staker Space [3]](https://polkadot.subscan.io/account/123)');
     });
 
     it('should transform markdown link to HTML', () => {

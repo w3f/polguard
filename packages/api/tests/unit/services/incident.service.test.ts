@@ -32,8 +32,9 @@ const createTestIncidentDto = (overrides = {}) => ({
   account: 'test-account',
   groupId: 'validators-test-group',
   handlerType: 'test-handler',
-  notificationChannels: [{ channelId: 'test-channel', messengerType: MessengerType.Matrix }],
+  notificationChannels: [{ channelId: 'test-channel', messengerType: MessengerType.Matrix, repeatHours: 1.5 }],
   needsAck: true,
+  idempotencyKey: 'test-key',
   ...overrides
 });
 
@@ -61,6 +62,33 @@ describe('IncidentService', () => {
     }).compile();
 
     service = module.get<IncidentService>(IncidentService);
+  });
+
+  describe('findIncidentById', () => {
+    it('returns incident when found', async () => {
+      const incident = { id: 1, message: 'Test incident', notifications: [] };
+      incidentRepo.findOne.mockResolvedValue(incident);
+      
+      const result = await service.findIncidentById(1);
+      
+      expect(result).toBe(incident);
+      expect(incidentRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: ['notifications'],
+      });
+    });
+
+    it('throws NotFoundException when incident not found', async () => {
+      incidentRepo.findOne.mockResolvedValue(null);
+      
+      await expect(service.findIncidentById(999))
+        .rejects.toThrow(NotFoundException);
+      
+      expect(incidentRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 999 },
+        relations: ['notifications'],
+      });
+    });
   });
 
   describe('createIncident', () => {

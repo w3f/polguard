@@ -14,7 +14,10 @@ import * as path from 'path';
 export class StorageService implements KeyValueStorageClient, OnModuleInit, OnModuleDestroy {
   private readonly storage: LocalStorage<any>;
 
-  constructor(private namespace: string, private dataPath: string = 'data') {
+  constructor(
+    private namespace: string,
+    private dataPath: string = 'data/node-persist',
+  ) {
     this.storage = nodePersist.create();
   }
 

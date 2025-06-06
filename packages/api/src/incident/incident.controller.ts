@@ -10,6 +10,27 @@ export class IncidentController {
 
   constructor(private readonly incidentService: IncidentService) {}
 
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Get incident by ID',
+    description: 'Retrieve a specific incident by its ID with all related notifications.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The incident with the specified ID',
+    type: IncidentResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Incident not found',
+  })
+  @ApiParam({ name: 'id', description: 'Incident ID', type: 'number' })
+  async getIncidentById(@Param('id') id: number): Promise<IncidentResponseDto> {
+    this.logger.debug(`Getting incident ${id}`);
+    const incident = await this.incidentService.findIncidentById(id);
+    return incident;
+  }
+
   @Get()
   @ApiOperation({
     summary: 'Get incidents with filtering options',

@@ -112,7 +112,7 @@ export class ConfigService {
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
       }).optional(),
       storage: Joi.object({
-        dataPath: Joi.string().default('data'),
+        dataPath: Joi.string().default('data/local-storage'),
       }).optional(),
     });
 
@@ -148,7 +148,7 @@ export class ConfigService {
   }
 
   getStorageDataPath(): string {
-    return this.config.storage?.dataPath || 'data';
+    return this.config.storage?.dataPath || 'data/local-storage';
   }
 }
 

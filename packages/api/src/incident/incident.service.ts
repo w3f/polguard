@@ -4,7 +4,8 @@ import { Repository } from 'typeorm';
 import { Incident, IncidentNotification } from '../database/incident.entity';
 import { CreateIncidentDto, GetIncidentsDto } from './dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType } from '@w3f/monitoring-types';
+import { NotificationType, MessageType } from '@w3f/monitoring-types';
+import { MessageStyler } from '../notification/message-styler';
 
 @Injectable()
 export class IncidentService {
@@ -17,6 +18,29 @@ export class IncidentService {
     private notificationRepository: Repository<IncidentNotification>,
     private notificationService: NotificationService,
   ) {}
+
+  async findIncidentById(id: number): Promise<Incident> {
+    const incident = await this.incidentRepository.findOne({
+      where: { id },
+      relations: ['notifications'],
+    });
+
+    if (!incident) {
+      throw new NotFoundException(`Incident with ID ${id} not found`);
+    }
+
+    const messageType = incident.isResolved ? MessageType.OneTime : MessageType.Firing;
+    // TODO: The idea was to support multiple messengers, for now hardcoding to matrix/html
+    incident.message = MessageStyler.parseAndStyle(
+      incident.message,
+      messageType,
+      'html',
+      incident.id,
+      incident.needsAck,
+    );
+
+    return incident;
+  }
 
   async findIncidents(filters: GetIncidentsDto): Promise<Incident[]> {
     const queryBuilder = this.incidentRepository.createQueryBuilder('incident');

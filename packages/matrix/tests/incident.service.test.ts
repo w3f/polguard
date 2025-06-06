@@ -76,7 +76,7 @@ describe('IncidentService', () => {
         {
           params: {
             channelId: 'test-room',
-            resolved: false,
+            isResolved: false,
           },
         },
       );
@@ -117,8 +117,8 @@ describe('IncidentService', () => {
         {
           params: {
             channelId: 'test-room',
-            ackRequired: true,
-            acked: false,
+            needsAck: true,
+            isAcked: false,
           },
         },
       );

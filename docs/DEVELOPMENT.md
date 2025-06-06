@@ -30,6 +30,14 @@ This design decision prioritizes a simple interface for defining handlers over s
 
 ## Future Considerations and Known Issues
 
+### Notification Formatting
+
+Currently, notification handling logic exists in both the chain and API services. Ideally, only the API service should be responsible for the styling and formatting of notifications. This would simplify the chain service and maintain a consistent format across different notification consumers.
+
+### Chain Service Statefulness
+
+The chain service is currently stateful and uses node-persist for file-based persistence. However, the only piece of data that actually needs to be persisted is the `last_processed_block`. To simplify, this responsibility could be moved to the API service, which already functions as a persistence layer.
+
 ### Storage Implementation
 
 Initially, the platform used Redis for key-value storage. To simplify infrastructure requirements, we replaced it with node-persist, a file-based storage solution. This works well for our current needs (a few hundred keys), but be aware that node-persist lacks file-level locking, which could cause data corruption if multiple processes access the same storage directory.

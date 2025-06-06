@@ -33,16 +33,7 @@ jobs:
     executor: node
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - yarn-v4-{{ checksum "yarn.lock" }}
-            - yarn-v4-
       - run: yarn install --immutable
-      - save_cache:
-          key: yarn-v4-{{ checksum "yarn.lock" }}
-          paths:
-            - ~/.cache/yarn
-            - .yarn/cache
       - run: yarn build
       - run: yarn lint
       - run: yarn test
@@ -88,9 +79,6 @@ jobs:
           name: Pull app image from registry
           command: docker pull web3f/monitoring-platform:${CIRCLE_SHA1}
 
-      # kubectl, helm, kind — download once, then served from cache
-      - restore_cache:
-          keys: [kube-tools-v3]
       - run:
           name: Install kube tools
           command: |
@@ -116,10 +104,6 @@ jobs:
           command: |
             helm repo add bitnami https://charts.bitnami.com/bitnami
             helm repo update
-      
-      - save_cache:
-          key: kube-tools-v3
-          paths: [~/.local/bin]
 
       - run:
           name: Build E2E runner image

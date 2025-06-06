@@ -23,41 +23,43 @@ export class MessageStyler {
     messageType: MessageType,
     styleType: StyleType,
     incidentId?: number,
+    needsAck?: boolean,
   ): string {
-    // Parse message content into title and details
-    const messageLines = messageContent.split('\n').filter(line => line.trim() !== '');
-    let title = messageLines[0] || '';
-    const details = messageLines.slice(1) || [];
+    const lines = messageContent.split('\n').filter(line => line.trim() !== '');
+    const title = lines[0] || '';
+    const details = lines.slice(1) || [];
 
-    // Prepend incident ID to title if provided
-    if (incidentId !== undefined) {
-      title = `#${incidentId}\n${title}`;
-    }
-
-    // Apply style to message and return
-    return this.applyStyle(title, details, messageType, styleType);
+    return this.applyStyle(title, details, messageType, styleType, incidentId, needsAck);
   }
 
-  static applyStyle(title: string, details: string[], messageType: MessageType, styleType: StyleType): string {
-    const { prefix, color } = this.getPrefixAndColor(messageType);
-    const styledTitle = this.styleTitle(prefix, title, color, styleType);
-    const styledDetails = this.styleDetails(details, styleType);
-    return `${styledTitle}\n${styledDetails}`;
-  }
+  static applyStyle(
+    title: string,
+    details: string[],
+    messageType: MessageType,
+    styleType: StyleType,
+    incidentId?: number,
+    needsAck?: boolean,
+  ): string {
+    const rawIcon = this.getStatusIcon(messageType);
+    const idPart = incidentId !== undefined ? `[#${incidentId}] ` : '';
+    const ackBadge = needsAck ? ' ❗' : '';
+    const rawHeadingText = `${rawIcon} ${idPart}${title.trim()}${ackBadge}`;
 
-  private static styleTitle(prefix: string, title: string, color: string, styleType: StyleType): string {
-    const linkedTitle = this.styleLinks(title, styleType);
-    switch (styleType) {
-      case 'html':
-        // Convert newlines to <br> tags for HTML
-        const htmlTitle = linkedTitle.replace(/\n/g, '<br>');
-        return `<b><font color="${color}">${prefix}</font>${htmlTitle}</b>`;
-      case 'markdown':
-        return `**${prefix}${linkedTitle}**`;
-      case 'plain':
-      default:
-        return `${prefix}${linkedTitle}`;
+    let styledHeading: string;
+    let styledDetails: string;
+
+    if (styleType === 'html') {
+      styledHeading = `<p><strong>${this.styleLinks(rawHeadingText, styleType)}</strong></p>`;
+      styledDetails = this.styleDetails(details, styleType);
+    } else if (styleType === 'markdown') {
+      styledHeading = `**${rawIcon} ${idPart}${title.trim()}${ackBadge}**`;
+      styledDetails = this.styleDetails(details, 'markdown');
+    } else {
+      styledHeading = `${rawIcon} ${idPart}${title.trim()}${ackBadge}`;
+      styledDetails = this.styleDetails(details, 'plain');
     }
+
+    return `${styledHeading}\n${styledDetails}`;
   }
 
   private static styleDetails(details: string[], styleType: StyleType): string {
@@ -74,14 +76,14 @@ export class MessageStyler {
     }
   }
 
-  private static getPrefixAndColor(messageType: MessageType): { prefix: string; color: string } {
+  private static getStatusIcon(messageType: MessageType): string {
     switch (messageType) {
       case MessageType.Firing:
-        return { prefix: 'FIRING: ', color: 'red' };
+        return '🔥';
       case MessageType.Resolved:
-        return { prefix: 'RESOLVED: ', color: 'green' };
+        return '✅';
       case MessageType.OneTime:
-        return { prefix: '', color: 'black' };
+        return 'ℹ️';
     }
   }
 

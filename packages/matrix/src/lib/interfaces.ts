@@ -22,18 +22,32 @@ export interface MatrixConfig {
 export interface Incident {
   id: number;
   message: string;
+  blockNumber: number;
   chain: string;
+  account: string;
   groupId: string;
-  handlerName: string;
-  wallet: string;
-  ackRequired: boolean;
-  acked: boolean;
-  ackedByUser?: string;
+  handlerType: string;
+  needsAck: boolean;
+  isAcked: boolean;
+  ackedBy?: string;
   ackedAt?: Date;
-  resolved: boolean;
+  isResolved: boolean;
   resolvedAt?: Date;
-  resolvedMessage?: string;
   createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface QueryFilters {
+  status?: string;
+  createdAfter?: string;
+  createdBefore?: string;
+  chain?: string;
+  account?: string;
+  groupId?: string;
+  handlerType?: string;
+  needsAck?: boolean;
+  isAcked?: boolean;
+  isResolved?: boolean;
 }
 
 export interface IncidentServiceInterface {
@@ -41,4 +55,5 @@ export interface IncidentServiceInterface {
   getNonAcked(roomId: string): Promise<Incident[]>;
   getIncidentById(incidentId: number): Promise<Incident>;
   acknowledgeIncident(incidentId: number, username: string, channelId: string): Promise<void>;
+  queryIncidents(roomId: string, filters: QueryFilters): Promise<Incident[]>;
 }

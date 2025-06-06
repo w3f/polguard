@@ -82,7 +82,13 @@ export class NotificationService {
           : MessageType.Firing
         : MessageType.Resolved;
 
-    const styledMessage = MessageStyler.parseAndStyle(incident.message, messageType, 'html', incident.id);
+    const styledMessage = MessageStyler.parseAndStyle(
+      incident.message,
+      messageType,
+      'html',
+      incident.id,
+      incident.needsAck,
+    );
     const isDelivered = await this.sendNotification(notification.channelId, notification.messengerType, styledMessage);
 
     notification.lastSentAt = new Date();

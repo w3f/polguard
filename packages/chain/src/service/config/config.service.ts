@@ -54,7 +54,7 @@ export class ConfigService {
         host: Joi.string().default('0.0.0.0'),
       }).optional(),
       storage: Joi.object({
-        dataPath: Joi.string().default('data'),
+        dataPath: Joi.string().default('data/node-persist'),
       }).optional(),
     });
 
@@ -86,8 +86,6 @@ export class ConfigService {
     return this.config.logging?.level || 'info';
   }
 
-
-
   getMonitoringApi(): {
     baseUrl: string;
     endpoints: {
@@ -104,7 +102,7 @@ export class ConfigService {
   }
 
   getStorageDataPath(): string {
-    return this.config.storage?.dataPath || 'data';
+    return this.config.storage?.dataPath || 'data/node-persist';
   }
 }
 

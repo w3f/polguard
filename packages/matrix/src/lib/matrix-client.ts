@@ -24,7 +24,7 @@ export class MatrixClient {
   protected logger: Logger;
   protected localStorage: LocalStorage;
 
-  constructor(config: MatrixConfig, logger: Logger, dataPath: string = 'data') {
+  constructor(config: MatrixConfig, logger: Logger, dataPath: string = 'data/local-storage') {
     this.config = config;
     this.logger = logger;
     this.localStorage = new LocalStorage(dataPath);
@@ -38,7 +38,12 @@ export class MatrixClient {
     this.client = await this.createClient();
     await this.setupClientAndSync();
     this.setupEventHandlers();
-    this.logger.log('Matrix client initialized successfully');
+
+    const rooms = this.client.getRooms();
+    this.logger.log(`Matrix client initialized successfully. Bot is in ${rooms.length} rooms:`);
+    rooms.forEach(room => {
+      this.logger.log(`  - Room: ${room.roomId} (${room.name || 'No name'})`);
+    });
   }
 
   private async setupClientAndSync(): Promise<void> {
@@ -130,7 +135,9 @@ export class MatrixClient {
   private async waitForSync(): Promise<void> {
     return new Promise(resolve => {
       this.client.once(ClientEvent.Sync, (state: string) => {
+        this.logger.debug(`Matrix client sync state: ${state}`);
         if (state === 'PREPARED') {
+          this.logger.log('Matrix client sync completed - ready to receive messages');
           resolve();
         }
       });
@@ -138,20 +145,51 @@ export class MatrixClient {
   }
 
   private setupMessageHandler(): void {
+    this.logger.debug('Setting up Matrix message handler for Timeline events');
     this.client.on(RoomEvent.Timeline, (event: MatrixEvent, room: Room) => {
-      if (event.getType() === 'm.room.message') {
+      this.logger.debug(
+        `Timeline event received: type=${event.getType()}, room=${room.roomId}, sender=${event.getSender()}`,
+      );
+      if (event.getType() === 'm.room.message' || event.getType() === 'm.room.encrypted') {
         this.handleIncomingMessage(event, room);
       }
     });
+    this.logger.debug('Matrix message handler setup complete');
   }
 
-  protected handleIncomingMessage(event: MatrixEvent, room: Room) {
+  protected async handleIncomingMessage(event: MatrixEvent, room: Room) {
     const sender = event.getSender();
-    const content = event.getContent();
-    this.logger.debug(`Received message from ${sender} in room ${room.roomId}: ${content.body}`);
+    const roomId = room.roomId;
+    const eventType = event.getType();
 
-    if (content.body.startsWith('!')) {
-      this.handleCommand(room.roomId, content.body, event);
+    this.logger.debug(`MatrixClient processing ${eventType} from ${sender} in room ${roomId}`);
+
+    if (sender === this.client.getUserId()) {
+      this.logger.debug('Ignoring message from bot itself');
+      return;
+    }
+
+    // Decrypt the event if it's encrypted
+    if (event.isEncrypted()) {
+      this.logger.debug('Decrypting encrypted message...');
+      await this.client.decryptEventIfNeeded(event);
+    }
+
+    const content = event.getContent();
+    const body = content.body || '';
+
+    this.logger.debug(`Message body: "${body}"`);
+
+    if (!body) {
+      this.logger.debug('Message body is empty');
+      return;
+    }
+
+    if (body.startsWith('!')) {
+      this.logger.debug(`Detected command: ${body}`);
+      this.handleCommand(roomId, body, event);
+    } else {
+      this.logger.debug(`Non-command message: ${body}`);
     }
   }
 

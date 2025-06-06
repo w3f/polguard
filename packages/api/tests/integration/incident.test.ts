@@ -204,4 +204,31 @@ describe('Incident API (integration)', () => {
     
     expect(chainFilter.body.some(inc => inc.account === 'test-account-kusama')).toBe(true);
   });
+
+  it('gets incident by ID', async () => {
+    const createResponse = await request(app.getHttpServer())
+      .post('/incidents')
+      .send(createTestIncident({ 
+        message: 'Test incident for ID retrieval',
+        account: 'test-account-by-id'
+      }))
+      .expect(201);
+    
+    const incidentId = createResponse.body.id;
+    
+    const getResponse = await request(app.getHttpServer())
+      .get(`/incidents/${incidentId}`)
+      .expect(200);
+    
+    expect(getResponse.body.id).toBe(incidentId);
+    expect(getResponse.body.message).toContain('Test incident for ID retrieval');
+    expect(getResponse.body.account).toBe('test-account-by-id');
+    expect(getResponse.body.notifications).toBeDefined();
+  });
+
+  it('returns 404 for non-existent incident ID', async () => {
+    await request(app.getHttpServer())
+      .get('/incidents/99999')
+      .expect(404);
+  });
 });

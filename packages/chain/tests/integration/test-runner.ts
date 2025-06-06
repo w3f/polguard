@@ -100,7 +100,7 @@ export class TestRunner {
     console.log(`Connecting to ${chain} at ${rpcEndpoint}`);
     
     const api = await ApiPromise.create({ 
-      provider: new WsProvider(rpcEndpoint), 
+      provider: new WsProvider(rpcEndpoint),
       noInitWarn: true 
     });
     
@@ -119,7 +119,7 @@ export class TestRunner {
       return results;
     } finally {
       console.log(`Disconnecting from ${chain}`);
-      await api.disconnect();
+      await api.disconnect()
     }
   }
   

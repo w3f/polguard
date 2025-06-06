@@ -8,6 +8,7 @@ import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as JSONbig from 'json-bigint';
 import { Incident, IncidentNotification } from '../../src/database/incident.entity';
 
 const workerId = process.env.JEST_WORKER_ID ?? '0';          // "0" when runInBand
@@ -100,6 +101,17 @@ export async function createTestApp(fixtureOptions?: {
     transform: true,
     whitelist: true,
   }));
+
+  // Override Express JSON serializer to handle BigInt (same as in main.ts)
+  app.use((req, res, next) => {
+    res.json = function (body) {
+      const jsonBody = JSONbig.stringify(body);
+      res.setHeader('Content-Type', 'application/json');
+      return res.send(jsonBody);
+    };
+
+    next();
+  });
   
   // Get the MonitoringConfigService to inject our test data
   const monitoringConfigService = moduleFixture.get<MonitoringConfigService>(MonitoringConfigService);

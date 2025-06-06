@@ -2,7 +2,7 @@ rpcEndpoints:
   Polkadot: wss://rpc-polkadot.luckyfriday.io
   Kusama: wss://rpc-kusama.luckyfriday.io
   PeoplePolkadot: wss://rpc-people-polkadot.luckyfriday.io
-  AssetHubPolkadot: wss://rpc-asset-hub-polkadot.luckyfriday.io
+  AssetHubPolkadot: wss://polkadot-asset-hub-rpc.polkadot.io
   Centrifuge: wss://rpc-centrifuge.luckyfriday.io
 
 tests:

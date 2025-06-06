@@ -172,7 +172,8 @@ export class ChainWatcher {
    */
   private async startBlockProcessingLoop(startBlock?: number): Promise<void> {
     const lastProcessedBlock = await this.store.get<number>('last_processed_block');
-    let nextBlockToProcess = startBlock ?? (lastProcessedBlock ? lastProcessedBlock + 1 : this.latestBlockNumber);
+    // Restarting may reprocess the same block, but this avoids unresolved edge cases
+    let nextBlockToProcess = startBlock ?? lastProcessedBlock ?? this.latestBlockNumber;
     let lastConfigRefreshTime = Date.now();
 
     while (this.isRunning) {

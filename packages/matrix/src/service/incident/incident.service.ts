@@ -1,4 +1,4 @@
-import { Incident, IncidentServiceInterface } from '@lib/interfaces';
+import { Incident, IncidentServiceInterface, QueryFilters } from '@lib/interfaces';
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '../config/config.service';
@@ -20,7 +20,7 @@ export class IncidentService implements IncidentServiceInterface {
       this.httpService.get(url, {
         params: {
           channelId: roomId,
-          resolved: false,
+          isResolved: false,
         },
       }),
     );
@@ -34,8 +34,8 @@ export class IncidentService implements IncidentServiceInterface {
       this.httpService.get(url, {
         params: {
           channelId: roomId,
-          ackRequired: true,
-          acked: false,
+          needsAck: true,
+          isAcked: false,
         },
       }),
     );
@@ -58,5 +58,18 @@ export class IncidentService implements IncidentServiceInterface {
         channelId,
       }),
     );
+  }
+
+  async queryIncidents(roomId: string, filters: QueryFilters): Promise<Incident[]> {
+    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const url = `${baseUrl}${endpoints.getIncidents}`;
+
+    const params = {
+      channelId: roomId,
+      ...filters,
+    };
+
+    const response = await firstValueFrom(this.httpService.get(url, { params }));
+    return response.data;
   }
 }

@@ -1,6 +1,7 @@
 # App
 /monitoring-configs/*.yaml
 /config/config.yaml
+*.sqlite
 
 # Compiled output
 /dist
