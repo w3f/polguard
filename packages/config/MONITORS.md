@@ -17,48 +17,58 @@ Monitors validator staking activities.
 
 ### Handlers
 
-#### SlashReported
+#### SlashReportedEvent
 - **Type**: Event (`staking.SlashReported`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects when a validator is slashed
 
-#### CommissionChanged
+#### CommissionChangedEvent
 - **Type**: Event (`staking.ValidatorPrefsSet`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects changes to validator commission
 
-#### DestinationChanged
+#### UnbondedEvent
+- **Type**: Event (`staking.Unbonded`)
+- **Chains**: Polkadot, Kusama
+- **Description**: Detects when tokens are unbonded
+
+#### DestinationChangedCall
 - **Type**: Call (`staking.setPayee`, `staking.bond`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects changes to reward destination
 
-#### CommissionUnexpected
+#### CommissionUnexpectedState
 - **Type**: State (`staking.validators`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Alerts when commission doesn't match expected value
 - **Config Keys**:
   - `commission`: (number) Expected commission percentage (0-100)
 
-#### SelfStakeUnexpected
+#### SelfStakeUnexpectedState
 - **Type**: State (`staking.bonded`, `staking.ledger`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Alerts when self-stake doesn't match expected value
 - **Config Keys**:
   - `selfStake`: (string) Expected self-stake amount as a decimal string (e.g., "1000.5")
 
-#### ValidatorIntentionMissing
+#### ValidatorIntentionMissingState
 - **Type**: State (`staking.bonded`, `staking.validators`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Alerts when validator intention is missing
 
-#### DestinationUnexpected
+#### DestinationUnexpectedState
 - **Type**: State (`staking.payee`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Alerts when reward destination doesn't match expected value
 - **Config Keys**:
   - `payee`: (string) Expected reward destination - one of: "Staked", "Stash", "Controller"
 
-#### ActiveSetPresence
+#### DestinationChangedState
+- **Type**: State (`staking.payee`)
+- **Chains**: Polkadot, Kusama
+- **Description**: Detects changes to reward destination between blocks
+
+#### ActiveSetPresenceState
 - **Type**: State (`session.validators`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Monitors validator presence in the active set
@@ -70,8 +80,8 @@ monitors:
   - name: Staking
     commission: 10  # Default commission percentage
     handlers:
-      - CommissionChanged
-      - SlashReported
+      - CommissionChangedEvent
+      - SlashReportedEvent
 
 accounts:
   - address: "..."
@@ -86,27 +96,32 @@ Monitors account balances and transfers.
 
 ### Handlers
 
-#### BalanceDecrease
+#### BalanceDecreaseState
 - **Type**: State (`system.account`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects any balance decreases between blocks
 
-#### BalanceThreshold
+#### BalanceThresholdState
 - **Type**: State (`system.account`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Alerts when balance falls below a threshold
 - **Config Keys**:
   - `threshold`: (string) Balance threshold value as a decimal string (e.g., "1000.0")
 
-#### TransferIngress
+#### TransferIngressEvent
 - **Type**: Event (`balances.Transfer`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects incoming transfers
 
-#### TransferEgress
+#### TransferEgressEvent
 - **Type**: Event (`balances.Transfer`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects outgoing transfers
+
+#### TransferCall
+- **Type**: Call (`balances.transfer`)
+- **Chains**: Polkadot, Kusama
+- **Description**: Detects transfer calls (for testing purposes)
 
 ### Example Configuration
 
@@ -115,8 +130,8 @@ monitors:
   - name: Balances
     threshold: "1000.0"  # Default balance threshold
     handlers:
-      - BalanceThreshold
-      - TransferIngress
+      - BalanceThresholdState
+      - TransferIngressEvent
 
 accounts:
   - address: "..."
@@ -129,28 +144,28 @@ Monitors asset/token balances and transfers.
 
 ### Handlers
 
-#### AssetBalanceDecrease
+#### AssetBalanceDecreaseState
 - **Type**: State (`assets.account`, `ormlTokens.accounts`)
 - **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
 - **Description**: Detects any asset balance decreases between blocks
 - **Config Keys**:
   - `tokens`: (array) List of token names to monitor
 
-#### AssetBalanceThreshold
+#### AssetBalanceThresholdState
 - **Type**: State (`assets.account`, `ormlTokens.accounts`)
 - **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
 - **Description**: Alerts when asset balance falls below a threshold
 - **Config Keys**:
   - `tokenThresholds`: (array) Array of [token, threshold] pairs where threshold is a decimal string
 
-#### AssetTransferIngress
+#### AssetTransferIngressEvent
 - **Type**: Event (`assets.Transferred`, `ormlTokens.Transfer`)
 - **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
 - **Description**: Detects incoming asset transfers
 - **Config Keys**:
   - `tokens`: (array) List of token names to monitor
 
-#### AssetTransferEgress
+#### AssetTransferEgressEvent
 - **Type**: Event (`assets.Transferred`, `ormlTokens.Transfer`)
 - **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
 - **Description**: Detects outgoing asset transfers
@@ -163,9 +178,9 @@ Monitors asset/token balances and transfers.
 monitors:
   - name: Assets
     handlers:
-      - AssetBalanceThreshold
-      - AssetTransferIngress
-      - AssetTransferEgress
+      - AssetBalanceThresholdState
+      - AssetTransferIngressEvent
+      - AssetTransferEgressEvent
 
 accounts:
   - address: "..."
@@ -179,7 +194,7 @@ Monitors on-chain identity information.
 
 ### Handlers
 
-#### IdentityUnexpected
+#### IdentityUnexpectedState
 - **Type**: State (`identity.identityOf`, `identity.superOf`)
 - **Chains**: PeoplePolkadot, PeopleKusama
 - **Description**: Alerts when identity doesn't match expected values
@@ -194,17 +209,17 @@ Monitors on-chain identity information.
   - `github`: (string) Expected GitHub username
   - `discord`: (string) Expected Discord username
 
-#### IdentityChanged
+#### IdentityChangedEvent
 - **Type**: Event (`identity.IdentitySet`, `identity.IdentityCleared`, `identity.IdentityKilled`)
 - **Chains**: PeoplePolkadot, PeopleKusama
 - **Description**: Detects changes to identity information
 
-#### IdentityMissing
+#### IdentityMissingState
 - **Type**: State (`identity.identityOf`, `identity.superOf`)
 - **Chains**: PeoplePolkadot, PeopleKusama
 - **Description**: Alerts when identity is missing
 
-#### IdentityFieldsMissing
+#### IdentityFieldsMissingState
 - **Type**: State (`identity.identityOf`, `identity.superOf`)
 - **Chains**: PeoplePolkadot, PeopleKusama
 - **Description**: Alerts when specific identity fields are missing
@@ -231,12 +246,12 @@ Monitors governance activities.
 
 ### Handlers
 
-#### ReferendaSubmitted
+#### ReferendaSubmittedEvent
 - **Type**: Event (`referenda.Submitted`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects when new referenda are submitted
 
-#### ConvictionVote
+#### ConvictionVoteCall
 - **Type**: Call (`convictionVoting.vote`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects conviction voting activities
@@ -247,8 +262,8 @@ Monitors governance activities.
 monitors:
   - name: Governance
     handlers:
-      - ReferendaSubmitted
-      - ConvictionVote
+      - ReferendaSubmittedEvent
+      - ConvictionVoteCall
 ```
 
 ## XCM Monitor
@@ -257,7 +272,7 @@ Monitors cross-chain asset transfers.
 
 ### Handlers
 
-#### XcmTransferEgress
+#### XcmTransferEgressEvent
 - **Type**: Event (`polkadotXcm.Sent`, `xcmPallet.Sent`)
 - **Chains**: Polkadot, Kusama, AssetHubPolkadot, AssetHubKusama
 - **Description**: Detects outgoing cross-chain asset transfers
@@ -268,7 +283,7 @@ Monitors cross-chain asset transfers.
 monitors:
   - name: Xcm
     handlers:
-      - XcmTransferEgress
+      - XcmTransferEgressEvent
 ```
 
 ## Handler Types
@@ -285,8 +300,8 @@ You should configure which handlers are active for each monitor:
 
 ```yaml
 handlers:  # Required: explicitly list desired handlers
-  - CommissionChanged
-  - SlashReported
+  - CommissionChangedEvent
+  - SlashReportedEvent
 ```
 
 ## Related Documentation

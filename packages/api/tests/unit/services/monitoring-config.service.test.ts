@@ -39,9 +39,9 @@ const createMonitoringGroup = (
       settings: {
         commission: 10,
         handlers: [
-          StakingHandlerType.CommissionChanged, 
-          StakingHandlerType.SlashReported, 
-          StakingHandlerType.CommissionUnexpected
+          StakingHandlerType.CommissionChangedEvent, 
+          StakingHandlerType.SlashReportedEvent, 
+          StakingHandlerType.CommissionUnexpectedState
         ],
       },
     },

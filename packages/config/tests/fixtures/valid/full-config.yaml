@@ -35,8 +35,8 @@ defaults:
     - name: Staking
       commission: 10
       handlers:
-        - CommissionChanged
-        - SlashReported
+        - CommissionChangedEvent
+        - SlashReportedEvent
 
 groups:
   - id: validators-default  # This group will be created for both Polkadot and Kusama
@@ -56,15 +56,15 @@ groups:
       - name: Staking
         commission: 7
         handlers:
-          - CommissionChanged
-          - DestinationChanged
+          - CommissionChangedEvent
+          - DestinationChangedCall
         annotations:
           tag: group-N
       - name: Balances
         threshold: "500.75"
         handlers:
-          - BalanceThreshold
+          - BalanceThresholdState
       - name: Identity
         handlers:
-          - IdentityChanged
+          - IdentityChangedEvent
     accountSet: validators-custom

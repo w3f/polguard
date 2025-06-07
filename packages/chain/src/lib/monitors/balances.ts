@@ -10,8 +10,8 @@ import { Call, Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 
 export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
-  @State(H.BalanceDecrease, [Chain.Polkadot, Chain.Kusama])
-  async balanceDecrease({ blockNumber, handlerType }: StateHandlerParams<H.BalanceDecrease>): Promise<void> {
+  @State(H.BalanceDecreaseState, [Chain.Polkadot, Chain.Kusama])
+  async balanceDecrease({ blockNumber, handlerType }: StateHandlerParams<H.BalanceDecreaseState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
     const [curr, prev] = await Promise.all([
       await this.chain.systemAccountBalance(addresses, blockNumber),
@@ -42,8 +42,8 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     }
   }
 
-  @State(H.BalanceThreshold, [Chain.Polkadot, Chain.Kusama])
-  async balanceThreshold({ blockNumber, handlerType }: StateHandlerParams<H.BalanceThreshold>): Promise<void> {
+  @State(H.BalanceThresholdState, [Chain.Polkadot, Chain.Kusama])
+  async balanceThreshold({ blockNumber, handlerType }: StateHandlerParams<H.BalanceThresholdState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
     const cur = await this.chain.systemAccountBalance(addresses, blockNumber);
 
@@ -69,14 +69,14 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
 
   // This handler was added just for testing purposes (multisig, proxy, nested calls)
   // TODO: Should follow same approach as event-based handler: Ingress, Egress
-  @Call(H.Transfer, [Chain.Polkadot, Chain.Kusama], 'balances.transfer')
+  @Call(H.TransferCall, [Chain.Polkadot, Chain.Kusama], 'balances.transfer')
   async balancesTransfer({
     call,
     origin,
     blockNumber,
     extrinsicIndex,
     handlerType,
-  }: CallHandlerParams<H.Transfer>): Promise<void> {
+  }: CallHandlerParams<H.TransferCall>): Promise<void> {
     const [to, amount] = call.args.map(arg => arg.toString());
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
       const message = this.fmt.message(
@@ -92,12 +92,12 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     }
   }
 
-  @Event(H.TransferIngress, [Chain.Polkadot, Chain.Kusama], 'balances.Transfer')
+  @Event(H.TransferIngressEvent, [Chain.Polkadot, Chain.Kusama], 'balances.Transfer')
   async balancesTransferIngress({
     eventRecord,
     blockNumber,
     handlerType,
-  }: EventHandlerParams<H.TransferIngress>): Promise<void> {
+  }: EventHandlerParams<H.TransferIngressEvent>): Promise<void> {
     const [from, to, amount] = eventRecord.event.data.map(item => item.toString());
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, to)) {
@@ -113,12 +113,12 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     }
   }
 
-  @Event(H.TransferEgress, [Chain.Polkadot, Chain.Kusama], 'balances.Transfer')
+  @Event(H.TransferEgressEvent, [Chain.Polkadot, Chain.Kusama], 'balances.Transfer')
   async balancesTransferEgress({
     eventRecord,
     blockNumber,
     handlerType,
-  }: EventHandlerParams<H.TransferEgress>): Promise<void> {
+  }: EventHandlerParams<H.TransferEgressEvent>): Promise<void> {
     const [from, to, amount] = eventRecord.event.data.map(item => item.toString());
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, from)) {

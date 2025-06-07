@@ -51,7 +51,7 @@ describe('ConfigProcessor', () => {
       expect(bobAccount?.[MonitorType.Staking]).toEqual({
         commission: 3, // Overridden from account
         selfStake: 1000500000000000n, // Converted to BigInt
-        handlers: [StakingHandlerType.CommissionChanged, StakingHandlerType.DestinationChanged],
+        handlers: [StakingHandlerType.CommissionChangedEvent, StakingHandlerType.DestinationChangedCall],
         annotations: {
           tag: 'group-R', // Overridden from account
         },

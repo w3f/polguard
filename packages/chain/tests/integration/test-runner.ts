@@ -94,15 +94,29 @@ export class TestRunner {
     
     return testCases;
   }
+
+  // WS connect with 10 s timeout and one retry
+  private async connectWs(rpc: string): Promise<ApiPromise> {
+    const attempt = () =>
+      Promise.race([
+        ApiPromise.create({ provider: new WsProvider(rpc), noInitWarn: true }),
+        new Promise<never>((_, rej) =>
+          setTimeout(() => rej(new Error('WS connection timeout')), 10_000)
+        ),
+      ]);
+
+    try {
+      return await attempt();
+    } catch (err: any) {
+      console.warn(`First WS connect for rpc ${rpc} failed (${err.message}), retrying…`);
+      return await attempt();
+    }
+  }
   
   private async runChainTests(chain: Chain, testCases: TestCase[], rpcEndpoint: string, debug: boolean): Promise<TestResult[]> {
     console.log(`\n${colors.cyan}Running ${testCases.length} tests for ${chain}...${colors.reset}`);
     console.log(`Connecting to ${chain} at ${rpcEndpoint}`);
-    
-    const api = await ApiPromise.create({ 
-      provider: new WsProvider(rpcEndpoint),
-      noInitWarn: true 
-    });
+    const api = await this.connectWs(rpcEndpoint);
     
     try {
       const concurrencyLimit = 5;

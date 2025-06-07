@@ -18,7 +18,7 @@ rpcEndpoints:
 
 tests:
   Staking:
-    CommissionChanged:
+    CommissionChangedEvent:
       - chain: "Polkadot"
         block: 12345678
         account:

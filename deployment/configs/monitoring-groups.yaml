@@ -12,9 +12,9 @@ defaults:
     - name: Staking
       commission: 5
       handlers:
-        - CommissionChanged
-        - SlashReported
-        - CommissionUnexpected
+        - CommissionChangedEvent
+        - SlashReportedEvent
+        - CommissionUnexpectedState
 
 accountSets:
   validator-accounts:

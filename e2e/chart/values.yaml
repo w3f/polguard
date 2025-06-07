@@ -8,7 +8,7 @@ tests:
     api:
       url: http://api:3000
       incident:
-        handlerType: "TransferEgress"
+        handlerType: TransferEgressEvent
     chain:
       url: http://chain:3000
       targetBlock: 25700136

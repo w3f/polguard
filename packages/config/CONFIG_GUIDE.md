@@ -53,8 +53,8 @@ defaults:
     - name: Staking
       commission: 10
       handlers:
-        - CommissionChanged
-        - SlashReported
+        - CommissionChangedEvent
+        - SlashReportedEvent
 ```
 
 ## Account Sets
@@ -139,8 +139,8 @@ The platform processes configuration in the following order:
 ```yaml
 # Handlers array is required and must contain at least one handler
 handlers:
-  - CommissionChanged
-  - SlashReported
+  - CommissionChangedEvent
+  - SlashReportedEvent
 ```
 
 ## Monitor Settings Hierarchy
@@ -216,20 +216,20 @@ groups:
       - name: Staking
         commission: 5
         handlers:
-          - CommissionChanged
-          - SlashReported
+          - CommissionChangedEvent
+          - SlashReportedEvent
       - name: Balances
         threshold: "1000.0"
         handlers:
-          - BalanceThreshold
-          - TransferIngress
+          - BalanceThresholdState
+          - TransferIngressEvent
     accountSet: validators-set
 
   - name: validators-balances-no-ack
     monitors:
       - name: Balances
         handlers:
-          - TransferEgress
+          - TransferEgressEvent
     notifications:
       messengerType: matrix
       channels: ['!roomid:matrix.org']

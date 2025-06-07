@@ -55,7 +55,7 @@ export class CreateIncidentDto {
 
   @ApiProperty({
     description: 'Handler type that detected the incident',
-    example: 'SlashReported',
+    example: 'SlashReportedEvent',
   })
   @IsString()
   @IsNotEmpty()

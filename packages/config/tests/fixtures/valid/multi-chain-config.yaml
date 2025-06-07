@@ -26,14 +26,14 @@ groups:
       - name: Staking
         commission: 5
         handlers:
-          - CommissionChanged
+          - CommissionChangedEvent
       - name: Balances
         threshold: "1000.0"
         handlers:
-          - BalanceThreshold
+          - BalanceThresholdState
       - name: Xcm
         handlers:
-          - XcmTransferEgress
+          - XcmTransferEgressEvent
     accountSet: polkadot-validators
         
   - id: kusama-validators
@@ -43,12 +43,12 @@ groups:
       - name: Staking
         commission: 10
         handlers:
-          - CommissionChanged
+          - CommissionChangedEvent
       - name: Balances
         threshold: "10000.0"
         handlers:
-          - BalanceThreshold
+          - BalanceThresholdState
       - name: Xcm
         handlers:
-          - XcmTransferEgress
+          - XcmTransferEgressEvent
     accountSet: kusama-validators

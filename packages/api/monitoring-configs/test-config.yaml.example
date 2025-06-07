@@ -7,7 +7,7 @@ defaults:
       - "!testroom:matrix.org"
   monitors:
     - name: Staking
-      handlers: ['SlashReported']
+      handlers: ['SlashReportedEvent']
       commission: 10
 
 accountSets:

@@ -15,7 +15,7 @@ import { AbstractMonitor } from './abstract-monitor';
 
 export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
   @Event(
-    H.XcmTransferEgress,
+    H.XcmTransferEgressEvent,
     [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPolkadot, Chain.AssetHubKusama],
     ['polkadotXcm.Sent', 'xcmPallet.Sent'],
   )
@@ -23,7 +23,7 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
     eventRecord,
     blockNumber,
     handlerType,
-  }: EventHandlerParams<H.XcmTransferEgress>): Promise<void> {
+  }: EventHandlerParams<H.XcmTransferEgressEvent>): Promise<void> {
     const [rawOrigin, rawDestination, rawMessage] = eventRecord.event.data;
     const transferInfo = this.extractXcmTransferInfo(rawOrigin, rawDestination, rawMessage, blockNumber);
     const { origin, destination, destinationChain, transfers } = transferInfo;

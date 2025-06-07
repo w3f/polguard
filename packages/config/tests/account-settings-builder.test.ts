@@ -17,7 +17,7 @@ describe('AccountSettingsBuilder', () => {
           name: MonitorType.Staking,
           settings: {
             commission: 10,
-            handlers: [StakingHandlerType.CommissionChanged],
+            handlers: [StakingHandlerType.CommissionChangedEvent],
           } as MonitorTypeSettings[MonitorType.Staking],
         },
       ];
@@ -41,7 +41,7 @@ describe('AccountSettingsBuilder', () => {
       expect(result[MonitorType.Staking]).toEqual({
         commission: 5, // From account settings
         selfStake: 10005000000000n, // Converted to BigInt
-        handlers: [StakingHandlerType.CommissionChanged],
+        handlers: [StakingHandlerType.CommissionChangedEvent],
       });
     });
 
@@ -51,7 +51,7 @@ describe('AccountSettingsBuilder', () => {
           name: MonitorType.Staking,
           settings: {
             commission: 10,
-            handlers: [StakingHandlerType.ActiveSetPresence],
+            handlers: [StakingHandlerType.ActiveSetPresenceState],
           } as MonitorTypeSettings[MonitorType.Staking],
         },
       ];

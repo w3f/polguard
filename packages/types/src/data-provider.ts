@@ -8,7 +8,7 @@ export type IdentityInfo = {
   [K in IdentityField]?: string;
 };
 export interface ChainDataProvider {
-  stakingValidators(blockNumber: number): Promise<Set<string>>;
+  stakingValidators(blockNumber: number): Promise<string[]>;
   stakingValidatorsCommission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>>;
   stakingLedgerActive(addresses: string[], blockNumber: number): Promise<Record<string, bigint | null>>;
   stakingBonded(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
@@ -20,6 +20,6 @@ export interface ChainDataProvider {
   identitySuperOf(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
   assetsAccountBalance(addresses: string[], tokenNames: string[], blockNumber: number): Promise<Record<string, Record<string, bigint>>>;
   ormlTokensAccountBalance(addresses: string[], tokenNames: string[], blockNumber: number): Promise<Record<string, Record<string, bigint>>>;
-  referendaInfoFor(referendumIndex: string | number, blockNumber: number): Promise<PalletReferendaReferendumInfo | null>;
+  referendaInfoFor(referendumIndex: string | number, blockNumber: number): Promise<string | null>;
   referendaTrack(trackId: number | string, blockNumber: number): Promise<string>;
 }

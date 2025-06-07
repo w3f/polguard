@@ -220,8 +220,8 @@ workflows:
       # TODO: It's not yet clear how we'll handle CD for prod, but we don't need to publish 
       # the chart every release as it works for the rest of services
 
-      - publish_charts:
-          context: github-bot
-          filters:
-            branches: {ignore: /.*/}
-            tags:     {only: /^v\d+\.\d+\.\d+$/}
+      # - publish_charts:
+      #     context: github-bot
+      #     filters:
+      #       branches: {ignore: /.*/}
+      #       tags:     {only: /^v\d+\.\d+\.\d+$/}

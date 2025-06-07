@@ -13,5 +13,5 @@ groups:
       - name: Staking
         commission: 10
         handlers:
-          - CommissionChanged
+          - CommissionChangedEvent
     accountSet: invalid-notifications

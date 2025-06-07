@@ -43,46 +43,47 @@ export enum NotificationType {
 }
 
 export enum StakingHandlerType {
-  SlashReported = 'SlashReported',
-  CommissionChanged = 'CommissionChanged',
-  Unbonded = 'Unbonded',
-  DestinationChanged = 'DestinationChanged',
-  CommissionUnexpected = 'CommissionUnexpected',
-  DestinationUnexpected = 'DestinationUnexpected',
-  SelfStakeUnexpected = 'SelfStakeUnexpected',
-  ActiveSetPresence = 'ActiveSetPresence',
-  ValidatorIntentionMissing = 'ValidatorIntentionMissing',
+  SlashReportedEvent = 'SlashReportedEvent',
+  CommissionChangedEvent = 'CommissionChangedEvent',
+  UnbondedEvent = 'UnbondedEvent',
+  DestinationChangedCall = 'DestinationChangedCall',
+  DestinationChangedState = 'DestinationChangedState',
+  CommissionUnexpectedState = 'CommissionUnexpectedState',
+  DestinationUnexpectedState = 'DestinationUnexpectedState',
+  SelfStakeUnexpectedState = 'SelfStakeUnexpectedState',
+  ActiveSetPresenceState = 'ActiveSetPresenceState',
+  ValidatorIntentionMissingState = 'ValidatorIntentionMissingState',
 }
 
 export enum BalancesHandlerType {
-  BalanceDecrease = 'BalanceDecrease',
-  BalanceThreshold = 'BalanceThreshold',
-  TransferIngress = 'TransferIngress',
-  TransferEgress = 'TransferEgress',
-  Transfer = 'Transfer',
+  BalanceDecreaseState = 'BalanceDecreaseState',
+  BalanceThresholdState = 'BalanceThresholdState',
+  TransferIngressEvent = 'TransferIngressEvent',
+  TransferEgressEvent = 'TransferEgressEvent',
+  TransferCall = 'TransferCall',
 }
 
 export enum IdentityHandlerType {
-  IdentityUnexpected = 'IdentityUnexpected',
-  IdentityChanged = 'IdentityChanged',
-  IdentityMissing = 'IdentityMissing',
-  IdentityFieldsMissing = 'IdentityFieldsMissing',
+  IdentityUnexpectedState = 'IdentityUnexpectedState',
+  IdentityChangedEvent = 'IdentityChangedEvent',
+  IdentityMissingState = 'IdentityMissingState',
+  IdentityFieldsMissingState = 'IdentityFieldsMissingState',
 }
 
 export enum GovernanceHandlerType {
-  ReferendaSubmitted = 'ReferendaSubmitted',
-  ConvictionVote = 'ConvictionVote',
+  ReferendaSubmittedEvent = 'ReferendaSubmittedEvent',
+  ConvictionVoteCall = 'ConvictionVoteCall',
 }
 
 export enum XcmHandlerType {
-  XcmTransferEgress = 'XcmTransferEgress',
+  XcmTransferEgressEvent = 'XcmTransferEgressEvent',
 }
 
 export enum AssetsHandlerType {
-  AssetBalanceDecrease = 'AssetBalanceDecrease',
-  AssetBalanceThreshold = 'AssetBalanceThreshold',
-  AssetTransferIngress = 'AssetTransferIngress',
-  AssetTransferEgress = 'AssetTransferEgress',
+  AssetBalanceDecreaseState = 'AssetBalanceDecreaseState',
+  AssetBalanceThresholdState = 'AssetBalanceThresholdState',
+  AssetTransferIngressEvent = 'AssetTransferIngressEvent',
+  AssetTransferEgressEvent = 'AssetTransferEgressEvent',
 }
 
 export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {

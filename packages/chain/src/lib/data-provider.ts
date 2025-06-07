@@ -41,11 +41,10 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
      * TODO: This seems suboptimal, find out better ways of dealing with ValueQuery storage
      */
     @Cached()
-    async stakingValidators(blockNumber: number): Promise<Set<string>> {
+    async stakingValidators(blockNumber: number): Promise<string[]> {
       const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
       const keys = await apiAt.query.staking.validators.keys();
-      const validatorAddresses = keys.map(key => key.args[0].toString());
-      return new Set(validatorAddresses);
+      return keys.map(k => k.args[0].toString());
     }
 
     @Cached()
@@ -54,13 +53,12 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       blockNumber: number,
     ): Promise<Record<string, number | null>> {
       const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
-      const validatorAddresses = await this.stakingValidators(blockNumber);
+      const validatorAddresses = new Set(await this.stakingValidators(blockNumber));
       const prefs = await apiAt.query.staking.validators.multi(addresses);
       const result: Record<string, number | null> = {};
 
       addresses.forEach((address, index) => {
         if (!validatorAddresses.has(address)) {
-          this.logger.debug(`Account ${address} is not in validator set at block ${blockNumber}`);
           result[address] = null;
         } else {
           result[address] = prefs[index].commission.toNumber() / 10_000_000;
@@ -79,10 +77,6 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       addresses.forEach((address, index) => {
         const info = bondedInfo[index] as Option<Codec>;
         const bondedAddress = info.isSome ? info.unwrap().toString() : null;
-
-        if (!bondedAddress) {
-          this.logger.debug(`No bonded address found for validator ${address} at block ${blockNumber}`);
-        }
         result[address] = bondedAddress;
       });
 
@@ -98,7 +92,6 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       addresses.forEach((address, index) => {
         const ledger = ledgers[index] as Option<Codec>;
         if (ledger.isNone) {
-          this.logger.debug(`No staking ledger found for controller ${address} at block ${blockNumber}`);
           result[address] = null;
         } else {
           result[address] = ledgers[index].unwrap().active.toBigInt();
@@ -117,10 +110,6 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       addresses.forEach((address, index) => {
         const payee = payees[index] as Option<Codec>;
         if (payee.isNone) {
-          this.logger.debug(
-            `Account ${address} has no payee set (not bonded for staking) ` +
-              `at block ${blockNumber} but is configured for monitoring.`,
-          );
           result[address] = null;
         } else {
           result[address] = payee.toString();
@@ -265,13 +254,19 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
     }
 
     @Cached()
-    async referendaInfoFor(referendumIndex: string | number, blockNumber: number): Promise<any> {
+    async referendaInfoFor(referendumIndex: string | number, blockNumber: number): Promise<string | null> {
       const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
       const info = await apiAt.query.referenda.referendumInfoFor(referendumIndex);
       if (info.isNone) {
         return null;
       }
-      return info.unwrap();
+
+      const unwrapped = info.unwrap();
+      if (!unwrapped.isOngoing) {
+        return null;
+      }
+
+      return unwrapped.asOngoing.submissionDeposit.who.toString();
     }
 
     @Cached()

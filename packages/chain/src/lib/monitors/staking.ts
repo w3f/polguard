@@ -12,8 +12,12 @@ import {
 import { AbstractMonitor } from './abstract-monitor';
 
 export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
-  @Event(H.SlashReported, [Chain.Polkadot, Chain.Kusama], 'staking.SlashReported')
-  async slashReported({ eventRecord, blockNumber, handlerType }: EventHandlerParams<H.SlashReported>): Promise<void> {
+  @Event(H.SlashReportedEvent, [Chain.Polkadot, Chain.Kusama], 'staking.SlashReported')
+  async slashReported({
+    eventRecord,
+    blockNumber,
+    handlerType,
+  }: EventHandlerParams<H.SlashReportedEvent>): Promise<void> {
     const validatorId = eventRecord.event.data[0].toString();
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, validatorId)) {
@@ -26,12 +30,12 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @Event(H.CommissionChanged, [Chain.Polkadot, Chain.Kusama], 'staking.ValidatorPrefsSet')
+  @Event(H.CommissionChangedEvent, [Chain.Polkadot, Chain.Kusama], 'staking.ValidatorPrefsSet')
   async commissionChanged({
     eventRecord,
     blockNumber,
     handlerType,
-  }: EventHandlerParams<H.CommissionChanged>): Promise<void> {
+  }: EventHandlerParams<H.CommissionChangedEvent>): Promise<void> {
     const stash = eventRecord.event.data[0].toString();
     const prefs = eventRecord.event.data[1] as PalletStakingValidatorPrefs;
 
@@ -48,8 +52,8 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @Event(H.Unbonded, [Chain.Polkadot, Chain.Kusama], 'staking.Unbonded')
-  async unbonded({ eventRecord, blockNumber, handlerType }: EventHandlerParams<H.Unbonded>): Promise<void> {
+  @Event(H.UnbondedEvent, [Chain.Polkadot, Chain.Kusama], 'staking.Unbonded')
+  async unbonded({ eventRecord, blockNumber, handlerType }: EventHandlerParams<H.UnbondedEvent>): Promise<void> {
     const [stash, amount] = eventRecord.event.data.map(d => d.toString());
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, stash)) {
@@ -65,14 +69,14 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @Call(H.DestinationChanged, [Chain.Polkadot, Chain.Kusama], ['staking.setPayee', 'staking.bond'])
+  @Call(H.DestinationChangedCall, [Chain.Polkadot, Chain.Kusama], ['staking.setPayee', 'staking.bond'])
   async destinationChanged({
     call,
     origin,
     blockNumber,
     extrinsicIndex,
     handlerType,
-  }: CallHandlerParams<H.DestinationChanged>): Promise<void> {
+  }: CallHandlerParams<H.DestinationChangedCall>): Promise<void> {
     const payee = (call.method === 'setPayee' ? call.args[0] : call.args[1]) as PalletStakingRewardDestination;
     const destination = payee.isAccount ? payee.asAccount.toString() : payee.type;
 
@@ -89,8 +93,43 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @State(H.CommissionUnexpected, [Chain.Polkadot, Chain.Kusama])
-  async commissionUnexpected({ blockNumber, handlerType }: StateHandlerParams<H.CommissionUnexpected>): Promise<void> {
+  @State(H.DestinationChangedState, [Chain.Polkadot, Chain.Kusama])
+  async destinationChangedState({
+    blockNumber,
+    handlerType,
+  }: StateHandlerParams<H.DestinationChangedState>): Promise<void> {
+    const addresses = this.reg.getUniqueAddresses();
+    const [curr, prev] = await Promise.all([
+      await this.chain.stakingPayee(addresses, blockNumber),
+      await this.chain.stakingPayee(addresses, blockNumber - 1),
+    ]);
+
+    for (const address of addresses) {
+      const currDestination = curr[address];
+      const prevDestination = prev[address];
+
+      for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
+        if (currDestination !== null && prevDestination !== null && currDestination !== prevDestination) {
+          const message = this.fmt.message(
+            [
+              `Reward destination changed for ${this.fmt.accountLink(account.name, account.ss58)}`,
+              `Previous: ${prevDestination}`,
+              `Current: ${currDestination}`,
+            ],
+            { blockNumber },
+          );
+          const key = { account: account.ss58, groupId, handlerType };
+          await this.incidents.handle(message, notifications, key, blockNumber);
+        }
+      }
+    }
+  }
+
+  @State(H.CommissionUnexpectedState, [Chain.Polkadot, Chain.Kusama])
+  async commissionUnexpected({
+    blockNumber,
+    handlerType,
+  }: StateHandlerParams<H.CommissionUnexpectedState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
     const commissions = await this.chain.stakingValidatorsCommission(addresses, blockNumber);
 
@@ -114,8 +153,11 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.SelfStakeUnexpected, [Chain.Polkadot, Chain.Kusama])
-  async selfStakeUnexpected({ blockNumber, handlerType }: StateHandlerParams<H.SelfStakeUnexpected>): Promise<void> {
+  @State(H.SelfStakeUnexpectedState, [Chain.Polkadot, Chain.Kusama])
+  async selfStakeUnexpected({
+    blockNumber,
+    handlerType,
+  }: StateHandlerParams<H.SelfStakeUnexpectedState>): Promise<void> {
     // Note: The staking.ledger storage is still keyed by what was historically the controller address.
     // Although stash-controller separation is deprecated and staking.bonded now returns the same address,
     // we still need this two-step lookup process to access the ledger storage due to backward compatibility
@@ -150,11 +192,11 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @State(H.ValidatorIntentionMissing, [Chain.Polkadot, Chain.Kusama])
+  @State(H.ValidatorIntentionMissingState, [Chain.Polkadot, Chain.Kusama])
   async validatorIntentionMissing({
     blockNumber,
     handlerType,
-  }: StateHandlerParams<H.ValidatorIntentionMissing>): Promise<void> {
+  }: StateHandlerParams<H.ValidatorIntentionMissingState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
     const bondedInfo = await this.chain.stakingBonded(addresses, blockNumber);
     const commissions = await this.chain.stakingValidatorsCommission(addresses, blockNumber);
@@ -180,11 +222,11 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.DestinationUnexpected, [Chain.Polkadot, Chain.Kusama])
+  @State(H.DestinationUnexpectedState, [Chain.Polkadot, Chain.Kusama])
   async destinationUnexpected({
     blockNumber,
     handlerType,
-  }: StateHandlerParams<H.DestinationUnexpected>): Promise<void> {
+  }: StateHandlerParams<H.DestinationUnexpectedState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
     const payees = await this.chain.stakingPayee(addresses, blockNumber);
 
@@ -207,8 +249,8 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.ActiveSetPresence, [Chain.Polkadot, Chain.Kusama])
-  async activeSetPresense({ blockNumber, handlerType }: StateHandlerParams<H.ActiveSetPresence>): Promise<void> {
+  @State(H.ActiveSetPresenceState, [Chain.Polkadot, Chain.Kusama])
+  async activeSetPresense({ blockNumber, handlerType }: StateHandlerParams<H.ActiveSetPresenceState>): Promise<void> {
     const validators = await this.chain.sessionValidators(blockNumber);
 
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {

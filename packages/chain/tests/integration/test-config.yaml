@@ -7,25 +7,25 @@ rpcEndpoints:
 
 tests:
   Staking:
-    SlashReported:
+    SlashReportedEvent:
       - description: "Event (staking.SlashReported)"
         chain: Polkadot
         block: 23912156
         account:
           address: 13YJ7PrjwAhKHP9m99APDSuvLwWKSQSmKABfJY3H2Cepk2CA
-    CommissionChanged:
+    CommissionChangedEvent:
       - description: "Event (staking.ValidatorPrefsSet)"
         chain: Polkadot
         block: 25687816
         account:
           address: 15ZvLonEseaWZNy8LDkXXj3Y8bmAjxCjwvpy4pXWSL4nGSBs
-    Unbonded:
+    UnbondedEvent:
       - description: "Event (staking.Unbonded)"
         chain: Polkadot
         block: 26090579
         account:
           address: 13UVJyLnbVp8c4FQeiGHuwQmjryMLyKsETR9mRHNkeHEwnPe
-    DestinationChanged:
+    DestinationChangedCall:
       - description: "Call (staking.setPayee)"
         chain: Polkadot
         block: 25690413
@@ -36,34 +36,40 @@ tests:
         block: 25690191
         account:
           address: 1aWpog533KKNYXQeKpvwCmrCaB8WXgFNhmo43oakFTP88TH
-    CommissionUnexpected:
+    DestinationChangedState:
+      - description: "State (staking.payee)"
+        chain: Polkadot
+        block: 25690413
+        account:
+          address: 16GHeAPkM9pja4XaigJ5XC7VBHyG7qHatm2hQcog4cmENeV6
+    CommissionUnexpectedState:
       - description: "State (staking.validators)"
         chain: Polkadot
         block: 25690600
         account:
           address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
           commission: 9
-    SelfStakeUnexpected:
+    SelfStakeUnexpectedState:
       - description: "State (staking.bonded, staking.ledger)"
         chain: Polkadot
         block: 25690601
         account:
           address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
           selfStake: 9000000000000
-    ValidatorIntentionMissing:
+    ValidatorIntentionMissingState:
       - description: "State (staking.bonded, staking.validators)"
         chain: Polkadot
         block: 25690602
         account:
           address: 12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ
-    DestinationUnexpected:
+    DestinationUnexpectedState:
       - description: "State (staking.payee)"
         chain: Polkadot
         block: 25690603
         account:
           address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
           payee: test
-    ActiveSetPresence:
+    ActiveSetPresenceState:
       - description: "State (session.validators)"
         chain: Polkadot
         block: 25700079
@@ -71,32 +77,32 @@ tests:
           address: 12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ
 
   Balances:
-    BalanceDecrease:
+    BalanceDecreaseState:
       - description: "State (system.account). Balance decreased"
         chain: Polkadot
         block: 25700153
         account:
           address: 12nr7GiDrYHzAYT9L8HdeXnMfWcBuYfAXpgfzf3upujeCciz
-    BalanceThreshold:
+    BalanceThresholdState:
       - description: "State (system.account)"
         chain: Polkadot
         block: 25700154
         account:
           address: 12iTqoDYN18NkUbi7H3S1DWfMA99xporWhrjdyo2bvMZqJv5
           threshold: 1630000000000
-    TransferIngress:
+    TransferIngressEvent:
       - description: "Event (balances.Transfer)"
         chain: Polkadot
         block: 25700136
         account:
           address: 13sWK9B3PVxQyzeeGVtW1sZ9qBJJLa68pwtwP1asnUBMKXYz
-    TransferEgress:
+    TransferEgressEvent:
       - description: "Event (balances.Transfer)"
         chain: Polkadot
         block: 25700136
         account:
           address: 13hyXGa1E6Gprm1RQo56WwTGuvZWw4q2MoQHBPXFiGfVRx4f
-    Transfer:
+    TransferCall:
       - description: "Call (balances.Transfer). Nested call: multisig -> proxy -> balances.transfer. Should generate two incidents"
         chain: Kusama
         block: 21441337
@@ -104,7 +110,7 @@ tests:
           address: ESVfLhWFe7pAePrxctqDPEx8jEZFPCWxfmyuGAzn8gAJdPU
 
   Identity:
-    IdentityUnexpected:
+    IdentityUnexpectedState:
       - description: "State (identity.identityOf, identity.superOf)"
         chain: PeoplePolkadot
         block: 	1958722
@@ -115,7 +121,7 @@ tests:
           web: test
           matrix: test
           email: test
-    IdentityChanged:
+    IdentityChangedEvent:
       - description: "Event (identity.IdentitySet)"
         chain: PeoplePolkadot
         block: 1952394
@@ -126,13 +132,13 @@ tests:
         block: 1804308
         account:
           address: 14SiBFwmMnUH6VLRCTmHQ78FSw6t21b6qkmUmHYYk88W83Z7
-    IdentityMissing:
+    IdentityMissingState:
       - description: "State (identity.identityOf, identity.superOf)"
         chain: PeoplePolkadot
         block: 1958723
         account:
           address: HS9ucpbZ3FLR6q1wwf2ubUv1W7nRQBFufrwPek4ZmspgHbr
-    IdentityFieldsMissing:
+    IdentityFieldsMissingState:
       - description: "State (identity.identityOf, identity.superOf)"
         chain: PeoplePolkadot
         block: 1958723
@@ -140,7 +146,7 @@ tests:
           address: 15iK81MWBDA5hLYMpAUSZF6ArGSdqiDD5mon2F7i5Pf3XtfT
 
   Xcm:
-    XcmTransferEgress:
+    XcmTransferEgressEvent:
       - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Multisig dest 1000"
         chain: Polkadot
         block: 21497354
@@ -202,7 +208,7 @@ tests:
         account:
           address: 12NpELGHzDaMspRH3E5zThqNpW24KeZ3TMjXdYVxmEH4caCS
   Assets:
-    AssetBalanceDecrease:
+    AssetBalanceDecreaseState:
       - description: "State (assets.account). Balance decreased"
         chain: AssetHubPolkadot
         block: 8855547
@@ -215,7 +221,7 @@ tests:
         account:
           tokens: [localUSDC]
           address: 4dtAmm2K7vs75h3AfyjEtsbseR9dmN3PPzVsxAsCiEgHCeKZ
-    AssetBalanceThreshold:
+    AssetBalanceThresholdState:
       - description: "State (assets.account)"
         chain: AssetHubPolkadot
         block: 8855547
@@ -228,7 +234,7 @@ tests:
         account:
           address: 4diz9ZYpk1Q6RxpwQ1vtBEvcHfcCy1eoonkUBY9FPYUd9pCw
           tokenThresholds: [[localUSDC, 101000000]]
-    AssetTransferIngress:
+    AssetTransferIngressEvent:
       - description: "Event (assets.Transferred)"
         chain: AssetHubPolkadot
         block: 8850814
@@ -241,7 +247,7 @@ tests:
         account:
           tokens: [localUSDC]
           address: 4diz9ZYpk1Q6RxpwQ1vtBEvcHfcCy1eoonkUBY9FPYUd9pCw
-    AssetTransferEgress:
+    AssetTransferEgressEvent:
       - description: "Event (assets.Transferred)"
         chain: AssetHubPolkadot
         block: 8850814
@@ -255,13 +261,13 @@ tests:
           tokens: [localUSDC]
           address: 4dtAmm2K7vs75h3AfyjEtsbseR9dmN3PPzVsxAsCiEgHCeKZ
   Governance:
-    ReferendaSubmitted:
-      - description: "Event (referenda.Submitted)"
+    ReferendaSubmittedEvent:
+      - description: "Event (referenda.Submitted), part of utility.batch_all"
         chain: Polkadot
-        block: 25764772
+        block: 26344616
         account:
-          address: ''
-    ConvictionVote:
+          address: 'None'
+    ConvictionVoteCall:
       - description: "Call (convictionVoting.vote)"
         chain: Polkadot
         block: 25771956

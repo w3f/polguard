@@ -11,45 +11,45 @@ import { Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 
 export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
-  @State(H.AssetBalanceDecrease, [Chain.AssetHubPolkadot, Chain.AssetHubKusama])
-  async assetBalanceDecrease(params: StateHandlerParams<H.AssetBalanceDecrease>): Promise<void> {
+  @State(H.AssetBalanceDecreaseState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama])
+  async assetBalanceDecrease(params: StateHandlerParams<H.AssetBalanceDecreaseState>): Promise<void> {
     return this.handleBalanceDecrease(
       (addrs, tokens, block) => this.chain.assetsAccountBalance(addrs, tokens, block),
       params,
     );
   }
 
-  @State(H.AssetBalanceDecrease, [Chain.Centrifuge])
-  async ormlTokensBalanceDecrease(params: StateHandlerParams<H.AssetBalanceDecrease>): Promise<void> {
+  @State(H.AssetBalanceDecreaseState, [Chain.Centrifuge])
+  async ormlTokensBalanceDecrease(params: StateHandlerParams<H.AssetBalanceDecreaseState>): Promise<void> {
     return this.handleBalanceDecrease(
       (addrs, tokens, block) => this.chain.ormlTokensAccountBalance(addrs, tokens, block),
       params,
     );
   }
 
-  @State(H.AssetBalanceThreshold, [Chain.AssetHubPolkadot, Chain.AssetHubKusama])
-  async assetBalanceThreshold(params: StateHandlerParams<H.AssetBalanceThreshold>): Promise<void> {
+  @State(H.AssetBalanceThresholdState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama])
+  async assetBalanceThreshold(params: StateHandlerParams<H.AssetBalanceThresholdState>): Promise<void> {
     return this.handleBalanceThreshold(
       (addrs, tokens, block) => this.chain.assetsAccountBalance(addrs, tokens, block),
       params,
     );
   }
 
-  @State(H.AssetBalanceThreshold, [Chain.Centrifuge])
-  async ormlTokensBalanceThreshold(params: StateHandlerParams<H.AssetBalanceThreshold>): Promise<void> {
+  @State(H.AssetBalanceThresholdState, [Chain.Centrifuge])
+  async ormlTokensBalanceThreshold(params: StateHandlerParams<H.AssetBalanceThresholdState>): Promise<void> {
     return this.handleBalanceThreshold(
       (addrs, tokens, block) => this.chain.ormlTokensAccountBalance(addrs, tokens, block),
       params,
     );
   }
 
-  @Event(H.AssetTransferIngress, [Chain.AssetHubPolkadot, Chain.AssetHubKusama], 'assets.Transferred')
-  @Event(H.AssetTransferIngress, [Chain.Centrifuge], 'ormlTokens.Transfer')
+  @Event(H.AssetTransferIngressEvent, [Chain.AssetHubPolkadot, Chain.AssetHubKusama], 'assets.Transferred')
+  @Event(H.AssetTransferIngressEvent, [Chain.Centrifuge], 'ormlTokens.Transfer')
   async onTransferIngress({
     eventRecord,
     blockNumber,
     handlerType,
-  }: EventHandlerParams<H.AssetTransferIngress>): Promise<void> {
+  }: EventHandlerParams<H.AssetTransferIngressEvent>): Promise<void> {
     const [rawId, from, to, amount] = eventRecord.event.data.map(d => d.toString());
     const token = ID_TOKEN_MAP[this.chainProps.chain][rawId];
 
@@ -69,13 +69,13 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
     }
   }
 
-  @Event(H.AssetTransferEgress, [Chain.AssetHubPolkadot, Chain.AssetHubKusama], 'assets.Transferred')
-  @Event(H.AssetTransferEgress, [Chain.Centrifuge], 'ormlTokens.Transfer')
+  @Event(H.AssetTransferEgressEvent, [Chain.AssetHubPolkadot, Chain.AssetHubKusama], 'assets.Transferred')
+  @Event(H.AssetTransferEgressEvent, [Chain.Centrifuge], 'ormlTokens.Transfer')
   async onTransferEgress({
     eventRecord,
     blockNumber,
     handlerType,
-  }: EventHandlerParams<H.AssetTransferEgress>): Promise<void> {
+  }: EventHandlerParams<H.AssetTransferEgressEvent>): Promise<void> {
     const [rawId, from, to, amount] = eventRecord.event.data.map(d => d.toString());
     const token = ID_TOKEN_MAP[this.chainProps.chain][rawId];
 
@@ -100,7 +100,7 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
    */
   private async handleBalanceDecrease(
     getBalances: (addresses: string[], tokens: string[], block: number) => Promise<TokenBalances>,
-    params: StateHandlerParams<H.AssetBalanceDecrease>,
+    params: StateHandlerParams<H.AssetBalanceDecreaseState>,
   ): Promise<void> {
     const { blockNumber, handlerType } = params;
     const addresses = this.reg.getUniqueAddresses();
@@ -140,7 +140,7 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
    */
   private async handleBalanceThreshold(
     getBalances: (addresses: string[], tokens: string[], block: number) => Promise<TokenBalances>,
-    params: StateHandlerParams<H.AssetBalanceThreshold>,
+    params: StateHandlerParams<H.AssetBalanceThresholdState>,
   ): Promise<void> {
     const { blockNumber, handlerType } = params;
     const addresses = this.reg.getUniqueAddresses();

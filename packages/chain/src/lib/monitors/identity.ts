@@ -10,8 +10,8 @@ import {
 import { AbstractMonitor } from './abstract-monitor';
 
 export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
-  @State(H.IdentityUnexpected, [Chain.PeoplePolkadot, Chain.PeopleKusama])
-  async identityUnexpected({ blockNumber, handlerType }: StateHandlerParams<H.IdentityUnexpected>): Promise<void> {
+  @State(H.IdentityUnexpectedState, [Chain.PeoplePolkadot, Chain.PeopleKusama])
+  async identityUnexpected({ blockNumber, handlerType }: StateHandlerParams<H.IdentityUnexpectedState>): Promise<void> {
     const addressToParent = await this.getAddressToParent(blockNumber);
     const parents = Array.from(new Set(addressToParent.values()));
     const identities = await this.chain.identityOf(parents, blockNumber);
@@ -44,7 +44,7 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
   }
 
   @Event(
-    H.IdentityChanged,
+    H.IdentityChangedEvent,
     [Chain.PeoplePolkadot, Chain.PeopleKusama],
     ['identity.IdentitySet', 'identity.IdentityCleared', 'identity.IdentityKilled'],
   )
@@ -52,7 +52,7 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
     eventRecord,
     blockNumber,
     handlerType,
-  }: EventHandlerParams<H.IdentityChanged>): Promise<void> {
+  }: EventHandlerParams<H.IdentityChangedEvent>): Promise<void> {
     const parent = eventRecord.event.data[0].toString();
     const addressToParent = await this.getAddressToParent(blockNumber);
     const address = this.findAddressByParent(parent, addressToParent);
@@ -90,8 +90,8 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
     }
   }
 
-  @State(H.IdentityMissing, [Chain.PeoplePolkadot, Chain.PeopleKusama])
-  async identityMissing({ blockNumber, handlerType }: StateHandlerParams<H.IdentityMissing>): Promise<void> {
+  @State(H.IdentityMissingState, [Chain.PeoplePolkadot, Chain.PeopleKusama])
+  async identityMissing({ blockNumber, handlerType }: StateHandlerParams<H.IdentityMissingState>): Promise<void> {
     const addressToParent = await this.getAddressToParent(blockNumber);
     const parents = Array.from(new Set(addressToParent.values()));
     const identities = await this.chain.identityOf(parents, blockNumber);
@@ -110,11 +110,11 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
     }
   }
 
-  @State(H.IdentityFieldsMissing, [Chain.PeoplePolkadot, Chain.PeopleKusama])
+  @State(H.IdentityFieldsMissingState, [Chain.PeoplePolkadot, Chain.PeopleKusama])
   async identityFieldsMissing({
     blockNumber,
     handlerType,
-  }: StateHandlerParams<H.IdentityFieldsMissing>): Promise<void> {
+  }: StateHandlerParams<H.IdentityFieldsMissingState>): Promise<void> {
     // TODO: Make requiredFields configurable
     const requiredFields = ['email', 'matrix'];
     const addressToParent = await this.getAddressToParent(blockNumber);

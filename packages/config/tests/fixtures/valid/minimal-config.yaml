@@ -13,8 +13,8 @@ groups:
       - name: Staking
         commission: 10
         handlers:
-          - CommissionChanged
+          - CommissionChangedEvent
       - name: Xcm
         handlers:
-          - XcmTransferEgress
+          - XcmTransferEgressEvent
     accountSet: minimal-validators

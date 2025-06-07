@@ -21,7 +21,7 @@ import { monitorSchemas, extractFieldsFromSchema } from './config-validator';
  *     name: MonitorType.Staking,
  *     settings: {
  *       commission: 10,
- *       handlers: ['CommissionChanged']
+ *       handlers: ['CommissionChangedEvent']
  *     }
  *   },
  *   {
@@ -45,7 +45,7 @@ import { monitorSchemas, extractFieldsFromSchema } from './config-validator';
  * //   [MonitorType.Staking]: {
  * //     commission: 5,              // From account settings
  * //     selfStake: 10005000000000n, // From account settings, converted to BigInt
- * //     handlers: ['CommissionChanged']  // Preserved from monitor config
+ * //     handlers: ['CommissionChangedEvent']  // Preserved from monitor config
  * //   },
  * //   [MonitorType.Balances]: {
  * //     threshold: 1002200000000n,  // From monitor settings, converted to BigInt

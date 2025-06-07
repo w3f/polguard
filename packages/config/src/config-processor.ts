@@ -42,7 +42,7 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  *     monitors: [
  *       {
  *         name: MonitorType.Staking,
- *         settings: { commission: 10, handlers: ["CommissionChanged"] }
+ *         settings: { commission: 10, handlers: ["CommissionChangedEvent"] }
  *       }
  *     ],
  *     accounts: [
