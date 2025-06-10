@@ -22,7 +22,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     const polkassemblyLink = this.fmt.link('Polkassembly', `https://polkadot.polkassembly.io/referenda/${referendumIndex}`);
     const message = this.fmt.message(
       [
-        `Referendum #${referendumIndex} submitted`,
+        `Referenda #${referendumIndex} submitted`,
         `Proposed by: ${this.fmt.accountLink(proposer, proposer)}`,
         `Track: ${await this.chain.referendaTrack(trackId, blockNumber)}`,
         `Links: ${subsquareLink} | ${polkassemblyLink}`,
@@ -60,7 +60,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
       const message = this.fmt.message(
-        [`${this.fmt.accountLink(account.name, account.ss58)} cast a vote on referendum #${pollIndex}`, ...voteLines],
+        [`${this.fmt.accountLink(account.name, account.ss58)} cast a vote on referenda #${pollIndex}`, ...voteLines],
         { blockNumber, extrinsicIndex },
       );
       const key = { account: account.ss58, groupId, handlerType };

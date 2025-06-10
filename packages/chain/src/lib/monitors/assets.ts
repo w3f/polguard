@@ -160,7 +160,7 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
           if (currentBalance < threshold) {
             const message = this.fmt.message(
               [
-                `Balance for ${this.fmt.accountLink(account.name, account.ss58)} is below threshold.`,
+                `Balance for ${this.fmt.accountLink(account.name, account.ss58)} is below threshold`,
                 `Current balance: ${this.fmt.balance(currentBalance, token)}`,
                 `Threshold: ${this.fmt.balance(threshold, token)}`,
               ],

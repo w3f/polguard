@@ -90,7 +90,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       const result: Record<string, bigint | null> = {};
 
       addresses.forEach((address, index) => {
-        const ledger = ledgers[index] as Option<Codec>;
+        const ledger = ledgers[index];
         if (ledger.isNone) {
           result[address] = null;
         } else {
@@ -108,11 +108,16 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       const result: Record<string, string | null> = {};
 
       addresses.forEach((address, index) => {
-        const payee = payees[index] as Option<Codec>;
+        const payee = payees[index];
         if (payee.isNone) {
           result[address] = null;
         } else {
-          result[address] = payee.toString();
+          const destination = payee.unwrap();
+          if (destination.isAccount) {
+            result[address] = destination.asAccount.toString();
+          } else {
+            result[address] = destination.toString();
+          }
         }
       });
 

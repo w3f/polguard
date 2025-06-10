@@ -101,7 +101,7 @@ export class MatrixBot extends MatrixClient {
       }
     } catch (error) {
       this.logger.error(`Error fetching open incidents: ${error.message}`);
-      await this.sendErrorMessage(roomId, 'An error occurred while fetching open incidents. Please try again later.');
+      await this.sendErrorMessage(roomId, 'An error occurred while fetching open incidents. Please try again later');
     }
   }
 
@@ -120,7 +120,7 @@ export class MatrixBot extends MatrixClient {
       }
     } catch (error) {
       this.logger.error(`Error fetching unacknowledged incidents: ${error.message}`);
-      await this.sendErrorMessage(roomId, 'An error occurred while fetching unacknowledged incidents. Please try again later.');
+      await this.sendErrorMessage(roomId, 'An error occurred while fetching unacknowledged incidents. Please try again later');
     }
   }
 
@@ -159,7 +159,7 @@ export class MatrixBot extends MatrixClient {
       await this.sendMessage(roomId, html);
     } catch (error) {
       this.logger.error(`Error fetching incident details: ${error.message}`);
-      await this.sendErrorMessage(roomId, 'An error occurred while fetching incident details. Please try again later.');
+      await this.sendErrorMessage(roomId, 'An error occurred while fetching incident details. Please try again later');
     }
   }
 
@@ -167,7 +167,7 @@ export class MatrixBot extends MatrixClient {
     try {
       const incidentId = parseInt(incidentIdStr, 10);
       if (isNaN(incidentId)) {
-        await this.sendErrorMessage(roomId, 'Invalid incident ID. Please provide a valid number.');
+        await this.sendErrorMessage(roomId, 'Invalid incident ID. Please provide a valid number');
         return;
       }
 
@@ -176,11 +176,11 @@ export class MatrixBot extends MatrixClient {
       await this.incidentService.acknowledgeIncident(incidentId, userId, roomId);
       await this.sendMessage(
         roomId,
-        `<p><strong>Success:</strong> Incident <strong>#${incidentId}</strong> has been acknowledged by ${userId}.</p>`,
+        `<p><strong>Success:</strong> Incident <strong>#${incidentId}</strong> has been acknowledged by <code>${userId}</code></p>`,
       );
     } catch (error) {
       this.logger.error(`Error acknowledging incident: ${error.message}`);
-      await this.sendErrorMessage(roomId, 'An error occurred while acknowledging incident. Please try again later.');
+      await this.sendErrorMessage(roomId, 'An error occurred while acknowledging incident. Please try again later');
     }
   }
 
@@ -212,7 +212,7 @@ export class MatrixBot extends MatrixClient {
       for (const arg of args) {
         const [key, value] = arg.split('=');
         if (!key || !value) {
-          await this.sendErrorMessage(roomId, `Invalid filter format: ${arg}. Use key=value format.`);
+          await this.sendErrorMessage(roomId, `Invalid filter format: ${arg}. Use key=value format`);
           return;
         }
 
@@ -231,7 +231,7 @@ export class MatrixBot extends MatrixClient {
       const incidents = await this.incidentService.queryIncidents(roomId, filters);
 
       if (incidents.length === 0) {
-        await this.sendMessage(roomId, '<p><strong>No incidents found matching the specified filters.</strong></p>');
+        await this.sendMessage(roomId, '<p><strong>No incidents found matching the specified filters</strong></p>');
       } else {
         let html = `<p><strong>Query results (${incidents.length} incidents):</strong></p><ul>`;
         const items = incidents
@@ -245,7 +245,7 @@ export class MatrixBot extends MatrixClient {
       }
     } catch (error) {
       this.logger.error(`Error querying incidents: ${error.message}`);
-      await this.sendErrorMessage(roomId, 'An error occurred while querying incidents. Please try again later.');
+      await this.sendErrorMessage(roomId, 'An error occurred while querying incidents. Please try again later');
     }
   }
 

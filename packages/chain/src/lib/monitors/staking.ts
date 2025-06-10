@@ -21,7 +21,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     const validatorId = eventRecord.event.data[0].toString();
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, validatorId)) {
-      const message = this.fmt.message([`Validator ${account.name} has been slashed.`], {
+      const message = this.fmt.message([`Validator ${account.name} has been slashed`], {
         blockNumber,
         phase: eventRecord.phase,
       });
@@ -42,7 +42,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, stash)) {
       const message = this.fmt.message(
         [
-          `Commission change detected for ${this.fmt.accountLink(account.name, account.ss58)}.`,
+          `Commission change detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
           `Commission: ${prefs.commission}`,
         ],
         { blockNumber, phase: eventRecord.phase },
@@ -59,7 +59,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, stash)) {
       const message = this.fmt.message(
         [
-          `Unbond detected for ${this.fmt.accountLink(account.name, account.ss58)}.`,
+          `Unbond detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
           `Amount: ${this.fmt.balance(amount)}`,
         ],
         { blockNumber, phase: eventRecord.phase },
@@ -83,7 +83,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
       const message = this.fmt.message(
         [
-          `Destination change detected for ${this.fmt.accountLink(account.name, account.ss58)}.`,
+          `Destination change detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
           `Destination: ${destination}`,
         ],
         { blockNumber, extrinsicIndex },
@@ -143,7 +143,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const isFiring = commission > expectedCommission;
       const message = this.fmt.message(
         [
-          `Unexpected commission detected for ${this.fmt.accountLink(account.name, account.ss58)}.`,
+          `Unexpected commission detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
           `Expected ${expectedCommission}, got ${commission}`,
         ],
         { blockNumber },
@@ -181,7 +181,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
         const isFiring = stake < expectedStake;
         const message = this.fmt.message(
           [
-            `Unexpected self-stake detected for ${this.fmt.accountLink(account.name, account.ss58)}.`,
+            `Unexpected self-stake detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
             `Expected ${this.fmt.balance(expectedStake)}, got ${this.fmt.balance(stake)}`,
           ],
           { blockNumber },
@@ -207,7 +207,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const isFiring = !isBonded || !hasValidatorPrefs;
 
       const messageLines = [
-        `Account ${this.fmt.accountLink(account.name, account.ss58)} is not properly set up as validator.`,
+        `Account ${this.fmt.accountLink(account.name, account.ss58)} is not properly set up as validator`,
       ];
       if (!isBonded) {
         messageLines.push('Account is not bonded.');
@@ -239,7 +239,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const isFiring = destination !== expectedDestination;
       const message = this.fmt.message(
         [
-          `Unexpected reward destination detected for ${this.fmt.accountLink(account.name, account.ss58)}.`,
+          `Unexpected reward destination detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
           `Expected "${expectedDestination}", got "${destination}"`,
         ],
         { blockNumber },
@@ -257,7 +257,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const isFiring = !validators[account.ss58];
       const message = this.fmt.message(
         [
-          `Target ${this.fmt.accountLink(account.name, account.ss58)} is not present in the validation active set.`,
+          `Target ${this.fmt.accountLink(account.name, account.ss58)} is not present in the validation active set`,
           `Era: ${await this.chain.stakingActiveEra(blockNumber)}`,
         ],
         { blockNumber },

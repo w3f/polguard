@@ -28,7 +28,7 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
         });
 
         const messageLines = [
-          `Unexpected identity fields detected for ${this.fmt.accountLink(account.name, account.ss58)}.`,
+          `Unexpected identity fields detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
         ];
 
         mismatchedFields.forEach(field => {
@@ -65,7 +65,7 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
       const previous = previousIdentity[parent];
       const current = currentIdentity[parent];
 
-      const messageLines = [`Identity change detected for ${this.fmt.accountLink(account.name, account.ss58)}.`];
+      const messageLines = [`Identity change detected for ${this.fmt.accountLink(account.name, account.ss58)}`];
 
       IDENTITY_FIELDS.forEach(field => {
         const previousValue = previous?.[field] ?? 'Not set';
@@ -101,7 +101,7 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
       const identity = identities[parent];
 
       for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
-        const messageLines = [`Identity is missing for ${this.fmt.accountLink(account.name, account.ss58)}.`];
+        const messageLines = [`Identity is missing for ${this.fmt.accountLink(account.name, account.ss58)}`];
         const message = this.fmt.message(messageLines, { blockNumber });
         const key = { account: account.ss58, groupId, handlerType };
         const isFiring = !identity;
@@ -129,7 +129,7 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
       for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
         const missingFields = requiredFields.filter(field => !identity[field]);
         const messageLines = [
-          `Required identity fields missing for ${this.fmt.accountLink(account.name, account.ss58)}.`,
+          `Required identity fields missing for ${this.fmt.accountLink(account.name, account.ss58)}`,
           ...missingFields.map(field => `${field}: Not set`),
         ];
         const message = this.fmt.message(messageLines, { blockNumber });
