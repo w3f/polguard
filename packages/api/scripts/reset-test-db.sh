@@ -19,8 +19,8 @@ else
   echo "Container removed successfully."
 fi
 
-echo "Creating a new postgres container..."
-docker run -d --name postgres-test -p 5432:5432 -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD postgres
+echo "Creating a new postgres container with database '$DB_NAME'..."
+docker run -d --name postgres-test -p 5432:5432 -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD -e POSTGRES_DB=$DB_NAME postgres
 
 echo "Waiting for postgres to start..."
 sleep 5
@@ -30,9 +30,5 @@ until docker exec postgres-test pg_isready -U postgres > /dev/null 2>&1; do
   echo "Waiting for postgres to be ready..."
   sleep 2
 done
-
-# Create the database
-echo "Creating database '$DB_NAME'..."
-docker exec -u postgres postgres-test psql -c "CREATE DATABASE $DB_NAME;"
 
 echo "Postgres container reset and database '$DB_NAME' created successfully."

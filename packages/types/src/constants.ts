@@ -103,14 +103,14 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.AssetHubPolkadot]: {
     chain: Chain.AssetHubPolkadot,
-    specName: 'assethub-polkadot',
+    specName: 'statemint',
     chainDecimals: 10,
     chainToken: 'DOT',
     ss58Format: 0,
   },
   [Chain.AssetHubKusama]: {
     chain: Chain.AssetHubKusama,
-    specName: 'assethub-kusama',
+    specName: 'statemine',
     chainDecimals: 12,
     chainToken: 'KSM',
     ss58Format: 2,

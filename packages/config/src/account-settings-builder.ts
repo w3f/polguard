@@ -1,4 +1,4 @@
-import { MonitorType, MonitorConfig, ChainProperties, MonitorTypeSettings } from '@w3f/monitoring-types';
+import { MonitorType, MonitorConfig, ChainProperties, MonitorTypeSettings, CHAIN_TOKENS } from '@w3f/monitoring-types';
 import { monitorSchemas, extractFieldsFromSchema } from './config-validator';
 
 /**
@@ -76,7 +76,7 @@ export class AccountSettingsBuilder {
     chainProps: ChainProperties,
   ): Record<MonitorType, Record<string, any>> {
     const mergedSettings = this.mergeSettings(monitorConfigs, accountSettings);
-    return this.transformDecimalBalances(mergedSettings, chainProps.chainDecimals);
+    return this.transformDecimalBalances(mergedSettings, chainProps);
   }
 
   private static mergeSettings(
@@ -117,12 +117,12 @@ export class AccountSettingsBuilder {
    * - Balances monitor: threshold field
    *
    * @param settings - Merged settings
-   * @param decimals - Chain-specific decimal places
+   * @param chainProps - Chain properties
    * @returns Settings with decimal strings converted to BigInt
    */
   private static transformDecimalBalances(
     settings: Record<MonitorType, Record<string, any>>,
-    decimals: number,
+    chainProps: ChainProperties,
   ): Record<MonitorType, Record<string, any>> {
     const transformed = { ...settings };
 
@@ -131,7 +131,7 @@ export class AccountSettingsBuilder {
       transformed[MonitorType.Staking] = {
         ...rest,
         ...(selfStake && {
-          selfStake: this.atomizeBalance(selfStake, decimals),
+          selfStake: this.atomizeBalance(selfStake, chainProps.chainDecimals),
         }),
       };
     }
@@ -141,7 +141,7 @@ export class AccountSettingsBuilder {
       transformed[MonitorType.Balances] = {
         ...rest,
         ...(threshold && {
-          threshold: this.atomizeBalance(threshold, decimals),
+          threshold: this.atomizeBalance(threshold, chainProps.chainDecimals),
         }),
       };
     }
@@ -150,7 +150,7 @@ export class AccountSettingsBuilder {
       const tokenThresholds = transformed[MonitorType.Assets].tokenThresholds;
       transformed[MonitorType.Assets].tokenThresholds = tokenThresholds.map(([token, threshold]: [string, string]) => [
         token,
-        this.atomizeBalance(threshold, decimals),
+        this.atomizeBalance(threshold, CHAIN_TOKENS[chainProps.chain][token].decimals),
       ]);
     }
 

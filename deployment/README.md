@@ -1,33 +1,58 @@
 # Deployment
 
-The platform now uses a consolidated Docker image for all services, with different commands to run each service.
+The platform uses a consolidated Docker image for all services, with different commands to run each service.
 
-## Development Flow
+## Environments
 
-For local development and testing, use the Docker Compose setup:
+We have three deployment environments:
 
-```bash
-# Start all services
-docker-compose up -d
+- **staging** - Staging environment for testing
+- **production** - Production environment
+- **production-oncall** - Production environment with higher criticality (currently used only for Finance)
 
-# Or start a specific service
-docker-compose up -d api
-```
+## Kubernetes Namespaces
 
-This will start all required services:
-- API service
-- Chain service
-- Matrix service
-- PostgreSQL
+Each environment corresponds to a dedicated Kubernetes namespace in the engineering cluster:
 
-All services use the same Docker image (defined in the root Dockerfile) but with different commands to run each service. The Docker Compose configuration references this Dockerfile directly for local development.
+- `monitoring-stage`
+- `monitoring-prod`
+- `monitoring-oncall`
 
-The `configs` directory contains example configurations used by Docker Compose for local development. The Docker Compose setup is only used for local development and is not intended for production use.
+Engineering ArgoCD: https://argocd.w3f.tech/applications
 
-## Production Flow
+## CI/CD Pipeline
 
-Production deployments use Helm chart and ArgoCD. The `chart` directory contains a unified Helm chart for the monitoring platform.
-Deployment to production is handled via ArgoCD.
+### CircleCI
+
+CircleCI handles the build and release process:
+
+- Builds and pushes Docker images with SHA tags for every commit
+- Tags images as `master` and `latest` for master branch commits
+- For release tags (vX.Y.Z), retags and pushes images with the version tag
+- Publishes Helm charts to the chart repository
+
+### Docker Images
+
+Images are published to Docker Hub under `web3f/monitoring-platform` with the following tagging strategy:
+
+- `${CIRCLE_SHA1}` - Every commit
+- `master`, `latest` - Master branch commits
+- `vX.Y.Z` - Release tags
+
+## ArgoCD Deployment
+
+Deployments are handled via ArgoCD using the "app of apps" pattern.
 
 The ArgoCD configuration is maintained in a separate repository:
-https://gitlab.w3f.tech/infrastructure/argocd-deployment
+https://gitlab.w3f.tech/infrastructure/argocd-deployment/-/tree/master/apps
+
+**Currently, there is no automation for updating image tags in environments.** Image tags must be updated manually for each environment in the ArgoCD configuration repository.
+
+In the future, we are considering implementing automation using ArgoCD Image Updater or other solutions (TBD).
+
+## Helm Charts
+
+Helm charts are published to the W3F chart repository as part of the CI pipeline:
+https://github.com/w3f/helm-charts/tree/gh-pages
+
+The `publish-chart.sh` script is automatically triggered by CircleCI when a release tag is created.

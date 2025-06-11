@@ -54,26 +54,16 @@ The API service requires a configuration file to specify its behavior. For an ex
 ### Running the Service
 
 ```bash
-# Install dependencies
 yarn install
-
-# Build the package
 yarn build
-
-# Start in production mode
 yarn start
 ```
 
 ## Development
 
 ```bash
-# Start in development mode
 yarn start:dev
-
-# Run tests
 yarn test
-
-# Run integration tests
 yarn test:integration
 ```
 

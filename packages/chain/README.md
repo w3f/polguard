@@ -10,7 +10,9 @@ The Chain service is responsible for monitoring blockchain activities and genera
 - **State Monitoring**: Tracks on-chain state changes
 - **Multi-Monitor Architecture**: Supports specialized monitors for different blockchain aspects
 - **Configuration Refresh**: Periodically updates monitoring configuration
-- **Incident Generation**: Creates and resolves incidents based on detected conditions
+- **Incident Generation**: Creates and resolves incidents by sending calls to the API service. Supports two types of incidents:
+  - **One-time incidents**: Generated from events and calls when specific conditions are detected
+  - **Firing/Resolved incidents**: Generated from state handlers that continuously monitor conditions and can transition between firing and resolved states
 
 ### Monitors
 
@@ -18,6 +20,7 @@ The Chain service includes several specialized monitors:
 
 - **Staking Monitor**: Tracks validator activities, commission rates, and staking parameters
 - **Balances Monitor**: Monitors account balances and transfers
+- **Assets Monitor**: Monitors asset/token balances and transfers
 - **Identity Monitor**: Tracks on-chain identity information
 - **Governance Monitor**: Monitors governance activities like referenda and voting
 - **XCM Monitor**: Tracks cross-chain asset transfers
@@ -59,31 +62,23 @@ The Chain service requires a configuration file to specify its behavior. For an 
 
 - Node.js 20+
 - Yarn 4.6.0+
-- Redis
 - Access to a blockchain RPC node
 - API service (for monitoring configuration and incident management)
 
 ### Running the Service
 
 ```bash
-# Install dependencies
 yarn install
-
-# Build the package
 yarn build
-
-# Start in production mode
 yarn start
 ```
 
 ## Development
 
 ```bash
-# Start in development mode
 yarn start:dev
-
-# Run tests
 yarn test
+yarn test:integration
 ```
 
 ### Project Structure

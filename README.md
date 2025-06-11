@@ -2,7 +2,7 @@
 
 # Monitoring Platform
 
-The Monitoring Platform is designed to monitor Polkadot, Kusama, and related parachains, mostly for security-related events. The platform is built as a modular system with several specialized services working together, with the API service serving as the central control point for incident management and configuration.
+The Monitoring Platform provides real-time monitoring of Polkadot, Kusama, and parachains, mostly for security-related events. It is built as a modular system of microservices, including Chain, API, and Matrix services, with distributed configuration across multiple sources and centralized incident management.
 
 ## Architecture
 
@@ -46,52 +46,17 @@ graph LR
 
 ## Packages
 
-### Services
+| Package                                 | Role                         | Key features                                            |
+|-----------------------------------------|------------------------------|---------------------------------------------------------|
+| [**API**](packages/api/README.md)       | Incident & config control    | REST API for incident CRUD, monitoring config handling  |
+| [**Chain**](packages/chain/README.md)   | Blockchain monitor           | Balance changes, transfers, identity, voting and more   |
+| [**Matrix**](packages/matrix/README.md) | Notifications & bot          | Deliver/ack incidents via Matrix rooms, bot commands    |
+| [**Types**](packages/types/README.md)   | Shared types                 | Core interfaces, constants, enums                       |
+| [**Config**](packages/config/README.md) | YAML config & validation     | Load/validate monitoring rules                          |
 
-- [**API**](packages/api/README.md): central control service that manages incidents, configurations, and notifications
-  - Enables creating, tracking, acknowledging, and resolving incidents through a REST API
-  - Provides centralized monitoring configuration for other services
-  - Schedules notification retries and configuration refreshes
-  - Handles automatic resolution of orphaned incidents
+## Installation & Setup
 
-- [**Chain**](packages/chain/README.md): monitors blockchain activities and generates incidents
-  - Processes blockchain events, extrinsic calls and state changes
-  - Creates incidents when issues are detected, resolves incidents
-  - Some of the monitoring features:
-    - Account balance tracking and balance transfer detection
-    - Cross-chain assets transfers
-    - Staking commission changes, slashes, and active set presence
-    - Identity changes and verification
-    - Referenda and voting activities
-
-- [**Matrix**](packages/matrix/README.md): handles sending notifications to Matrix rooms
-  - Delivers incident notifications to Matrix rooms
-  - Provides a bot interface for incident management
-  - Supports incident acknowledgment via commands
-
-### Supporting Packages
-
-- [**Types**](packages/types/README.md): common types, interfaces, and constants used across all packages
-  - Defines core data structures and enums
-  - Provides type safety and consistency across packages
-
-- [**Config**](packages/config/README.md): monitoring configuration processing and validation
-  - Enables defining monitoring groups with specific chains, accounts, and notification settings
-  - Loads and validates YAML monitoring configuration files
-  - Transforms raw configuration into structured monitoring groups
-  - Provides utilities for address transformation and settings building
-  - [Configuration Guide](packages/config/CONFIG_GUIDE.md): detailed guide to the YAML configuration format
-  - [Monitors & Handlers Reference](packages/config/MONITORS.md): comprehensive list of all monitors and handlers
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 20+
-- Yarn 4.6.0+
-- PostgreSQL
-
-### Installation
+**Prerequisites:** Node.js 20+, Yarn 4.6+, PostgreSQL
 
 ```bash
 git clone https://github.com/w3f/monitoring-platform.git
@@ -100,42 +65,56 @@ yarn install
 yarn build
 ```
 
-### Configuration
-
-There are two types of configuration in this project:
-
-1. **Application configuration**: each service has its own application configuration file in its `config` directory. These files configure the service's behavior, connections, and runtime parameters. Example application configurations can be found in the `config` directory of each package.
-
-2. **Monitoring configuration**: separate from application configuration, this defines what to monitor (accounts, chains, thresholds, etc.) and is processed by the Config package and served by the API service.
-
-### Running Services
-
-Start individual services in development mode:
-
+**Development:**
 ```bash
 yarn start:api:dev
 yarn start:chain:dev
 yarn start:matrix:dev
 ```
 
-For more details on configuring and running each service, refer to the README in each service's package directory.
+## Configuration
 
-### Deployment
+- **Service config:** Per-package `config/config.yaml` files (connections, runtime params)
+- **Monitoring rules:** YAML files defining chains, accounts, thresholds; see [Config Guide](packages/config/CONFIG_GUIDE.md)
 
-The project includes deployment configurations in the `deployment` folder:
+## Deployment
 
-- Docker Compose setup for local development
-- Helm chart for Kubernetes deployment
+- **CI/CD:** CircleCI builds Docker images & Helm charts
+- **Helm charts:** Published to W3F Helm repo
+- **ArgoCD:** Deploys apps `monitoring-stage`, `monitoring-prod`, `monitoring-oncall`
+- **Kubernetes:** Each environment runs in its own namespace
 
-For more details on deployment options, see the [Deployment Guide](deployment/README.md).
+See [Deployment Guide](deployment/README.md) for details.
 
-## End-to-End Tests
+## Testing
 
-The project includes end-to-end tests that verify the complete flow from chain events to API incidents to Matrix notifications. These tests can be run locally using KinD or as part of the CI/CD pipeline.
+```bash
+# Unit tests (per-package tests/ directory)
+yarn test
 
-For more details, see the [E2E Tests Documentation](e2e/README.md).
+# Integration tests (per-package tests/integration/ directory)  
+yarn test:integration
+```
 
-## Development
+**End-to-End tests:** Full flow (Chain → API → Matrix); see [E2E Tests](e2e/README.md)
 
-For development guidelines and notes, see the [Development Notes](docs/DEVELOPMENT.md).
-For information on publishing packages, see the [Publishing Guide](docs/PUBLISHING.md).
+## Documentation
+
+### Core Services
+- [**API Service**](packages/api/README.md) - REST API for incident & config management
+- [**Chain Service**](packages/chain/README.md) - Blockchain monitoring service
+- [**Matrix Service**](packages/matrix/README.md) - Notifications & bot service
+
+### Supporting Packages
+- [**Types Package**](packages/types/README.md) - Shared interfaces and types
+- [**Config Package**](packages/config/README.md) - YAML monitoring config & validation
+
+### Configuration & Monitoring
+- [**Config Guide**](packages/config/CONFIG_GUIDE.md) - Monitoring rules configuration
+- [**Monitors & Handlers**](packages/config/MONITORS.md) - List of all supported monitors and handlers
+
+### Development & Operations
+- [**Deployment Guide**](deployment/README.md) - CI/CD, Helm, ArgoCD, Kubernetes deployment
+- [**E2E Tests**](e2e/README.md) - End-to-end testing setup and execution
+- [**Development Notes**](docs/NOTES.md) - Architecture, design decisions & known issues
+- [**Publishing Guide**](docs/PUBLISHING.md) - NPM package release process

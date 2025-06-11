@@ -35,11 +35,6 @@ export class MonitoringConfigService implements MonitoringConfigClient {
 
     const groups = response.data.groups;
 
-    // Validate that we received at least one group
-    if (!groups || groups.length === 0) {
-      throw new Error('No monitoring groups received from API');
-    }
-
     // Log detailed information and update metrics
     this.logGroupDetails(groups);
     this.updateMetrics(groups);

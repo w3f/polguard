@@ -152,6 +152,9 @@ export class ChainWatcher {
     });
 
     this.logger.debug(`Initialized ${this.monitors.length} monitors for chain ${this.chainProps.chain}`);
+    if (this.monitors.length === 0) {
+      this.logger.warn(`No monitors were initialized for chain ${this.chainProps.chain}`);
+    }
   }
 
   /**
@@ -177,15 +180,14 @@ export class ChainWatcher {
     let lastConfigRefreshTime = Date.now();
 
     while (this.isRunning) {
-      // Check if it's time to refresh config
       const now = Date.now();
       if (now - lastConfigRefreshTime >= this.configRefreshIntervalMs) {
-        // Refresh monitors with latest configuration
         await this.initializeMonitors(false);
         lastConfigRefreshTime = now;
       }
       if (this.monitors.length === 0) {
-        throw new Error('No monitors were initialized for ChainWatcher.');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        continue;
       }
       if (nextBlockToProcess <= this.latestBlockNumber) {
         await this.processBlock(nextBlockToProcess);
@@ -276,7 +278,7 @@ export class ChainWatcher {
       return this.traverseCallTree(blockNumber, inner, origin, extrinsicIndex);
     }
 
-    // 4. LEAF → dispatch to all monitors
+    // 4. Base: dispatch to all monitors
     await Promise.all(this.monitors.map(m => m.processCall({ blockNumber, call, origin, extrinsicIndex })));
   }
 }

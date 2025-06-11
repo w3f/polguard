@@ -155,8 +155,6 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
 
         for (const [token, threshold] of account.settings.tokenThresholds) {
           const currentBalance = cur[token][address];
-          if (currentBalance === null) continue;
-
           if (currentBalance < threshold) {
             const message = this.fmt.message(
               [

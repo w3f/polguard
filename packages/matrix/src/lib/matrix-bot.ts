@@ -176,7 +176,7 @@ export class MatrixBot extends MatrixClient {
       await this.incidentService.acknowledgeIncident(incidentId, userId, roomId);
       await this.sendMessage(
         roomId,
-        `<p><strong>Success:</strong> Incident <strong>#${incidentId}</strong> has been acknowledged by <code>${userId}</code></p>`,
+        `<p><strong>Success:</strong> Incident <strong>#${incidentId}</strong> has been acknowledged</p>`,
       );
     } catch (error) {
       this.logger.error(`Error acknowledging incident: ${error.message}`);

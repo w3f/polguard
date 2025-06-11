@@ -30,6 +30,12 @@ The Matrix bot supports several commands:
 - `!unacked`: List all incidents requiring acknowledgment
 - `!incident <id>`: Show detailed information about a specific incident
 - `!ack <id>`: Acknowledge an incident by ID
+- `!query [filters...]`: Query incidents with custom filters
+  - Available filters: `account`, `groupId`, `handlerType`, `status`, `chain`, `createdAfter`, `createdBefore`, `isResolved`, `isAcked`, `needsAck`
+  - Example: `!query createdAfter=2025-01-01 createdBefore=2025-01-31 isResolved=false`
+  - Boolean filters (`isResolved`, `isAcked`, `needsAck`) accept `true` or `false` values
+  - Date filters (`createdAfter`, `createdBefore`) accept ISO date format (supports both date-only like `2025-01-01` and full datetime like `2025-01-01T10:30:00Z`)
+  - Status filter accepts: `open`, `acked`, `unacked`
 
 ## Configuration
 
@@ -47,23 +53,15 @@ The Matrix service requires a configuration file to specify its behavior. For an
 ### Running the Service
 
 ```bash
-# Install dependencies
 yarn install
-
-# Build the package
 yarn build
-
-# Start in production mode
 yarn start
 ```
 
 ## Development
 
 ```bash
-# Start in development mode
 yarn start:dev
-
-# Run tests
 yarn test
 ```
 

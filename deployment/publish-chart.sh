@@ -17,6 +17,14 @@ PAGES="/tmp/helm-pages"
 rm -rf "$PAGES"
 git clone --branch="$BRANCH" --depth=1 "https://github.com/$REPO.git" "$PAGES"
 
+# ─── SKIP IF ALREADY PUBLISHED ───────────────────────────────────────────────
+chart_name=$(awk '/^name:/ {print $2; exit}' "$CHART_DIR/Chart.yaml")
+pkg="$PAGES/$chart_name/${chart_name}-${VERSION_TAG}.tgz"
+if [[ -f "$pkg" ]]; then
+  echo "✅ Chart version $VERSION_TAG already published. Skipping."
+  exit 0
+fi
+
 # ─── DEPENDENCIES & LINT ──────────────────────────────────────────────────────
 helm dependency update "$CHART_DIR"
 helm lint "$CHART_DIR"
@@ -35,7 +43,6 @@ popd >/dev/null
 
 # ─── PUSH ────────────────────────────────────────────────────────────────────
 pushd "$PAGES" >/dev/null
-# Configure Git
 git config user.name "CircleCI"
 git config user.email "$CIRCLE_USERNAME@users.noreply.github.com"
 
@@ -47,7 +54,6 @@ else
   echo "No changes detected; skipping commit."
 fi
 
-# Push
 git push "https://${GITHUB_BOT_TOKEN}@github.com/$REPO.git" "$BRANCH"
 popd >/dev/null
 

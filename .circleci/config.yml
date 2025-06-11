@@ -19,7 +19,6 @@ executors:
       - image: cimg/node:lts
     working_directory: ~/project
 
-# Re-usable commands
 commands:
   docker_login:
     steps:
@@ -27,7 +26,6 @@ commands:
           name: Docker login
           command: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
 
-# Jobs
 jobs:
   code_quality:
     executor: node
@@ -197,8 +195,6 @@ jobs:
             chmod +x deployment/publish-chart.sh
             ./deployment/publish-chart.sh w3f/helm-charts
 
-
-# Workflow
 workflows:
   test_and_publish:
     jobs:
@@ -216,12 +212,9 @@ workflows:
           filters:
             branches: {ignore: /.*/}
             tags:     {only: /^v\d+\.\d+\.\d+$/}
-      
-      # TODO: It's not yet clear how we'll handle CD for prod, but we don't need to publish 
-      # the chart every release as it works for the rest of services
 
-      # - publish_charts:
-      #     context: github-bot
-      #     filters:
-      #       branches: {ignore: /.*/}
-      #       tags:     {only: /^v\d+\.\d+\.\d+$/}
+      - publish_charts:
+          context: github-bot
+          filters:
+            branches: {ignore: /.*/}
+            tags:     {only: /^v\d+\.\d+\.\d+$/}
