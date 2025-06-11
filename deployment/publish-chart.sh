@@ -17,11 +17,12 @@ PAGES="/tmp/helm-pages"
 rm -rf "$PAGES"
 git clone --branch="$BRANCH" --depth=1 "https://github.com/$REPO.git" "$PAGES"
 
-# ─── SKIP IF ALREADY PUBLISHED ───────────────────────────────────────────────
+# ─── SKIP IF THIS CHART VERSION IS ALREADY PUBLISHED ─────────────────────────
 chart_name=$(awk '/^name:/ {print $2; exit}' "$CHART_DIR/Chart.yaml")
-pkg="$PAGES/$chart_name/${chart_name}-${VERSION_TAG}.tgz"
+chart_version=$(awk '/^version:/ {print $2; exit}' "$CHART_DIR/Chart.yaml")
+pkg="$PAGES/$chart_name/${chart_name}-${chart_version}.tgz"
 if [[ -f "$pkg" ]]; then
-  echo "✅ Chart version $VERSION_TAG already published. Skipping."
+  echo "ℹ️  Chart ${chart_name} version ${chart_version} already exists in ${BRANCH}; skipping publish."
   exit 0
 fi
 
@@ -30,7 +31,6 @@ helm dependency update "$CHART_DIR"
 helm lint "$CHART_DIR"
 
 # ─── PACKAGE ──────────────────────────────────────────────────────────────────
-chart_name=$(awk '/^name:/ {print $2; exit}' "$CHART_DIR/Chart.yaml")
 mkdir -p "$PAGES/$chart_name"
 helm package --destination "$PAGES/$chart_name" "$CHART_DIR"
 
