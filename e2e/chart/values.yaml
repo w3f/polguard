@@ -141,6 +141,7 @@ matrix:
         getIncidents: /incidents
         getIncident: /incidents/:id
         acknowledgeIncident: /incidents/:id/acknowledge
+        getAccounts: /monitoring-config/accounts
     environment: test
     logging:
       level: debug

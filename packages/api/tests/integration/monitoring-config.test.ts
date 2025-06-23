@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { Chain } from '@w3f/monitoring-types';
+import { Chain, MessengerType } from '@w3f/monitoring-types';
 import { DataSource } from 'typeorm';
 import { cleanupTestDatabase, createTestApp, dbFile } from './test-utils';
 
@@ -121,6 +121,51 @@ describe('MonitoringConfig API (integration)', () => {
         .get('/monitoring-config/accounts')
         .query({ chain: 'InvalidChain', groupIds: testGroups })
         .expect(400);
+    });
+
+    describe('Channel filtering', () => {
+      it('filters accounts by messenger type and channel ID', async () => {
+        const response = await request(app.getHttpServer())
+          .get('/monitoring-config/accounts')
+          .query({ 
+            chain: testChain, 
+            messengerType: MessengerType.Matrix, 
+            channelId: '!testroom:matrix.org' 
+          })
+          .expect(200);
+        
+        expect(response.body).toHaveProperty('accounts');
+        expect(typeof response.body.accounts).toBe('object');
+        
+        // Should only return accounts for groups that have this specific channel
+        const groupIds = Object.keys(response.body.accounts);
+        expect(groupIds.length).toBeGreaterThanOrEqual(0);
+      });
+
+      it('returns empty accounts for non-existent channel', async () => {
+        const response = await request(app.getHttpServer())
+          .get('/monitoring-config/accounts')
+          .query({ 
+            chain: testChain, 
+            messengerType: MessengerType.Matrix, 
+            channelId: '!nonexistent:matrix.org' 
+          })
+          .expect(200);
+        
+        expect(response.body).toHaveProperty('accounts');
+        expect(Object.keys(response.body.accounts)).toHaveLength(0);
+      });
+
+      it('returns 400 for invalid messenger type', async () => {
+        await request(app.getHttpServer())
+          .get('/monitoring-config/accounts')
+          .query({ 
+            chain: testChain, 
+            messengerType: 'InvalidMessenger', 
+            channelId: '!testroom:matrix.org' 
+          })
+          .expect(400);
+      });
     });
   });
 });

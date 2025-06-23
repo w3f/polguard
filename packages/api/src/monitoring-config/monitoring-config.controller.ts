@@ -31,6 +31,15 @@ export class MonitoringConfigController {
   })
   @ApiResponse({ status: 200, type: AccountsResponseDto })
   getAccounts(@Query() query: GetConfigDto): AccountsResponseDto {
+    if (query.messengerType && query.channelId) {
+      this.logger.debug(
+        `Fetching accounts for chain ${query.chain}, messenger: ${query.messengerType}, channel: ${query.channelId}`,
+      );
+      return {
+        accounts: this.monitoringConfigService.getAccountsByChannel(query.chain, query.messengerType, query.channelId),
+      };
+    }
+
     const groupIdsLog = query.groupIds.length > 0 ? query.groupIds.join(', ') : 'all groups';
     this.logger.debug(`Fetching accounts for chain ${query.chain}, groups: ${groupIdsLog}`);
     return {

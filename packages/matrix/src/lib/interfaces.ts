@@ -1,3 +1,5 @@
+import { Chain } from '@w3f/monitoring-types';
+
 export interface PasswordAuth {
   password: string;
 }
@@ -71,4 +73,8 @@ export interface IncidentServiceInterface {
   getIncidentById(incidentId: string): Promise<Incident>;
   acknowledgeIncident(incidentId: string, username: string, channelId: string): Promise<void>;
   queryIncidents(roomId: string, filters: QueryFilters): Promise<Incident[]>;
+}
+
+export interface MonitoringConfigServiceInterface {
+  getAccounts(chain: Chain, channelId: string): Promise<Record<string, string[]>>;
 }

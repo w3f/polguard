@@ -102,6 +102,7 @@ export class ConfigService {
           getIncidents: Joi.string().required(),
           getIncident: Joi.string().required(),
           acknowledgeIncident: Joi.string().required(),
+          getAccounts: Joi.string().required(),
         }).required(),
       }).required(),
       httpServer: Joi.object({
@@ -134,6 +135,7 @@ export class ConfigService {
       getIncidents: string;
       getIncident: string;
       acknowledgeIncident: string;
+      getAccounts: string;
     };
   } {
     return this.config.monitoringApi;
@@ -161,6 +163,7 @@ interface AppConfig {
       getIncidents: string;
       getIncident: string;
       acknowledgeIncident: string;
+      getAccounts: string;
     };
   };
   httpServer: {

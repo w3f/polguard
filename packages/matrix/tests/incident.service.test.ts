@@ -26,6 +26,7 @@ describe('IncidentService', () => {
           getIncidents: '/incidents',
           getIncident: '/incidents/:id',
           acknowledgeIncident: '/incidents/:id/acknowledge',
+          getAccounts: '/monitoring-config/accounts',
         },
       }),
     };

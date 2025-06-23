@@ -11,6 +11,7 @@ export class MonitoringConfigService implements OnModuleInit {
   private monitoringGroups: MonitoringGroup[] = [];
   private monitoringConfigMap: Record<string, Record<string, MonitoringGroup>> = {};
   private accountsMap: Record<string, Record<string, string[]>> = {};
+  private channelToGroupsMap: Record<string, string[]> = {};
   private allActiveAccounts: string[] = [];
 
   constructor(private readonly configService: ConfigService) {}
@@ -40,7 +41,8 @@ export class MonitoringConfigService implements OnModuleInit {
   private buildLookupDictionaries(): void {
     this.monitoringConfigMap = {};
     this.accountsMap = {};
-    this.allActiveAccounts = [];
+    this.channelToGroupsMap = {};
+    const allActiveAccountsSet = new Set<string>();
 
     // Group by chain first
     for (const group of this.monitoringGroups) {
@@ -62,9 +64,19 @@ export class MonitoringConfigService implements OnModuleInit {
       const accountAddresses = group.accounts.map(account => account.ss58);
       this.accountsMap[group.chain][group.id] = accountAddresses;
 
-      // Add to the flat list of all active accounts
-      this.allActiveAccounts.push(...accountAddresses);
+      accountAddresses.forEach(address => allActiveAccountsSet.add(address));
+
+      // Build channel-to-groups mapping with concatenated key
+      for (const channelId of group.notifications.channels) {
+        const key = `${group.notifications.messengerType}:${channelId}:${group.chain}`;
+        if (!this.channelToGroupsMap[key]) {
+          this.channelToGroupsMap[key] = [];
+        }
+        this.channelToGroupsMap[key].push(group.id);
+      }
     }
+
+    this.allActiveAccounts = Array.from(allActiveAccountsSet);
   }
 
   getMonitoringGroups(chain: Chain, groupIds: string[]): MonitoringGroup[] {
@@ -72,7 +84,7 @@ export class MonitoringConfigService implements OnModuleInit {
       return [];
     }
 
-    // If groupIds is empty, return all groups for the chain
+    // If groupIds is empty (not provided), return all groups for the chain
     if (groupIds.length === 0) {
       return Object.values(this.monitoringConfigMap[chain]);
     }
@@ -88,13 +100,13 @@ export class MonitoringConfigService implements OnModuleInit {
       .filter(Boolean);
   }
 
-  getAccounts(chain: Chain, groupIds: string[]): Record<string, string[]> {
+  getAccounts(chain: Chain, groupIds?: string[]): Record<string, string[]> {
     if (!this.accountsMap[chain]) {
       return {};
     }
 
-    // If groupIds is empty, return all accounts for the chain
-    if (groupIds.length === 0) {
+    // If groupIds is empty (not provided), return all accounts for the chain
+    if (!groupIds || groupIds.length === 0) {
       return this.accountsMap[chain];
     }
 
@@ -109,6 +121,17 @@ export class MonitoringConfigService implements OnModuleInit {
       },
       {} as Record<string, string[]>,
     );
+  }
+
+  getAccountsByChannel(chain: Chain, messengerType: string, channelId: string): Record<string, string[]> {
+    const key = `${messengerType}:${channelId}:${chain}`;
+    const groupIds = this.channelToGroupsMap[key];
+
+    // ChannelId doesn't exist
+    if (!groupIds || groupIds.length === 0) {
+      return {};
+    }
+    return this.getAccounts(chain, groupIds);
   }
 
   /**

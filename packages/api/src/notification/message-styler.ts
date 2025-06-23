@@ -9,20 +9,20 @@ interface Link {
 
 export class MessageStyler {
   /**
-   * Parses a message string into title and details, optionally prepends an incident ID,
+   * Parses a message string into title and details, prepends an incident ID,
    * and applies styling based on the message type and style type.
    *
    * @param messageContent The raw message content to parse and style
    * @param messageType The type of message (Firing, Resolved, OneTime)
    * @param styleType The style to apply (html, plain, markdown)
-   * @param incidentId Optional incident ID to prepend to the title
+   * @param incidentId Required incident ID to prepend to the title
    * @returns Styled message string
    */
   static parseAndStyle(
     messageContent: string,
     messageType: MessageType,
     styleType: StyleType,
-    incidentId?: string,
+    incidentId: string,
     needsAck?: boolean,
   ): string {
     const lines = messageContent.split('\n').filter(line => line.trim() !== '');
@@ -37,25 +37,24 @@ export class MessageStyler {
     details: string[],
     messageType: MessageType,
     styleType: StyleType,
-    incidentId?: string,
+    incidentId: string,
     needsAck?: boolean,
   ): string {
-    const rawIcon = this.getStatusIcon(messageType);
-    const idPart = incidentId !== undefined ? `[#${incidentId}] ` : '';
+    const icon = this.getStatusIcon(messageType);
     const ackBadge = needsAck ? ' ❗' : '';
-    const rawHeadingText = `${rawIcon} ${idPart}${title.trim()}${ackBadge}`;
 
     let styledHeading: string;
     let styledDetails: string;
 
     if (styleType === 'html') {
-      styledHeading = `<p><strong>${this.styleLinks(rawHeadingText, styleType)}</strong></p>`;
+      const styledTitle = this.styleLinks(title.trim(), styleType);
+      styledHeading = `<p>${icon} <strong>${incidentId}:</strong> ${styledTitle}${ackBadge}</p>`;
       styledDetails = this.styleDetails(details, styleType);
     } else if (styleType === 'markdown') {
-      styledHeading = `**${rawIcon} ${idPart}${title.trim()}${ackBadge}**`;
+      styledHeading = `${icon} **${incidentId}:** ${title.trim()}${ackBadge}`;
       styledDetails = this.styleDetails(details, 'markdown');
     } else {
-      styledHeading = `${rawIcon} ${idPart}${title.trim()}${ackBadge}`;
+      styledHeading = `${icon} ${incidentId}: ${title.trim()}${ackBadge}`;
       styledDetails = this.styleDetails(details, 'plain');
     }
 

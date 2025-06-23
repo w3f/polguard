@@ -29,7 +29,6 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
     const { origin, destination, destinationChain, transfers } = transferInfo;
 
     if (!origin) {
-      this.logger.warn(`Unable to determine origin address for XCM transfer in block ${blockNumber}`);
       return;
     }
 
@@ -71,7 +70,8 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
     const destinationLoc = rawDestination as unknown as StagingXcmV4Location;
     const message = rawMessage as unknown as StagingXcmV4Xcm;
 
-    // 1. Get origin account from the MultiLocation (X1.AccountId32)
+    // 1. Get origin account from the MultiLocation
+    // Origin is not always X1.AccountId32, can be chain itself MultiLocation::Here, e.g. https://polkadot.subscan.io/block/26472907
     const origin = this.parseLocation(originLoc, blockNumber);
 
     // 2. Determine beneficiary instruction (handles nested XCM cases)

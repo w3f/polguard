@@ -1,6 +1,6 @@
 import { IsArray, IsString, IsEnum, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { Chain } from '@w3f/monitoring-types';
+import { Chain, MessengerType } from '@w3f/monitoring-types';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class GetConfigDto {
@@ -22,4 +22,14 @@ export class GetConfigDto {
   @IsArray()
   @IsString({ each: true })
   groupIds: string[] = [];
+
+  @ApiProperty({ enum: MessengerType, description: 'Messenger type to filter by', required: false })
+  @IsOptional()
+  @IsEnum(MessengerType)
+  messengerType?: MessengerType;
+
+  @ApiProperty({ description: 'Channel ID to filter by', required: false })
+  @IsOptional()
+  @IsString()
+  channelId?: string;
 }

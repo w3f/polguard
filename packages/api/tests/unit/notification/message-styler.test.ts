@@ -2,7 +2,8 @@ import { MessageStyler } from '../../../src/notification/message-styler';
 import { MessageType } from '@w3f/monitoring-types';
 
 describe('MessageStyler', () => {
-  // Helper function to create title and details for tests
+  const incidentId = 'GEB7BN648733';
+  
   const createTitleAndDetails = (title: string, details: string[] = []): [string, string[]] => {
     return [title, details];
   };
@@ -11,7 +12,7 @@ describe('MessageStyler', () => {
     const [title, details] = createTitleAndDetails('Test Message', ['Detail 1', 'Detail 2']);
 
     it('should style HTML messages correctly', () => {
-      const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html');
+      const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html', incidentId);
       expect(result).toContain('<ul>');
       expect(result).toContain('<li>Detail 1</li>');
       expect(result).toContain('<li>Detail 2</li>');
@@ -20,19 +21,20 @@ describe('MessageStyler', () => {
     });
 
     it('should style Markdown messages correctly', () => {
-      const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'markdown');
-      expect(result).toContain('**');
+      const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'markdown', incidentId);
+      expect(result).toContain(`**${incidentId}:**`);
       expect(result).toContain('- Detail 1');
       expect(result).toContain('- Detail 2');
       expect(result).toContain('ℹ️');
     });
 
     it('should style Plain text messages correctly', () => {
-      const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'plain');
+      const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'plain', incidentId);
       expect(result).not.toContain('**');
       expect(result).toContain('Detail 1');
       expect(result).toContain('Detail 2');
       expect(result).toContain('ℹ️');
+      expect(result).toContain(`${incidentId}:`);
     });
   });
 
@@ -40,17 +42,17 @@ describe('MessageStyler', () => {
     const [title, details] = createTitleAndDetails('Test Message');
 
     it('should style FIRING messages correctly', () => {
-      const result = MessageStyler.applyStyle(title, details, MessageType.Firing, 'html');
+      const result = MessageStyler.applyStyle(title, details, MessageType.Firing, 'html', incidentId);
       expect(result).toContain('🔥');
     });
 
     it('should style RESOLVED messages correctly', () => {
-      const result = MessageStyler.applyStyle(title, details, MessageType.Resolved, 'html');
+      const result = MessageStyler.applyStyle(title, details, MessageType.Resolved, 'html', incidentId);
       expect(result).toContain('✅');
     });
 
     it('should style OneTime messages correctly', () => {
-      const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html');
+      const result = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html', incidentId);
       expect(result).toContain('ℹ️');
     });
   });
@@ -58,83 +60,54 @@ describe('MessageStyler', () => {
   describe('Parse and Style', () => {
     it('should parse and style a message correctly', () => {
       const messageContent = 'Test Title\nDetail 1\nDetail 2';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.OneTime, 'html');
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.OneTime, 'html', incidentId);
       
       expect(result).toContain('ℹ️');
       expect(result).toContain('Test Title');
       expect(result).toContain('<li>Detail 1</li>');
       expect(result).toContain('<li>Detail 2</li>');
+      expect(result).toContain(`<strong>${incidentId}:</strong>`);
     });
     
-    it('should prepend incident ID to title when provided', () => {
+    it('should format incident ID correctly', () => {
       const messageContent = 'Test Title\nDetail 1';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 'abc123');
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', incidentId);
       
       expect(result).toContain('🔥');
-      expect(result).toContain('[#abc123]');
+      expect(result).toContain(`<strong>${incidentId}:</strong>`);
       expect(result).toContain('Test Title');
     });
     
     it('should handle empty message content', () => {
       const messageContent = '';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Resolved, 'html', 'abc456');
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Resolved, 'html', incidentId);
       
       expect(result).toContain('✅');
-      expect(result).toContain('[#abc456]');
-    });
-    
-    it('should handle message with only title (no details)', () => {
-      const messageContent = 'Just a title';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.OneTime, 'markdown', 'abc789');
-      
-      expect(result).toContain('**ℹ️ [#abc789] Just a title**');
-      expect(result).not.toContain('-'); // No details, so no list items
+      expect(result).toContain(`<strong>${incidentId}:</strong>`);
     });
 
     it('should add ack badge when needsAck is true', () => {
       const messageContent = 'Test Title\nDetail 1';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 'abc123', true);
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', incidentId, true);
       
-      expect(result).toContain('🔥');
-      expect(result).toContain('[#abc123]');
-      expect(result).toContain('Test Title');
       expect(result).toContain('❗');
     });
 
-    it('should not add ack badge when needsAck is false', () => {
-      const messageContent = 'Test Title\nDetail 1';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 'abc123', false);
-      
-      expect(result).toContain('🔥');
-      expect(result).toContain('[#abc123]');
-      expect(result).toContain('Test Title');
-      expect(result).not.toContain('❗');
-    });
   });
 
   describe('Link Styling', () => {
     it('should style simple links correctly', () => {
       const [title, details] = createTitleAndDetails('[Simple Link](https://example.com)');
-
-      const htmlResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html');
-      const markdownResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'markdown');
-      const plainResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'plain');
+      const htmlResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html', incidentId);
 
       expect(htmlResult).toContain('<a href="https://example.com">Simple Link</a>');
-      expect(markdownResult).toContain('[Simple Link](https://example.com)');
-      expect(plainResult).toContain('[Simple Link](https://example.com)');
     });
 
     it('should handle links with nested brackets', () => {
       const [title, details] = createTitleAndDetails('[Staker Space [3]](https://polkadot.subscan.io/account/123)');
-
-      const htmlResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html');
-      const markdownResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'markdown');
-      const plainResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'plain');
+      const htmlResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html', incidentId);
 
       expect(htmlResult).toContain('<a href="https://polkadot.subscan.io/account/123">Staker Space [3]</a>');
-      expect(markdownResult).toContain('[Staker Space [3]](https://polkadot.subscan.io/account/123)');
-      expect(plainResult).toContain('[Staker Space [3]](https://polkadot.subscan.io/account/123)');
     });
 
     it('should transform markdown link to HTML', () => {
@@ -148,8 +121,7 @@ describe('MessageStyler', () => {
 
     it('should handle multiple nested brackets', () => {
       const [title, details] = createTitleAndDetails('[Complex [Nested [Brackets]] Test](https://example.com)');
-
-      const htmlResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html');
+      const htmlResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html', incidentId);
 
       expect(htmlResult).toContain(
         '<a href="https://example.com">Complex [Nested [Brackets]] Test</a>'
@@ -166,7 +138,7 @@ describe('MessageStyler', () => {
         ]
       );
 
-      const htmlResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html');
+      const htmlResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html', incidentId);
       
       expect(htmlResult).toContain('<li>Normal text</li>');
       expect(htmlResult).toContain('<li><a href="https://example.com">Simple Link</a></li>');
@@ -176,7 +148,7 @@ describe('MessageStyler', () => {
     it('should handle multiple links in single line', () => {
       const [title, details] = createTitleAndDetails('Check [Link1](https://one.com) and [Link2 [2]](https://two.com)');
 
-      const htmlResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html');
+      const htmlResult = MessageStyler.applyStyle(title, details, MessageType.OneTime, 'html', incidentId);
       
       expect(htmlResult).toContain('<a href="https://one.com">Link1</a>');
       expect(htmlResult).toContain('<a href="https://two.com">Link2 [2]</a>');

@@ -25,7 +25,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     );
     const message = this.fmt.message(
       [
-        `Referenda #${referendumIndex} submitted`,
+        `Referendum #${referendumIndex} submitted`,
         `Proposed by: ${this.fmt.accountLink(proposer, proposer)}`,
         `Track: ${await this.chain.referendaTrack(trackId, blockNumber)}`,
         `Links: ${subsquareLink} | ${polkassemblyLink}`,
@@ -63,7 +63,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
       const message = this.fmt.message(
-        [`${this.fmt.accountLink(account.name, account.ss58)} cast a vote on referenda #${pollIndex}`, ...voteLines],
+        [`${this.fmt.accountLink(account.name, account.ss58)} cast a vote on referendum #${pollIndex}`, ...voteLines],
         { blockNumber, extrinsicIndex },
       );
       const key = { account: account.ss58, groupId, handlerType };
