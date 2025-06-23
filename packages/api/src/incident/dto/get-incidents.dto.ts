@@ -1,22 +1,9 @@
 import { IsOptional, IsEnum, IsDateString, IsString, IsBoolean } from 'class-validator';
-import { Chain } from '@w3f/monitoring-types';
+import { Chain, MessengerType } from '@w3f/monitoring-types';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 export class GetIncidentsDto {
-  @ApiProperty({
-    description: `Filter incidents by status.
-
-- open: Unresolved and unacknowledged (firing incidents only)
-- acked: Acknowledged but unresolved (firing incidents only)
-- unacked: Acknowledgment required but not yet acknowledged`,
-    enum: ['open', 'acked', 'unacked'],
-    required: false,
-  })
-  @IsOptional()
-  @IsEnum(['open', 'acked', 'unacked'])
-  status?: string;
-
   @ApiProperty({
     description: 'Filter incidents created after this date (ISO format), ex. 2025-04-20T00:00:00Z',
     required: false,
@@ -73,6 +60,15 @@ export class GetIncidentsDto {
   @IsOptional()
   @IsString()
   channelId?: string;
+
+  @ApiProperty({
+    description: 'Filter incidents by messenger type',
+    enum: MessengerType,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(MessengerType)
+  messengerType?: MessengerType;
 
   @ApiProperty({
     description: 'Filter incidents by whether acknowledgment is required',

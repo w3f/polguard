@@ -22,7 +22,7 @@ export class MessageStyler {
     messageContent: string,
     messageType: MessageType,
     styleType: StyleType,
-    incidentId?: number,
+    incidentId?: string,
     needsAck?: boolean,
   ): string {
     const lines = messageContent.split('\n').filter(line => line.trim() !== '');
@@ -37,7 +37,7 @@ export class MessageStyler {
     details: string[],
     messageType: MessageType,
     styleType: StyleType,
-    incidentId?: number,
+    incidentId?: string,
     needsAck?: boolean,
   ): string {
     const rawIcon = this.getStatusIcon(messageType);

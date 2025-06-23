@@ -68,45 +68,45 @@ describe('MessageStyler', () => {
     
     it('should prepend incident ID to title when provided', () => {
       const messageContent = 'Test Title\nDetail 1';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 123);
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 'abc123');
       
       expect(result).toContain('🔥');
-      expect(result).toContain('[#123]');
+      expect(result).toContain('[#abc123]');
       expect(result).toContain('Test Title');
     });
     
     it('should handle empty message content', () => {
       const messageContent = '';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Resolved, 'html', 456);
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Resolved, 'html', 'abc456');
       
       expect(result).toContain('✅');
-      expect(result).toContain('[#456]');
+      expect(result).toContain('[#abc456]');
     });
     
     it('should handle message with only title (no details)', () => {
       const messageContent = 'Just a title';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.OneTime, 'markdown', 789);
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.OneTime, 'markdown', 'abc789');
       
-      expect(result).toContain('**ℹ️ [#789] Just a title**');
+      expect(result).toContain('**ℹ️ [#abc789] Just a title**');
       expect(result).not.toContain('-'); // No details, so no list items
     });
 
     it('should add ack badge when needsAck is true', () => {
       const messageContent = 'Test Title\nDetail 1';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 123, true);
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 'abc123', true);
       
       expect(result).toContain('🔥');
-      expect(result).toContain('[#123]');
+      expect(result).toContain('[#abc123]');
       expect(result).toContain('Test Title');
       expect(result).toContain('❗');
     });
 
     it('should not add ack badge when needsAck is false', () => {
       const messageContent = 'Test Title\nDetail 1';
-      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 123, false);
+      const result = MessageStyler.parseAndStyle(messageContent, MessageType.Firing, 'html', 'abc123', false);
       
       expect(result).toContain('🔥');
-      expect(result).toContain('[#123]');
+      expect(result).toContain('[#abc123]');
       expect(result).toContain('Test Title');
       expect(result).not.toContain('❗');
     });

@@ -1,15 +1,15 @@
-chain: Polkadot
-# startBlock: 24283300
-
+chain: AssetHubPolkadot
 rpc:
-  url: wss://rpc-polkadot.luckyfriday.io
+  url: wss://polkadot-asset-hub-rpc.polkadot.io
+httpServer:
+  port: 3002
+  host: 0.0.0.0
 monitoringApi:
-  baseUrl: http://localhost:8082
+  baseUrl: http://localhost:3000
   endpoints:
     createIncident: /incidents
-    resolveIncident: "/incidents/:id/resolve"
+    resolveIncident: /incidents/:id/resolve
     getConfig: /monitoring-config/groups
-
 environment: development
 logging:
   level: debug

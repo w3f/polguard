@@ -61,7 +61,7 @@ export class IncidentHandler implements IncidentHandlerClient {
     incidentKey: IncidentKey,
     blockNumber: number,
     isResolved: boolean = false,
-  ): Promise<number> {
+  ): Promise<string> {
     // Create notification channels from notification settings
     const notificationChannels: NotificationChannel[] = notifications.channels.map(channel => ({
       channelId: channel,

@@ -20,7 +20,7 @@ export class IncidentApiService implements IncidentApiClient {
     this.resolveUrl = `${baseUrl}${endpoints.resolveIncident}`;
   }
 
-  async createIncident(incident: CreateIncidentDto): Promise<number> {
+  async createIncident(incident: CreateIncidentDto): Promise<string> {
     const response = await lastValueFrom(this.httpService.post(this.createUrl, incident));
     return response.data.id;
   }

@@ -44,7 +44,7 @@ defaults:
     - Kusama
     
   notifications:
-    messengerType: matrix
+    messengerType: Matrix
     channels: ['!roomid:matrix.org']
     needsAck: true
     repeatHours: 24
@@ -83,7 +83,7 @@ groups:
       - Kusama
     
     notifications:
-      messengerType: matrix
+      messengerType: Matrix
       channels: ['!customroom:matrix.org']
     
     monitors:
@@ -206,7 +206,7 @@ defaults:
   chains:
     - Polkadot
   notifications:
-    messengerType: matrix
+    messengerType: Matrix
     channels: ['!roomid:matrix.org']
     needsAck: true
 
@@ -231,7 +231,7 @@ groups:
         handlers:
           - TransferEgressEvent
     notifications:
-      messengerType: matrix
+      messengerType: Matrix
       channels: ['!roomid:matrix.org']
       needsAck: false
       repeatHours: 12

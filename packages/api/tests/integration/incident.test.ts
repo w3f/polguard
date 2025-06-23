@@ -1,10 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { Chain, MessengerType } from '@w3f/monitoring-types';
+import { Chain, MessengerType, NotificationType } from '@w3f/monitoring-types';
 import { DataSource } from 'typeorm';
-import { createTestApp } from './test-utils';
-import path from 'path';
-import fs from 'fs';
+import { cleanupTestDatabase, createTestApp } from './test-utils';
+import { Notification } from '../../src/database/notification.entity';
 
 describe('Incident API (integration)', () => {
   let app: INestApplication;
@@ -34,7 +33,7 @@ describe('Incident API (integration)', () => {
     const { app: testApp, moduleFixture } = await createTestApp();
     app = testApp;
     dataSource = moduleFixture.get<DataSource>(DataSource);
-    notificationRepo = dataSource.getRepository('incident_notifications');
+    notificationRepo = dataSource.getRepository(Notification);
   });
 
   afterAll(async () => {
@@ -42,9 +41,7 @@ describe('Incident API (integration)', () => {
     if (dataSource && dataSource.isInitialized) {
       await dataSource.destroy();
     }
-    // remove the SQLite backing file if it exists
-    const tmpDb = path.join(process.cwd(), 'file:tests?mode=memory');
-    if (fs.existsSync(tmpDb)) fs.unlinkSync(tmpDb);
+    cleanupTestDatabase();
   });
 
   it('handles one-time incident workflow with notifications', async () => {
@@ -69,9 +66,10 @@ describe('Incident API (integration)', () => {
       incident: { id },
       channelId: 'test-channel',
       messengerType: MessengerType.Matrix,
-      type: 'alert',
+      type: NotificationType.Alert,
       repeatHours: 1.0,
       isDelivered: true,
+      message: 'Test incident',
       lastSentAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date()
@@ -106,9 +104,10 @@ describe('Incident API (integration)', () => {
       incident: { id },
       channelId: 'test-channel',
       messengerType: MessengerType.Matrix,
-      type: 'alert',
+      type: NotificationType.Alert,
       repeatHours: 1.0,
       isDelivered: true,
+      message: 'Test incident',
       lastSentAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date()
@@ -129,7 +128,7 @@ describe('Incident API (integration)', () => {
     const notifications = await notificationRepo.find({
       where: { 
         incident: { id },
-        type: 'resolution'
+        type: NotificationType.Resolution
       }
     });
     expect(notifications.length).toBeGreaterThan(0);
@@ -169,7 +168,7 @@ describe('Incident API (integration)', () => {
   it('handles error cases properly', async () => {
     // Try to acknowledge non-existent incident
     await request(app.getHttpServer())
-      .post('/incidents/99999/acknowledge')
+      .post('/incidents/NONEXISTENT123/acknowledge')
       .send({ username: 'test-user', channelId: 'test-channel' })
       .expect(404);
     
@@ -228,7 +227,7 @@ describe('Incident API (integration)', () => {
 
   it('returns 404 for non-existent incident ID', async () => {
     await request(app.getHttpServer())
-      .get('/incidents/99999')
+      .get('/incidents/NONEXISTENT123')
       .expect(404);
   });
 });

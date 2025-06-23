@@ -19,8 +19,22 @@ export interface MatrixConfig {
   tokenAuth?: TokenAuth;
 }
 
-export interface Incident {
+export interface Notification {
   id: number;
+  incidentId: string;
+  channelId: string;
+  messengerType: string;
+  type: string;
+  repeatHours: number;
+  lastSentAt?: Date;
+  isDelivered: boolean;
+  message: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Incident {
+  id: string;
   message: string;
   blockNumber: number;
   chain: string;
@@ -35,6 +49,7 @@ export interface Incident {
   resolvedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+  notifications?: Notification[];
 }
 
 export interface QueryFilters {
@@ -53,7 +68,7 @@ export interface QueryFilters {
 export interface IncidentServiceInterface {
   getNonResolved(roomId: string): Promise<Incident[]>;
   getNonAcked(roomId: string): Promise<Incident[]>;
-  getIncidentById(incidentId: number): Promise<Incident>;
-  acknowledgeIncident(incidentId: number, username: string, channelId: string): Promise<void>;
+  getIncidentById(incidentId: string): Promise<Incident>;
+  acknowledgeIncident(incidentId: string, username: string, channelId: string): Promise<void>;
   queryIncidents(roomId: string, filters: QueryFilters): Promise<Incident[]>;
 }

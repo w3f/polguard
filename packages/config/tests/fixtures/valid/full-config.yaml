@@ -24,7 +24,7 @@ accountSets:
 
 defaults:
   notifications:
-    messengerType: matrix
+    messengerType: Matrix
     channels: ['!defaultroom:matrix.org']
     needsAck: true
     repeatHours: 24
@@ -48,7 +48,7 @@ groups:
     chains:
       - Kusama  # This group only for Kusama
     notifications:
-      messengerType: matrix
+      messengerType: Matrix
       channels: ['!customroom:matrix.org']
       needsAck: false
       repeatHours: 12

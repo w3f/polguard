@@ -25,22 +25,6 @@ export enum MonitorType {
   Assets = 'Assets',
 }
 
-export enum MessageType {
-  Firing = 'Firing',
-  Resolved = 'Resolved',
-  OneTime = 'Event',
-}
-
-export enum MessengerType {
-  Matrix = 'matrix',
-  Slack = 'slack',
-  Telegram = 'telegram',
-}
-
-export enum NotificationType {
-  Alert = 'alert',
-  Resolution = 'resolution',
-}
 
 export enum StakingHandlerType {
   SlashReportedEvent = 'SlashReportedEvent',

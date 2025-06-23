@@ -14,7 +14,7 @@ export class NotificationChannelDto {
   @ApiProperty({
     description: 'Type of messenger to use for notifications',
     enum: MessengerType,
-    example: 'matrix',
+    example: 'Matrix',
   })
   @IsEnum(MessengerType)
   messengerType: MessengerType;

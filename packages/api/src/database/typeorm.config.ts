@@ -1,7 +1,9 @@
 import { DataSource } from 'typeorm';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { ConfigService } from '../config/config.service';
 import { Logger } from '@nestjs/common';
-import { Incident, IncidentNotification } from './incident.entity';
+import { Incident } from './incident.entity';
+import { Notification } from './notification.entity';
 import * as path from 'path';
 
 const logger = new Logger('ConfigService');
@@ -15,7 +17,8 @@ export default new DataSource({
   username: dbConfig.username,
   password: dbConfig.password,
   database: dbConfig.database,
-  entities: [Incident, IncidentNotification],
+  entities: [Incident, Notification],
   migrations: [path.join(__dirname, 'migrations/**/*{.ts,.js}')],
+  namingStrategy: new SnakeNamingStrategy(),
   synchronize: configService.getEnvironment() !== 'production',
 });

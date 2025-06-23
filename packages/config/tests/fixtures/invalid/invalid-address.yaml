@@ -9,7 +9,7 @@ groups:
     chains:
       - Polkadot
     notifications:
-      messengerType: matrix
+      messengerType: Matrix
       channels: ['!room:matrix.org']
     monitors:
       - name: Staking

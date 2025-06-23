@@ -1,7 +1,7 @@
 import { encodeAddress } from '@polkadot/util-crypto';
 import { hexToU8a } from '@polkadot/util';
 import { ConfigProcessor } from '../src/config-processor';
-import { MonitorType, Chain, StakingHandlerType, getChainProperties } from '@w3f/monitoring-types';
+import { MonitorType, Chain, StakingHandlerType, getChainProperties, MessengerType } from '@w3f/monitoring-types';
 import path from 'path';
 
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');
@@ -25,7 +25,7 @@ describe('ConfigProcessor', () => {
       const defaultGroup = result.find(g => g.id === 'validators-default' && g.chain === Chain.Polkadot);
       expect(defaultGroup).toBeDefined();
       expect(defaultGroup?.notifications).toEqual({
-        messengerType: 'matrix',
+        messengerType: MessengerType.Matrix,
         channels: ['!defaultroom:matrix.org'],
         needsAck: true,
         repeatHours: 24,

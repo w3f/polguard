@@ -1,4 +1,5 @@
-import { Chain, MessengerType } from './constants';
+import { Chain } from './constants';
+import { MessengerType } from './notification';
 
 export interface NotificationSettings {
   messengerType: MessengerType;

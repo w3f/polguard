@@ -43,7 +43,7 @@ export interface KeyValueStorageClient {
 
 /** Client for sending incidents to the incident management service */
 export interface IncidentApiClient {
-  createIncident(incident: CreateIncidentDto): Promise<number>; // Returns incident ID
+  createIncident(incident: CreateIncidentDto): Promise<string>; // Returns incident ID
   resolveIncident(id: number): Promise<boolean>;
 }
 

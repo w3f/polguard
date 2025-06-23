@@ -15,7 +15,7 @@ accountSets:
 
 defaults:
   notifications:
-    messengerType: matrix
+    messengerType: Matrix
     channels: ['!multichain:matrix.org']
     
 groups:

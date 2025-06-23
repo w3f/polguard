@@ -9,10 +9,20 @@ import { of } from 'rxjs';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as JSONbig from 'json-bigint';
-import { Incident, IncidentNotification } from '../../src/database/incident.entity';
+import { Incident } from '../../src/database/incident.entity';
+import { Notification } from '../../src/database/notification.entity';
 
 const workerId = process.env.JEST_WORKER_ID ?? '0';          // "0" when runInBand
-export const dbFile   = path.join(process.cwd(), `test-${workerId}.sqlite`);
+export const dbFile = path.join(process.cwd(), `test-${workerId}.sqlite`);
+
+/**
+ * Cleanup function to remove the SQLite database file for the current worker
+ */
+export function cleanupTestDatabase(): void {
+  if (fs.existsSync(dbFile)) {
+    fs.unlinkSync(dbFile);
+  }
+}
 
 const SQLITE_TEST_CONFIG = {
   type: 'better-sqlite3' as const,
@@ -20,7 +30,7 @@ const SQLITE_TEST_CONFIG = {
   dropSchema: true,
   synchronize: true,
   keepConnectionAlive: true,
-  entities: [Incident, IncidentNotification],
+  entities: [Incident, Notification],
   extra: { pragmas: ['foreign_keys=ON'] },
 };
 

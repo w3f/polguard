@@ -1,5 +1,5 @@
 # Missing required groups field and accounts section
 defaults:
   notifications:
-    messengerType: matrix
+    messengerType: Matrix
     channels: ['!room:matrix.org']

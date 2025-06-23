@@ -4,7 +4,7 @@ import { NotificationResponseDto } from './notification-response.dto';
 
 export class IncidentResponseDto {
   @ApiProperty()
-  id: number;
+  id: string;
 
   @ApiProperty()
   message: string;

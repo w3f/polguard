@@ -57,7 +57,7 @@ import { AccountSettingsBuilder } from './account-settings-builder';
  *       }
  *     ],
  *     notifications: {
- *       messengerType: "matrix",
+ *       messengerType: "Matrix",
  *       channels: ["!room:matrix.org"]
  *     },
  *   }

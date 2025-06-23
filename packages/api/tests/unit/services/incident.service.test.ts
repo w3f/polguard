@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IncidentService } from '../../../src/incident/incident.service';
 import { Repository } from 'typeorm';
-import { Incident, IncidentNotification } from '../../../src/database/incident.entity';
+import { Incident } from '../../../src/database/incident.entity';
+import { Notification } from '../../../src/database/notification.entity';
 import { NotificationService } from '../../../src/notification/notification.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
@@ -41,7 +42,7 @@ const createTestIncidentDto = (overrides = {}) => ({
 describe('IncidentService', () => {
   let service: IncidentService;
   let incidentRepo: MockRepository<Incident>;
-  let notificationRepo: MockRepository<IncidentNotification>;
+  let notificationRepo: MockRepository<Notification>;
   let notificationService: Partial<NotificationService>;
 
   beforeEach(async () => {
@@ -56,7 +57,7 @@ describe('IncidentService', () => {
       providers: [
         IncidentService,
         { provide: getRepositoryToken(Incident), useValue: incidentRepo },
-        { provide: getRepositoryToken(IncidentNotification), useValue: notificationRepo },
+        { provide: getRepositoryToken(Notification), useValue: notificationRepo },
         { provide: NotificationService, useValue: notificationService },
       ],
     }).compile();
@@ -66,26 +67,28 @@ describe('IncidentService', () => {
 
   describe('findIncidentById', () => {
     it('returns incident when found', async () => {
-      const incident = { id: 1, message: 'Test incident', notifications: [] };
+      const id = 'TEST123ABC456';
+      const incident = { id, message: 'Test incident', notifications: [] };
       incidentRepo.findOne.mockResolvedValue(incident);
       
-      const result = await service.findIncidentById(1);
+      const result = await service.findIncidentById(id);
       
       expect(result).toBe(incident);
       expect(incidentRepo.findOne).toHaveBeenCalledWith({
-        where: { id: 1 },
+        where: { id },
         relations: ['notifications'],
       });
     });
 
     it('throws NotFoundException when incident not found', async () => {
+      const id = 'NONEXISTENT123';
       incidentRepo.findOne.mockResolvedValue(null);
       
-      await expect(service.findIncidentById(999))
+      await expect(service.findIncidentById(id))
         .rejects.toThrow(NotFoundException);
       
       expect(incidentRepo.findOne).toHaveBeenCalledWith({
-        where: { id: 999 },
+        where: { id },
         relations: ['notifications'],
       });
     });
@@ -93,8 +96,9 @@ describe('IncidentService', () => {
 
   describe('createIncident', () => {
     it('creates a new incident', async () => {
+      const id = 'NEW123ABC456';
       const dto = createTestIncidentDto();
-      const savedIncident = { id: 1, ...dto };
+      const savedIncident = { id, ...dto };
       
       incidentRepo.findOne.mockResolvedValue(null);
       incidentRepo.create.mockReturnValue(savedIncident);
@@ -102,7 +106,7 @@ describe('IncidentService', () => {
       
       const result = await service.createIncident(dto);
       
-      expect(result.id).toBe(1);
+      expect(result.id).toBe(id);
       expect(incidentRepo.save).toHaveBeenCalled();
       expect(notificationService.createNotifications).toHaveBeenCalledWith(
         savedIncident, dto.notificationChannels, NotificationType.Alert
@@ -110,8 +114,9 @@ describe('IncidentService', () => {
     });
 
     it('returns existing incident if duplicate', async () => {
+      const id = 'EXISTING123';
       const dto = createTestIncidentDto({ isResolved: false });
-      const existingIncident = { id: 1, ...dto };
+      const existingIncident = { id, ...dto };
       
       incidentRepo.findOne.mockResolvedValue(existingIncident);
       
@@ -122,8 +127,9 @@ describe('IncidentService', () => {
     });
 
     it('sets resolvedAt for resolved incidents', async () => {
+      const id = 'RESOLVED123';
       const dto = createTestIncidentDto({ isResolved: true });
-      const incident = { id: 1, ...dto, resolvedAt: undefined };
+      const incident = { id, ...dto, resolvedAt: undefined };
       
       incidentRepo.findOne.mockResolvedValue(null);
       incidentRepo.create.mockReturnValue(incident);
@@ -142,52 +148,57 @@ describe('IncidentService', () => {
 
   describe('acknowledgeIncident', () => {
     it('acknowledges an incident', async () => {
+      const id = 'ACK123ABC456';
       const incident = {
-        id: 1, needsAck: true, isAcked: false, ackedAt: null, ackedBy: null
+        id, needsAck: true, isAcked: false, ackedAt: null, ackedBy: null
       };
       
       incidentRepo.findOne.mockResolvedValue(incident);
       notificationRepo.findOne.mockResolvedValue({ channelId: 'test-channel' });
       incidentRepo.save.mockImplementation(inc => Promise.resolve(inc));
       
-      const result = await service.acknowledgeIncident(1, 'test-user', 'test-channel');
+      const result = await service.acknowledgeIncident(id, 'test-user', 'test-channel');
       
       expect(result.isAcked).toBe(true);
       expect(result.ackedBy).toBe('test-user');
     });
 
     it('throws NotFoundException if incident not found', async () => {
+      const id = 'NOTFOUND123';
       incidentRepo.findOne.mockResolvedValue(null);
       
-      await expect(service.acknowledgeIncident(999, 'user', 'channel'))
+      await expect(service.acknowledgeIncident(id, 'user', 'channel'))
         .rejects.toThrow(NotFoundException);
     });
 
     it('throws ForbiddenException if ack not required', async () => {
-      incidentRepo.findOne.mockResolvedValue({ id: 1, needsAck: false });
+      const id = 'NOACK123';
+      incidentRepo.findOne.mockResolvedValue({ id, needsAck: false });
       notificationRepo.findOne.mockResolvedValue({ channelId: 'test-channel' });
       
-      await expect(service.acknowledgeIncident(1, 'user', 'test-channel'))
+      await expect(service.acknowledgeIncident(id, 'user', 'test-channel'))
         .rejects.toThrow(ForbiddenException);
     });
 
     it('throws ForbiddenException if channel mismatch', async () => {
-      incidentRepo.findOne.mockResolvedValue({ id: 1, needsAck: true });
+      const id = 'WRONGCH123';
+      incidentRepo.findOne.mockResolvedValue({ id, needsAck: true });
       notificationRepo.findOne.mockResolvedValue(null);
       
-      await expect(service.acknowledgeIncident(1, 'user', 'wrong-channel'))
+      await expect(service.acknowledgeIncident(id, 'user', 'wrong-channel'))
         .rejects.toThrow(ForbiddenException);
     });
   });
 
   describe('resolveIncidentById', () => {
     it('resolves an incident', async () => {
-      const incident = { id: 1, isResolved: false, resolvedAt: null };
+      const id = 'RESOLVE123';
+      const incident = { id, isResolved: false, resolvedAt: null };
       
       incidentRepo.findOne.mockResolvedValue(incident);
       incidentRepo.save.mockImplementation(inc => Promise.resolve(inc));
       
-      const result = await service.resolveIncidentById(1);
+      const result = await service.resolveIncidentById(id);
       
       expect(result.isResolved).toBe(true);
       expect(result.resolvedAt).toBeDefined();
@@ -195,18 +206,20 @@ describe('IncidentService', () => {
     });
 
     it('throws NotFoundException if incident not found', async () => {
+      const id = 'NOTFOUND456';
       incidentRepo.findOne.mockResolvedValue(null);
       
-      await expect(service.resolveIncidentById(999))
+      await expect(service.resolveIncidentById(id))
         .rejects.toThrow(NotFoundException);
     });
 
     it('throws ForbiddenException if already resolved', async () => {
+      const id = 'ALREADY789';
       incidentRepo.findOne.mockResolvedValue({ 
-        id: 1, isResolved: true, resolvedAt: new Date() 
+        id, isResolved: true, resolvedAt: new Date() 
       });
       
-      await expect(service.resolveIncidentById(1))
+      await expect(service.resolveIncidentById(id))
         .rejects.toThrow(ForbiddenException);
     });
   });

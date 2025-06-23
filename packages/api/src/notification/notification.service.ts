@@ -2,8 +2,9 @@ import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
-import { MessageType, MessengerType, NotificationType } from '@w3f/monitoring-types';
-import { Incident, IncidentNotification } from '../database/incident.entity';
+import { MessageType, MessengerType, NotificationType, MESSENGER_STYLE_MAP } from '@w3f/monitoring-types';
+import { Incident } from '../database/incident.entity';
+import { Notification } from '../database/notification.entity';
 import { MessageStyler } from './message-styler';
 import { ConfigService } from '../config/config.service';
 import { firstValueFrom } from 'rxjs';
@@ -16,8 +17,8 @@ export class NotificationService {
     private readonly httpService: HttpService,
     @InjectRepository(Incident)
     private incidentRepository: Repository<Incident>,
-    @InjectRepository(IncidentNotification)
-    private notificationRepository: Repository<IncidentNotification>,
+    @InjectRepository(Notification)
+    private notificationRepository: Repository<Notification>,
     private readonly configService: ConfigService,
   ) {}
 
@@ -29,16 +30,37 @@ export class NotificationService {
     channels: { channelId: string; messengerType: MessengerType; repeatHours: number }[],
     type: NotificationType,
   ): Promise<void> {
-    const notifications = channels.map(channel => ({
-      incident,
-      channelId: channel.channelId,
-      messengerType: channel.messengerType,
-      repeatHours: channel.repeatHours,
-      type,
-    }));
+    const notifications = channels.map(channel => {
+      const messageType =
+        type === NotificationType.Alert
+          ? incident.isResolved
+            ? MessageType.OneTime
+            : MessageType.Firing
+          : MessageType.Resolved;
+
+      const styleType = MESSENGER_STYLE_MAP[channel.messengerType];
+      const styledMessage = MessageStyler.parseAndStyle(
+        incident.message,
+        messageType,
+        styleType,
+        incident.id,
+        incident.needsAck,
+      );
+
+      return {
+        incident,
+        channelId: channel.channelId,
+        messengerType: channel.messengerType,
+        repeatHours: channel.repeatHours,
+        type,
+        message: styledMessage,
+      };
+    });
 
     const savedNotifications = await this.notificationRepository.save(notifications);
-    await Promise.all(savedNotifications.map(notification => this.processNotification(notification)));
+
+    // Send notifications immediately
+    await Promise.all(savedNotifications.map(notification => this.deliverNotification(notification)));
   }
 
   /**
@@ -63,50 +85,29 @@ export class NotificationService {
   }
 
   /**
-   * Process a single notification
+   * Deliver a notification by sending it and updating its status
    */
-  async processNotification(notification: IncidentNotification): Promise<void> {
-    const incident = await this.incidentRepository.findOne({
-      where: { id: notification.incident.id },
-    });
-
-    if (!incident) {
-      this.logger.error(`Incident ${notification.incident.id} not found for notification ${notification.id}`);
-      return;
-    }
-
-    const messageType =
-      notification.type === NotificationType.Alert
-        ? incident.isResolved
-          ? MessageType.OneTime
-          : MessageType.Firing
-        : MessageType.Resolved;
-
-    const styledMessage = MessageStyler.parseAndStyle(
-      incident.message,
-      messageType,
-      'html',
-      incident.id,
-      incident.needsAck,
-    );
-    const isDelivered = await this.sendNotification(notification.channelId, notification.messengerType, styledMessage);
+  private async deliverNotification(notification: Notification): Promise<void> {
+    const isDelivered = await this.send(notification.channelId, notification.messengerType, notification.message);
 
     notification.lastSentAt = new Date();
     notification.isDelivered = isDelivered;
     await this.notificationRepository.save(notification);
 
     if (isDelivered) {
-      this.logger.log(`Successfully processed notification ${notification.id} for incident ${incident.id}`);
+      this.logger.log(
+        `Successfully delivered notification ${notification.id} for incident ${notification.incident.id}`,
+      );
     } else {
-      this.logger.error(`Failed to deliver notification ${notification.id} for incident ${incident.id}`);
+      this.logger.error(`Failed to deliver notification ${notification.id} for incident ${notification.incident.id}`);
     }
   }
 
   /**
-   * Send a notification to a specific channel
-   * @returns boolean indicating whether the notification was sent successfully
+   * Send a message to the external messenger service
+   * @returns boolean indicating whether the message was sent successfully
    */
-  private async sendNotification(channelId: string, messengerType: MessengerType, message: string): Promise<boolean> {
+  private async send(channelId: string, messengerType: MessengerType, message: string): Promise<boolean> {
     const notificationConfig = this.configService.getNotificationConfig();
 
     try {
@@ -173,7 +174,7 @@ export class NotificationService {
         }
       }
 
-      await this.processNotification(notification);
+      await this.deliverNotification(notification);
     }
   }
 }

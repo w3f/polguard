@@ -1,6 +1,6 @@
 import { MatrixClient } from './matrix-client';
 import { MatrixConfig, IncidentServiceInterface, QueryFilters } from './interfaces';
-import { Logger } from '@w3f/monitoring-types';
+import { Logger, MessengerType, NotificationType } from '@w3f/monitoring-types';
 import { MatrixEvent } from 'matrix-js-sdk';
 
 export class MatrixBot extends MatrixClient {
@@ -120,20 +120,33 @@ export class MatrixBot extends MatrixClient {
       }
     } catch (error) {
       this.logger.error(`Error fetching unacknowledged incidents: ${error.message}`);
-      await this.sendErrorMessage(roomId, 'An error occurred while fetching unacknowledged incidents. Please try again later');
+      await this.sendErrorMessage(
+        roomId,
+        'An error occurred while fetching unacknowledged incidents. Please try again later',
+      );
     }
   }
 
-  private async handleIncidentDetailsCommand(roomId: string, incidentIdStr: string) {
+  private async handleIncidentDetailsCommand(roomId: string, incidentId: string) {
+    const id = incidentId?.trim();
     try {
-      const incidentId = parseInt(incidentIdStr, 10);
-      if (isNaN(incidentId)) {
-        await this.sendErrorMessage(roomId, 'Invalid incident ID. Please provide a valid number.');
+      if (!id) {
+        await this.sendErrorMessage(roomId, 'Invalid incident ID');
         return;
       }
 
-      const incident = await this.incidentService.getIncidentById(incidentId);
-      let html = `<blockquote>${incident.message}</blockquote>`;
+      const incident = await this.incidentService.getIncidentById(id);
+
+      const matrixAlertNotification = incident.notifications?.find(
+        notification =>
+          notification.messengerType === MessengerType.Matrix &&
+          notification.channelId === roomId &&
+          notification.type === NotificationType.Alert,
+      );
+
+      const displayMessage = matrixAlertNotification?.message || incident.message;
+
+      let html = `<blockquote>${displayMessage}</blockquote>`;
       html += '<ul>';
 
       html += `<li><strong>Created:</strong> ${this.formatDate(incident.createdAt)}</li>`;
@@ -163,20 +176,19 @@ export class MatrixBot extends MatrixClient {
     }
   }
 
-  private async handleAckCommand(roomId: string, incidentIdStr: string, event: MatrixEvent) {
+  private async handleAckCommand(roomId: string, incidentId: string, event: MatrixEvent) {
+    const id = incidentId?.trim();
     try {
-      const incidentId = parseInt(incidentIdStr, 10);
-      if (isNaN(incidentId)) {
-        await this.sendErrorMessage(roomId, 'Invalid incident ID. Please provide a valid number');
+      if (!id) {
+        await this.sendErrorMessage(roomId, 'Invalid incident ID');
         return;
       }
 
       const userId = event.getSender();
-
-      await this.incidentService.acknowledgeIncident(incidentId, userId, roomId);
+      await this.incidentService.acknowledgeIncident(id, userId, roomId);
       await this.sendMessage(
         roomId,
-        `<p><strong>Success:</strong> Incident <strong>#${incidentId}</strong> has been acknowledged</p>`,
+        `<p><strong>Success:</strong> Incident <strong>#${id}</strong> has been acknowledged</p>`,
       );
     } catch (error) {
       this.logger.error(`Error acknowledging incident: ${error.message}`);
@@ -189,7 +201,7 @@ export class MatrixBot extends MatrixClient {
       if (args.length === 0) {
         await this.sendMessage(
           roomId,
-          'Usage: !query [filters...]\nExample: !query createdAfter=2025-01-01 createdBefore=2025-01-31 isResolved=false\nAvailable filters: account, groupId, handlerType, status, chain, createdAfter, createdBefore, isResolved, isAcked, needsAck',
+          'Usage: !query [filters...]\nExample: !query createdAfter=2025-01-01 createdBefore=2025-01-31 isResolved=false\nAvailable filters: account, groupId, handlerType, chain, createdAfter, createdBefore, isResolved, isAcked, needsAck',
         );
         return;
       }
@@ -198,7 +210,6 @@ export class MatrixBot extends MatrixClient {
         'account',
         'groupId',
         'handlerType',
-        'status',
         'chain',
         'createdAfter',
         'createdBefore',
@@ -217,7 +228,10 @@ export class MatrixBot extends MatrixClient {
         }
 
         if (!validKeys.has(key)) {
-          await this.sendErrorMessage(roomId, `Invalid filter: ${key}. Valid filters: ${Array.from(validKeys).join(', ')}`);
+          await this.sendErrorMessage(
+            roomId,
+            `Invalid filter: ${key}. Valid filters: ${Array.from(validKeys).join(', ')}`,
+          );
           return;
         }
 

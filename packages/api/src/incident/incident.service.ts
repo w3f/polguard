@@ -1,11 +1,11 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Incident, IncidentNotification } from '../database/incident.entity';
+import { Incident } from '../database/incident.entity';
+import { Notification } from '../database/notification.entity';
 import { CreateIncidentDto, GetIncidentsDto } from './dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType, MessageType } from '@w3f/monitoring-types';
-import { MessageStyler } from '../notification/message-styler';
+import { NotificationType } from '@w3f/monitoring-types';
 
 @Injectable()
 export class IncidentService {
@@ -14,12 +14,12 @@ export class IncidentService {
   constructor(
     @InjectRepository(Incident)
     private incidentRepository: Repository<Incident>,
-    @InjectRepository(IncidentNotification)
-    private notificationRepository: Repository<IncidentNotification>,
+    @InjectRepository(Notification)
+    private notificationRepository: Repository<Notification>,
     private notificationService: NotificationService,
   ) {}
 
-  async findIncidentById(id: number): Promise<Incident> {
+  async findIncidentById(id: string): Promise<Incident> {
     const incident = await this.incidentRepository.findOne({
       where: { id },
       relations: ['notifications'],
@@ -29,35 +29,12 @@ export class IncidentService {
       throw new NotFoundException(`Incident with ID ${id} not found`);
     }
 
-    const messageType = incident.isResolved ? MessageType.OneTime : MessageType.Firing;
-    // TODO: The idea was to support multiple messengers, for now hardcoding to matrix/html
-    incident.message = MessageStyler.parseAndStyle(
-      incident.message,
-      messageType,
-      'html',
-      incident.id,
-      incident.needsAck,
-    );
-
     return incident;
   }
 
   async findIncidents(filters: GetIncidentsDto): Promise<Incident[]> {
     const queryBuilder = this.incidentRepository.createQueryBuilder('incident');
 
-    if (filters.status) {
-      switch (filters.status) {
-        case 'open':
-          queryBuilder.andWhere('incident.isResolved = false');
-          break;
-        case 'acked':
-          queryBuilder.andWhere('incident.isAcked = true AND incident.isResolved = false');
-          break;
-        case 'unacked':
-          queryBuilder.andWhere('incident.needsAck = true AND incident.isAcked = false');
-          break;
-      }
-    }
     if (filters.needsAck !== undefined) {
       queryBuilder.andWhere('incident.needsAck = :needsAck', { needsAck: filters.needsAck });
     }
@@ -85,14 +62,16 @@ export class IncidentService {
     if (filters.handlerType) {
       queryBuilder.andWhere('incident.handlerType = :handlerType', { handlerType: filters.handlerType });
     }
-    if (filters.channelId) {
+    if (filters.channelId && filters.messengerType) {
       queryBuilder
         .innerJoin('incident.notifications', 'notification')
-        .andWhere('notification.channelId = :channelId', { channelId: filters.channelId });
+        .andWhere('notification.channelId = :channelId', { channelId: filters.channelId })
+        .andWhere('notification.messengerType = :messengerType', { messengerType: filters.messengerType });
     }
 
     queryBuilder.orderBy('incident.createdAt', 'DESC');
     queryBuilder.limit(1000); // Hard limit for now
+    queryBuilder.leftJoinAndSelect('incident.notifications', 'notifications');
 
     return queryBuilder.getMany();
   }
@@ -124,7 +103,7 @@ export class IncidentService {
     return savedIncident;
   }
 
-  async acknowledgeIncident(id: number, username: string, channelId: string): Promise<Incident> {
+  async acknowledgeIncident(id: string, username: string, channelId: string): Promise<Incident> {
     const incident = await this.incidentRepository.findOne({ where: { id } });
 
     if (!incident) {
@@ -156,7 +135,7 @@ export class IncidentService {
     return this.incidentRepository.save(incident);
   }
 
-  async resolveIncidentById(id: number): Promise<Incident> {
+  async resolveIncidentById(id: string): Promise<Incident> {
     const incident = await this.incidentRepository.findOne({ where: { id } });
 
     if (!incident) {

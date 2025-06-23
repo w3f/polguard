@@ -2,8 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { Chain } from '@w3f/monitoring-types';
 import { DataSource } from 'typeorm';
-import { createTestApp, dbFile } from './test-utils';
-import fs from 'fs';
+import { cleanupTestDatabase, createTestApp, dbFile } from './test-utils';
 
 describe('MonitoringConfig API (integration)', () => {
   let app: INestApplication;
@@ -25,7 +24,7 @@ describe('MonitoringConfig API (integration)', () => {
     if (dataSource && dataSource.isInitialized) {
       await dataSource.destroy();
     }
-    try { fs.unlinkSync(dbFile); } catch (_) {}
+    cleanupTestDatabase();
   });
   
   describe('GET /monitoring-config/groups', () => {

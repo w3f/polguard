@@ -17,9 +17,12 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     handlerType,
   }: EventHandlerParams<H.ReferendaSubmittedEvent>): Promise<void> {
     const [referendumIndex, trackId] = eventRecord.event.data.map(arg => arg.toString());
-    const proposer = await this.chain.referendaInfoFor(referendumIndex, blockNumber) ?? 'unknown';
+    const proposer = (await this.chain.referendaInfoFor(referendumIndex, blockNumber)) ?? 'unknown';
     const subsquareLink = this.fmt.link('Subsquare', `https://polkadot.subsquare.io/referenda/${referendumIndex}`);
-    const polkassemblyLink = this.fmt.link('Polkassembly', `https://polkadot.polkassembly.io/referenda/${referendumIndex}`);
+    const polkassemblyLink = this.fmt.link(
+      'Polkassembly',
+      `https://polkadot.polkassembly.io/referenda/${referendumIndex}`,
+    );
     const message = this.fmt.message(
       [
         `Referenda #${referendumIndex} submitted`,

@@ -24,8 +24,8 @@ export class IncidentController {
     status: 404,
     description: 'Incident not found',
   })
-  @ApiParam({ name: 'id', description: 'Incident ID', type: 'number' })
-  async getIncidentById(@Param('id') id: number): Promise<IncidentResponseDto> {
+  @ApiParam({ name: 'id', description: 'Incident ID', type: 'string' })
+  async getIncidentById(@Param('id') id: string): Promise<IncidentResponseDto> {
     this.logger.debug(`Getting incident ${id}`);
     const incident = await this.incidentService.findIncidentById(id);
     return incident;
@@ -92,10 +92,10 @@ Used by the notification service (Matrix) for incident acknowledgment.`,
     description: 'The incident has been successfully acknowledged',
     type: IncidentResponseDto,
   })
-  @ApiParam({ name: 'id', description: 'Incident ID', type: 'number' })
+  @ApiParam({ name: 'id', description: 'Incident ID', type: 'string' })
   @ApiBody({ type: AcknowledgeIncidentDto })
   async acknowledgeIncidentById(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Body() acknowledgeIncidentDto: AcknowledgeIncidentDto,
   ): Promise<IncidentResponseDto> {
     this.logger.debug(`Acknowledging incident ${id}`);
@@ -117,8 +117,8 @@ Used by the notification service (Matrix) for incident acknowledgment.`,
     description: 'The incident has been successfully resolved',
     type: IncidentResponseDto,
   })
-  @ApiParam({ name: 'id', description: 'Incident ID', type: 'number' })
-  async resolveIncidentById(@Param('id') id: number): Promise<IncidentResponseDto> {
+  @ApiParam({ name: 'id', description: 'Incident ID', type: 'string' })
+  async resolveIncidentById(@Param('id') id: string): Promise<IncidentResponseDto> {
     this.logger.debug(`Resolving incident ${id} by ID`);
     const incident = await this.incidentService.resolveIncidentById(id);
     return incident;

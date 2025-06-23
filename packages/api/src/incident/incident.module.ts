@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IncidentController } from './incident.controller';
 import { IncidentService } from './incident.service';
-import { Incident, IncidentNotification } from '../database/incident.entity';
+import { Incident } from '../database/incident.entity';
+import { Notification } from '../database/notification.entity';
 import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Incident, IncidentNotification]), NotificationModule],
+  imports: [TypeOrmModule.forFeature([Incident, Notification]), NotificationModule],
   controllers: [IncidentController],
   providers: [IncidentService],
   exports: [IncidentService],

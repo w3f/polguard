@@ -5,6 +5,7 @@ import { ConfigService } from '../src/service/config/config.service';
 import { Logger } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 import { AxiosResponse } from 'axios';
+import { MessengerType } from '@w3f/monitoring-types';
 
 describe('IncidentService', () => {
   let service: IncidentService;
@@ -76,6 +77,7 @@ describe('IncidentService', () => {
         {
           params: {
             channelId: 'test-room',
+            messengerType: MessengerType.Matrix,
             isResolved: false,
           },
         },
@@ -117,6 +119,7 @@ describe('IncidentService', () => {
         {
           params: {
             channelId: 'test-room',
+            messengerType: MessengerType.Matrix,
             needsAck: true,
             isAcked: false,
           },
@@ -127,23 +130,23 @@ describe('IncidentService', () => {
 
   describe('getIncidentById', () => {
     it('should return an incident by ID', async () => {
-      const mockIncident = { id: 1, message: 'Test incident' };
+      const mockIncident = { id: 'test-incident-1', message: 'Test incident' };
 
       const mockResponse: AxiosResponse = {
         data: mockIncident,
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { url: 'http://api:3000/incidents/1' } as any,
+        config: { url: 'http://api:3000/incidents/test-incident-1' } as any,
       };
 
       (httpServiceMock.get as jest.Mock).mockReturnValue(of(mockResponse));
 
-      const result = await service.getIncidentById(1);
+      const result = await service.getIncidentById('test-incident-1');
 
       expect(result).toEqual(mockIncident);
       expect(httpServiceMock.get).toHaveBeenCalledWith(
-        'http://api:3000/incidents/1',
+        'http://api:3000/incidents/test-incident-1',
       );
     });
   });
@@ -155,15 +158,15 @@ describe('IncidentService', () => {
         status: 201,
         statusText: 'Created',
         headers: {},
-        config: { url: 'http://api:3000/incidents/1/acknowledge' } as any,
+        config: { url: 'http://api:3000/incidents/test-incident-1/acknowledge' } as any,
       };
 
       (httpServiceMock.post as jest.Mock).mockReturnValue(of(mockResponse));
 
-      await service.acknowledgeIncident(1, 'test-user', 'test-room');
+      await service.acknowledgeIncident('test-incident-1', 'test-user', 'test-room');
 
       expect(httpServiceMock.post).toHaveBeenCalledWith(
-        'http://api:3000/incidents/1/acknowledge',
+        'http://api:3000/incidents/test-incident-1/acknowledge',
         {
           username: 'test-user',
           channelId: 'test-room',
