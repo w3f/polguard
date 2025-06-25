@@ -176,7 +176,7 @@ export class MatrixBot extends MatrixClient {
       } else if (incident.needsAck) {
         html += `<li><strong>Acknowledged:</strong> No</li>`;
       }
-
+      html += `<li><strong>Chain:</strong> ${incident.chain}</li>`;
       html += `<li><strong>Group:</strong> ${incident.groupId}</li>`;
       html += `<li><strong>Handler:</strong> ${incident.handlerType}</li>`;
       html += `<li><strong>Account:</strong> ${incident.account}</li>`;

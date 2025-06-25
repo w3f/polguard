@@ -2924,6 +2924,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@w3f/monitoring-config@workspace:packages/config"
   dependencies:
+    "@polkadot/util": "npm:^13.5.2"
+    "@polkadot/util-crypto": "npm:^13.5.2"
     "@swc/core": "npm:^1.10.1"
     "@swc/jest": "npm:^0.2.29"
     "@types/jest": "npm:^29.5.2"
