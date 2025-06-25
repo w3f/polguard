@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { AppModule } from '../../src/app.module';
 import { MonitoringConfigService } from '../../src/monitoring-config/monitoring-config.service';
 import { ConfigService } from '../../src/config/config.service';
@@ -31,6 +32,7 @@ const SQLITE_TEST_CONFIG = {
   synchronize: true,
   keepConnectionAlive: true,
   entities: [Incident, Notification],
+  namingStrategy: new SnakeNamingStrategy(),
   extra: { pragmas: ['foreign_keys=ON'] },
 };
 

@@ -19,7 +19,7 @@ export class Notification {
   incidentId: string;
 
   @ManyToOne('Incident', 'notifications')
-  @JoinColumn({ name: 'incidentId' })
+  @JoinColumn()
   incident: Incident;
 
   @Column()

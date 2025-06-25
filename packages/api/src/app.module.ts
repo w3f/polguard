@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { ConfigModule } from './config/config.module';
 import { ConfigService } from './config/config.service';
 import { IncidentModule } from './incident/incident.module';
@@ -20,6 +21,7 @@ import { MonitoringConfigModule } from './monitoring-config/monitoring-config.mo
         type: 'postgres',
         ...configService.getDatabaseConfig(),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        namingStrategy: new SnakeNamingStrategy(),
         synchronize: configService.getEnvironment() !== 'production', // Auto-create tables in non-production
       }),
     }),
