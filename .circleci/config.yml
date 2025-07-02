@@ -216,5 +216,4 @@ workflows:
       - publish_charts:
           context: github-bot
           filters:
-            branches: {ignore: /.*/}
-            tags:     {only: /^v\d+\.\d+\.\d+$/}
+            branches: {only: [ master ]}

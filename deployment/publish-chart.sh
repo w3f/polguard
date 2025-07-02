@@ -6,12 +6,6 @@ REPO="${1:-w3f/helm-charts}"
 BRANCH="${GITHUB_PAGES_BRANCH:-gh-pages}"
 CHART_DIR="${HELM_CHARTS_SOURCE:-$PWD/deployment/chart}"
 
-VERSION_TAG="${CIRCLE_TAG:-$(git describe --tags --exact-match 2>/dev/null || echo "")}"
-if [[ -z "$VERSION_TAG" ]]; then
-  echo "ERROR: must run on a Git tag (set \$CIRCLE_TAG)" >&2
-  exit 1
-fi
-
 # ─── CLONE PAGES BRANCH ──────────────────────────────────────────────────────
 PAGES="/tmp/helm-pages"
 rm -rf "$PAGES"
@@ -57,4 +51,4 @@ fi
 git push "https://${GITHUB_BOT_TOKEN}@github.com/$REPO.git" "$BRANCH"
 popd >/dev/null
 
-echo "✅ Published $CHART_DIR at tag $VERSION_TAG to $REPO#$BRANCH"
+echo "✅ Published $CHART_DIR to $REPO#$BRANCH"
