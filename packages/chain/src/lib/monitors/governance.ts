@@ -26,11 +26,13 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
       'Polkassembly',
       `https://${this.chainProps.chain.toLowerCase()}.polkassembly.io/referenda/${referendumIndex}`,
     );
+    // Sanitize C-style string
+    const trackName = (await this.chain.referendaTrack(trackId, blockNumber)).replace(/\0/g, '');
     const message = this.fmt.message(
       [
         `Referendum #${referendumIndex} submitted`,
         `Proposed by: ${this.fmt.accountLink(proposer, proposer)}`,
-        `Track: ${await this.chain.referendaTrack(trackId, blockNumber)}`,
+        `Track: ${trackName}`,
         `Links: ${subsquareLink} | ${polkassemblyLink}`,
       ],
       { blockNumber, phase: eventRecord.phase },
