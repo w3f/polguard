@@ -169,7 +169,10 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
         if (identity.isNone) {
           result[address] = null;
         } else {
-          result[address] = this.processIdentityInfo(identity.unwrap()[0].info as unknown as PeopleIdentityInfo);
+          const identityOf = identity.unwrap();
+          const id = Array.isArray(identityOf) ? identityOf[0]: identityOf;
+          const identityInfo = this.processIdentityInfo(id.info as unknown as PeopleIdentityInfo);
+          result[address] = identityInfo;
         }
       });
 
@@ -184,8 +187,14 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       const superIds = await apiAt.query.identity.superOf.multi(addresses);
 
       addresses.forEach((address, index) => {
-        const superOf = superIds[index] as Option<Codec>;
-        result[address] = superOf.isSome ? superOf.unwrap()[0].toString() : null;
+        const identity = superIds[index] as Option<Codec>;
+        if (identity.isNone) {
+          result[address] = null;
+        } else {
+          const superOf = identity.unwrap();
+          const id = Array.isArray(superOf) ? superOf[0]: superOf;
+          result[address] = id.toString();
+        }
       });
 
       return result;

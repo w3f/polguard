@@ -2,7 +2,9 @@ rpcEndpoints:
   Polkadot: wss://rpc-polkadot.luckyfriday.io
   Kusama: wss://rpc-kusama.luckyfriday.io
   PeoplePolkadot: wss://rpc-people-polkadot.luckyfriday.io
+  PeopleKusama: wss://rpc-people-kusama.luckyfriday.io
   AssetHubPolkadot: wss://polkadot-asset-hub-rpc.polkadot.io
+  AssetHubKusama: wss://kusama-asset-hub-rpc.polkadot.io
   Centrifuge: wss://rpc-centrifuge.luckyfriday.io
 
 tests:
@@ -112,10 +114,10 @@ tests:
   Identity:
     IdentityUnexpectedState:
       - description: "State (identity.identityOf, identity.superOf)"
-        chain: PeoplePolkadot
-        block: 	1958722
+        chain: PeopleKusama
+        block: 5056659
         account:
-          address: 162Cw32opH6PQRLU1dcLVgkvgC3EWrTFZQfjCK9kbuFYZ76p
+          address: DV7b5AL9zNbsnQ8CWCwvw2tzc3pz74EVDLGQdNU1tujA2L5
           display: test
           legal: test
           web: test
