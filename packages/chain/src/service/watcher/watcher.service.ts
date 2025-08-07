@@ -3,6 +3,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ConfigService } from '../config/config.service';
 import { MonitoringConfigService } from '../monitoring-config/monitoring-config.service';
 import { StorageService } from '../storage/storage.service';
+import { LastBlockService } from '../last-block/last-block.service';
 import { getChainProperties } from '@w3f/monitoring-types';
 import { ChainWatcher } from '../../lib/watcher';
 import { IncidentHandler } from '../../lib/incident-handler';
@@ -20,6 +21,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     private readonly monitoringConfig: MonitoringConfigService,
     private readonly storage: StorageService,
     private readonly incidents: IncidentApiService,
+    private readonly lastBlock: LastBlockService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -44,6 +46,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     this.watcher = new ChainWatcher(
       new Logger('ChainWatcher'),
       this.monitoringConfig,
+      this.lastBlock,
       this.api,
       incidentHandler,
       this.storage,

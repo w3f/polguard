@@ -9,10 +9,11 @@
  * - MonitoringConfigClient: Represents a client for fetching monitoring configuration
  */
 
-import { CreateIncidentDto } from './incident';
+import { CreateIncidentDto, ResolveIncidentDto } from './incident';
 import { MonitoringGroup } from './monitor';
 import { Hash, Header, SignedBlock } from '@polkadot/types/interfaces';
 import { ApiDecoration } from '@polkadot/api/types';
+import { Chain } from './constants';
 
 export interface MonitoringConfigClient {
   getMonitoringGroups(): Promise<MonitoringGroup[]>;
@@ -43,8 +44,14 @@ export interface KeyValueStorageClient {
 
 /** Client for sending incidents to the incident management service */
 export interface IncidentApiClient {
-  createIncident(incident: CreateIncidentDto): Promise<string>; // Returns incident ID
-  resolveIncident(id: number): Promise<boolean>;
+  createIncident(incident: CreateIncidentDto): Promise<string | null>; // Returns incident ID or null for 409 conflicts
+  resolveIncident(id: number, resolveData: ResolveIncidentDto): Promise<void>;
+}
+
+/** Client for managing last processed block information */
+export interface LastBlockClient {
+  getLastBlock(chain: Chain): Promise<number | null>;
+  setLastBlock(chain: Chain, blockNumber: number): Promise<void>;
 }
 
 /**

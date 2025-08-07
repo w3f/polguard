@@ -8,6 +8,7 @@ export class StorageModule {
   static forRootAsync(): DynamicModule {
     return {
       module: StorageModule,
+      global: true,
       imports: [ConfigModule],
       providers: [
         Logger,
@@ -15,8 +16,7 @@ export class StorageModule {
           provide: StorageService,
           useFactory: (configService: ConfigService) => {
             const chain = configService.getChain();
-            const dataPath = configService.getStorageDataPath();
-            return new StorageService(chain, dataPath);
+            return new StorageService(chain);
           },
           inject: [ConfigService],
         },

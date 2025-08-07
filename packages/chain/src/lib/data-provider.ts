@@ -170,7 +170,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
           result[address] = null;
         } else {
           const identityOf = identity.unwrap();
-          const id = Array.isArray(identityOf) ? identityOf[0]: identityOf;
+          const id = Array.isArray(identityOf) ? identityOf[0] : identityOf;
           const identityInfo = this.processIdentityInfo(id.info as unknown as PeopleIdentityInfo);
           result[address] = identityInfo;
         }
@@ -192,7 +192,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
           result[address] = null;
         } else {
           const superOf = identity.unwrap();
-          const id = Array.isArray(superOf) ? superOf[0]: superOf;
+          const id = Array.isArray(superOf) ? superOf[0] : superOf;
           result[address] = id.toString();
         }
       });

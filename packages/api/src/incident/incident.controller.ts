@@ -1,6 +1,12 @@
 import { Controller, Get, Post, Body, Param, Query, Logger } from '@nestjs/common';
 import { IncidentService } from './incident.service';
-import { CreateIncidentDto, AcknowledgeIncidentDto, GetIncidentsDto, IncidentResponseDto } from './dto';
+import {
+  CreateIncidentDto,
+  AcknowledgeIncidentDto,
+  GetIncidentsDto,
+  IncidentResponseDto,
+  ResolveIncidentDto,
+} from './dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('incidents')
@@ -56,7 +62,7 @@ Used by the notification service (Matrix) to display incidents.`,
     type: [IncidentResponseDto],
   })
   async getIncidents(@Query() query: GetIncidentsDto): Promise<IncidentResponseDto[]> {
-    this.logger.debug('Getting incidents');
+    this.logger.debug('Getting incidents.');
     const incidents = await this.incidentService.findIncidents(query);
     return incidents;
   }
@@ -73,9 +79,13 @@ Used by Watcher service to automatically create incidents when issues are detect
     description: 'The incident has been successfully created',
     type: IncidentResponseDto,
   })
+  @ApiResponse({
+    status: 409,
+    description: 'Block already processed',
+  })
   @ApiBody({ type: CreateIncidentDto })
   async createIncident(@Body() createIncidentDto: CreateIncidentDto): Promise<IncidentResponseDto> {
-    this.logger.debug('Creating new incident');
+    this.logger.debug('Creating new incident.');
     const incident = await this.incidentService.createIncident(createIncidentDto);
     return incident;
   }
@@ -98,7 +108,7 @@ Used by the notification service (Matrix) for incident acknowledgment.`,
     @Param('id') id: string,
     @Body() acknowledgeIncidentDto: AcknowledgeIncidentDto,
   ): Promise<IncidentResponseDto> {
-    this.logger.debug(`Acknowledging incident ${id}`);
+    this.logger.debug(`Acknowledging incident ${id}.`);
     const incident = await this.incidentService.acknowledgeIncident(
       id,
       acknowledgeIncidentDto.username,
@@ -117,10 +127,17 @@ Used by the notification service (Matrix) for incident acknowledgment.`,
     description: 'The incident has been successfully resolved',
     type: IncidentResponseDto,
   })
+  @ApiResponse({
+    status: 409,
+    description: 'Block already processed',
+  })
   @ApiParam({ name: 'id', description: 'Incident ID', type: 'string' })
-  async resolveIncidentById(@Param('id') id: string): Promise<IncidentResponseDto> {
-    this.logger.debug(`Resolving incident ${id} by ID`);
-    const incident = await this.incidentService.resolveIncidentById(id);
+  async resolveIncidentById(
+    @Param('id') id: string,
+    @Body() resolveIncidentDto: ResolveIncidentDto,
+  ): Promise<IncidentResponseDto> {
+    this.logger.debug(`Resolving incident ${id}.`);
+    const incident = await this.incidentService.resolveIncidentById(id, resolveIncidentDto);
     return incident;
   }
 }

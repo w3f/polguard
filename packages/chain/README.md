@@ -10,6 +10,7 @@ The Chain service is responsible for monitoring blockchain activities and genera
 - **State Monitoring**: Tracks on-chain state changes
 - **Multi-Monitor Architecture**: Supports specialized monitors for different blockchain aspects
 - **Configuration Refresh**: Periodically updates monitoring configuration
+- **Block Progress Tracking**: Updates last processed block information in the API service
 - **Incident Generation**: Creates and resolves incidents by sending calls to the API service. Supports two types of incidents:
   - **One-time incidents**: Generated from events and calls when specific conditions are detected
   - **Firing/Resolved incidents**: Generated from state handlers that continuously monitor conditions and can transition between firing and resolved states

@@ -11,8 +11,8 @@ monitoringConfigSources:
   - name: dn
     url: https://gitlab.w3f.tech/api/v4/projects/102/repository/files/dn.yaml/raw?ref=main
     authToken: ***
-  - name: treasury
-    url: https://gitlab.w3f.tech/api/v4/projects/102/repository/files/treasury.yaml/raw?ref=main
+  - name: assets
+    url: https://gitlab.w3f.tech/api/v4/projects/102/repository/files/assets.yaml/raw?ref=main
     authToken: ***
 environment: development
 logging:

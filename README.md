@@ -30,7 +30,7 @@ graph LR
     
     %% Connections with simplified labels
     Chain1 & Chain2 -->|Creates/resolves<br>incidents| API
-    Chain1 & Chain2 -.->|Gets config| API
+    Chain1 & Chain2 -.->|Gets config,<br>last block| API
     API -->|Sends notifications| Matrix
     Matrix -->|Gets/acks incidents| API
     Matrix <-->|Two-way communication| Room
@@ -46,13 +46,13 @@ graph LR
 
 ## Packages
 
-| Package                                 | Role                         | Key features                                            |
-|-----------------------------------------|------------------------------|---------------------------------------------------------|
-| [**API**](packages/api/README.md)       | Incident & config control    | REST API for incident CRUD, monitoring config handling  |
-| [**Chain**](packages/chain/README.md)   | Blockchain monitor           | Balance changes, transfers, identity, voting and more   |
-| [**Matrix**](packages/matrix/README.md) | Notifications & bot          | Deliver/ack incidents via Matrix rooms, bot commands    |
-| [**Types**](packages/types/README.md)   | Shared types                 | Core interfaces, constants, enums                       |
-| [**Config**](packages/config/README.md) | YAML config & validation     | Load/validate monitoring rules                          |
+| Package                                 | Role                         | Key features                                             |
+|-----------------------------------------|------------------------------|----------------------------------------------------------|
+| [**API**](packages/api/README.md)       | Incident & config control    | Incident CRUD API, monitoring config, last block handling|
+| [**Chain**](packages/chain/README.md)   | Blockchain monitor           | Balance changes, transfers, identity, voting and more    |
+| [**Matrix**](packages/matrix/README.md) | Notifications & bot          | Deliver/ack incidents via Matrix rooms, bot commands     |
+| [**Types**](packages/types/README.md)   | Shared types                 | Core interfaces, constants, enums                        |
+| [**Config**](packages/config/README.md) | YAML config & validation     | Load/validate monitoring rules                           |
 
 ## Installation & Setup
 

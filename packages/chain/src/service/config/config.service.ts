@@ -47,6 +47,8 @@ export class ConfigService {
           createIncident: Joi.string().required(),
           resolveIncident: Joi.string().required(),
           getConfig: Joi.string().required(),
+          getLastBlock: Joi.string().required(),
+          setLastBlock: Joi.string().required(),
         }).required(),
       }).required(),
       httpServer: Joi.object({
@@ -92,6 +94,8 @@ export class ConfigService {
       createIncident: string;
       resolveIncident: string;
       getConfig: string;
+      getLastBlock: string;
+      setLastBlock: string;
     };
   } {
     return this.config.monitoringApi;
@@ -118,6 +122,8 @@ interface Config {
       createIncident: string;
       resolveIncident: string;
       getConfig: string;
+      getLastBlock: string;
+      setLastBlock: string;
     };
   };
   httpServer?: {

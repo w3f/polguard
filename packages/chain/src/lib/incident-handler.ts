@@ -48,9 +48,11 @@ export class IncidentHandler implements IncidentHandlerClient {
 
     if (isFiring && !incidentId) {
       const id = await this.createIncident(message, notifications, incidentKey, blockNumber, false);
-      await this.store.set(storeKey, id);
+      if (id) {
+        await this.store.set(storeKey, id);
+      }
     } else if (!isFiring && incidentId) {
-      await this.resolveIncident(incidentId);
+      await this.resolveIncident(incidentId, blockNumber);
       await this.store.del(storeKey);
     }
   }
@@ -61,7 +63,7 @@ export class IncidentHandler implements IncidentHandlerClient {
     incidentKey: IncidentKey,
     blockNumber: number,
     isResolved: boolean = false,
-  ): Promise<string> {
+  ): Promise<string | null> {
     // Create notification channels from notification settings
     const notificationChannels: NotificationChannel[] = notifications.channels.map(channel => ({
       channelId: channel,
@@ -86,16 +88,20 @@ export class IncidentHandler implements IncidentHandlerClient {
       isResolved,
     };
 
-    this.logger.debug(`Creating incident: ${JSON.stringify(createIncidentDto)}`);
+    this.logger.debug(`Sending incident: ${JSON.stringify(createIncidentDto)}`);
 
     const incidentId = await this.incidentApi.createIncident(createIncidentDto);
-    this.logger.debug(`Created incident with ID: ${incidentId}`);
+    if (incidentId) {
+      this.logger.debug(`Sent incident with ID: ${incidentId}`);
+    } else {
+      this.logger.debug('Skipping incident.');
+    }
     return incidentId;
   }
 
-  private async resolveIncident(incidentId: number): Promise<void> {
+  private async resolveIncident(incidentId: number, blockNumber: number): Promise<void> {
     this.logger.debug(`Resolving incident with ID: ${incidentId}`);
-    await this.incidentApi.resolveIncident(incidentId);
+    await this.incidentApi.resolveIncident(incidentId, { chain: this.chain, blockNumber });
   }
 
   private getStoreKey(incidentKey: IncidentKey): string {

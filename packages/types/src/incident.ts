@@ -34,6 +34,11 @@ export interface IncidentKey {
   token?: string;
 }
 
+export interface ResolveIncidentDto {
+  chain: Chain;
+  blockNumber: number;
+}
+
 export interface IncidentHandlerClient {
   handle(
     message: string[],

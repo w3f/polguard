@@ -3,9 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Incident } from '../database/incident.entity';
 import { Notification } from '../database/notification.entity';
-import { CreateIncidentDto, GetIncidentsDto } from './dto';
+import { CreateIncidentDto, GetIncidentsDto, ResolveIncidentDto } from './dto';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '@w3f/monitoring-types';
+import { LastBlockService } from '../last-block/last-block.service';
 
 @Injectable()
 export class IncidentService {
@@ -17,6 +18,7 @@ export class IncidentService {
     @InjectRepository(Notification)
     private notificationRepository: Repository<Notification>,
     private notificationService: NotificationService,
+    private lastBlockService: LastBlockService,
   ) {}
 
   async findIncidentById(id: string): Promise<Incident> {
@@ -77,8 +79,9 @@ export class IncidentService {
   }
 
   async createIncident(dto: CreateIncidentDto): Promise<Incident> {
-    // Check for existing unresolved incidents with the same idempotency key
-    // to ensure idempotency. Skip for one-time incidents that are immediately resolved.
+    await this.lastBlockService.setLastBlock(dto.chain, dto.blockNumber);
+
+    // Idempotency check for ongoing incidents.
     if (!dto.isResolved) {
       const existingIncident = await this.incidentRepository.findOne({
         where: {
@@ -92,6 +95,21 @@ export class IncidentService {
       }
     }
 
+    // Idempotency check for one-time incidents.
+    if (dto.isResolved) {
+      const existingOneTimeIncident = await this.incidentRepository.findOne({
+        where: {
+          idempotencyKey: dto.idempotencyKey,
+          blockNumber: dto.blockNumber,
+          isResolved: true,
+        },
+      });
+
+      if (existingOneTimeIncident) {
+        return existingOneTimeIncident;
+      }
+    }
+
     const { notificationChannels, ...incidentData } = dto;
     const incident = this.incidentRepository.create(incidentData);
     if (incident.isResolved) {
@@ -99,6 +117,7 @@ export class IncidentService {
     }
 
     const savedIncident = await this.incidentRepository.save(incident);
+    this.logger.debug(`Incident created: ${savedIncident.id}.`);
     await this.notificationService.createNotifications(savedIncident, notificationChannels, NotificationType.Alert);
     return savedIncident;
   }
@@ -121,33 +140,30 @@ export class IncidentService {
       throw new ForbiddenException('Channel ID does not match any notification for this incident');
     }
 
-    // Check if acknowledgment is required
-    if (!incident.needsAck) {
-      throw new ForbiddenException(`Incident with ID ${id} does not require acknowledgment`);
-    }
-
     if (!incident.ackedAt) {
       incident.isAcked = true;
       incident.ackedAt = new Date();
       incident.ackedBy = username;
     }
-
+    this.logger.debug(`Incident ${id} acknowledged by: ${username}.`);
     return this.incidentRepository.save(incident);
   }
 
-  async resolveIncidentById(id: string): Promise<Incident> {
+  async resolveIncidentById(id: string, dto: ResolveIncidentDto): Promise<Incident> {
+    await this.lastBlockService.setLastBlock(dto.chain, dto.blockNumber);
     const incident = await this.incidentRepository.findOne({ where: { id } });
 
     if (!incident) {
       throw new NotFoundException(`Incident with ID ${id} not found`);
     }
     if (incident.resolvedAt) {
-      throw new ForbiddenException(`Incident with ID ${id} is already resolved`);
+      return incident;
     }
 
     incident.isResolved = true;
     incident.resolvedAt = new Date();
     const savedIncident = await this.incidentRepository.save(incident);
+    this.logger.debug(`Incident ${id} resolved.`);
 
     await this.notificationService.createResolutionNotifications(savedIncident);
     return savedIncident;
@@ -182,7 +198,10 @@ export class IncidentService {
     let resolvedCount = 0;
     for (const incident of orphanedIncidents) {
       try {
-        await this.resolveIncidentById(incident.id);
+        incident.isResolved = true;
+        incident.resolvedAt = new Date();
+        await this.incidentRepository.save(incident);
+        this.logger.log(`Incident ${incident.id} auto-resolved.`);
         resolvedCount++;
       } catch (error) {
         this.logger.error(`Failed to auto-resolve incident ${incident.id}`, error);

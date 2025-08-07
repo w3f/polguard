@@ -7,7 +7,7 @@ The API service serves as the central control point for the Monitoring Platform,
 - **Incident Management**: Stores, tracks, and manages incidents
 - **Configuration Management**: Provides centralized monitoring configuration
 - **Notification Coordination**: Schedules and manages notification delivery
-- **Persistence**: Stores incidents and their states in a database
+- **Persistence**: Stores incidents, their states, and last processed block information for different chains in a database
 - **Scheduled Tasks**: Performs periodic maintenance tasks
 
 ## REST API Endpoints
@@ -25,6 +25,11 @@ The API service serves as the central control point for the Monitoring Platform,
 
 - `GET /monitoring-config/groups`: Get monitoring groups
 - `GET /monitoring-config/accounts`: Get accounts for monitoring
+
+### Last Processed Block Management
+
+- `GET /last-block/:chainId`: Get last processed block for a chain
+- `POST /last-block`: Update last processed block for a chain
 
 ### Health and Metrics
 

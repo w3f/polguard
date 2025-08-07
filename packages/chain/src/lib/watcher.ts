@@ -14,6 +14,7 @@ import {
   MonitoringConfigClient,
   Monitor,
   ChainApiClient,
+  LastBlockClient,
 } from '@w3f/monitoring-types';
 import {
   IdentityMonitor,
@@ -68,6 +69,7 @@ export class ChainWatcher {
   constructor(
     private logger: Logger,
     private monitoringConfigClient: MonitoringConfigClient,
+    private lastBlockClient: LastBlockClient,
     private api: ChainApiClient,
     private incidents: IncidentHandlerClient,
     private store: KeyValueStorageClient,
@@ -174,17 +176,27 @@ export class ChainWatcher {
    * @param startBlock Optional starting block number
    */
   private async startBlockProcessingLoop(startBlock?: number): Promise<void> {
-    const lastProcessedBlock = await this.store.get<number>('last_processed_block');
-    // Restarting may reprocess the same block, but this avoids unresolved edge cases
+    const lastProcessedBlock = await this.lastBlockClient.getLastBlock(this.chainProps.chain);
+    // Priority: startBlock from config YAML > API service lastProcessedBlock > latest chain block
     let nextBlockToProcess = startBlock ?? lastProcessedBlock ?? this.latestBlockNumber;
     let lastConfigRefreshTime = Date.now();
 
     while (this.isRunning) {
+      // At the moment we store this key only for prometheus metrics service
+      await this.store.set('last_processed_block', nextBlockToProcess - 1);
+
       const now = Date.now();
+
+      // Periodic tasks: refresh config and checkpoint last processed block
       if (now - lastConfigRefreshTime >= this.configRefreshIntervalMs) {
         await this.initializeMonitors(false);
+        if (nextBlockToProcess > 0) {
+          this.logger.debug(`Setting the last block to: ${nextBlockToProcess - 1}`);
+          await this.lastBlockClient.setLastBlock(this.chainProps.chain, nextBlockToProcess - 1);
+        }
         lastConfigRefreshTime = now;
       }
+
       if (this.monitors.length === 0) {
         await new Promise(resolve => setTimeout(resolve, 5000));
         continue;
@@ -228,8 +240,6 @@ export class ChainWatcher {
       const origin = extrinsic.signer.toString();
       await this.traverseCallTree(blockNumber, extrinsic.method, origin, extrinsicIndex);
     }
-
-    await this.store.set('last_processed_block', blockNumber);
   }
 
   /**

@@ -156,6 +156,8 @@ export class TestRunner {
       const watcher = new ChainWatcher(
         logger,
         { getMonitoringGroups: async () => [group] },
+        { getLastBlock: async () => null,
+          setLastBlock: async () => null},
         api,
         incidentHandler,
         storage,

@@ -10,6 +10,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { MonitoringConfigModule } from './monitoring-config/monitoring-config.module';
+import { LastBlockModule } from './last-block/last-block.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { MonitoringConfigModule } from './monitoring-config/monitoring-config.mo
     HealthModule,
     MetricsModule,
     MonitoringConfigModule,
+    LastBlockModule,
   ],
 })
 export class AppModule {}

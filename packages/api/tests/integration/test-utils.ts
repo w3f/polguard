@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as JSONbig from 'json-bigint';
 import { Incident } from '../../src/database/incident.entity';
 import { Notification } from '../../src/database/notification.entity';
+import { LastBlock } from '../../src/database/last-block.entity';
 
 const workerId = process.env.JEST_WORKER_ID ?? '0';          // "0" when runInBand
 export const dbFile = path.join(process.cwd(), `test-${workerId}.sqlite`);
@@ -31,7 +32,7 @@ const SQLITE_TEST_CONFIG = {
   dropSchema: true,
   synchronize: true,
   keepConnectionAlive: true,
-  entities: [Incident, Notification],
+  entities: [Incident, Notification, LastBlock],
   namingStrategy: new SnakeNamingStrategy(),
   extra: { pragmas: ['foreign_keys=ON'] },
 };

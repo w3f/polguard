@@ -3,7 +3,6 @@ import { MetricsService } from './metrics.service';
 import { ConfigModule } from '../config/config.module';
 import { ConfigService } from '../config/config.service';
 import { MetricsController } from './metrics.controller';
-import { StorageModule } from '../storage/storage.module';
 import { StorageService } from '../storage/storage.service';
 
 @Module({})
@@ -11,7 +10,7 @@ export class MetricsModule {
   static forRootAsync(): DynamicModule {
     return {
       module: MetricsModule,
-      imports: [ConfigModule, StorageModule.forRootAsync()],
+      imports: [ConfigModule],
       controllers: [MetricsController],
       providers: [
         {

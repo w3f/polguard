@@ -103,6 +103,8 @@ chain:
         createIncident: /incidents
         resolveIncident: /incidents/:id/resolve
         getConfig: /monitoring-config/groups
+        getLastBlock: /last-block/:chain
+        setLastBlock: /last-block
     environment: test
     logging:
       level: debug
