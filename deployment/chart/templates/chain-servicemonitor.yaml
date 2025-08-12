@@ -1,0 +1,8 @@
+{{- if $.Values.serviceMonitor.enabled }}
+{{- range $chainName, $_chain := $.Values.chainServices }}
+
+{{ $context := dict "name" $chainName "global" $ }}
+{{ include "foundation.web3.mp.servicemonitor" $context }}
+
+{{- end }}
+{{- end }}

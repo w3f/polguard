@@ -43,7 +43,9 @@ runE2ETest();
 async function waitForChainBlock(targetBlock: number): Promise<void> {
   while (true) {
     try {
+      console.log('Getting metrics...');
       const response = await axios.get(`${config.chain.url}/metrics`);
+      console.log('Got metrics response.');
       const blockMatch = response.data.match(/mp_chain_watcher_block_height{[^}]*} (\d+)/);
       
       if (blockMatch) {
@@ -54,7 +56,8 @@ async function waitForChainBlock(targetBlock: number): Promise<void> {
         console.log('No block metric found in metrics response');
       }
     } catch (error) {
-      console.warn('Error checking chain metrics:', String(error));
+      console.warn('WARN: Error checking chain metrics:', String(error));
+      console.log('Will retry to get metrics.');
     }
     await sleep(5_000);
   }

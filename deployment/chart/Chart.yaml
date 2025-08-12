@@ -1,12 +1,12 @@
 apiVersion: v2
-name: monitoring
-description: Monitoring Platform - single-replica Deployment
+
+name: monitoring-platform
+description: An application stack that allows monitoring of Polkadot and Kusama.
+
 type: application
-version: 1.0.2
-appVersion: 1.0.0
+version: 1.1.0
 
 dependencies:
   - name: common
     repository: https://charts.bitnami.com/bitnami
     version: ">=2.0.0"
-    type: library

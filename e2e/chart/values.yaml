@@ -1,151 +1,143 @@
+
+# ------------------------------------ configs for the monitoring-service subchart -------------------------------------
+
+
+# values under the "monitoring:" key will be applied to the monitoring-platform subchart
+# n.b. we alias monitoring-platform to monitoring as helm prefers camelCase values and monitoring-platform includes a dash
+monitoring:
+
+  # global stuff
+  fullnameOverride: "e2e" # used to create consistently named resources from the monitoring-platform subchart
+
+  # chain stuff
+  chainServices:
+    chain: # this will create a single chain service called "e2e-chain"
+      config:
+        chain: "Polkadot"
+        # Target Event is at block 25700136
+        startBlock: "25700135"
+        rpc:
+          url: "wss://rpc-polkadot.luckyfriday.io"
+        monitoringApi:
+          baseUrl: "http://e2e-api:80"
+          endpoints:
+            createIncident: "/incidents"
+            resolveIncident: "/incidents/:id/resolve"
+            getConfig: "/monitoring-config/groups"
+            getLastBlock: "/last-block/:chain"
+            setLastBlock: "/last-block"
+        environment: "test"
+        logging:
+          level: "debug"
+      secrets: {}
+      containerArgs: [ "start:chain" ]
+  chainInitContainers:
+    - name: "wait-for-api"
+      image: "busybox:1.28"
+      command: ['sh', '-c', 'until nc -z e2e-api 80; do echo waiting for api; sleep 2; done;']
+
+  # api stuff
+  apiService:
+    config:
+      database:
+        host: "postgresql"
+        port: 5432
+        username: "postgres"
+        password: "postgres"
+        database: "monitoring"
+      notificationApi:
+        matrix:
+          url: "http://e2e-matrix:80/notifications"
+      monitoringConfigSources:
+        - name: "gitlab"
+          # E2E Test project
+          url: "https://gitlab.w3f.tech/api/v4/projects/101/repository/files/accounts.yaml/raw?ref=main"
+          # authToken is provided via GITLAB_TOKEN environment variable
+      environment: "test"
+      logging:
+        level: "debug"
+    secrets:
+      GITLAB_TOKEN: "BAD_TOKEN"
+    containerArgs: ["start:api"] # not explicitly required but added or consistency
+  apiInitContainers:
+    - name: "wait-for-postgresql"
+      image: "busybox:1.28"
+      command: [ 'sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;' ]
+
+  # matrix stuff
+  matrixService:
+    config:
+      matrix:
+        url: "https://matrix.web3.foundation"
+        userId: "@cibot:web3.foundation"
+        tokenAuth:
+          deviceId: "BAD_DEVICE_ID"
+        # accessToken is provided via MATRIX_TOKEN environment variable
+        rooms:
+          # MonitoringPlatformCI non-encrypted room
+          - id: "!qheQMilERwmQosvZnI:web3.foundation"
+        logging:
+          level: "warn"
+      monitoringApi:
+        baseUrl: "http://e2e-api:80"
+        endpoints:
+          getIncidents: "/incidents"
+          getIncident: "/incidents/:id"
+          acknowledgeIncident: "/incidents/:id/acknowledge"
+          getAccounts: "/monitoring-config/accounts"
+      environment: "test"
+      logging:
+        level: "debug"
+    secrets:
+      MATRIX_TOKEN: "BAD_TOKEN" # this should match the value provided for /secrets.MATRIX_TOKEN (below)
+    containerArgs: ["start:matrix"] # not explicitly required but added or consistency
+  matrixInitContainers:
+    - name: "wait-for-api"
+      image: "busybox:1.28"
+      command: [ 'sh', '-c', 'until nc -z e2e-api 80; do echo waiting for api; sleep 2; done;' ]
+
+# --------------------------------------- configs for parent the e2e test chart ----------------------------------------
+
 tests:
   image:
-    repository: web3f/monitoring-platform-e2e
-    tag: latest
-    pullPolicy: IfNotPresent
+    repository: "web3f/monitoring-platform-e2e"
+    tag: "latest"
+    pullPolicy: "IfNotPresent"
   config:
     timeoutSeconds: 120
     api:
-      url: http://api:3000
+      url: "http://e2e-api:80"
       incident:
-        handlerType: TransferEgressEvent
+        handlerType: "TransferEgressEvent"
     chain:
-      url: http://chain:3000
+      url: "http://e2e-chain:80"
       targetBlock: 25700136
     matrix:
-      homeserver: https://matrix.web3.foundation
+      homeserver: "https://matrix.web3.foundation"
       # MonitoringPlatformCI non-encrypted room
       roomId: "!qheQMilERwmQosvZnI:web3.foundation"
       userId: "@cibot:web3.foundation"
       tokenAuth:
-        deviceId: YWSWHPBARX
+        deviceId: "BAD_DEVICE_ID_IN_TESTS"
       # accessToken is provided via MATRIX_TOKEN environment variable
       messagePattern: "sent 11.8985 DOT"
 
-# Secrets configuration
+# Secrets configuration for the test runner pod
 secrets:
-  MATRIX_TOKEN: ""
+  MATRIX_TOKEN: "BAD_TOKEN_IN_TEST_RUNER" # this should match the value provided for /monitoring.notificationService.secrets.MATRIX_TOKEN
 
 postgresql:
   auth:
     enablePostgresUser: true
-    postgresPassword: postgres
-    database: monitoring
+    postgresPassword: "postgres"
+    database: "monitoring"
   primary:
     persistence:
       enabled: false
     resources:
       requests:
-        cpu: 100m
-        memory: 128Mi
+        cpu: "100m"
+        memory: "128Mi"
       limits:
-        cpu: 500m
-        memory: 256Mi
-
-# API service configuration
-api:
-  imageTag: latest
-  containerArgs: ["start:api"]
-  initContainers:
-    - name: wait-for-postgresql
-      image: busybox:1.28
-      command: ['sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;']
-  service:
-    port: 3000
-  mountPaths:
-    config: /app/packages/api/config
-  config:
-    database:
-      host: postgresql
-      port: 5432
-      username: postgres
-      password: postgres
-      database: monitoring
-    notificationApi:
-      matrix:
-        url: http://matrix:3000/notifications
-    monitoringConfigSources:
-      - name: gitlab
-        # E2E Test project
-        url: https://gitlab.w3f.tech/api/v4/projects/101/repository/files/accounts.yaml/raw?ref=main
-        # authToken is provided via GITLAB_TOKEN environment variable
-    environment: test
-    logging:
-      level: debug
-  secrets:
-    GITLAB_TOKEN: ""
-
-# Chain service configuration
-chain:
-  imageTag: latest
-  containerArgs: ["start:chain"]
-  initContainers:
-    - name: wait-for-api
-      image: busybox:1.28
-      command: ['sh', '-c', 'until nc -z api 3000; do echo waiting for api; sleep 2; done;']
-  service:
-    port: 3000
-  persistence:
-    enabled: true
-    size: 50Mi
-  mountPaths:
-    config: /app/packages/chain/config
-    data: /app/packages/chain/data
-  config:
-    chain: Polkadot
-    # Target Event is at block 25700136
-    startBlock: 25700135
-    rpc: 
-      url: wss://rpc-polkadot.luckyfriday.io
-    monitoringApi:
-      baseUrl: http://api:3000
-      endpoints:
-        createIncident: /incidents
-        resolveIncident: /incidents/:id/resolve
-        getConfig: /monitoring-config/groups
-        getLastBlock: /last-block/:chain
-        setLastBlock: /last-block
-    environment: test
-    logging:
-      level: debug
-
-# Matrix service configuration
-matrix:
-  imageTag: latest
-  containerArgs: ["start:matrix"]
-  initContainers:
-    - name: wait-for-api
-      image: busybox:1.28
-      command: ['sh', '-c', 'until nc -z api 3000; do echo waiting for api; sleep 2; done;']
-  service:
-    port: 3000
-  persistence:
-    enabled: true
-    size: 50Mi
-  mountPaths:
-    config: /app/packages/matrix/config
-    data: /app/packages/matrix/matrix-storage
-  config:
-    matrix:
-      url: https://matrix.web3.foundation
-      userId: "@cibot:web3.foundation"
-      tokenAuth:
-        deviceId: YWSWHPBARX
-      # accessToken is provided via MATRIX_TOKEN environment variable
-      rooms:
-        # MonitoringPlatformCI non-encrypted room
-        - id: "!qheQMilERwmQosvZnI:web3.foundation"
-      logging:
-        level: warn
-    monitoringApi:
-      baseUrl: http://api:3000
-      endpoints:
-        getIncidents: /incidents
-        getIncident: /incidents/:id
-        acknowledgeIncident: /incidents/:id/acknowledge
-        getAccounts: /monitoring-config/accounts
-    environment: test
-    logging:
-      level: debug
-  secrets:
-    MATRIX_TOKEN: ""
+        cpu: "500m"
+        memory: "256Mi"

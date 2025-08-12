@@ -12,15 +12,7 @@ dependencies:
   - name: postgresql
     repository: https://charts.bitnami.com/bitnami
     version: "16.6.3"
-  - name: monitoring
+  - name: monitoring-platform
     repository: file://../../deployment/chart
     version: "*"
-    alias: api
-  - name: monitoring
-    repository: file://../../deployment/chart
-    version: "*"
-    alias: chain
-  - name: monitoring
-    repository: file://../../deployment/chart
-    version: "*"
-    alias: matrix
+    alias: monitoring

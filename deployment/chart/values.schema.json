@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "type": "object",
+  "properties": {
+    "image": { "$ref": "#/definitions/image" },
+    "resources": { "$ref": "#/definitions/resources" },
+    "serviceMonitor": { "$ref": "#/definitions/serviceMonitor" },
+
+    "chainServices": {
+      "type": "object",
+      "description": "Per-chain configurations. Each chain creates a new set of chain service instances.",
+      "patternProperties": {
+        "^[a-zA-Z0-9-_]+$": {
+          "allOf": [
+            { "$ref": "#/definitions/svc" },
+            { "required": [ "config", "containerArgs" ] }
+          ]
+        }
+      }
+    },
+    "chainInitContainers": { "$ref": "#/definitions/initContainers" },
+    "chainConfigMountPath": { "$ref": "#/definitions/mountPath" },
+
+    "apiService": {
+      "allOf": [
+        { "$ref": "#/definitions/svc" },
+        { "required": ["config", "containerArgs"] }
+      ]
+    },
+    "apiInitContainers": { "$ref": "#/definitions/initContainers" },
+    "apiConfigMountPath": { "$ref": "#/definitions/mountPath" },
+
+    "matrixService": {
+      "allOf": [
+        { "$ref": "#/definitions/svc" },
+        { "required": ["config", "containerArgs"] }
+      ]
+    },
+    "matrixInitContainers": { "$ref": "#/definitions/initContainers" },
+    "matrixPersistence": { "$ref": "#/definitions/persistence" },
+    "matrixConfigMountPath": { "$ref": "#/definitions/mountPath" },
+    "matrixDataMountPath": { "$ref": "#/definitions/mountPath" }
+  },
+  "required": [],
+  "definitions": {
+    "svc": {
+      "$comment": "This object configures a single service. Either an api service, a matrix service, or a chain service for a single chain.",
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of replicas for the chain service"
+        },
+        "containerArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Arguments passed to the container"
+        },
+        "secrets": {
+          "type": "object",
+          "description": "Optional secrets map"
+        },
+        "config": {
+          "type": "object",
+          "description": "Required runtime configuration"
+        },
+        "containerPort": {
+          "type": "integer",
+          "description": "Port number used by the container. The running application should listen on this port."
+        },
+        "servicePort": {
+          "type": "integer",
+          "description": "Port number exposed by the service. Other applications should send requests to this port."
+        }
+      },
+      "required": ["config"]
+    },
+    "resources": {
+      "$comment": "Resource settings applied to this service's pods.",
+      "type": "object",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "Requested CPU units"
+            },
+            "memory": {
+              "type": "string",
+              "description": "Requested memory units"
+            }
+          },
+          "required": ["cpu", "memory"]
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "Maximum allowed CPU units"
+            },
+            "memory": {
+              "type": "string",
+              "description": "Maximum allowed memory units"
+            }
+          },
+          "required": ["cpu", "memory"]
+        }
+      },
+      "required": ["requests", "limits"]
+    },
+    "persistence": {
+      "$comment": "Persistence configuration for this service's pods.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable persistent storage. If disabled, chain services will not mount persistent storage and store-related components will not be created."
+        },
+        "size": {
+          "type": "string",
+          "description": "Storage size request"
+        },
+        "accessModes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany"]
+          },
+          "description": "Kubernetes persistent volume access modes"
+        }
+      },
+      "required": ["enabled"]
+    },
+    "initContainers": {
+      "type": "array",
+      "description": "List of init containers",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the init container"
+          },
+          "image": {
+            "type": "string",
+            "description": "Docker image for the init container"
+          },
+          "command": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Command to run in the init container"
+          }
+        },
+        "required": ["name", "image"]
+      }
+    },
+    "serviceMonitor": {
+      "$comment": "Service monitor configuration",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable service monitoring"
+        },
+        "labels": {
+          "type": "object",
+          "description": "Labels for the service monitor"
+        },
+        "endpointPort": {
+          "type": "string",
+          "description": "Port name for the service monitor endpoint"
+        }
+      },
+      "required": ["enabled"]
+    },
+    "mountPath": {
+      "type": "string",
+      "description": "Mount path"
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Image repository"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["IfNotPresent", "Always", "Never"],
+          "description": "Kubernetes image pull policy"
+        },
+        "pullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of image pull secrets"
+        }
+      },
+      "required": ["repository", "tag"]
+    }
+  }
+}

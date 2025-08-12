@@ -1,44 +1,83 @@
+
+# The values in this file provide sensible default for this chart.
+# The schema used is defined by ./values.schema.json
+
+# --------------------------------- global resource settings applied to every service  ---------------------------------
+
 image:
-  repository: docker.io/web3f/monitoring-platform
-  tag: latest
-  pullPolicy: IfNotPresent
-  pullSecrets: []
+  repository: "docker.io/web3f/monitoring-platform"
+  tag: "latest"
+  pullPolicy: "IfNotPresent"
 
-service:
-  port: 3000
-
-containerArgs: ["start:chain"]
-
-# REQUIRED runtime configuration
-config: {}
-
-# Optional init containers
-initContainers: []
-
-# Optional secrets map
-secrets: {}
-
-persistence:
-  enabled: false
-  size: 100Mi
-  accessModes:
-    - ReadWriteOnce
-
-# Mount points for volumes
-mountPaths:
-  config: /app/packages/chain/config
-  data:   /app/packages/chain/data          # used only if persistence.enabled=true
-
-# Probe configuration
-probes:
-  liveness:
-    initialDelaySeconds: 30
-    periodSeconds: 10
-  readiness:
-    initialDelaySeconds: 5
-    periodSeconds: 5
+resources:
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+  limits:
+    cpu: "400m"
+    memory: "512Mi"
 
 serviceMonitor:
   enabled: false
   labels: {}
   endpointPort: http
+
+# --------------------------------------------------- chain services ---------------------------------------------------
+
+# chainServices: # each chain listed here will create a new set of chain svc instances (x replica count)
+
+chainInitContainers:
+  - name: "wait-for-api"
+    image: "busybox:1.28"
+    command: [ 'sh', '-c', 'until nc -z api 3000; do echo waiting for api; sleep 2; done;' ]
+
+chainConfigMountPath: "/app/packages/chain/config"
+
+# ---------------------------------------------------- api service -----------------------------------------------------
+
+# for the default values.yaml file, all fields MUST be provided
+apiService:
+  replicas: 1
+  containerArgs: ["start:api"]
+  secrets: {} # OPTIONAL secrets map
+  config: {}  # REQUIRED runtime configuration
+  containerPort: 3000
+  servicePort: 80
+
+apiInitContainers:
+  - name: "wait-for-api"
+    image: "busybox:1.28"
+    command: [ 'sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;' ]
+
+apiConfigMountPath: "/app/packages/api/config"
+
+# --------------------------------------------------- matrix service ---------------------------------------------------
+
+# for the default values.yaml file, all fields MUST be provided
+matrixService:
+  replicas: 1
+  containerArgs: ["start:matrix"]
+  secrets: {} # OPTIONAL secrets map
+  config: {}  # REQUIRED runtime configuration
+  containerPort: 3000
+  servicePort: 80
+
+matrixInitContainers:
+  - name: "wait-for-api"
+    image: "busybox:1.28"
+    command: [ 'sh', '-c', 'until nc -z api 80; do echo waiting for api; sleep 2; done;' ]
+
+matrixPersistence:
+  enabled: true
+  size: "200Mi"
+  accessModes:
+    - "ReadWriteOnce"
+
+matrixConfigMountPath: "/app/packages/matrix/config"
+
+matrixDataMountPath: "/app/packages/matrix/data"
+
+# ----- the following variables are not part of the schema but are still supported. they come from bitnami/common ------
+
+#fullnameOverride: "monitoring-prod"
+# (other variables may be supported)

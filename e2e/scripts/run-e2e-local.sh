@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+
+# run the e2e tests locally
+# required env vars:
+#  - GITLAB_TOKEN:      a valid token to access the CI e2e configs (currently the same as staging) in GL
+#  - MATRIX_TOKEN:      a token for a matrix session. This must currently be created manually.
+#  - MATRIX_DEVICE_ID:  a device ID for the same session that the MATRIX_TOKEN is for
+#
+# Note: MATRIX_TOKEN and MATRIX_DEVICE_ID can be created by running the matrix service locally and looking in the following dir:
+#   ${project_root}/packages/matrix/data
+#
+
+
 set -euo pipefail
 
 usage() { echo "Usage: $0 [--cleanup]"; exit 1; }
@@ -6,9 +18,16 @@ usage() { echo "Usage: $0 [--cleanup]"; exit 1; }
 CLEANUP=false
 [[ ${1:-} ]] && { [[ $1 == "--cleanup" ]] || usage; CLEANUP=true; }
 
-NAMESPACE=dev
+NAMESPACE=e2e
 RELEASE_NAME=e2e
 IMAGE_TAG=local
+
+echo "NAMESPACE=${NAMESPACE}"
+echo "RELEASE_NAME=${RELEASE_NAME}"
+echo "IMAGE_TAG=${IMAGE_TAG}"
+echo "GITLAB_TOKEN=${GITLAB_TOKEN}"
+echo "MATRIX_TOKEN=${MATRIX_TOKEN}"
+echo "MATRIX_DEVICE_ID=${MATRIX_DEVICE_ID}"
 
 command_exists() { command -v "$1" &>/dev/null; }
 
@@ -49,20 +68,15 @@ helm dependency update ./e2e/chart
 helm lint ./e2e/chart
 
 helm upgrade --install "$RELEASE_NAME" ./e2e/chart \
-  --create-namespace \
-  -n "$NAMESPACE" \
-  --set tests.image.repository=web3f/monitoring-platform-e2e \
-  --set tests.image.tag="$IMAGE_TAG" \
-  --set tests.image.pullPolicy=IfNotPresent \
-  --set api.image.tag="$IMAGE_TAG" \
-  --set api.secrets.GITLAB_TOKEN="$GITLAB_TOKEN" \
-  --set api.fullnameOverride="api" \
-  --set matrix.image.tag="$IMAGE_TAG" \
-  --set matrix.secrets.MATRIX_TOKEN="$MATRIX_TOKEN" \
-  --set matrix.fullnameOverride="matrix" \
-  --set chain.image.tag="$IMAGE_TAG" \
-  --set chain.fullnameOverride="chain" \
-  --set secrets.MATRIX_TOKEN="$MATRIX_TOKEN" \
-  --wait
+              -n "$NAMESPACE" --create-namespace \
+              --set tests.image.repository=web3f/monitoring-platform-e2e \
+              --set tests.image.tag=${IMAGE_TAG} \
+              --set monitoring.image.tag=${IMAGE_TAG} \
+              --set monitoring.apiService.secrets.GITLAB_TOKEN=${GITLAB_TOKEN} \
+              --set monitoring.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
+              --set tests.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
+              --set monitoring.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
+              --set secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
+              --wait
 
 helm test "$RELEASE_NAME" -n "$NAMESPACE"

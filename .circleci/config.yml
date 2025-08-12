@@ -96,7 +96,7 @@ jobs:
             }
             # make PATH stick for all following steps
             echo "export PATH=$HOME/.local/bin:\$PATH" >> $BASH_ENV
-      
+
       - run:
           name: Add Helm chart repos
           command: |
@@ -121,7 +121,7 @@ jobs:
 
             kind load docker-image web3f/monitoring-platform:${CIRCLE_SHA1} --name=ci
             kind load docker-image web3f/monitoring-platform-e2e:${CIRCLE_SHA1} --name=ci
-      
+
       - run:
           name: Update and build Helm chart dependencies
           command: |
@@ -129,7 +129,7 @@ jobs:
             helm dependency update e2e/chart
             helm dependency build deployment/chart
             helm dependency build e2e/chart
-      
+
       - run:
           name: Lint e2e chart
           command: helm lint e2e/chart
@@ -137,21 +137,20 @@ jobs:
       - run:
           name: Install e2e chart
           command: |
+            echo "Now installing monitoring-platform with helm. This command will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state. If this command times out, check the status of esp. the Deployments and Pods."
             kubectl create ns e2e
             helm upgrade --install $RELEASE ./e2e/chart \
               -n e2e --create-namespace \
               --set tests.image.repository=web3f/monitoring-platform-e2e \
               --set tests.image.tag=${CIRCLE_SHA1} \
-              --set api.image.tag=${CIRCLE_SHA1} \
-              --set api.fullnameOverride="api" \
-              --set chain.image.tag=${CIRCLE_SHA1} \
-              --set chain.fullnameOverride="chain" \
-              --set matrix.image.tag=${CIRCLE_SHA1} \
-              --set matrix.fullnameOverride="matrix" \
-              --set matrix.secrets.MATRIX_TOKEN=$MATRIX_TOKEN \
-              --set api.secrets.GITLAB_TOKEN=$GITLAB_TOKEN \
-              --set secrets.MATRIX_TOKEN=$MATRIX_TOKEN \
+              --set monitoring.image.tag=${CIRCLE_SHA1} \
+              --set monitoring.apiService.secrets.GITLAB_TOKEN=${GITLAB_TOKEN} \
+              --set monitoring.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
+              --set tests.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
+              --set monitoring.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
+              --set secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --wait
+          no_output_timeout: 10m
 
       - run:
           name: Execute E2E tests

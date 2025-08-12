@@ -1,0 +1,2 @@
+{{ $context := dict "name" "matrix" "svc" $.Values.matrixService "global" $ }}
+{{ include "foundation.web3.mp.configmap" $context }}
