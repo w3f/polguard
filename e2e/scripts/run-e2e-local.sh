@@ -77,6 +77,7 @@ helm upgrade --install "$RELEASE_NAME" ./e2e/chart \
               --set tests.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set monitoring.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --set secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
-              --wait
+              --wait \
+              --debug
 
 helm test "$RELEASE_NAME" -n "$NAMESPACE"

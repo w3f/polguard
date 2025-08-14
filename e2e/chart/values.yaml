@@ -9,6 +9,9 @@ monitoring:
   # global stuff
   fullnameOverride: "e2e" # used to create consistently named resources from the monitoring-platform subchart
 
+  # disable the default servicemonitors
+  serviceMonitorsEnabled: false
+
   # chain stuff
   chainServices:
     chain: # this will create a single chain service called "e2e-chain"

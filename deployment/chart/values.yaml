@@ -17,10 +17,7 @@ resources:
     cpu: "400m"
     memory: "512Mi"
 
-serviceMonitor:
-  enabled: false
-  labels: {}
-  endpointPort: http
+serviceMonitorsEnabled: true
 
 # --------------------------------------------------- chain services ---------------------------------------------------
 

@@ -1,5 +1,6 @@
 {{- range $chainName, $chain := $.Values.chainServices }}
 
+---
 {{ $context := dict "name" $chainName "svc" $chain "global" $ "kind" "chain" }}
 {{ include "foundation.web3.mp.deployment" $context }}
 

@@ -4,7 +4,7 @@ name: monitoring-platform
 description: An application stack that allows monitoring of Polkadot and Kusama.
 
 type: application
-version: 1.1.0
+version: 1.2.0
 
 dependencies:
   - name: common

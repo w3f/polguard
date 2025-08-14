@@ -9,11 +9,10 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "common.names.fullname" .global }}-{{ .name }}
-  labels:
-    {{ toYaml .global.monitorSettings.labels | nindent 4 }}
+  labels: {{ include "common.labels.standard" .global | nindent 4 }}
 spec:
   selector:
     matchLabels: {{ include "foundation.web3.mp.common.matchLabels" . | nindent 6 }}
   endpoints:
-    - port: {{ .global.monitorSettings.endpointPort }}
+    - port: http
 {{- end }}

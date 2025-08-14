@@ -4,8 +4,9 @@
   "properties": {
     "image": { "$ref": "#/definitions/image" },
     "resources": { "$ref": "#/definitions/resources" },
-    "serviceMonitor": { "$ref": "#/definitions/serviceMonitor" },
-
+    "serviceMonitorsEnabled": {
+      "type": "boolean"
+    },
     "chainServices": {
       "type": "object",
       "description": "Per-chain configurations. Each chain creates a new set of chain service instances.",
@@ -160,25 +161,6 @@
         },
         "required": ["name", "image"]
       }
-    },
-    "serviceMonitor": {
-      "$comment": "Service monitor configuration",
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Enable service monitoring"
-        },
-        "labels": {
-          "type": "object",
-          "description": "Labels for the service monitor"
-        },
-        "endpointPort": {
-          "type": "string",
-          "description": "Port name for the service monitor endpoint"
-        }
-      },
-      "required": ["enabled"]
     },
     "mountPath": {
       "type": "string",

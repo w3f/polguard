@@ -1,4 +1,4 @@
-{{- if $.Values.serviceMonitor.enabled }}
+{{- if $.Values.serviceMonitorsEnabled }}
 
 {{ $context := dict "name" "matrix" "global" $ }}
 {{ include "foundation.web3.mp.servicemonitor" $context }}
