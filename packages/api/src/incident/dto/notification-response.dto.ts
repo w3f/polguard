@@ -14,8 +14,8 @@ export class NotificationResponseDto {
   @ApiProperty()
   type: NotificationType;
 
-  @ApiProperty({ type: Number, format: 'float' })
-  repeatHours: number;
+  @ApiProperty({ required: false })
+  repeatFiringMs?: number;
 
   @ApiProperty({ required: false })
   lastSentAt?: Date;

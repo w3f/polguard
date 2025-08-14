@@ -95,9 +95,10 @@ export class ChainWatcher {
     const header = await this.api.rpc.chain.getHeader();
     this.latestBlockNumber = header.number.toNumber();
 
-    this.api.rpc.chain.subscribeFinalizedHeads(header => {
+    this.api.rpc.chain.subscribeFinalizedHeads(async header => {
       const blockNumber = header.number.toNumber();
       this.latestBlockNumber = blockNumber;
+      await this.store.set('last_on_chain_block', blockNumber);
     });
 
     this.startBlockProcessingLoop(startBlock);
@@ -182,7 +183,7 @@ export class ChainWatcher {
     let lastConfigRefreshTime = Date.now();
 
     while (this.isRunning) {
-      // At the moment we store this key only for prometheus metrics service
+      // At the moment we use store only for metrics
       await this.store.set('last_processed_block', nextBlockToProcess - 1);
 
       const now = Date.now();

@@ -27,10 +27,15 @@ async function runE2ETest() {
 
     // Wait for Matrix notification
     console.log(`Checking Matrix notifications for message pattern "${config.matrix.messagePattern}"...`);
-    
     await waitForMatrixNotification(config.matrix.roomId, config.matrix.messagePattern);
-    
     console.log('✅ Matrix notification found\n✅ All E2E tests passed successfully');
+
+    // Wait for Matrix escalation notification
+    console.log(`Checking Matrix escalation notifications for message pattern "${config.matrix.escalationMessagePattern}"...`);
+    await waitForMatrixNotification(config.matrix.escalationRoomId, config.matrix.escalationMessagePattern);
+    console.log('✅ Matrix escalation notification found');
+
+    console.log('✅ All E2E tests passed successfully');
     process.exit(0);
   } catch (error) {
     console.error('❌ E2E test failed with error:', error);

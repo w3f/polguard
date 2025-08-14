@@ -80,3 +80,16 @@ kubectl -n dev logs -l app.kubernetes.io/instance=monitoring-e2e
 # For CI tests
 kubectl -n e2e logs -l app.kubernetes.io/instance=e2e-<job-id>
 ```
+
+## Debugging KinD in CircleCI
+
+If an e2e test job fails, you can inspect the KinD cluster:
+
+1. **Rerun job with SSH** in the CircleCI UI.
+2. **Shell into the control-plane node**:
+```bash
+docker exec -it ci-control-plane bash
+crictl ps -a
+crictl pods
+crictl logs <CID>
+```

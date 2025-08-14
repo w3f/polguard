@@ -4,14 +4,16 @@ import { MessengerType } from './notification';
 export interface NotificationSettings {
   messengerType: MessengerType;
   channels: string[];
+  escalationChannels?: string[];
+  escalationTimeoutMs?: number;
   needsAck?: boolean;
-  repeatHours?: number;
+  repeatFiringMs?: number;
 }
 
 export interface NotificationChannel {
   channelId: string;
   messengerType: MessengerType;
-  repeatHours?: number;
+  repeatFiringMs?: number;
 }
 
 export interface CreateIncidentDto {
@@ -22,6 +24,8 @@ export interface CreateIncidentDto {
   groupId: string;
   handlerType: string;
   notificationChannels: NotificationChannel[];
+  escalationChannels?: NotificationChannel[];
+  escalationTimeoutMs?: number;
   needsAck?: boolean;
   isResolved?: boolean;
   idempotencyKey: string;

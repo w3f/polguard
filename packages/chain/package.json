@@ -29,7 +29,7 @@
     "@nestjs/core": "^11.0.14",
     "@nestjs/platform-express": "^11.0.14",
     "@nestjs/terminus": "^11.0.0",
-    "@polkadot/api": "^16.2.2",
+    "@polkadot/api": "^16.4.4",
     "@types/json-bigint": "^1.0.4",
     "@w3f/monitoring-types": "workspace:*",
     "axios": "^1.7.7",

@@ -53,6 +53,9 @@ monitoring:
           # E2E Test project
           url: "https://gitlab.w3f.tech/api/v4/projects/101/repository/files/accounts.yaml/raw?ref=main"
           # authToken is provided via GITLAB_TOKEN environment variable
+      crons:
+        # Every 5 seconds
+        escalations: "*/5 * * * * *"
       environment: "test"
       logging:
         level: "debug"
@@ -90,7 +93,7 @@ monitoring:
         level: "debug"
     secrets:
       MATRIX_TOKEN: "BAD_TOKEN" # this should match the value provided for /secrets.MATRIX_TOKEN (below)
-    containerArgs: ["start:matrix"] # not explicitly required but added or consistency
+    containerArgs: ["start:matrix"] # not explicitly required but added for consistency
   matrixInitContainers:
     - name: "wait-for-api"
       image: "busybox:1.28"
@@ -116,11 +119,14 @@ tests:
       homeserver: "https://matrix.web3.foundation"
       # MonitoringPlatformCI non-encrypted room
       roomId: "!qheQMilERwmQosvZnI:web3.foundation"
+      # MonitoringPlatformCI (escalation) non-encrypted room
+      escalationRoomId: "!YfPVnKvvxefYreTclH:web3.foundation"
       userId: "@cibot:web3.foundation"
       tokenAuth:
         deviceId: "BAD_DEVICE_ID_IN_TESTS"
       # accessToken is provided via MATRIX_TOKEN environment variable
       messagePattern: "sent 11.8985 DOT"
+      escalationMessagePattern: "The incident was not acknowledged"
 
 # Secrets configuration for the test runner pod
 secrets:

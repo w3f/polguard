@@ -27,7 +27,7 @@ export interface Notification {
   channelId: string;
   messengerType: string;
   type: string;
-  repeatHours: number;
+  repeatFiringMs: number;
   lastSentAt?: Date;
   isDelivered: boolean;
   message: string;

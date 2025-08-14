@@ -34,8 +34,8 @@ export class Notification {
   @Column({ type: 'simple-enum', enum: NotificationType })
   type: NotificationType;
 
-  @Column({ type: 'double precision' })
-  repeatHours: number;
+  @Column({ type: 'integer', nullable: true })
+  repeatFiringMs?: number;
 
   @Column({ nullable: true })
   lastSentAt: Date;

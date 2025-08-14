@@ -47,7 +47,7 @@ defaults:
     messengerType: Matrix
     channels: ['!roomid:matrix.org']
     needsAck: true
-    repeatHours: 24
+    repeatFiringMs: 3600
     
   monitors:
     - name: Staking
@@ -114,6 +114,20 @@ groups:
 - Currently only supports Matrix rooms
 - Must match format: `!roomid:server.name`
 - At least one channel required
+
+### Incident Escalation
+
+You can configure escalation channels and a timeout to automatically notify additional recipients if an incident requiring acknowledgment is not acknowledged in time.
+
+```yaml
+notifications:
+  messengerType: Matrix
+  channels: ['!roomid:matrix.org']
+  escalationChannels: ['!escalationroom:matrix.org']  # optional
+  escalationTimeoutMs: 3600000  # optional value in milliseconds, defaults to 1 hour
+  needsAck: true
+```
+When `needsAck` is true, escalation will trigger after `escalationTimeoutMs` unless the incident is acknowledged.
 
 ## Configuration Processing
 
@@ -234,7 +248,7 @@ groups:
       messengerType: Matrix
       channels: ['!roomid:matrix.org']
       needsAck: false
-      repeatHours: 12
+      repeatFiringMs: 604800
     accountSet: validators-set
 ```
 

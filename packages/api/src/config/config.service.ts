@@ -95,6 +95,12 @@ export class ConfigService {
           }),
         )
         .optional(),
+      crons: Joi.object({
+        escalations: Joi.string().optional(),
+        retries: Joi.string().optional(),
+        refreshConfig: Joi.string().optional(),
+        autoResolve: Joi.string().optional(),
+      }).optional(),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -128,6 +134,10 @@ export class ConfigService {
   getMonitoringConfigSources() {
     return this.config.monitoringConfigSources || [];
   }
+
+  getCronsConfig() {
+    return this.config.crons || {};
+  }
 }
 
 interface AppConfig {
@@ -156,4 +166,10 @@ interface AppConfig {
     url: string;
     authToken?: string;
   }[];
+  crons?: {
+    escalations?: string;
+    retries?: string;
+    refreshConfig?: string;
+    autoResolve?: string;
+  };
 }

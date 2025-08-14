@@ -18,12 +18,14 @@ export interface E2EConfig {
   matrix: {
     homeserver: string;
     roomId: string;
+    escalationRoomId: string;
     userId: string;
     tokenAuth: {
       deviceId: string;
       accessToken?: string;
     };
     messagePattern: string;
+    escalationMessagePattern: string;
   };
 }
 
@@ -75,6 +77,7 @@ export class ConfigService {
       matrix: Joi.object({
         homeserver: Joi.string().required(),
         roomId: Joi.string().required(),
+        escalationRoomId: Joi.string().required(),
         userId: Joi.string().required(),
         tokenAuth: Joi.object({
           deviceId: Joi.string().required(),
@@ -82,6 +85,7 @@ export class ConfigService {
         }).required(),
         messageLimit: Joi.number().default(20),
         messagePattern: Joi.string().required(),
+        escalationMessagePattern: Joi.string().required(),
       }).required(),
     });
 

@@ -71,6 +71,25 @@ export class CreateIncidentDto {
   notificationChannels: NotificationChannelDto[];
 
   @ApiProperty({
+    description: 'Escalation channels for this incident',
+    type: [NotificationChannelDto],
+    required: false,
+  })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => NotificationChannelDto)
+  escalationChannels?: NotificationChannelDto[];
+
+  @ApiProperty({
+    description: 'Escalation timeout in milliseconds (after which escalation notifications will be sent if unacked)',
+    example: 900000, // 15 minutes
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  escalationTimeoutMs?: number;
+
+  @ApiProperty({
     description: 'Whether the incident requires acknowledgment',
     default: false,
     required: false,

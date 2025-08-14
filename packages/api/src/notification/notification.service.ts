@@ -1,11 +1,11 @@
 import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository, LessThan, Not, IsNull } from 'typeorm';
 import { MessageType, MessengerType, NotificationType, MESSENGER_STYLE_MAP } from '@w3f/monitoring-types';
 import { Incident } from '../database/incident.entity';
 import { Notification } from '../database/notification.entity';
-import { MessageStyler } from './message-styler';
+import { MessageRenderer } from './message-renderer';
 import { ConfigService } from '../config/config.service';
 import { firstValueFrom } from 'rxjs';
 
@@ -27,31 +27,55 @@ export class NotificationService {
    */
   async createNotifications(
     incident: Incident,
-    channels: { channelId: string; messengerType: MessengerType; repeatHours: number }[],
+    channels: { channelId: string; messengerType: MessengerType; repeatFiringMs?: number }[],
     type: NotificationType,
   ): Promise<void> {
     const notifications = channels.map(channel => {
-      const messageType =
-        type === NotificationType.Alert
-          ? incident.isResolved
-            ? MessageType.OneTime
-            : MessageType.Firing
-          : MessageType.Resolved;
+      const lines = incident.message.split('\n').filter(line => line.trim() !== '');
+      const title = lines[0] || '';
+      const details = lines.slice(1) || [];
+
+      let messageType: MessageType;
+      let preTitle: string | undefined;
+
+      switch (type) {
+        case NotificationType.Alert:
+          messageType = incident.isResolved ? MessageType.OneTime : MessageType.Firing;
+          break;
+        case NotificationType.Resolution:
+          messageType = MessageType.Resolved;
+          break;
+        case NotificationType.Escalation:
+          messageType = MessageType.Escalation;
+          const timeoutInMinutes = Math.floor(incident.escalationTimeoutMs / 60000);
+          const destinations =
+            incident.notificationChannels
+              ?.map(c => {
+                if (c.messengerType === MessengerType.Matrix) {
+                  return `https://matrix.to/#/${c.channelId}`;
+                }
+                return c.channelId; // Fallback for other types
+              })
+              .join(', ') || 'N/A';
+          preTitle = `Escalation: The incident was not acknowledged within ${timeoutInMinutes} minutes in any of the following rooms: ${destinations}`;
+          break;
+      }
 
       const styleType = MESSENGER_STYLE_MAP[channel.messengerType];
-      const styledMessage = MessageStyler.parseAndStyle(
-        incident.message,
+      const styledMessage = MessageRenderer.format(styleType, {
+        title,
+        details,
+        preTitle,
         messageType,
-        styleType,
-        incident.id,
-        incident.needsAck,
-      );
+        incidentId: incident.id,
+        needsAck: incident.needsAck,
+      });
 
       return {
         incident,
         channelId: channel.channelId,
         messengerType: channel.messengerType,
-        repeatHours: channel.repeatHours,
+        repeatFiringMs: channel.repeatFiringMs,
         type,
         message: styledMessage,
       };
@@ -78,7 +102,7 @@ export class NotificationService {
     const channels = alertNotifications.map(alert => ({
       channelId: alert.channelId,
       messengerType: alert.messengerType,
-      repeatHours: alert.repeatHours,
+      repeatFiringMs: alert.repeatFiringMs,
     }));
 
     await this.createNotifications(incident, channels, NotificationType.Resolution);
@@ -149,12 +173,13 @@ export class NotificationService {
         // Never delivered successfully
         { isDelivered: false },
 
-        // Needs to be repeated based on interval
+        // Firing unresolved incidents which need to be repeated based on interval
         {
           isDelivered: true,
           lastSentAt: LessThan(
             new Date(now.getTime() - 60 * 1000), // At least 1 minute ago (safety buffer)
           ),
+          repeatFiringMs: Not(IsNull()),
           // Only repeat for unresolved incidents
           incident: {
             isResolved: false,
@@ -167,7 +192,7 @@ export class NotificationService {
     for (const notification of pendingNotifications) {
       // For repeating notifications, check if the full interval has passed
       if (notification.isDelivered && notification.lastSentAt) {
-        const nextSendTime = new Date(notification.lastSentAt.getTime() + notification.repeatHours * 60 * 60 * 1000);
+        const nextSendTime = new Date(notification.lastSentAt.getTime() + notification.repeatFiringMs);
 
         if (nextSendTime > now) {
           continue;

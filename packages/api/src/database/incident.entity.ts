@@ -8,7 +8,7 @@ import {
   OneToMany,
   BeforeInsert,
 } from 'typeorm';
-import { Chain } from '@w3f/monitoring-types';
+import { Chain, MessengerType } from '@w3f/monitoring-types';
 import type { Notification } from './notification.entity';
 import { generateIncidentId } from './id-generator';
 
@@ -46,6 +46,15 @@ export class Incident {
   @Column()
   idempotencyKey: string;
 
+  @Column({ type: 'simple-json' })
+  notificationChannels: { channelId: string; messengerType: MessengerType; repeatFiringMs?: number }[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  escalationChannels?: { channelId: string; messengerType: MessengerType }[];
+
+  @Column({ type: 'integer', nullable: true })
+  escalationTimeoutMs?: number;
+
   @Column({ default: false })
   needsAck: boolean;
 
@@ -63,6 +72,12 @@ export class Incident {
 
   @Column({ nullable: true })
   resolvedAt: Date;
+
+  @Column({ default: false })
+  isEscalated: boolean;
+
+  @Column({ nullable: true })
+  escalatedAt: Date;
 
   @CreateDateColumn()
   createdAt: Date;

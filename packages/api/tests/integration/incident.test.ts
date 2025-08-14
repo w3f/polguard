@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { Chain, MessengerType } from '@w3f/monitoring-types';
+import { Chain, MessengerType, NotificationType } from '@w3f/monitoring-types';
 import { DataSource } from 'typeorm';
 import { cleanupTestDatabase, createTestApp } from './test-utils';
 import { Incident } from '../../src/database/incident.entity';
@@ -17,7 +17,9 @@ describe('Incident API (integration)', () => {
   const TEST_ACCOUNT = '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5';
   const TEST_GROUP_ID = 'validators-default';
   const TEST_CHANNEL_ID = '!testroom:matrix.org';
+  const TEST_ESCALATION_CHANNEL_ID = '!escalation:matrix.org';
   const TEST_HANDLER_TYPE = 'SlashReportedEvent';
+  const TEST_ESCALATION_TIMEOUT = 500;
 
   const createIncidentDto = (overrides: Partial<CreateIncidentDto> = {}): CreateIncidentDto => ({
     message: 'Test incident',
@@ -29,7 +31,7 @@ describe('Incident API (integration)', () => {
     notificationChannels: [{
       channelId: TEST_CHANNEL_ID,
       messengerType: MessengerType.Matrix,
-      repeatHours: 1.0,
+      repeatFiringMs: 3600,
     }],
     needsAck: false,
     isResolved: false,
@@ -340,6 +342,73 @@ describe('Incident API (integration)', () => {
     it('returns 404 for non-existent incident', async () => {
       await resolveIncident('non-existent-id').expect(404);
     });
+  });
+
+  describe('Escalation functionality', () => {
+    it('creates incident with escalation channels successfully', async () => {
+      const response = await postIncident(createIncidentDto({
+        needsAck: true,
+        escalationChannels: [{
+          channelId: TEST_ESCALATION_CHANNEL_ID,
+          messengerType: MessengerType.Matrix,
+        }],
+        escalationTimeoutMs: TEST_ESCALATION_TIMEOUT,
+      })).expect(201);
+
+      expect(response.body.escalationChannels[0]).toMatchObject({
+        channelId: TEST_ESCALATION_CHANNEL_ID,
+        messengerType: MessengerType.Matrix,
+      });
+    });
+
+    it('escalates unacknowledged incidents after timeout', async () => {
+      const incident = await postIncident(createIncidentDto({
+        needsAck: true,
+        escalationChannels: [{
+          channelId: TEST_ESCALATION_CHANNEL_ID,
+          messengerType: MessengerType.Matrix,
+        }],
+        escalationTimeoutMs: TEST_ESCALATION_TIMEOUT,
+      })).expect(201);
+      const incidentService = app.get(IncidentService);
+
+      await new Promise(resolve => setTimeout(resolve, TEST_ESCALATION_TIMEOUT + 500));
+      await incidentService.escalateIncidents();
+
+      const notifications = await dataSource.getRepository(Notification).find({
+        where: { incident: { id: incident.body.id } }
+      });
+
+      const escalationNotifications = notifications.filter(n => n.type === NotificationType.Escalation);
+      expect(escalationNotifications).toHaveLength(1);
+      expect(escalationNotifications[0].channelId).toBe(TEST_ESCALATION_CHANNEL_ID);
+    }, TEST_ESCALATION_TIMEOUT + 1000);
+
+    it('does not send escalation twice for the same incident', async () => {
+      const incident = await postIncident(createIncidentDto({
+        needsAck: true,
+        escalationChannels: [{
+          channelId: TEST_ESCALATION_CHANNEL_ID,
+          messengerType: MessengerType.Matrix,
+        }],
+        escalationTimeoutMs: TEST_ESCALATION_TIMEOUT,
+      })).expect(201);
+      const incidentService = app.get(IncidentService);
+
+      // Wait for escalation timeout and escalate first time
+      await new Promise(resolve => setTimeout(resolve, TEST_ESCALATION_TIMEOUT + 500));
+      await incidentService.escalateIncidents();
+      // Try to escalate again
+      await incidentService.escalateIncidents();
+
+      const notifications = await dataSource.getRepository(Notification).find({
+        where: { incident: { id: incident.body.id } }
+      });
+
+      const escalationNotifications = notifications.filter(n => n.type === NotificationType.Escalation);
+      expect(escalationNotifications).toHaveLength(1);
+      expect(escalationNotifications[0].channelId).toBe(TEST_ESCALATION_CHANNEL_ID);
+    }, TEST_ESCALATION_TIMEOUT + 1500);
   });
 
   describe('Auto-resolve orphaned incidents', () => {

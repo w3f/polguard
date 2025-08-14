@@ -28,7 +28,7 @@ describe('ConfigProcessor', () => {
         messengerType: MessengerType.Matrix,
         channels: ['!defaultroom:matrix.org'],
         needsAck: true,
-        repeatHours: 24,
+        repeatFiringMs: 3600,
       });
 
       // Test group-level annotations

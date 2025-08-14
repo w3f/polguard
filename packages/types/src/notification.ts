@@ -2,6 +2,7 @@ export enum MessageType {
   Firing = 'Firing',
   Resolved = 'Resolved',
   OneTime = 'Event',
+  Escalation = 'Escalation',
 }
 
 export enum MessengerType {
@@ -13,10 +14,22 @@ export enum MessengerType {
 export enum NotificationType {
   Alert = 'Alert',
   Resolution = 'Resolution',
+  Escalation = 'Escalation',
 }
 
-export const MESSENGER_STYLE_MAP: Record<MessengerType, 'html' | 'plain' | 'markdown'> = {
-  [MessengerType.Matrix]: 'html',
-  [MessengerType.Slack]: 'markdown',
-  [MessengerType.Telegram]: 'html',
+export enum Style { Html='html', Markdown='markdown', Plain='plain' }
+
+export const MESSENGER_STYLE_MAP: Record<MessengerType, Style> = {
+  [MessengerType.Matrix]: Style.Html,
+  [MessengerType.Slack]: Style.Markdown,
+  [MessengerType.Telegram]: Style.Html,
 };
+
+export interface MessagePayload {
+  title: string;
+  preTitle?: string;
+  details: string[];
+  messageType: MessageType;
+  incidentId: string;
+  needsAck?: boolean;
+}

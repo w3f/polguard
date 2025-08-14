@@ -111,7 +111,10 @@ export class IncidentService {
     }
 
     const { notificationChannels, ...incidentData } = dto;
-    const incident = this.incidentRepository.create(incidentData);
+    const incident = this.incidentRepository.create({
+      ...incidentData,
+      notificationChannels,
+    });
     if (incident.isResolved) {
       incident.resolvedAt = new Date();
     }
@@ -167,6 +170,31 @@ export class IncidentService {
 
     await this.notificationService.createResolutionNotifications(savedIncident);
     return savedIncident;
+  }
+
+  async escalateIncidents(): Promise<void> {
+    const incidents = await this.incidentRepository.find({
+      where: {
+        needsAck: true,
+        isAcked: false,
+        isEscalated: false,
+      },
+    });
+
+    // Time check in Node for Postgres + SQLite compatibility (SQLite is used in integration tests).
+    // The syntax is different between Postgres and SQLite.
+    const now = Date.now();
+    for (const i of incidents) {
+      if (!i.escalationTimeoutMs || !i.escalationChannels) continue;
+      if (now < i.createdAt.getTime() + i.escalationTimeoutMs) continue;
+      const channels = Array.isArray(i.escalationChannels) ? i.escalationChannels : [];
+      if (!channels.length) continue;
+
+      i.isEscalated = true;
+      i.escalatedAt = new Date();
+      await this.incidentRepository.save(i);
+      await this.notificationService.createNotifications(i, channels, NotificationType.Escalation);
+    }
   }
 
   /**

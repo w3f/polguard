@@ -1,0 +1,121 @@
+import { MessageRenderer } from '../../../src/notification/message-renderer';
+import { MessageType, Style, MessagePayload } from '@w3f/monitoring-types';
+
+describe('MessageRenderer', () => {
+  const incidentId = 'GEB7BN648733';
+
+  const createMessageParts = (
+    title: string,
+    details: string[] = [],
+    messageType: MessageType = MessageType.OneTime,
+    needsAck = false,
+    preTitle?: string,
+  ): MessagePayload => {
+    return { title, details, messageType, incidentId, needsAck, preTitle };
+  };
+
+  describe('Style Type Styling', () => {
+    const parts = createMessageParts('Test Message', ['Detail 1', 'Detail 2']);
+
+    it('should style HTML messages correctly', () => {
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('<ul>');
+      expect(result).toContain('<li>Detail 1</li>');
+      expect(result).toContain('<li>Detail 2</li>');
+      expect(result).toContain('</ul>');
+      expect(result).toContain('ℹ️');
+    });
+
+    it('should style Markdown messages correctly', () => {
+      const result = MessageRenderer.format(Style.Markdown, parts);
+      expect(result).toContain(`**${incidentId}:**`);
+      expect(result).toContain('- Detail 1');
+      expect(result).toContain('- Detail 2');
+      expect(result).toContain('ℹ️');
+    });
+
+    it('should style Plain text messages correctly', () => {
+      const result = MessageRenderer.format(Style.Plain, parts);
+      expect(result).not.toContain('**');
+      expect(result).toContain('Detail 1');
+      expect(result).toContain('Detail 2');
+      expect(result).toContain('ℹ️');
+      expect(result).toContain(`${incidentId}:`);
+    });
+  });
+
+  describe('Message Type Styling', () => {
+    it('should style FIRING messages correctly', () => {
+      const parts = createMessageParts('Test Message', [], MessageType.Firing);
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('🔥');
+    });
+
+    it('should style RESOLVED messages correctly', () => {
+      const parts = createMessageParts('Test Message', [], MessageType.Resolved);
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('✅');
+    });
+
+    it('should style OneTime messages correctly', () => {
+      const parts = createMessageParts('Test Message', [], MessageType.OneTime);
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('ℹ️');
+    });
+  });
+
+  describe('Message Composition', () => {
+    it('should handle empty details', () => {
+      const parts = createMessageParts('Test Title');
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('ℹ️');
+      expect(result).toContain('Test Title');
+      expect(result).not.toContain('<ul>');
+    });
+
+    it('should add ack badge when needsAck is true', () => {
+      const parts = createMessageParts('Test Title', [], MessageType.Firing, true);
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('❗');
+    });
+
+    it('should include preTitle when provided', () => {
+      const parts = createMessageParts('Test Title', [], MessageType.Firing, false, 'This is a pre-title');
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('<p>This is a pre-title</p>');
+    });
+  });
+
+  describe('Link Styling', () => {
+    it('should style simple links correctly', () => {
+      const parts = createMessageParts('[Simple Link](https://example.com)');
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('<a href="https://example.com">Simple Link</a>');
+    });
+
+    it('should handle links with nested brackets', () => {
+      const parts = createMessageParts('[Staker Space [3]](https://polkadot.subscan.io/account/123)');
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('<a href="https://polkadot.subscan.io/account/123">Staker Space [3]</a>');
+    });
+
+    it('should handle links in message details', () => {
+      const parts = createMessageParts('Title', [
+        'Normal text',
+        '[Simple Link](https://example.com)',
+        '[Nested [Bracket] Link](https://test.com)',
+      ]);
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('<li>Normal text</li>');
+      expect(result).toContain('<li><a href="https://example.com">Simple Link</a></li>');
+      expect(result).toContain('<li><a href="https://test.com">Nested [Bracket] Link</a></li>');
+    });
+
+    it('should handle multiple links in single line', () => {
+      const parts = createMessageParts('Check [Link1](https://one.com) and [Link2 [2]](https://two.com)');
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('<a href="https://one.com">Link1</a>');
+      expect(result).toContain('<a href="https://two.com">Link2 [2]</a>');
+    });
+  });
+});

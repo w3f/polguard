@@ -42,6 +42,7 @@ The API service performs several scheduled tasks:
 
 - **Notification Retries**: Retries failed notifications
 - **Configuration Refresh**: Refreshes monitoring configurations
+- **Incident Escalations**: Checks for unacknowledged incidents and sends escalation notifications when due
 - **Orphaned Incident Resolution**: Auto-resolves incidents for accounts no longer in monitoring configuration
 
 ## Configuration

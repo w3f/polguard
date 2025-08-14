@@ -27,7 +27,7 @@ defaults:
     messengerType: Matrix
     channels: ['!defaultroom:matrix.org']
     needsAck: true
-    repeatHours: 24
+    repeatFiringMs: 3600
   chains:
     - Polkadot
     - Kusama
@@ -51,7 +51,7 @@ groups:
       messengerType: Matrix
       channels: ['!customroom:matrix.org']
       needsAck: false
-      repeatHours: 12
+      repeatFiringMs: 3600
     monitors:
       - name: Staking
         commission: 7

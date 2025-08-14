@@ -8,7 +8,6 @@ import {
   IncidentApiClient,
   CreateIncidentDto,
   IncidentKey,
-  NotificationChannel,
 } from '@w3f/monitoring-types';
 
 /**
@@ -64,14 +63,8 @@ export class IncidentHandler implements IncidentHandlerClient {
     blockNumber: number,
     isResolved: boolean = false,
   ): Promise<string | null> {
-    // Create notification channels from notification settings
-    const notificationChannels: NotificationChannel[] = notifications.channels.map(channel => ({
-      channelId: channel,
-      messengerType: notifications.messengerType,
-      repeatHours: notifications.repeatHours,
-    }));
+    const { channels, escalationChannels, escalationTimeoutMs, messengerType, repeatFiringMs } = notifications;
 
-    // Create the incident DTO according to CreateIncidentDto
     const createIncidentDto: CreateIncidentDto = {
       message: message.join('\n'),
       chain: this.chain,
@@ -81,9 +74,10 @@ export class IncidentHandler implements IncidentHandlerClient {
       groupId: incidentKey.groupId,
       handlerType: incidentKey.handlerType,
       idempotencyKey: this.getStoreKey(incidentKey),
-      // Notification channels
-      notificationChannels,
+      notificationChannels: channels.map(channelId => ({ channelId, messengerType, repeatFiringMs })),
       // Optional fields
+      escalationChannels: escalationChannels.map(channelId => ({ channelId, messengerType })),
+      escalationTimeoutMs,
       needsAck: notifications.needsAck || false,
       isResolved,
     };
