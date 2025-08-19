@@ -12,7 +12,7 @@ import { IncidentService } from '../../src/incident/incident.service';
 describe('Incident API (integration)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
-  
+
   const TEST_CHAIN = Chain.Polkadot;
   const TEST_ACCOUNT = '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5';
   const TEST_GROUP_ID = 'validators-default';
@@ -28,36 +28,36 @@ describe('Incident API (integration)', () => {
     account: TEST_ACCOUNT,
     groupId: TEST_GROUP_ID,
     handlerType: TEST_HANDLER_TYPE,
-    notificationChannels: [{
-      channelId: TEST_CHANNEL_ID,
-      messengerType: MessengerType.Matrix,
-      repeatFiringMs: 3600,
-    }],
+    notificationChannels: [
+      {
+        channelId: TEST_CHANNEL_ID,
+        messengerType: MessengerType.Matrix,
+        repeatFiringMs: 3600,
+      },
+    ],
     needsAck: false,
     isResolved: false,
     idempotencyKey: 'test-key',
     ...overrides,
   });
 
-  const createOneTimeIncident = (overrides: Partial<CreateIncidentDto> = {}) => 
+  const createOneTimeIncident = (overrides: Partial<CreateIncidentDto> = {}) =>
     createIncidentDto({ isResolved: true, ...overrides });
 
-  const createOngoingIncident = (overrides: Partial<CreateIncidentDto> = {}) => 
+  const createOngoingIncident = (overrides: Partial<CreateIncidentDto> = {}) =>
     createIncidentDto({ needsAck: true, isResolved: false, ...overrides });
 
-  const postIncident = (dto: CreateIncidentDto) => 
-    request(app.getHttpServer()).post('/incidents').send(dto);
+  const postIncident = (dto: CreateIncidentDto) => request(app.getHttpServer()).post('/incidents').send(dto);
 
-  const getIncident = (id: string) => 
-    request(app.getHttpServer()).get(`/incidents/${id}`);
+  const getIncident = (id: string) => request(app.getHttpServer()).get(`/incidents/${id}`);
 
   const acknowledgeIncident = (id: string, username = 'testuser', channelId = TEST_CHANNEL_ID) =>
     request(app.getHttpServer()).post(`/incidents/${id}/acknowledge`).send({ username, channelId });
 
   const resolveIncident = (id: string, blockNumber = 1000) =>
-    request(app.getHttpServer()).post(`/incidents/${id}/resolve`).send({ 
-      chain: TEST_CHAIN, 
-      blockNumber 
+    request(app.getHttpServer()).post(`/incidents/${id}/resolve`).send({
+      chain: TEST_CHAIN,
+      blockNumber,
     });
 
   const setLastBlock = async (blockNumber: number) => {
@@ -72,7 +72,7 @@ describe('Incident API (integration)', () => {
     app = testApp;
     dataSource = moduleFixture.get<DataSource>(DataSource);
   });
-  
+
   afterAll(async () => {
     await app.close();
     if (dataSource?.isInitialized) {
@@ -86,7 +86,7 @@ describe('Incident API (integration)', () => {
     await dataSource.getRepository(Notification).clear();
     await dataSource.getRepository(Incident).clear();
     await dataSource.getRepository(LastBlock).clear();
-    
+
     // Set default last block to same as default incident block number
     await setLastBlock(1000);
   });
@@ -107,7 +107,7 @@ describe('Incident API (integration)', () => {
 
     it('handles idempotency for same key and block', async () => {
       const dto = createOneTimeIncident({ idempotencyKey: 'same-key' });
-      
+
       const first = await postIncident(dto).expect(201);
       const second = await postIncident(dto).expect(201);
 
@@ -116,7 +116,7 @@ describe('Incident API (integration)', () => {
 
     it('creates new incident for same key but different block', async () => {
       const baseDto = createOneTimeIncident({ idempotencyKey: 'same-key' });
-      
+
       const first = await postIncident(baseDto).expect(201);
       const second = await postIncident({ ...baseDto, blockNumber: 2000 }).expect(201);
 
@@ -132,7 +132,7 @@ describe('Incident API (integration)', () => {
       await postIncident(createOneTimeIncident({ blockNumber: 1500 })).expect(201);
 
       const lastBlock = await dataSource.getRepository(LastBlock).findOne({
-        where: { chain: TEST_CHAIN }
+        where: { chain: TEST_CHAIN },
       });
       expect(lastBlock?.blockNumber).toBe(1500);
     });
@@ -152,7 +152,7 @@ describe('Incident API (integration)', () => {
 
     it('handles idempotency for ongoing incidents', async () => {
       const dto = createOngoingIncident({ idempotencyKey: 'ongoing-key' });
-      
+
       const first = await postIncident(dto).expect(201);
       const second = await postIncident(dto).expect(201);
 
@@ -161,7 +161,7 @@ describe('Incident API (integration)', () => {
 
     it('creates new incident after previous one resolved', async () => {
       const dto = createOngoingIncident({ idempotencyKey: 'resolve-test' });
-      
+
       const first = await postIncident(dto).expect(201);
       await resolveIncident(first.body.id).expect(201);
       const second = await postIncident(dto).expect(201);
@@ -194,7 +194,7 @@ describe('Incident API (integration)', () => {
 
     it('preserves original acker on multiple acknowledgments', async () => {
       const incident = await postIncident(createOngoingIncident()).expect(201);
-      
+
       const first = await acknowledgeIncident(incident.body.id, 'user1').expect(201);
       const second = await acknowledgeIncident(incident.body.id, 'user2').expect(201);
 
@@ -213,7 +213,7 @@ describe('Incident API (integration)', () => {
       await postIncident(createOneTimeIncident({ blockNumber: 1500 })).expect(201);
 
       const lastBlock = await dataSource.getRepository(LastBlock).findOne({
-        where: { chain: TEST_CHAIN }
+        where: { chain: TEST_CHAIN },
       });
       expect(lastBlock?.blockNumber).toBe(1500);
     });
@@ -221,7 +221,7 @@ describe('Incident API (integration)', () => {
     it('rejects block less than last block with 409', async () => {
       // Set last block to 1500
       await setLastBlock(1500);
-      
+
       // Try to create incident with block 999 (less than 1500)
       await postIncident(createOneTimeIncident({ blockNumber: 999 })).expect(409);
     });
@@ -236,16 +236,16 @@ describe('Incident API (integration)', () => {
       await resolveIncident(incident.body.id, 1200).expect(201);
 
       const lastBlock = await dataSource.getRepository(LastBlock).findOne({
-        where: { chain: TEST_CHAIN }
+        where: { chain: TEST_CHAIN },
       });
       expect(lastBlock?.blockNumber).toBe(1200);
     });
 
     it('rejects resolving with block less than last block with 409', async () => {
       await setLastBlock(1500);
-      
+
       const incident = await postIncident(createOngoingIncident({ blockNumber: 1500 })).expect(201);
-      
+
       // Try to resolve with block 999 (less than 1500)
       await resolveIncident(incident.body.id, 999).expect(409);
     });
@@ -253,18 +253,24 @@ describe('Incident API (integration)', () => {
 
   describe('GET /incidents', () => {
     beforeEach(async () => {
-      await postIncident(createOneTimeIncident({ 
-        idempotencyKey: 'resolved', 
-        message: 'Resolved incident' 
-      }));
-      await postIncident(createOngoingIncident({ 
-        idempotencyKey: 'unresolved-ack', 
-        message: 'Unresolved needing ack' 
-      }));
-      await postIncident(createIncidentDto({ 
-        idempotencyKey: 'unresolved-no-ack', 
-        message: 'Unresolved not needing ack' 
-      }));
+      await postIncident(
+        createOneTimeIncident({
+          idempotencyKey: 'resolved',
+          message: 'Resolved incident',
+        }),
+      );
+      await postIncident(
+        createOngoingIncident({
+          idempotencyKey: 'unresolved-ack',
+          message: 'Unresolved needing ack',
+        }),
+      );
+      await postIncident(
+        createIncidentDto({
+          idempotencyKey: 'unresolved-no-ack',
+          message: 'Unresolved not needing ack',
+        }),
+      );
     });
 
     it('retrieves all incidents without filters', async () => {
@@ -273,28 +279,26 @@ describe('Incident API (integration)', () => {
     });
 
     it('filters by resolution status', async () => {
-      const resolved = await request(app.getHttpServer())
-        .get('/incidents').query({ isResolved: true }).expect(200);
-      const unresolved = await request(app.getHttpServer())
-        .get('/incidents').query({ isResolved: false }).expect(200);
+      const resolved = await request(app.getHttpServer()).get('/incidents').query({ isResolved: true }).expect(200);
+      const unresolved = await request(app.getHttpServer()).get('/incidents').query({ isResolved: false }).expect(200);
 
       expect(resolved.body).toHaveLength(1);
       expect(unresolved.body).toHaveLength(2);
     });
 
     it('filters by acknowledgment requirement', async () => {
-      const needsAck = await request(app.getHttpServer())
-        .get('/incidents').query({ needsAck: true }).expect(200);
+      const needsAck = await request(app.getHttpServer()).get('/incidents').query({ needsAck: true }).expect(200);
 
       expect(needsAck.body).toHaveLength(1);
       expect(needsAck.body[0].message).toBe('Unresolved needing ack');
     });
 
     it('filters by chain and account', async () => {
-      const byChain = await request(app.getHttpServer())
-        .get('/incidents').query({ chain: TEST_CHAIN }).expect(200);
+      const byChain = await request(app.getHttpServer()).get('/incidents').query({ chain: TEST_CHAIN }).expect(200);
       const byAccount = await request(app.getHttpServer())
-        .get('/incidents').query({ account: TEST_ACCOUNT }).expect(200);
+        .get('/incidents')
+        .query({ account: TEST_ACCOUNT })
+        .expect(200);
 
       expect(byChain.body).toHaveLength(3);
       expect(byAccount.body).toHaveLength(3);
@@ -346,14 +350,18 @@ describe('Incident API (integration)', () => {
 
   describe('Escalation functionality', () => {
     it('creates incident with escalation channels successfully', async () => {
-      const response = await postIncident(createIncidentDto({
-        needsAck: true,
-        escalationChannels: [{
-          channelId: TEST_ESCALATION_CHANNEL_ID,
-          messengerType: MessengerType.Matrix,
-        }],
-        escalationTimeoutMs: TEST_ESCALATION_TIMEOUT,
-      })).expect(201);
+      const response = await postIncident(
+        createIncidentDto({
+          needsAck: true,
+          escalationChannels: [
+            {
+              channelId: TEST_ESCALATION_CHANNEL_ID,
+              messengerType: MessengerType.Matrix,
+            },
+          ],
+          escalationTimeoutMs: TEST_ESCALATION_TIMEOUT,
+        }),
+      ).expect(201);
 
       expect(response.body.escalationChannels[0]).toMatchObject({
         channelId: TEST_ESCALATION_CHANNEL_ID,
@@ -361,70 +369,87 @@ describe('Incident API (integration)', () => {
       });
     });
 
-    it('escalates unacknowledged incidents after timeout', async () => {
-      const incident = await postIncident(createIncidentDto({
-        needsAck: true,
-        escalationChannels: [{
-          channelId: TEST_ESCALATION_CHANNEL_ID,
-          messengerType: MessengerType.Matrix,
-        }],
-        escalationTimeoutMs: TEST_ESCALATION_TIMEOUT,
-      })).expect(201);
-      const incidentService = app.get(IncidentService);
+    it(
+      'escalates unacknowledged incidents after timeout',
+      async () => {
+        const incident = await postIncident(
+          createIncidentDto({
+            needsAck: true,
+            escalationChannels: [
+              {
+                channelId: TEST_ESCALATION_CHANNEL_ID,
+                messengerType: MessengerType.Matrix,
+              },
+            ],
+            escalationTimeoutMs: TEST_ESCALATION_TIMEOUT,
+          }),
+        ).expect(201);
+        const incidentService = app.get(IncidentService);
 
-      await new Promise(resolve => setTimeout(resolve, TEST_ESCALATION_TIMEOUT + 500));
-      await incidentService.escalateIncidents();
+        await new Promise(resolve => setTimeout(resolve, TEST_ESCALATION_TIMEOUT + 500));
+        await incidentService.escalateIncidents();
 
-      const notifications = await dataSource.getRepository(Notification).find({
-        where: { incident: { id: incident.body.id } }
-      });
+        const notifications = await dataSource.getRepository(Notification).find({
+          where: { incident: { id: incident.body.id } },
+        });
 
-      const escalationNotifications = notifications.filter(n => n.type === NotificationType.Escalation);
-      expect(escalationNotifications).toHaveLength(1);
-      expect(escalationNotifications[0].channelId).toBe(TEST_ESCALATION_CHANNEL_ID);
-    }, TEST_ESCALATION_TIMEOUT + 1000);
+        const escalationNotifications = notifications.filter(n => n.type === NotificationType.Escalation);
+        expect(escalationNotifications).toHaveLength(1);
+        expect(escalationNotifications[0].channelId).toBe(TEST_ESCALATION_CHANNEL_ID);
+      },
+      TEST_ESCALATION_TIMEOUT + 1000,
+    );
 
-    it('does not send escalation twice for the same incident', async () => {
-      const incident = await postIncident(createIncidentDto({
-        needsAck: true,
-        escalationChannels: [{
-          channelId: TEST_ESCALATION_CHANNEL_ID,
-          messengerType: MessengerType.Matrix,
-        }],
-        escalationTimeoutMs: TEST_ESCALATION_TIMEOUT,
-      })).expect(201);
-      const incidentService = app.get(IncidentService);
+    it(
+      'does not send escalation twice for the same incident',
+      async () => {
+        const incident = await postIncident(
+          createIncidentDto({
+            needsAck: true,
+            escalationChannels: [
+              {
+                channelId: TEST_ESCALATION_CHANNEL_ID,
+                messengerType: MessengerType.Matrix,
+              },
+            ],
+            escalationTimeoutMs: TEST_ESCALATION_TIMEOUT,
+          }),
+        ).expect(201);
+        const incidentService = app.get(IncidentService);
 
-      // Wait for escalation timeout and escalate first time
-      await new Promise(resolve => setTimeout(resolve, TEST_ESCALATION_TIMEOUT + 500));
-      await incidentService.escalateIncidents();
-      // Try to escalate again
-      await incidentService.escalateIncidents();
+        // Wait for escalation timeout and escalate first time
+        await new Promise(resolve => setTimeout(resolve, TEST_ESCALATION_TIMEOUT + 500));
+        await incidentService.escalateIncidents();
+        // Try to escalate again
+        await incidentService.escalateIncidents();
 
-      const notifications = await dataSource.getRepository(Notification).find({
-        where: { incident: { id: incident.body.id } }
-      });
+        const notifications = await dataSource.getRepository(Notification).find({
+          where: { incident: { id: incident.body.id } },
+        });
 
-      const escalationNotifications = notifications.filter(n => n.type === NotificationType.Escalation);
-      expect(escalationNotifications).toHaveLength(1);
-      expect(escalationNotifications[0].channelId).toBe(TEST_ESCALATION_CHANNEL_ID);
-    }, TEST_ESCALATION_TIMEOUT + 1500);
+        const escalationNotifications = notifications.filter(n => n.type === NotificationType.Escalation);
+        expect(escalationNotifications).toHaveLength(1);
+        expect(escalationNotifications[0].channelId).toBe(TEST_ESCALATION_CHANNEL_ID);
+      },
+      TEST_ESCALATION_TIMEOUT + 1500,
+    );
   });
 
   describe('Auto-resolve orphaned incidents', () => {
     it('does nothing when no active accounts (safety check)', async () => {
-      await postIncident(createOngoingIncident({ 
-        account: 'orphaned-account',
-        idempotencyKey: 'orphaned' 
-      })).expect(201);
+      await postIncident(
+        createOngoingIncident({
+          account: 'orphaned-account',
+          idempotencyKey: 'orphaned',
+        }),
+      ).expect(201);
 
       const incidentService = app.get(IncidentService);
       const resolvedCount = await incidentService.autoResolveOrphanedIncidents([]);
 
       expect(resolvedCount).toBe(0);
 
-      const incidents = await request(app.getHttpServer())
-        .get('/incidents').query({ isResolved: false }).expect(200);
+      const incidents = await request(app.getHttpServer()).get('/incidents').query({ isResolved: false }).expect(200);
       expect(incidents.body).toHaveLength(1);
     });
 

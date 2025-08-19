@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import * as path from 'path';
+import * as path from 'node:path';
 import { ConfigFetcher } from '@w3f/monitoring-config';
 import { Chain, MonitoringGroup } from '@w3f/monitoring-types';
 import { ConfigService } from '../config/config.service';

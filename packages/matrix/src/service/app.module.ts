@@ -4,7 +4,7 @@ import { MetricsModule } from './metrics/metrics.module';
 import { ConfigModule } from './config/config.module';
 import { IncidentModule } from './incident/incident.module';
 import { MonitoringConfigModule } from './monitoring-config/monitoring-config.module';
-import { MatrixBot } from '@lib/matrix-bot';
+import { MatrixBot } from '../lib/matrix-bot';
 import { IncidentService } from './incident/incident.service';
 import { MonitoringConfigService } from './monitoring-config/monitoring-config.service';
 import { ConfigService } from './config/config.service';

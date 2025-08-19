@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as yaml from 'js-yaml';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import * as Joi from 'joi';
-import { MatrixConfig } from '@lib/interfaces';
+import { MatrixConfig } from '../../lib/interfaces';
 
 @Injectable()
 export class ConfigService {

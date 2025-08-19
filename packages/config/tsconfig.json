@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
+    "declarationDir": "./dist/types",
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -16,10 +17,8 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "baseUrl": ".",
+    "outDir": "./dist/commonjs",
+    "baseUrl": "./src"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"]
 }

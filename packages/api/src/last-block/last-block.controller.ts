@@ -22,7 +22,9 @@ export class LastBlockController {
     if (!Object.values(Chain).includes(chain as Chain)) {
       throw new BadRequestException(`Invalid chain parameter: ${chain}`);
     }
-    return this.lastBlockService.getLastBlock(chain as Chain);
+    const lastBlock = await this.lastBlockService.getLastBlock(chain as Chain);
+    this.logger.debug(`Last block for chain ${chain} is ${lastBlock}.`);
+    return lastBlock;
   }
 
   @Post()

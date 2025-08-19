@@ -73,23 +73,18 @@ describe('IncidentService', () => {
       const result = await service.getNonResolved('test-room');
 
       expect(result).toEqual(mockIncidents);
-      expect(httpServiceMock.get).toHaveBeenCalledWith(
-        'http://api:3000/incidents',
-        {
-          params: {
-            channelId: 'test-room',
-            messengerType: MessengerType.Matrix,
-            isResolved: false,
-          },
+      expect(httpServiceMock.get).toHaveBeenCalledWith('http://api:3000/incidents', {
+        params: {
+          channelId: 'test-room',
+          messengerType: MessengerType.Matrix,
+          isResolved: false,
         },
-      );
+      });
     });
 
     it('should throw an error when the API call fails', async () => {
       const errorMessage = 'Network error';
-      (httpServiceMock.get as jest.Mock).mockReturnValue(
-        throwError(() => new Error(errorMessage)),
-      );
+      (httpServiceMock.get as jest.Mock).mockReturnValue(throwError(() => new Error(errorMessage)));
 
       await expect(service.getNonResolved('test-room')).rejects.toThrow(errorMessage);
     });
@@ -115,17 +110,14 @@ describe('IncidentService', () => {
       const result = await service.getNonAcked('test-room');
 
       expect(result).toEqual(mockIncidents);
-      expect(httpServiceMock.get).toHaveBeenCalledWith(
-        'http://api:3000/incidents',
-        {
-          params: {
-            channelId: 'test-room',
-            messengerType: MessengerType.Matrix,
-            needsAck: true,
-            isAcked: false,
-          },
+      expect(httpServiceMock.get).toHaveBeenCalledWith('http://api:3000/incidents', {
+        params: {
+          channelId: 'test-room',
+          messengerType: MessengerType.Matrix,
+          needsAck: true,
+          isAcked: false,
         },
-      );
+      });
     });
   });
 
@@ -146,9 +138,7 @@ describe('IncidentService', () => {
       const result = await service.getIncidentById('test-incident-1');
 
       expect(result).toEqual(mockIncident);
-      expect(httpServiceMock.get).toHaveBeenCalledWith(
-        'http://api:3000/incidents/test-incident-1',
-      );
+      expect(httpServiceMock.get).toHaveBeenCalledWith('http://api:3000/incidents/test-incident-1');
     });
   });
 
@@ -166,13 +156,10 @@ describe('IncidentService', () => {
 
       await service.acknowledgeIncident('test-incident-1', 'test-user', 'test-room');
 
-      expect(httpServiceMock.post).toHaveBeenCalledWith(
-        'http://api:3000/incidents/test-incident-1/acknowledge',
-        {
-          username: 'test-user',
-          channelId: 'test-room',
-        },
-      );
+      expect(httpServiceMock.post).toHaveBeenCalledWith('http://api:3000/incidents/test-incident-1/acknowledge', {
+        username: 'test-user',
+        channelId: 'test-room',
+      });
     });
   });
 });

@@ -5,7 +5,7 @@ import { Logger } from '@nestjs/common';
 import { Incident } from './incident.entity';
 import { Notification } from './notification.entity';
 import { LastBlock } from './last-block.entity';
-import * as path from 'path';
+import * as path from 'node:path';
 
 const logger = new Logger('ConfigService');
 const configService = new ConfigService(logger);

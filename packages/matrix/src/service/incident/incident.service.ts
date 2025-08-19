@@ -1,4 +1,4 @@
-import { Incident, IncidentServiceInterface, QueryFilters } from '@lib/interfaces';
+import { Incident, IncidentServiceInterface, QueryFilters } from '../../lib/interfaces';
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '../config/config.service';

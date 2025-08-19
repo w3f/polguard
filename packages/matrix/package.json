@@ -1,6 +1,5 @@
 {
   "name": "@w3f/monitoring-matrix",
-  "main": "dist/matrix/src/service/main.js",
   "version": "0.0.2",
   "description": "",
   "author": "W3F SecOps Team <devops@web3.foundation>",
@@ -11,12 +10,12 @@
   },
   "scripts": {
     "build": "nest build",
-    "start": "node dist/matrix/src/service/main",
+    "clean": "yarn dlx rimraf ./dist ./node_modules",
+    "start": "node dist/commonjs/service/main",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/matrix/src/service/main",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "lint": "eslint \"{src,apps,libs,tests}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -58,7 +57,6 @@
     "jest": "^29.7.0",
     "prettier": "^3.0.0",
     "ts-node": "^10.9.1",
-    "tsconfig-paths": "^4.2.0",
     "typescript": "~5.7.3"
   }
 }

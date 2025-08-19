@@ -16,13 +16,12 @@
     "access": "public"
   },
   "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
+    "dist"
   ],
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "clean": "yarn dlx rimraf ./dist ./node_modules",
     "test": "echo \"No tests required for types package\" && exit 0"
   },
   "dependencies": {

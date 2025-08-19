@@ -1,4 +1,4 @@
-import { Event, Call, State } from '@lib/decorators';
+import { Event, Call, State } from '../../src/lib/decorators';
 import { Chain, HandlerType } from '@w3f/monitoring-types';
 
 describe('Decorators', () => {
@@ -63,12 +63,14 @@ describe('Decorators', () => {
       const instance = new TestClass();
       const prototype = Object.getPrototypeOf(instance).constructor.prototype;
       const metadata = prototype.event.get('test.event');
-      
-      expect(metadata).toEqual([{
-        method: 'handler',
-        chains: [Chain.Polkadot, Chain.Kusama],
-        handler: 'EventHandler'
-      }]);
+
+      expect(metadata).toEqual([
+        {
+          method: 'handler',
+          chains: [Chain.Polkadot, Chain.Kusama],
+          handler: 'EventHandler',
+        },
+      ]);
     });
 
     it('should handle multiple decorators on same class', () => {

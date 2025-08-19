@@ -3,7 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '../config/config.service';
 import { firstValueFrom } from 'rxjs';
 import { Chain, MessengerType } from '@w3f/monitoring-types';
-import { MonitoringConfigServiceInterface } from '@lib/interfaces';
+import { MonitoringConfigServiceInterface } from '../../lib/interfaces';
 
 export interface AccountsResponse {
   accounts: Record<string, string[]>;

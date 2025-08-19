@@ -12,6 +12,8 @@
   ],
   "scripts": {
     "build": "yarn workspaces foreach -Wt run build",
+    "clean": "yarn workspaces foreach -W run clean && yarn run clean:root",
+    "clean:root": "yarn dlx rimraf ./node_modules",
     "test": "yarn workspaces foreach -W run test",
     "test:integration": "yarn workspaces foreach -W run test:integration",
     "lint": "yarn workspaces foreach -W run lint",
@@ -20,9 +22,7 @@
     "start:matrix:dev": "yarn workspace @w3f/monitoring-matrix start:dev",
     "start:matrix": "yarn workspace @w3f/monitoring-matrix start",
     "start:api:dev": "yarn workspace @w3f/monitoring-api start:dev",
-    "start:api": "yarn workspace @w3f/monitoring-api start:with-migrations",
-    "clean": "yarn workspaces foreach -W run clean",
-    "clean:all": "rm -rf node_modules && yarn workspaces foreach -W run clean"
+    "start:api": "yarn workspace @w3f/monitoring-api start:with-migrations"
   },
   "engines": {
     "node": ">=20.0.0"

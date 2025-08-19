@@ -1,7 +1,7 @@
-import yaml from 'js-yaml';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import Joi from 'joi';
+import yaml from 'js-yaml';
 
 export interface E2EConfig {
   timeoutSeconds?: number;
@@ -46,7 +46,7 @@ export class ConfigService {
       rawConfig.matrix.tokenAuth.accessToken =
         process.env.MATRIX_TOKEN ?? rawConfig.matrix.tokenAuth.accessToken;
     }
-    
+
     this.config = this.validateConfig(rawConfig);
   }
 

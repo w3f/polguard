@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { setTimeout as sleep } from 'timers/promises';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { ConfigService } from './config.js';
 
 const config = new ConfigService().getConfig();
@@ -52,7 +52,7 @@ async function waitForChainBlock(targetBlock: number): Promise<void> {
       const response = await axios.get(`${config.chain.url}/metrics`);
       console.log('Got metrics response.');
       const blockMatch = response.data.match(/mp_chain_watcher_block_height{[^}]*} (\d+)/);
-      
+
       if (blockMatch) {
         const currentBlock = parseInt(blockMatch[1], 10);
         console.log(`Current block: ${currentBlock}, Target block: ${targetBlock}`);
@@ -101,7 +101,7 @@ async function waitForMatrixNotification(
   while (true) {
     try {
       const response = await axios.get(
-        `${config.matrix.homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/messages`, 
+        `${config.matrix.homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/messages`,
         {
           params: {
             limit: 20,
@@ -114,14 +114,14 @@ async function waitForMatrixNotification(
         }
       );
       const messages: MatrixMessage[] = response.data.chunk || [];
-      
+
       // Filter for recent messages (last 5 minutes)
-      const recentMessages = messages.filter(msg => 
-        msg.origin_server_ts > fiveMinutesAgo && 
-        msg.type === 'm.room.message' && 
+      const recentMessages = messages.filter(msg =>
+        msg.origin_server_ts > fiveMinutesAgo &&
+        msg.type === 'm.room.message' &&
         msg.content.msgtype === 'm.text'
       );
-      
+
       // Check if any message matches the pattern
       for (const msg of recentMessages) {
         if (re.test(msg.content.body)) {
@@ -129,12 +129,12 @@ async function waitForMatrixNotification(
           return;
         }
       }
-      
+
       console.log('Waiting for Matrix notification…');
     } catch (error) {
       console.warn('Error checking Matrix messages:', String(error));
     }
-    
+
     await sleep(5_000);
   }
 }

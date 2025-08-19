@@ -1,5 +1,5 @@
 import { Controller, Logger, Post, Body } from '@nestjs/common';
-import { MatrixBot } from '@lib/matrix-bot';
+import { MatrixBot } from '../../lib/matrix-bot';
 
 @Controller('notifications')
 export class IncidentController {

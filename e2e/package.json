@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "clean": "yarn dlx rimraf ./dist ./node_modules",
     "test:e2e": "node --no-warnings --loader ts-node/esm src/e2e.test.ts"
   },
   "dependencies": {

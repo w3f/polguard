@@ -39,10 +39,6 @@ describe('IncidentController', () => {
     const result = await controller.sendNotification(notification);
 
     expect(result).toEqual({ success: true });
-    expect(matrixBotMock.sendMessage).toHaveBeenCalledWith(
-      notification.channelId,
-      notification.message,
-    );
+    expect(matrixBotMock.sendMessage).toHaveBeenCalledWith(notification.channelId, notification.message);
   });
-
 });

@@ -2,7 +2,7 @@ import { encodeAddress } from '@polkadot/util-crypto';
 import { hexToU8a } from '@polkadot/util';
 import { ConfigProcessor } from '../src/config-processor';
 import { MonitorType, Chain, StakingHandlerType, getChainProperties, MessengerType } from '@w3f/monitoring-types';
-import path from 'path';
+import path from 'node:path';
 
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 const TEST_HEX = '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';

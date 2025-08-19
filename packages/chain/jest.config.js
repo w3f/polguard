@@ -23,11 +23,7 @@ module.exports = {
   ],
   coverageDirectory: "./coverage",
   testEnvironment: "node",
-  moduleNameMapper: {
-    '^@service/(.*)$': '<rootDir>/src/service/$1',
-    '^@lib/(.*)$': '<rootDir>/src/lib/$1',
-    '^@w3f/monitoring-types$': '<rootDir>/../types/src'
-  },
+  moduleNameMapper: {},
   roots: [
     "<rootDir>/src",
     "<rootDir>/tests"
