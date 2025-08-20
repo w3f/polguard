@@ -31,6 +31,12 @@ export class Incident {
   @Column({ nullable: true })
   blockNumber: number;
 
+  @Column({ nullable: true })
+  eventIdx?: number;
+
+  @Column({ nullable: true })
+  extrinsicIdx?: number;
+
   @Column({ type: 'simple-enum', enum: Chain })
   chain: Chain;
 
@@ -69,6 +75,9 @@ export class Incident {
 
   @Column({ default: false })
   isResolved: boolean;
+
+  @Column({ default: false })
+  isAutoResolved: boolean;
 
   @Column({ nullable: true })
   resolvedAt: Date;

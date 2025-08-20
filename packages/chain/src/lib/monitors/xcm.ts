@@ -21,11 +21,11 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
   )
   async xcmTransferEgress({
     eventRecord,
-    blockNumber,
+    blockContext,
     handlerType,
   }: EventHandlerParams<H.XcmTransferEgressEvent>): Promise<void> {
     const [rawOrigin, rawDestination, rawMessage] = eventRecord.event.data;
-    const transferInfo = this.extractXcmTransferInfo(rawOrigin, rawDestination, rawMessage, blockNumber);
+    const transferInfo = this.extractXcmTransferInfo(rawOrigin, rawDestination, rawMessage, blockContext.blockNumber);
     const { origin, destination, destinationChain, transfers } = transferInfo;
 
     if (!origin) {
@@ -47,10 +47,10 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
 
         messageLines.push(`To: ${destination ?? 'Unknown'}`, `Destination chain: ${destinationChain ?? 'Unknown'}`);
 
-        const message = this.fmt.message(messageLines, { blockNumber, phase: eventRecord.phase });
+        const message = this.fmt.message(messageLines, blockContext);
 
         const key = { account: account.ss58, groupId, handlerType };
-        await this.incidents.handle(message, notifications, key, blockNumber);
+        await this.incidents.handle(message, notifications, key, blockContext);
       }
     }
   }

@@ -2,7 +2,7 @@ import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, Not, IsNull } from 'typeorm';
-import { MessageType, MessengerType, NotificationType, MESSENGER_STYLE_MAP } from '@w3f/monitoring-types';
+import { MessengerType, NotificationType, MESSENGER_STYLE_MAP, MessagePayload } from '@w3f/monitoring-types';
 import { Incident } from '../database/incident.entity';
 import { Notification } from '../database/notification.entity';
 import { MessageRenderer } from './message-renderer';
@@ -22,53 +22,41 @@ export class NotificationService {
     private readonly configService: ConfigService,
   ) {}
 
+  parseIncidentMessage(message: string): { title: string; details: string[] } {
+    const lines = (message || '')
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean);
+    return { title: lines[0] ?? '', details: lines.slice(1) };
+  }
+
   /**
-   * Create notifications for an incident
+   * Create notifications for an incident.
+   * Optional overrides let the caller adjust title/details.
    */
   async createNotifications(
     incident: Incident,
     channels: { channelId: string; messengerType: MessengerType; repeatFiringMs?: number }[],
     type: NotificationType,
+    overrides?: Partial<Pick<MessagePayload, 'title' | 'details'>>,
   ): Promise<void> {
+    const { title, details } = this.parseIncidentMessage(incident.message);
+
+    const basePayload: Omit<MessagePayload, 'kind'> = {
+      title,
+      details,
+      incidentId: incident.id,
+      needsAck: incident.needsAck,
+      isResolved: incident.isResolved,
+      ...overrides,
+    };
+
     const notifications = channels.map(channel => {
-      const lines = incident.message.split('\n').filter(line => line.trim() !== '');
-      const title = lines[0] || '';
-      const details = lines.slice(1) || [];
-
-      let messageType: MessageType;
-      let preTitle: string | undefined;
-
-      switch (type) {
-        case NotificationType.Alert:
-          messageType = incident.isResolved ? MessageType.OneTime : MessageType.Firing;
-          break;
-        case NotificationType.Resolution:
-          messageType = MessageType.Resolved;
-          break;
-        case NotificationType.Escalation:
-          messageType = MessageType.Escalation;
-          const timeoutInMinutes = Math.floor(incident.escalationTimeoutMs / 60000);
-          const destinations =
-            incident.notificationChannels
-              ?.map(c => {
-                if (c.messengerType === MessengerType.Matrix) {
-                  return `https://matrix.to/#/${c.channelId}`;
-                }
-                return c.channelId; // Fallback for other types
-              })
-              .join(', ') || 'N/A';
-          preTitle = `Escalation: The incident was not acknowledged within ${timeoutInMinutes} minutes in any of the following rooms: ${destinations}`;
-          break;
-      }
-
       const styleType = MESSENGER_STYLE_MAP[channel.messengerType];
+
       const styledMessage = MessageRenderer.format(styleType, {
-        title,
-        details,
-        preTitle,
-        messageType,
-        incidentId: incident.id,
-        needsAck: incident.needsAck,
+        ...basePayload,
+        kind: type,
       });
 
       return {

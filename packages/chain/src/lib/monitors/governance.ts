@@ -13,9 +13,10 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
   @Event(H.ReferendaSubmittedEvent, [Chain.Polkadot, Chain.Kusama], 'referenda.Submitted')
   async referendaSubmitted({
     eventRecord,
-    blockNumber,
+    blockContext,
     handlerType,
   }: EventHandlerParams<H.ReferendaSubmittedEvent>): Promise<void> {
+    const { blockNumber } = blockContext;
     const [referendumIndex, trackId] = eventRecord.event.data.map(arg => arg.toString());
     const proposer = (await this.chain.referendaInfoFor(referendumIndex, blockNumber)) ?? 'unknown';
     const subsquareLink = this.fmt.link(
@@ -35,11 +36,11 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
         `Track: ${trackName}`,
         `Links: ${subsquareLink} | ${polkassemblyLink}`,
       ],
-      { blockNumber, phase: eventRecord.phase },
+      blockContext,
     );
     for (const { groupId, notifications } of this.reg.getGroupsByHandler(handlerType)) {
       const key = { account: 'None', groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockNumber);
+      await this.incidents.handle(message, notifications, key, blockContext);
     }
   }
 
@@ -47,8 +48,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
   async convictionVote({
     call,
     origin,
-    blockNumber,
-    extrinsicIndex,
+    blockContext,
     handlerType,
   }: CallHandlerParams<H.ConvictionVoteCall>): Promise<void> {
     const pollIndex = call.args[0].toString();
@@ -69,10 +69,10 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
       const message = this.fmt.message(
         [`${this.fmt.accountLink(account.name, account.ss58)} cast a vote on referendum #${pollIndex}`, ...voteLines],
-        { blockNumber, extrinsicIndex },
+        blockContext,
       );
       const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockNumber);
+      await this.incidents.handle(message, notifications, key, blockContext);
     }
   }
 }

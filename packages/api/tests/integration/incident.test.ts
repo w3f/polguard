@@ -394,8 +394,16 @@ describe('Incident API (integration)', () => {
         });
 
         const escalationNotifications = notifications.filter(n => n.type === NotificationType.Escalation);
-        expect(escalationNotifications).toHaveLength(1);
-        expect(escalationNotifications[0].channelId).toBe(TEST_ESCALATION_CHANNEL_ID);
+        expect(escalationNotifications).toHaveLength(2);
+
+        // Should have notifications for both escalation channel and original notification channel
+        const escalationChannelNotification = escalationNotifications.find(
+          n => n.channelId === TEST_ESCALATION_CHANNEL_ID,
+        );
+        const originalChannelNotification = escalationNotifications.find(n => n.channelId === TEST_CHANNEL_ID);
+
+        expect(escalationChannelNotification).toBeDefined();
+        expect(originalChannelNotification).toBeDefined();
       },
       TEST_ESCALATION_TIMEOUT + 1000,
     );
@@ -428,31 +436,44 @@ describe('Incident API (integration)', () => {
         });
 
         const escalationNotifications = notifications.filter(n => n.type === NotificationType.Escalation);
-        expect(escalationNotifications).toHaveLength(1);
-        expect(escalationNotifications[0].channelId).toBe(TEST_ESCALATION_CHANNEL_ID);
+        expect(escalationNotifications).toHaveLength(2);
+
+        // Should have notifications for both escalation channel and original notification channel
+        const escalationChannelNotification = escalationNotifications.find(
+          n => n.channelId === TEST_ESCALATION_CHANNEL_ID,
+        );
+        const originalChannelNotification = escalationNotifications.find(n => n.channelId === TEST_CHANNEL_ID);
+
+        expect(escalationChannelNotification).toBeDefined();
+        expect(originalChannelNotification).toBeDefined();
       },
       TEST_ESCALATION_TIMEOUT + 1500,
     );
   });
 
-  describe('Auto-resolve orphaned incidents', () => {
-    it('does nothing when no active accounts (safety check)', async () => {
-      await postIncident(
-        createOngoingIncident({
-          account: 'orphaned-account',
-          idempotencyKey: 'orphaned',
-        }),
-      ).expect(201);
+  describe('Auto resolution', () => {
+    it('auto-resolves stale incidents after 30 days', async () => {
+      const incident = await postIncident(createOngoingIncident()).expect(201);
+      
+      // Set incident to be 31 days old
+      const thirtyOneDaysAgo = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
+      await dataSource.getRepository(Incident).update(
+        { id: incident.body.id },
+        { createdAt: thirtyOneDaysAgo }
+      );
 
       const incidentService = app.get(IncidentService);
-      const resolvedCount = await incidentService.autoResolveOrphanedIncidents([]);
+      await incidentService.autoResolveStaleIncidents();
 
-      expect(resolvedCount).toBe(0);
+      const resolvedIncident = await dataSource.getRepository(Incident).findOne({
+        where: { id: incident.body.id },
+      });
 
-      const incidents = await request(app.getHttpServer()).get('/incidents').query({ isResolved: false }).expect(200);
-      expect(incidents.body).toHaveLength(1);
+      expect(resolvedIncident).toMatchObject({
+        isResolved: true,
+        isAutoResolved: true,
+      });
+      expect(resolvedIncident?.resolvedAt).toBeDefined();
     });
-
-    // TODO: Add comprehensive tests for auto-resolve orphaned incidents
   });
 });

@@ -39,6 +39,8 @@ export interface Incident {
   id: string;
   message: string;
   blockNumber: number;
+  eventIdx?: number;
+  extrinsicIdx?: number;
   chain: string;
   account: string;
   groupId: string;
@@ -49,6 +51,8 @@ export interface Incident {
   ackedAt?: Date;
   isResolved: boolean;
   resolvedAt?: Date;
+  isEscalated: boolean;
+  escalatedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   notifications?: Notification[];

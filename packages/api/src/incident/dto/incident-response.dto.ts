@@ -12,6 +12,12 @@ export class IncidentResponseDto {
   @ApiProperty({ required: false })
   blockNumber?: number;
 
+  @ApiProperty({ required: false })
+  eventIdx?: number;
+
+  @ApiProperty({ required: false })
+  extrinsicIdx?: number;
+
   @ApiProperty({ enum: Chain })
   chain: Chain;
 
@@ -47,6 +53,12 @@ export class IncidentResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty()
+  isEscalated: boolean;
+
+  @ApiProperty({ required: false })
+  escalatedAt?: Date;
 
   @ApiProperty({ type: [NotificationResponseDto] })
   notifications: NotificationResponseDto[];

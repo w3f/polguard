@@ -47,7 +47,7 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
   @Event(H.AssetTransferIngressEvent, [Chain.Centrifuge], 'ormlTokens.Transfer')
   async onTransferIngress({
     eventRecord,
-    blockNumber,
+    blockContext,
     handlerType,
   }: EventHandlerParams<H.AssetTransferIngressEvent>): Promise<void> {
     const [rawId, from, to, amount] = eventRecord.event.data.map(d => d.toString());
@@ -61,11 +61,11 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
           `${this.fmt.accountLink(account.name, account.ss58)} received ${this.fmt.balance(amount, token)}`,
           `From: ${this.fmt.accountLink(from, from)}`,
         ],
-        { blockNumber, phase: eventRecord.phase },
+        blockContext,
       );
 
       const key = { account: account.ss58, groupId, handlerType, token };
-      await this.incidents.handle(message, notifications, key, blockNumber);
+      await this.incidents.handle(message, notifications, key, blockContext);
     }
   }
 
@@ -73,7 +73,7 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
   @Event(H.AssetTransferEgressEvent, [Chain.Centrifuge], 'ormlTokens.Transfer')
   async onTransferEgress({
     eventRecord,
-    blockNumber,
+    blockContext,
     handlerType,
   }: EventHandlerParams<H.AssetTransferEgressEvent>): Promise<void> {
     const [rawId, from, to, amount] = eventRecord.event.data.map(d => d.toString());
@@ -87,11 +87,11 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
           `${this.fmt.accountLink(account.name, account.ss58)} sent ${this.fmt.balance(amount, token)}`,
           `To: ${this.fmt.accountLink(to, to)}`,
         ],
-        { blockNumber, phase: eventRecord.phase },
+        blockContext,
       );
 
       const key = { account: account.ss58, groupId, handlerType, token };
-      await this.incidents.handle(message, notifications, key, blockNumber);
+      await this.incidents.handle(message, notifications, key, blockContext);
     }
   }
 
@@ -102,7 +102,8 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
     getBalances: (addresses: string[], tokens: string[], block: number) => Promise<TokenBalances>,
     params: StateHandlerParams<H.AssetBalanceDecreaseState>,
   ): Promise<void> {
-    const { blockNumber, handlerType } = params;
+    const { blockContext, handlerType } = params;
+    const { blockNumber } = blockContext;
     const addresses = this.reg.getUniqueAddresses();
     const tokens = this.reg.getUniqueTokens();
     if (tokens.length === 0) return;
@@ -125,10 +126,10 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
                 `Previous: ${this.fmt.balance(previousBalance, token)}`,
                 `Current:  ${this.fmt.balance(currentBalance, token)}`,
               ],
-              { blockNumber },
+              blockContext,
             );
             const key = { account: account.ss58, groupId, handlerType, token };
-            await this.incidents.handle(msg, notifications, key, blockNumber);
+            await this.incidents.handle(msg, notifications, key, blockContext);
           }
         }
       }
@@ -142,7 +143,8 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
     getBalances: (addresses: string[], tokens: string[], block: number) => Promise<TokenBalances>,
     params: StateHandlerParams<H.AssetBalanceThresholdState>,
   ): Promise<void> {
-    const { blockNumber, handlerType } = params;
+    const { blockContext, handlerType } = params;
+    const { blockNumber } = blockContext;
     const addresses = this.reg.getUniqueAddresses();
     const tokens = this.reg.getUniqueTokens();
     if (tokens.length === 0) return;
@@ -162,11 +164,11 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
                 `Current balance: ${this.fmt.balance(currentBalance, token)}`,
                 `Threshold: ${this.fmt.balance(threshold, token)}`,
               ],
-              { blockNumber },
+              blockContext,
             );
 
             const key = { account: account.ss58, groupId, handlerType, token };
-            await this.incidents.handle(message, notifications, key, blockNumber, true);
+            await this.incidents.handle(message, notifications, key, blockContext, true);
           }
         }
       }

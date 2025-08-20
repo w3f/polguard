@@ -23,19 +23,26 @@ The Matrix service is responsible for delivering incident notifications to Matri
 
 ## Bot Commands
 
-The Matrix bot supports several commands:
+The Matrix bot supports several commands for incident management:
 
-- `!help`: Show help message with all available commands
-- `!unresolved`: List all non-resolved incidents for this room
-- `!unacked`: List all incidents requiring acknowledgment for this room
-- `!info <id>`: Show detailed information about a specific incident
+### Core Commands
+
+- `!show <id>`: Show incident message for a specific incident
 - `!ack <id>`: Acknowledge an incident by ID
-- `!monitor <chain> <account>`: Check if an account is being monitored on a specific chain for this channel
+- `!unacked`: List incidents requiring acknowledgment for this room
+- `!active`: List active incidents (ongoing onchain conditions) for this room
+- `!manual`: Show comprehensive user manual with workflow processes
+- `!check <chain> <account>`: Check if an account is being monitored on a specific chain for this channel
+- `!help`: Show help message with all available commands
+
+### Debug Commands
+
 - `!query [filters...]`: Query incidents with custom filters
   - Available filters: `account`, `groupId`, `handlerType`, `chain`, `createdAfter`, `createdBefore`, `isResolved`, `isAcked`, `needsAck`
   - Example: `!query createdAfter=2025-01-01 createdBefore=2025-01-31 isResolved=false`
   - Boolean filters (`isResolved`, `isAcked`, `needsAck`) accept `true` or `false` values
   - Date filters (`createdAfter`, `createdBefore`) accept ISO date format (supports both date-only like `2025-01-01` and full datetime like `2025-01-01T10:30:00Z`)
+- `!debug <id>`: Show detailed debug information about a specific incident
 
 ## Configuration
 

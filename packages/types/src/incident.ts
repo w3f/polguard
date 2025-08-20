@@ -29,6 +29,8 @@ export interface CreateIncidentDto {
   needsAck?: boolean;
   isResolved?: boolean;
   idempotencyKey: string;
+  eventIdx?: number;
+  extrinsicIdx?: number;
 }
 
 export interface IncidentKey {
@@ -36,6 +38,12 @@ export interface IncidentKey {
   handlerType: string;
   account?: string;
   token?: string;
+}
+
+export interface BlockContext {
+  blockNumber: number;
+  eventIdx?: number;
+  extrinsicIdx?: number;
 }
 
 export interface ResolveIncidentDto {
@@ -48,7 +56,7 @@ export interface IncidentHandlerClient {
     message: string[],
     notifications: NotificationSettings,
     incidentKey: IncidentKey,
-    blockNumber: number,
+    blockContext: BlockContext,
     isFiring?: boolean
   ): Promise<void>;
 }

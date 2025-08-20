@@ -1,10 +1,3 @@
-export enum MessageType {
-  Firing = 'Firing',
-  Resolved = 'Resolved',
-  OneTime = 'Event',
-  Escalation = 'Escalation',
-}
-
 export enum MessengerType {
   Matrix = 'Matrix',
   Slack = 'Slack',
@@ -27,9 +20,9 @@ export const MESSENGER_STYLE_MAP: Record<MessengerType, Style> = {
 
 export interface MessagePayload {
   title: string;
-  preTitle?: string;
-  details: string[];
-  messageType: MessageType;
+  details?: string[];
+  kind: NotificationType;
   incidentId: string;
   needsAck?: boolean;
+  isResolved?: boolean;
 }

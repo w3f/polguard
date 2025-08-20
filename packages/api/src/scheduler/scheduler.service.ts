@@ -24,7 +24,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
 
     const exprEscalations = sched.escalations ?? CronExpression.EVERY_5_MINUTES;
     const exprRetries = sched.retries ?? CronExpression.EVERY_5_MINUTES;
-    const exprRefreshCfg = sched.refreshConfig ?? CronExpression.EVERY_5_MINUTES;
+    const exprRefreshCfg = sched.refreshConfig ?? CronExpression.EVERY_10_MINUTES;
     const exprAutoResolve = sched.autoResolve ?? CronExpression.EVERY_6_HOURS;
 
     this.addCronJob('notifications-escalations', exprEscalations, async () => {
@@ -42,13 +42,9 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
       await this.monitoringConfigService.refreshConfigurations();
     });
 
-    this.addCronJob('auto-resolve-orphaned', exprAutoResolve, async () => {
-      this.logger.debug('Running auto-resolution for orphaned incidents');
-      const active = this.monitoringConfigService.getAllActiveAccounts();
-      const resolved = await this.incidentService.autoResolveOrphanedIncidents(active);
-      if (resolved > 0) {
-        this.logger.log(`Auto-resolved ${resolved} orphaned incidents`);
-      }
+    this.addCronJob('auto-resolve-stale', exprAutoResolve, async () => {
+      this.logger.debug('Running auto-resolution for stale incidents');
+      await this.incidentService.autoResolveStaleIncidents();
     });
   }
 

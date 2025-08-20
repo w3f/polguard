@@ -116,4 +116,22 @@ export class CreateIncidentDto {
   @IsString()
   @IsNotEmpty()
   idempotencyKey: string;
+
+  @ApiProperty({
+    description: 'Event index within Vec<EventRecord>',
+    example: 2,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  eventIdx?: number;
+
+  @ApiProperty({
+    description: 'Extrinsic index within the block',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  extrinsicIdx?: number;
 }

@@ -1,24 +1,23 @@
-import { Phase } from '@polkadot/types/interfaces';
 import { formatBalance } from '@polkadot/util';
-import { CHAIN_TOKENS, ChainProperties } from '@w3f/monitoring-types';
+import { CHAIN_TOKENS, ChainProperties, BlockContext } from '@w3f/monitoring-types';
 
 export class Formatter {
   constructor(private chainProps: ChainProperties) {}
 
-  private getEventURL(blockNumber: number, phase: Phase): string {
-    if (!phase.isApplyExtrinsic) {
-      return '';
-    }
-    const index = phase.asApplyExtrinsic.toNumber();
-    return `https://${this.chainProps.specName}.subscan.io/event?extrinsic=${blockNumber}-${index}`;
+  private getEventURL(blockNumber: number, eventIdx: number): string {
+    return `https://${this.chainProps.specName}.subscan.io/event/${blockNumber}-${eventIdx}`;
+  }
+
+  private getExtrinsicURL(blockNumber: number, extrinsicIdx: number): string {
+    return `https://${this.chainProps.specName}.subscan.io/extrinsic/${blockNumber}-${extrinsicIdx}`;
+  }
+
+  private getBlockURL(blockNumber: number): string {
+    return `https://${this.chainProps.specName}.subscan.io/block/${blockNumber}`;
   }
 
   private getAccountURL(address: string): string {
     return `https://${this.chainProps.specName}.subscan.io/account/${address}`;
-  }
-
-  private getExtrinsicURL(blockNumber: number, extrinsicIndex: number): string {
-    return `https://${this.chainProps.specName}.subscan.io/extrinsic/${blockNumber}-${extrinsicIndex}`;
   }
 
   link(title: string, url: string): string {
@@ -52,23 +51,19 @@ export class Formatter {
     return `${amount.toString()} token ${tokenName}`;
   }
 
-  message(
-    rows: string[],
-    options?: {
-      blockNumber: number;
-      phase?: Phase;
-      extrinsicIndex?: number;
-    },
-  ): string[] {
+  message(rows: string[], blockContext?: BlockContext): string[] {
     const result = [...rows];
 
-    if (options) {
-      result.push(`Block: ${options.blockNumber}`);
-
-      if (options.phase !== undefined) {
-        result.push(`Event: ${this.getEventURL(options.blockNumber, options.phase)}`);
-      } else if (options.extrinsicIndex !== undefined) {
-        result.push(`Extrinsic: ${this.getExtrinsicURL(options.blockNumber, options.extrinsicIndex)}`);
+    if (blockContext) {
+      result.push(`Block: ${blockContext.blockNumber}`);
+      if (blockContext.eventIdx !== undefined) {
+        result.push(this.link('Subscan Event', this.getEventURL(blockContext.blockNumber, blockContext.eventIdx)));
+      } else if (blockContext.extrinsicIdx !== undefined) {
+        result.push(
+          this.link('Subscan Extrinsic', this.getExtrinsicURL(blockContext.blockNumber, blockContext.extrinsicIdx)),
+        );
+      } else {
+        result.push(this.link('Subscan Block', this.getBlockURL(blockContext.blockNumber)));
       }
     }
 

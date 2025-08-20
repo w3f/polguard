@@ -4,12 +4,18 @@ export class Migration1755171581759 implements MigrationInterface {
   name = 'Migration1755171581759';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Add new columns to incident table
-    await queryRunner.query(`ALTER TABLE "incident" ADD "notification_channels" text NOT NULL`);
+    // Add new columns to incident table (notification_channels nullable first)
+    await queryRunner.query(`ALTER TABLE "incident" ADD "notification_channels" text`);
     await queryRunner.query(`ALTER TABLE "incident" ADD "escalation_channels" text`);
     await queryRunner.query(`ALTER TABLE "incident" ADD "escalation_timeout_ms" integer`);
     await queryRunner.query(`ALTER TABLE "incident" ADD "is_escalated" boolean NOT NULL DEFAULT false`);
     await queryRunner.query(`ALTER TABLE "incident" ADD "escalated_at" TIMESTAMP`);
+
+    // Populate existing rows with default values
+    await queryRunner.query(`UPDATE "incident" SET "notification_channels" = '[]' WHERE "notification_channels" IS NULL`);
+
+    // Make notification_channels NOT NULL
+    await queryRunner.query(`ALTER TABLE "incident" ALTER COLUMN "notification_channels" SET NOT NULL`);
 
     // Update notification type enum
     await queryRunner.query(`ALTER TYPE "public"."notification_type_enum" RENAME TO "notification_type_enum_old"`);

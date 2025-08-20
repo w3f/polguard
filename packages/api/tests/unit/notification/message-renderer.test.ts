@@ -1,5 +1,5 @@
 import { MessageRenderer } from '../../../src/notification/message-renderer';
-import { MessageType, Style, MessagePayload } from '@w3f/monitoring-types';
+import { NotificationType, Style, MessagePayload } from '@w3f/monitoring-types';
 
 describe('MessageRenderer', () => {
   const incidentId = 'GEB7BN648733';
@@ -7,15 +7,15 @@ describe('MessageRenderer', () => {
   const createMessageParts = (
     title: string,
     details: string[] = [],
-    messageType: MessageType = MessageType.OneTime,
+    kind: NotificationType = NotificationType.Alert,
+    isResolved = true,
     needsAck = false,
-    preTitle?: string,
   ): MessagePayload => {
-    return { title, details, messageType, incidentId, needsAck, preTitle };
+    return { title, details, kind, incidentId, isResolved, needsAck };
   };
 
   describe('Style Type Styling', () => {
-    const parts = createMessageParts('Test Message', ['Detail 1', 'Detail 2']);
+    const parts = createMessageParts('Test Message', ['Detail 1', 'Detail 2'], NotificationType.Alert, true, true);
 
     it('should style HTML messages correctly', () => {
       const result = MessageRenderer.format(Style.Html, parts);
@@ -45,28 +45,34 @@ describe('MessageRenderer', () => {
   });
 
   describe('Message Type Styling', () => {
-    it('should style FIRING messages correctly', () => {
-      const parts = createMessageParts('Test Message', [], MessageType.Firing);
+    it('should style unresolved Alert messages correctly', () => {
+      const parts = createMessageParts('Test Message', [], NotificationType.Alert, false, false);
       const result = MessageRenderer.format(Style.Html, parts);
       expect(result).toContain('🔥');
     });
 
-    it('should style RESOLVED messages correctly', () => {
-      const parts = createMessageParts('Test Message', [], MessageType.Resolved);
+    it('should style resolved Alert messages correctly', () => {
+      const parts = createMessageParts('Test Message', [], NotificationType.Alert, true, true);
+      const result = MessageRenderer.format(Style.Html, parts);
+      expect(result).toContain('ℹ️');
+    });
+
+    it('should style Resolution messages correctly', () => {
+      const parts = createMessageParts('Test Message', [], NotificationType.Resolution);
       const result = MessageRenderer.format(Style.Html, parts);
       expect(result).toContain('✅');
     });
 
-    it('should style OneTime messages correctly', () => {
-      const parts = createMessageParts('Test Message', [], MessageType.OneTime);
+    it('should style Escalation messages correctly', () => {
+      const parts = createMessageParts('Test Message', [], NotificationType.Escalation);
       const result = MessageRenderer.format(Style.Html, parts);
-      expect(result).toContain('ℹ️');
+      expect(result).toContain('🚨');
     });
   });
 
   describe('Message Composition', () => {
     it('should handle empty details', () => {
-      const parts = createMessageParts('Test Title');
+      const parts = createMessageParts('Test Title', [], NotificationType.Alert, true, true);
       const result = MessageRenderer.format(Style.Html, parts);
       expect(result).toContain('ℹ️');
       expect(result).toContain('Test Title');
@@ -74,15 +80,9 @@ describe('MessageRenderer', () => {
     });
 
     it('should add ack badge when needsAck is true', () => {
-      const parts = createMessageParts('Test Title', [], MessageType.Firing, true);
+      const parts = createMessageParts('Test Title', [], NotificationType.Alert, false, true);
       const result = MessageRenderer.format(Style.Html, parts);
       expect(result).toContain('❗');
-    });
-
-    it('should include preTitle when provided', () => {
-      const parts = createMessageParts('Test Title', [], MessageType.Firing, false, 'This is a pre-title');
-      const result = MessageRenderer.format(Style.Html, parts);
-      expect(result).toContain('<p>This is a pre-title</p>');
     });
   });
 

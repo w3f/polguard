@@ -5,12 +5,13 @@ import { Incident } from '../database/incident.entity';
 import { Notification } from '../database/notification.entity';
 import { CreateIncidentDto, GetIncidentsDto, ResolveIncidentDto } from './dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType } from '@w3f/monitoring-types';
+import { NotificationType, MessengerType } from '@w3f/monitoring-types';
 import { LastBlockService } from '../last-block/last-block.service';
 
 @Injectable()
 export class IncidentService {
   private readonly logger = new Logger(IncidentService.name);
+  private static readonly AUTO_RESOLVE_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000;
 
   constructor(
     @InjectRepository(Incident)
@@ -187,55 +188,68 @@ export class IncidentService {
     for (const i of incidents) {
       if (!i.escalationTimeoutMs || !i.escalationChannels) continue;
       if (now < i.createdAt.getTime() + i.escalationTimeoutMs) continue;
-      const channels = Array.isArray(i.escalationChannels) ? i.escalationChannels : [];
-      if (!channels.length) continue;
+
+      const timeoutInMinutes = Math.floor((i.escalationTimeoutMs ?? 0) / 60000);
+      const destinations = i.notificationChannels
+        .map(c => (c.messengerType === MessengerType.Matrix ? `https://matrix.to/#/${c.channelId}` : c.channelId))
+        .join(', ');
 
       i.isEscalated = true;
       i.escalatedAt = new Date();
       await this.incidentRepository.save(i);
-      await this.notificationService.createNotifications(i, channels, NotificationType.Escalation);
+
+      const { title: originalTitle, details: originalDetails } = this.notificationService.parseIncidentMessage(
+        i.message,
+      );
+
+      // Escalation channels: escalation message with destinations plus original alert
+      await this.notificationService.createNotifications(i, i.escalationChannels, NotificationType.Escalation, {
+        title: `Escalation. The incident was not acknowledged within ${timeoutInMinutes} minutes in any of the following rooms: ${destinations}\n\nThe original message notification is repeated below:\n\n${originalTitle}`,
+        details: originalDetails,
+      });
+
+      // Normal notification channels: short escalation message
+      await this.notificationService.createNotifications(i, i.notificationChannels, NotificationType.Escalation, {
+        title: `The incident was not acknowledged within ${timeoutInMinutes} minutes and has therefore been escalated`,
+        details: [],
+      });
     }
   }
 
-  /**
-   * Auto-resolves incidents for accounts that are no longer in the monitoring configuration
-   * @param activeAccounts List of all active accounts from monitoring configuration
-   * @returns Number of incidents that were auto-resolved
-   */
-  async autoResolveOrphanedIncidents(activeAccounts: string[]): Promise<number> {
-    // Safety check - if no active accounts, something might be wrong with configuration
-    if (activeAccounts.length === 0) {
-      this.logger.warn('No active accounts found in monitoring configuration. Skipping auto-resolution.');
-      return 0;
-    }
+  async autoResolveStaleIncidents(): Promise<void> {
+    const now = Date.now();
+    const cutoff = new Date(now - IncidentService.AUTO_RESOLVE_TIMEOUT_MS);
 
-    // Find all unresolved incidents where the account is NOT in the active accounts
-    const orphanedIncidents = await this.incidentRepository
+    const staleIncidents = await this.incidentRepository
       .createQueryBuilder('incident')
       .where('incident.isResolved = :isResolved', { isResolved: false })
-      .andWhere('incident.account NOT IN (:...activeAccounts)', { activeAccounts })
+      .andWhere('incident.createdAt <= :cutoff', { cutoff })
       .getMany();
 
-    if (orphanedIncidents.length === 0) {
-      this.logger.debug('No incidents needed auto-resolution');
-      return 0;
+    if (staleIncidents.length === 0) {
+      this.logger.debug('No stale incidents to auto-resolve.');
+      return;
     }
 
-    this.logger.log(`Auto-resolving ${orphanedIncidents.length} orphaned incidents`);
+    this.logger.log(`Auto-resolving ${staleIncidents.length} stale incidents (createdAt <= ${cutoff.toISOString()}).`);
 
-    let resolvedCount = 0;
-    for (const incident of orphanedIncidents) {
-      try {
-        incident.isResolved = true;
-        incident.resolvedAt = new Date();
-        await this.incidentRepository.save(incident);
-        this.logger.log(`Incident ${incident.id} auto-resolved.`);
-        resolvedCount++;
-      } catch (error) {
-        this.logger.error(`Failed to auto-resolve incident ${incident.id}`, error);
-      }
+    for (const incident of staleIncidents) {
+      incident.isResolved = true;
+      incident.isAutoResolved = true;
+      incident.resolvedAt = new Date();
+
+      const savedIncident = await this.incidentRepository.save(incident);
+      this.logger.log(`Incident ${incident.id} auto-resolved due to timeout.`);
+
+      await this.notificationService.createNotifications(
+        savedIncident,
+        incident.notificationChannels,
+        NotificationType.Resolution,
+        {
+          title: 'Incident auto-resolved by timeout policy (30 days).',
+          details: [],
+        },
+      );
     }
-
-    return resolvedCount;
   }
 }

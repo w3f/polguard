@@ -8,6 +8,7 @@ import {
   IncidentApiClient,
   CreateIncidentDto,
   IncidentKey,
+  BlockContext,
 } from '@w3f/monitoring-types';
 
 /**
@@ -32,12 +33,12 @@ export class IncidentHandler implements IncidentHandlerClient {
     message: string[],
     notifications: NotificationSettings,
     incidentKey: IncidentKey,
-    blockNumber: number,
+    blockContext: BlockContext,
     isFiring?: boolean,
   ): Promise<void> {
     // One-time incident (created as immediately resolved)
     if (isFiring === undefined) {
-      await this.createIncident(message, notifications, incidentKey, blockNumber, true);
+      await this.createIncident(message, notifications, incidentKey, blockContext, true);
       return;
     }
 
@@ -46,12 +47,12 @@ export class IncidentHandler implements IncidentHandlerClient {
     const incidentId = await this.store.get<number>(storeKey);
 
     if (isFiring && !incidentId) {
-      const id = await this.createIncident(message, notifications, incidentKey, blockNumber, false);
+      const id = await this.createIncident(message, notifications, incidentKey, blockContext, false);
       if (id) {
         await this.store.set(storeKey, id);
       }
     } else if (!isFiring && incidentId) {
-      await this.resolveIncident(incidentId, blockNumber);
+      await this.resolveIncident(incidentId, blockContext.blockNumber);
       await this.store.del(storeKey);
     }
   }
@@ -60,7 +61,7 @@ export class IncidentHandler implements IncidentHandlerClient {
     message: string[],
     notifications: NotificationSettings,
     incidentKey: IncidentKey,
-    blockNumber: number,
+    blockContext: BlockContext,
     isResolved: boolean = false,
   ): Promise<string | null> {
     const { channels, escalationChannels, escalationTimeoutMs, messengerType, repeatFiringMs } = notifications;
@@ -68,7 +69,7 @@ export class IncidentHandler implements IncidentHandlerClient {
     const createIncidentDto: CreateIncidentDto = {
       message: message.join('\n'),
       chain: this.chain,
-      blockNumber,
+      blockNumber: blockContext.blockNumber,
       // Required fields
       account: incidentKey.account,
       groupId: incidentKey.groupId,
@@ -76,10 +77,12 @@ export class IncidentHandler implements IncidentHandlerClient {
       idempotencyKey: this.getStoreKey(incidentKey),
       notificationChannels: channels.map(channelId => ({ channelId, messengerType, repeatFiringMs })),
       // Optional fields
-      escalationChannels: escalationChannels.map(channelId => ({ channelId, messengerType })),
+      escalationChannels: escalationChannels?.map(channelId => ({ channelId, messengerType })),
       escalationTimeoutMs,
       needsAck: notifications.needsAck || false,
       isResolved,
+      eventIdx: blockContext.eventIdx,
+      extrinsicIdx: blockContext.extrinsicIdx,
     };
 
     this.logger.debug(`Sending incident: ${JSON.stringify(createIncidentDto)}`);

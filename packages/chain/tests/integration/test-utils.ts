@@ -4,6 +4,7 @@ import {
   NotificationSettings,
   IncidentHandlerClient,
   IncidentKey,
+  BlockContext,
 } from '@w3f/monitoring-types';
 
 export class LoggerAdapter implements Logger {
@@ -80,7 +81,7 @@ export class TestIncidentHandler implements IncidentHandlerClient {
     message: string[],
     notifications: NotificationSettings,
     incidentKey: IncidentKey,
-    blockNumber: number,
+    blockContext: BlockContext,
     isFiring?: boolean,
   ): Promise<void> {
     if (isFiring === false) return;
