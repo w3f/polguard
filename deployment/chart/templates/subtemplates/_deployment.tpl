@@ -57,7 +57,10 @@ spec:
 
           ports:
             - name: http
-              containerPort: {{ .svc.containerPort | default 3000 }}
+              containerPort: {{ .svc.containerHttpPort | default 3000 }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .svc.containerMetricsPort | default 9464 }}
               protocol: TCP
 
           {{- /* todo re-add probes */ -}}

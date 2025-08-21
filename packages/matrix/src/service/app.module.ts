@@ -1,6 +1,5 @@
 import { Logger, Module } from '@nestjs/common';
 import { HealthModule } from './health/health.module';
-import { MetricsModule } from './metrics/metrics.module';
 import { ConfigModule } from './config/config.module';
 import { IncidentModule } from './incident/incident.module';
 import { MonitoringConfigModule } from './monitoring-config/monitoring-config.module';
@@ -11,7 +10,7 @@ import { ConfigService } from './config/config.service';
 import { suppressConsole } from './console-suppressor';
 
 @Module({
-  imports: [HealthModule, MetricsModule, ConfigModule, IncidentModule.forRootAsync(), MonitoringConfigModule],
+  imports: [HealthModule, ConfigModule, IncidentModule.forRootAsync(), MonitoringConfigModule],
   providers: [
     Logger,
     {

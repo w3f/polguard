@@ -3,16 +3,31 @@ import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { MonitoringGroup, MonitoringConfigClient } from '@w3f/monitoring-types';
 import { ConfigService } from '../config/config.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { metrics, Meter, Gauge } from '@opentelemetry/api';
 
 @Injectable()
 export class MonitoringConfigService implements MonitoringConfigClient {
+  private readonly telemetryMeter: Meter;
+  private readonly telemetryTotalGroups: Gauge;
+  private readonly telemetryTotalAccounts: Gauge;
+  private readonly telemetryTotalMonitors: Gauge;
+
   constructor(
     private readonly logger: Logger,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
-    private readonly metrics: MetricsService,
-  ) {}
+  ) {
+    this.telemetryMeter = metrics.getMeter('monitoring-chain');
+    this.telemetryTotalGroups = this.telemetryMeter.createGauge('monitoring-chain.total-groups', {
+      description: 'The number of groups the service is monitoring.',
+    });
+    this.telemetryTotalAccounts = this.telemetryMeter.createGauge('monitoring-chain.total-accounts', {
+      description: 'The number of accounts the service is monitoring.',
+    });
+    this.telemetryTotalMonitors = this.telemetryMeter.createGauge('monitoring-chain.total-monitors', {
+      description: 'The number of monitors the service has active.',
+    });
+  }
 
   async getMonitoringGroups(): Promise<MonitoringGroup[]> {
     const monitoringApi = this.configService.getMonitoringApi();
@@ -33,7 +48,7 @@ export class MonitoringConfigService implements MonitoringConfigClient {
       throw new Error(`Failed to fetch monitoring groups: ${error.message}`);
     }
 
-    const groups = response.data.groups;
+    const groups = response.data.groups as MonitoringGroup[]; // todo add validation
 
     // Log detailed information and update metrics
     this.logGroupDetails(groups);
@@ -72,8 +87,8 @@ export class MonitoringConfigService implements MonitoringConfigClient {
       group.monitors.forEach(monitor => monitorTypes.add(monitor.name));
     });
 
-    this.metrics.setMonitorGroupsCount(totalGroups);
-    this.metrics.setMonitoredAccountsCount(totalAccounts);
-    this.metrics.setMonitorsCount(monitorTypes.size);
+    this.telemetryTotalGroups.record(totalGroups);
+    this.telemetryTotalAccounts.record(totalAccounts);
+    this.telemetryTotalMonitors.record(monitorTypes.size);
   }
 }

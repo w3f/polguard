@@ -68,13 +68,21 @@
           "type": "object",
           "description": "Required runtime configuration"
         },
-        "containerPort": {
+        "containerHttpPort": {
           "type": "integer",
-          "description": "Port number used by the container. The running application should listen on this port."
+          "description": "Port number used by the container for the main HTTP API. The running application should listen on this port."
         },
-        "servicePort": {
+        "serviceHttpPort": {
           "type": "integer",
-          "description": "Port number exposed by the service. Other applications should send requests to this port."
+          "description": "Port number exposed by the service for the main HTTP API. Other applications should send requests to this port."
+        },
+        "containerMetricsPort": {
+          "type": "integer",
+          "description": "Port number used by the container for exposing a Prometheus-compatible metrics API."
+        },
+        "serviceMetricsPort": {
+          "type": "integer",
+          "description": "Port number exposed by the service for exposing the container's Prometheus-compatible metrics API. Prometheus should send requests to this port."
         }
       },
       "required": ["config"]

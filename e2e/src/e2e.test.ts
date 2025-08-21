@@ -49,12 +49,16 @@ async function waitForChainBlock(targetBlock: number): Promise<void> {
   while (true) {
     try {
       console.log('Getting metrics...');
-      const response = await axios.get(`${config.chain.url}/metrics`);
+      const response = await axios.get(`${config.chain.metricsUrl}/metrics`);
       console.log('Got metrics response.');
-      const blockMatch = response.data.match(/mp_chain_watcher_block_height{[^}]*} (\d+)/);
+      console.log(`Response is ${response.data.length} bytes long.`);
+
+      const blockMatch = response.data.match(/^monitoring_chain_latest_block_on_chain\s\d+$/gm);
+      console.log(`blockMatch is: ${blockMatch}`);
 
       if (blockMatch) {
-        const currentBlock = parseInt(blockMatch[1], 10);
+        const [_metricName, currentBlockStr] = blockMatch[0].split(' ');
+        const currentBlock = parseInt(currentBlockStr, 10);
         console.log(`Current block: ${currentBlock}, Target block: ${targetBlock}`);
         if (currentBlock >= targetBlock) return;
       } else {

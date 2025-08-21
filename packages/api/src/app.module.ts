@@ -8,7 +8,6 @@ import { IncidentModule } from './incident/incident.module';
 import { NotificationModule } from './notification/notification.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { HealthModule } from './health/health.module';
-import { MetricsModule } from './metrics/metrics.module';
 import { MonitoringConfigModule } from './monitoring-config/monitoring-config.module';
 import { LastBlockModule } from './last-block/last-block.module';
 
@@ -31,7 +30,6 @@ import { LastBlockModule } from './last-block/last-block.module';
     NotificationModule,
     SchedulerModule,
     HealthModule,
-    MetricsModule,
     MonitoringConfigModule,
     LastBlockModule,
   ],

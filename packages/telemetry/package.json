@@ -1,0 +1,36 @@
+{
+  "name": "@w3f/monitoring-telemetry",
+  "version": "0.1.0",
+  "description": "Common telemetry configuration for monitoring-platform packages.",
+  "author": "W3F SecOps Team <devops@web3.foundation>",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "./dist/commonjs/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/commonjs/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf ./dist",
+    "build:watch": "tsc --watch",
+    "test": "echo \"No tests required for types package\" && exit 0"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.62.1",
+    "@opentelemetry/exporter-prometheus": "^0.203.0",
+    "@opentelemetry/sdk-metrics": "^2.0.1",
+    "@opentelemetry/sdk-node": "^0.203.0",
+    "@opentelemetry/sdk-trace-node": "^2.0.1"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.3"
+  }
+}

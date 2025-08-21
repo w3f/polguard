@@ -15,7 +15,10 @@ spec:
   type: ClusterIP
   ports:
     - name: http
-      port: {{ .svc.servicePort | default 80 }}
+      port: {{ .svc.serviceHttpPort | default 80 }}
       targetPort: http
+    - name: metrics
+      port: {{ .svc.serviceMetricsPort | default 9464 }}
+      targetPort: metrics
   selector: {{ include "foundation.web3.mp.common.matchLabels" . | nindent 4 }}
 {{- end }}

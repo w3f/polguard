@@ -48,6 +48,13 @@ The Matrix bot supports several commands for incident management:
 
 The Matrix service requires a configuration file to specify its behavior. For an example configuration, see the [example config file](./config/config.yaml.example).
 
+## Telemetry
+
+This service exposes additional Prometheus-compatible metrics on a seperate port/endpoint combination.
+The endpoint used is:
+
+```localhost:9464/metrics```
+
 ## Usage
 
 ### Prerequisites

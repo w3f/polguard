@@ -117,6 +117,7 @@ tests:
         handlerType: "TransferEgressEvent"
     chain:
       url: "http://e2e-chain:80"
+      metricsUrl: "http://e2e-chain:9464"
       targetBlock: 25700136
     matrix:
       homeserver: "https://matrix.web3.foundation"

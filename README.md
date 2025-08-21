@@ -46,13 +46,14 @@ graph LR
 
 ## Packages
 
-| Package                                 | Role                         | Key features                                             |
-|-----------------------------------------|------------------------------|----------------------------------------------------------|
-| [**API**](packages/api/README.md)       | Incident & config control    | Incident CRUD API, monitoring config, last block handling|
-| [**Chain**](packages/chain/README.md)   | Blockchain monitor           | Balance changes, transfers, identity, voting and more    |
-| [**Matrix**](packages/matrix/README.md) | Notifications & bot          | Deliver/ack incidents via Matrix rooms, bot commands     |
-| [**Types**](packages/types/README.md)   | Shared types                 | Core interfaces, constants, enums                        |
-| [**Config**](packages/config/README.md) | YAML config & validation     | Load/validate monitoring rules                           |
+| Package                                       | Role                           | Key features                                              |
+|-----------------------------------------------|--------------------------------|-----------------------------------------------------------|
+| [**API**](packages/api/README.md)             | Incident & config control      | Incident CRUD API, monitoring config, last block handling |
+| [**Chain**](packages/chain/README.md)         | Blockchain monitor             | Balance changes, transfers, identity, voting and more     |
+| [**Matrix**](packages/matrix/README.md)       | Notifications & bot            | Deliver/ack incidents via Matrix rooms, bot commands      |
+| [**Types**](packages/types/README.md)         | Shared types                   | Core interfaces, constants, enums                         |
+| [**Telemetry**](packages/telemetry/README.md) | Shared telemetry configuration | Initializes OpenTelemetry with auto-instrumentation       |
+| [**Config**](packages/config/README.md)       | YAML config & validation       | Load/validate monitoring rules                            |
 
 ## Installation & Setup
 
@@ -107,6 +108,7 @@ yarn test:integration
 
 ### Supporting Packages
 - [**Types Package**](packages/types/README.md) - Shared interfaces and types
+- [**Telemetry Package**](packages/telemetry/README.md) - Shared telemetry configuration
 - [**Config Package**](packages/config/README.md) - YAML monitoring config & validation
 
 ### Configuration & Monitoring

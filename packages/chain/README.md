@@ -48,14 +48,30 @@ graph TD
 
 ## REST API Endpoints
 
-### Health and Metrics
+### Health
 
 - `GET /health`: Health check endpoint that returns a 200 status code when the service is healthy
-- `GET /metrics`: Prometheus metrics endpoint that exposes default Node.js metrics and custom metrics (block height, accounts count, monitors count, groups count)
 
 ## Configuration
 
 The Chain service requires a configuration file to specify its behavior. For an example configuration, see the [example config file](./config/config.yaml.example).
+
+## Telemetry
+
+This service exposes additional Prometheus-compatible metrics on a seperate port/endpoint combination.
+The endpoint used is:
+
+```localhost:9464/metrics```
+
+In addition to metrics created by auto-instrumentation for Node.js, Nest.js, and the underlying fastify/express
+instance, we also expose the following custom metrics:
+
+- `latest-block-on-chain` -- the latest block on the chain, as reported by the RPC subscription to the chain node,
+- `last-block-processed` -- the last block that was fully processed,
+- `current-block-processing` -- the current block being processed,
+- `total-groups` -- the number of groups the service is monitoring,
+- `total-accounts` -- the number of accounts the service is monitoring,
+- `total-monitors` -- the number of monitors that are active.
 
 ## Usage
 

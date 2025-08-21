@@ -38,8 +38,10 @@ apiService:
   containerArgs: ["start:api"]
   secrets: {} # OPTIONAL secrets map
   config: {}  # REQUIRED runtime configuration
-  containerPort: 3000
-  servicePort: 80
+  containerHttpPort: 3000
+  serviceHttpPort: 80
+  containerMetricsPort: 9464
+  serviceMetricsPort: 9464
 
 apiInitContainers:
   - name: "wait-for-api"
@@ -56,8 +58,10 @@ matrixService:
   containerArgs: ["start:matrix"]
   secrets: {} # OPTIONAL secrets map
   config: {}  # REQUIRED runtime configuration
-  containerPort: 3000
-  servicePort: 80
+  containerHttpPort: 3000
+  serviceHttpPort: 80
+  containerMetricsPort: 9464
+  serviceMetricsPort: 9464
 
 matrixInitContainers:
   - name: "wait-for-api"

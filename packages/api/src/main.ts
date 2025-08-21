@@ -5,8 +5,12 @@ import { ConfigService } from './config/config.service';
 import * as JSONbig from 'json-bigint';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { getLogLevels } from '@w3f/monitoring-types';
+import { buildOtelSdk } from '@w3f/monitoring-telemetry';
 
 async function bootstrap() {
+  const otelSdk = buildOtelSdk(false, true);
+  otelSdk.start();
+
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);

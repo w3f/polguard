@@ -13,6 +13,7 @@ export interface E2EConfig {
   };
   chain: {
     url: string;
+    metricsUrl: number;
     targetBlock: number;
   };
   matrix: {
@@ -71,7 +72,8 @@ export class ConfigService {
         }).required(),
       }).required(),
       chain: Joi.object({
-        url: Joi.string().required(),
+        url: Joi.string().uri().required(),
+        metricsUrl: Joi.string().uri().required(),
         targetBlock: Joi.number().required(),
       }).required(),
       matrix: Joi.object({

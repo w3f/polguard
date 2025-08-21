@@ -1,3 +1,4 @@
+import { metrics, Meter, Gauge } from '@opentelemetry/api';
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
 import { EventRecord } from '@polkadot/types/interfaces';
@@ -55,7 +56,12 @@ export class ChainWatcher {
   monitors: Monitor[] = [];
   private isRunning = false;
   private readonly configRefreshIntervalMs = 15 * 60 * 1000; // 15 minutes
-  private latestBlockNumber = 0;
+  private _latestBlockNumber = 0;
+
+  private readonly telemetryMeter: Meter;
+  private readonly telemetryLatestBlockOnChain: Gauge;
+  private readonly telemetryLastBlockProcessed: Gauge;
+  private readonly telemetryCurrentBlockProcessing: Gauge;
 
   private static readonly monitorConfigs: [MonitorType, MonitorConstructor<MonitorType>][] = [
     [MonitorType.Governance, GovernanceMonitor],
@@ -75,7 +81,30 @@ export class ChainWatcher {
     private store: KeyValueStorageClient,
     private chainProps: ChainProperties,
     private chainProvider: ChainDataProvider,
-  ) {}
+  ) {
+    this.telemetryMeter = metrics.getMeter('monitoring-chain');
+    this.telemetryLatestBlockOnChain = this.telemetryMeter.createGauge('monitoring-chain.latest-block-on-chain', {
+      description: "The chain's latest block, as reported by the RPC subscription.",
+    });
+    this.telemetryLastBlockProcessed = this.telemetryMeter.createGauge('monitoring-chain.last-block-processed', {
+      description: 'The last block that the chain-service has processed.',
+    });
+    this.telemetryCurrentBlockProcessing = this.telemetryMeter.createGauge(
+      'monitoring-chain.current-block-processing',
+      {
+        description: 'The block that the chain-service is currently processing.',
+      },
+    );
+  }
+
+  // This setter is used just to hide the telemetry calls
+  private set latestBlockNumber(i: number) {
+    this.telemetryLatestBlockOnChain.record(i);
+    this._latestBlockNumber = i;
+  }
+  private get latestBlockNumber(): number {
+    return this._latestBlockNumber;
+  }
 
   /**
    * Starts the watcher if it's not already running.
@@ -183,9 +212,6 @@ export class ChainWatcher {
     let lastConfigRefreshTime = Date.now();
 
     while (this.isRunning) {
-      // At the moment we use store only for metrics
-      await this.store.set('last_processed_block', nextBlockToProcess - 1);
-
       const now = Date.now();
 
       // Periodic tasks: refresh config and checkpoint last processed block
@@ -222,6 +248,8 @@ export class ChainWatcher {
    */
   async processBlock(blockNumber: number): Promise<void> {
     this.logger.log(`Processing block: #${blockNumber}`);
+    this.telemetryCurrentBlockProcessing.record(blockNumber);
+
     const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
     const block = await this.api.rpc.chain.getBlock(blockHash);
     const apiAt = await this.api.at(blockHash);
@@ -244,6 +272,8 @@ export class ChainWatcher {
       const origin = extrinsic.signer.toString();
       await this.traverseCallTree(blockNumber, extrinsic.method, origin, extrinsicIdx);
     }
+
+    this.telemetryLastBlockProcessed.record(blockNumber);
   }
 
   /**

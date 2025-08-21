@@ -3,8 +3,12 @@ import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
 import { getLogLevels } from '@w3f/monitoring-types';
+import { buildOtelSdk } from '@w3f/monitoring-telemetry';
 
 async function bootstrap() {
+  const otelSdk = buildOtelSdk(false, true);
+  otelSdk.start();
+
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
