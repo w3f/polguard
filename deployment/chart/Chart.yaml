@@ -4,9 +4,4 @@ name: monitoring-platform
 description: An application stack that allows monitoring of Polkadot and Kusama.
 
 type: application
-version: 1.2.0
-
-dependencies:
-  - name: common
-    repository: https://charts.bitnami.com/bitnami
-    version: ">=2.0.0"
+version: 1.2.1
