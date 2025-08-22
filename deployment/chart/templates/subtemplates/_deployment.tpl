@@ -11,7 +11,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "common.names.fullname" .global }}-{{ .name }}
-  labels: {{ include "common.labels.standard" .global | nindent 4 }}
+  labels: {{ include "foundation.web3.mp.common.labels" . | nindent 4 }}
 spec:
   replicas: {{ .svc.replicas | default 1 }}
   strategy:

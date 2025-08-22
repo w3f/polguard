@@ -10,7 +10,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "common.names.fullname" .global }}-{{ .name }}
-  labels: {{ include "common.labels.standard" .global | nindent 4 }}
+  labels: {{ include "foundation.web3.mp.common.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:

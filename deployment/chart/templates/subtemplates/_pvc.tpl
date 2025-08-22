@@ -11,7 +11,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ include "common.names.fullname" .global }}-{{ .name }}
-  labels: {{ include "common.labels.standard" .global | nindent 4 }}
+  labels: {{ include "foundation.web3.mp.common.labels" . | nindent 4 }}
 spec:
   accessModes: {{ toYaml .persistence.accessModes | nindent 4 }}
   resources:

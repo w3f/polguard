@@ -9,7 +9,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "common.names.fullname" .global }}-{{ .name }}
-  labels: {{ include "common.labels.standard" .global | nindent 4 }}
+  labels: {{ include "foundation.web3.mp.common.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels: {{ include "foundation.web3.mp.common.matchLabels" . | nindent 6 }}
