@@ -13,6 +13,7 @@ import * as JSONbig from 'json-bigint';
 import { Incident } from '../../src/database/incident.entity';
 import { Notification } from '../../src/database/notification.entity';
 import { LastBlock } from '../../src/database/last-block.entity';
+import { ConfigFetcher } from '@w3f/monitoring-config';
 
 const workerId = process.env.JEST_WORKER_ID ?? '0'; // "0" when runInBand
 export const dbFile = path.join(process.cwd(), `test-${workerId}.sqlite`);
@@ -46,21 +47,11 @@ export async function setupMonitoringConfigService(
   service: MonitoringConfigService,
   fixturePath: string = path.join(__dirname, './fixtures/test-config.yaml'),
 ): Promise<void> {
-  // Get the configsDir from the service
-  const configsDir = path.join(process.cwd(), 'monitoring-configs');
+  jest.spyOn(ConfigFetcher, 'fetchAndProcessConfigs').mockImplementation(async () => {
+    const { ConfigProcessor } = await import('@w3f/monitoring-config');
+    return ConfigProcessor.processConfigs([fixturePath]);
+  });
 
-  // Create the directory if it doesn't exist
-  if (!fs.existsSync(configsDir)) {
-    fs.mkdirSync(configsDir, { recursive: true });
-  }
-
-  // Copy our test fixture to the configsDir
-  const fixtureContent = fs.readFileSync(fixturePath, 'utf8');
-  const targetPath = path.join(configsDir, 'test-config.yaml');
-  fs.writeFileSync(targetPath, fixtureContent);
-
-  // The service refreshes configurations normally
-  // It will find our test fixture in the configsDir
   await service.refreshConfigurations();
 }
 
