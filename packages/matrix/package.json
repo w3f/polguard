@@ -11,7 +11,7 @@
   "scripts": {
     "build": "nest build",
     "clean": "yarn dlx rimraf ./dist ./node_modules",
-    "start": "node dist/commonjs/service/main",
+    "start": "node dist/commonjs/src/service/main",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",

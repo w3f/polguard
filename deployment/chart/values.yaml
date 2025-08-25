@@ -19,6 +19,8 @@ resources:
 
 serviceMonitorsEnabled: true
 
+prometheusRulesEnabled: true
+
 # --------------------------------------------------- chain services ---------------------------------------------------
 
 # chainServices: # each chain listed here will create a new set of chain svc instances (x replica count)

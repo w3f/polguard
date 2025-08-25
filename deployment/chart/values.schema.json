@@ -5,6 +5,11 @@
     "image": { "$ref": "#/definitions/image" },
     "resources": { "$ref": "#/definitions/resources" },
     "serviceMonitorsEnabled": {
+      "description": "Should ServiceMonitor resources be created?",
+      "type": "boolean"
+    },
+    "prometheusRulesEnabled": {
+      "description": "Should PrometheusRule resources be created?",
       "type": "boolean"
     },
     "chainServices": {

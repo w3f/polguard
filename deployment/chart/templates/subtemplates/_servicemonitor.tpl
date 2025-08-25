@@ -14,5 +14,5 @@ spec:
   selector:
     matchLabels: {{ include "foundation.web3.mp.common.matchLabels" . | nindent 6 }}
   endpoints:
-    - port: http
+    - port: metrics
 {{- end }}

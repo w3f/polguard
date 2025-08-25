@@ -1,0 +1,18 @@
+{{ if .Values.prometheusRulesEnabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: chain-service-rules
+spec:
+  groups:
+    - name: ChainBlockAlerts
+      rules:
+        - alert: ProcessingBehindAlert
+          expr: "monitoring_chain_latest_block_on_chain{namespace=\"{{ .Release.Namespace }}\"} - monitoring_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"} > 100"
+          for: "5m"
+          labels:
+            severity: warning
+          annotations:
+            summary: The last processed block is more than 100 blocks behind the latest block on the chain.
+            description: "Chain service {{`{{ $labels.pod }}`}}: The last processed block is {{`{{ $value }}`}} behind the latest block on the chain."
+{{- end }}

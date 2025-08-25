@@ -4,11 +4,9 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
 import { getLogLevels } from '@w3f/monitoring-types';
 import { buildOtelSdk } from '@w3f/monitoring-telemetry';
+import * as pkg from '../../package.json'; // "* as" import needed whilst we use commonJS
 
 async function bootstrap() {
-  const otelSdk = buildOtelSdk(false, true);
-  otelSdk.start();
-
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
@@ -17,6 +15,9 @@ async function bootstrap() {
 
   const logger = new Logger('Main');
   const serverConfig = configService.getServerConfig();
+
+  const otelSdk = buildOtelSdk(pkg.name, pkg.version, configService.getChain(), false, true);
+  otelSdk.start();
 
   process.on('SIGTERM', async () => {
     logger.log('SIGTERM signal received. Starting graceful shutdown...');

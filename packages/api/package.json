@@ -11,7 +11,7 @@
   "scripts": {
     "build": "nest build",
     "clean": "yarn dlx rimraf ./dist ./node_modules",
-    "start": "node dist/commonjs/main",
+    "start": "node dist/commonjs/src/main",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:with-migrations": "yarn migration:run:prod && yarn start",
@@ -26,7 +26,7 @@
     "migration:generate": "typeorm-ts-node-commonjs migration:generate src/database/migrations/Migration -d src/database/typeorm.config.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/typeorm.config.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/typeorm.config.ts",
-    "migration:run:prod": "typeorm migration:run -d dist/commonjs/database/typeorm.config.js"
+    "migration:run:prod": "typeorm migration:run -d dist/commonjs/src/database/typeorm.config.js"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.0",

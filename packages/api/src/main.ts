@@ -6,11 +6,9 @@ import * as JSONbig from 'json-bigint';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { getLogLevels } from '@w3f/monitoring-types';
 import { buildOtelSdk } from '@w3f/monitoring-telemetry';
+import * as pkg from '../package.json'; // "* as" import needed whilst we use commonJS
 
 async function bootstrap() {
-  const otelSdk = buildOtelSdk(false, true);
-  otelSdk.start();
-
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
@@ -18,6 +16,9 @@ async function bootstrap() {
   Logger.overrideLogger(getLogLevels(logLevel));
 
   const logger = new Logger('Main');
+
+  const otelSdk = buildOtelSdk(pkg.name, pkg.version, undefined, false, true);
+  otelSdk.start();
 
   app.useGlobalPipes(
     new ValidationPipe({

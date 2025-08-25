@@ -63,6 +63,11 @@ export class ChainWatcher {
   private readonly telemetryLastBlockProcessed: Gauge;
   private readonly telemetryCurrentBlockProcessing: Gauge;
 
+  // the time it takes to process a block
+  // this should be available via traces, if traces are enabled
+  // since traces may not be enabled, we provide this additionally as a metric
+  private readonly telemetryBlockProcessingTime: Gauge;
+
   private static readonly monitorConfigs: [MonitorType, MonitorConstructor<MonitorType>][] = [
     [MonitorType.Governance, GovernanceMonitor],
     [MonitorType.Staking, StakingMonitor],
@@ -95,6 +100,10 @@ export class ChainWatcher {
         description: 'The block that the chain-service is currently processing.',
       },
     );
+    this.telemetryBlockProcessingTime = this.telemetryMeter.createGauge('monitoring-chain.block-processing-time', {
+      description: 'The time it takes to process a block.',
+      unit: 'ms',
+    });
   }
 
   // This setter is used just to hide the telemetry calls
@@ -249,6 +258,7 @@ export class ChainWatcher {
   async processBlock(blockNumber: number): Promise<void> {
     this.logger.log(`Processing block: #${blockNumber}`);
     this.telemetryCurrentBlockProcessing.record(blockNumber);
+    const start = performance.now();
 
     const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
     const block = await this.api.rpc.chain.getBlock(blockHash);
@@ -272,6 +282,9 @@ export class ChainWatcher {
       const origin = extrinsic.signer.toString();
       await this.traverseCallTree(blockNumber, extrinsic.method, origin, extrinsicIdx);
     }
+
+    const end = performance.now();
+    this.telemetryBlockProcessingTime.record(end - start);
 
     this.telemetryLastBlockProcessed.record(blockNumber);
   }

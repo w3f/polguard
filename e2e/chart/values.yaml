@@ -9,8 +9,9 @@ monitoring:
   # global stuff
   fullnameOverride: "e2e" # used to create consistently named resources from the monitoring-platform subchart
 
-  # disable the default servicemonitors
+  # disable the default servicemonitors and prometheusrules
   serviceMonitorsEnabled: false
+  prometheusRulesEnabled: false
 
   # chain stuff
   chainServices:
