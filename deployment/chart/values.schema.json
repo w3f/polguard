@@ -88,7 +88,8 @@
         "serviceMetricsPort": {
           "type": "integer",
           "description": "Port number exposed by the service for exposing the container's Prometheus-compatible metrics API. Prometheus should send requests to this port."
-        }
+        },
+        "resources": { "$ref": "#/definitions/resources" }
       },
       "required": ["config"]
     },

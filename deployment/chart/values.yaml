@@ -44,6 +44,13 @@ apiService:
   serviceHttpPort: 80
   containerMetricsPort: 9464
   serviceMetricsPort: 9464
+  resources:
+    requests:
+      cpu: "400m"
+      memory: "512Mi"
+    limits:
+      cpu: "800m"
+      memory: "1024Mi"
 
 apiInitContainers:
   - name: "wait-for-api"

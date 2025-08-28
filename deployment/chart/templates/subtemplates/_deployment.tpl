@@ -72,7 +72,12 @@ spec:
           {{- end }}
 
           resources:
+          {{- $customResources := .svc.resources | default false }}
+          {{- if $customResources }}
+{{ toYaml .svc.resources | indent 12 }}
+          {{- else }}
 {{ toYaml .global.Values.resources | indent 12 }}
+          {{- end }}
 
           volumeMounts:
             - name: config
