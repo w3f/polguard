@@ -1,6 +1,8 @@
+import { metrics, Meter, Gauge } from '@opentelemetry/api';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as path from 'node:path';
 import { ConfigFetcher } from '@w3f/monitoring-config';
+import { TELEMETRY_PREFIX } from '@w3f/monitoring-telemetry';
 import { Chain, MonitoringGroup } from '@w3f/monitoring-types';
 import { ConfigService } from '../config/config.service';
 
@@ -14,9 +16,29 @@ export class MonitoringConfigService implements OnModuleInit {
   private channelToGroupsMap: Record<string, string[]> = {};
   private allActiveAccounts: string[] = [];
 
-  constructor(private readonly configService: ConfigService) {}
+  private readonly telemetryMeter: Meter;
+  private readonly telemetryTotalGroups: Gauge;
+  private readonly telemetryTotalAccounts: Gauge;
+  private readonly telemetryTotalMonitors: Gauge;
+
+  constructor(private readonly configService: ConfigService) {
+    this.telemetryMeter = metrics.getMeter(`${TELEMETRY_PREFIX}.monitoring-api`);
+    this.telemetryTotalGroups = this.telemetryMeter.createGauge(`${TELEMETRY_PREFIX}.monitoring-api.total-groups`, {
+      description: 'The number of groups the service is monitoring.',
+    });
+    this.telemetryTotalAccounts = this.telemetryMeter.createGauge(`${TELEMETRY_PREFIX}.monitoring-api.total-accounts`, {
+      description: 'The number of accounts the service is monitoring.',
+    });
+    this.telemetryTotalMonitors = this.telemetryMeter.createGauge(`${TELEMETRY_PREFIX}.monitoring-api.total-monitors`, {
+      description: 'The number of monitors the service has active.',
+    });
+  }
 
   async onModuleInit() {
+    this.telemetryTotalGroups.record(0);
+    this.telemetryTotalAccounts.record(0);
+    this.telemetryTotalMonitors.record(0);
+
     await this.refreshConfigurations();
   }
 
@@ -36,6 +58,7 @@ export class MonitoringConfigService implements OnModuleInit {
     this.buildLookupDictionaries();
 
     this.logger.log(`Loaded ${this.monitoringGroups.length} monitoring groups`);
+    this.updateMetrics(this.monitoringGroups);
   }
 
   private buildLookupDictionaries(): void {
@@ -140,5 +163,19 @@ export class MonitoringConfigService implements OnModuleInit {
    */
   getAllActiveAccounts(): string[] {
     return this.allActiveAccounts;
+  }
+
+  private updateMetrics(groups: MonitoringGroup[]): void {
+    const totalGroups = groups.length;
+    const totalAccounts = groups.reduce((acc, group) => acc + (group.accounts?.length || 0), 0);
+    const monitorTypes = new Set<string>();
+
+    groups.forEach(group => {
+      group.monitors.forEach(monitor => monitorTypes.add(monitor.name));
+    });
+
+    this.telemetryTotalGroups.record(totalGroups);
+    this.telemetryTotalAccounts.record(totalAccounts);
+    this.telemetryTotalMonitors.record(monitorTypes.size);
   }
 }

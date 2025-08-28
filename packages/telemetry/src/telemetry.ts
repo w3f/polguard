@@ -10,9 +10,6 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
-import {
-
-} from "@opentelemetry/semantic-conventions/build/src/resource/SemanticResourceAttributes";
 import {TELEMETRY_PREFIX} from "./constants";
 
 /**

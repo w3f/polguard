@@ -2,6 +2,7 @@ import { metrics, Meter, Gauge } from '@opentelemetry/api';
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
 import { EventRecord } from '@polkadot/types/interfaces';
+import { TELEMETRY_PREFIX } from '@w3f/monitoring-telemetry';
 
 import {
   Logger,
@@ -87,23 +88,32 @@ export class ChainWatcher {
     private chainProps: ChainProperties,
     private chainProvider: ChainDataProvider,
   ) {
-    this.telemetryMeter = metrics.getMeter('monitoring-chain');
-    this.telemetryLatestBlockOnChain = this.telemetryMeter.createGauge('monitoring-chain.latest-block-on-chain', {
-      description: "The chain's latest block, as reported by the RPC subscription.",
-    });
-    this.telemetryLastBlockProcessed = this.telemetryMeter.createGauge('monitoring-chain.last-block-processed', {
-      description: 'The last block that the chain-service has processed.',
-    });
+    this.telemetryMeter = metrics.getMeter(`${TELEMETRY_PREFIX}.monitoring-chain`);
+    this.telemetryLatestBlockOnChain = this.telemetryMeter.createGauge(
+      `${TELEMETRY_PREFIX}.monitoring-chain.latest-block-on-chain`,
+      {
+        description: "The chain's latest block, as reported by the RPC subscription.",
+      },
+    );
+    this.telemetryLastBlockProcessed = this.telemetryMeter.createGauge(
+      `${TELEMETRY_PREFIX}.monitoring-chain.last-block-processed`,
+      {
+        description: 'The last block that the chain-service has processed.',
+      },
+    );
     this.telemetryCurrentBlockProcessing = this.telemetryMeter.createGauge(
-      'monitoring-chain.current-block-processing',
+      `${TELEMETRY_PREFIX}.monitoring-chain.current-block-processing`,
       {
         description: 'The block that the chain-service is currently processing.',
       },
     );
-    this.telemetryBlockProcessingTime = this.telemetryMeter.createGauge('monitoring-chain.block-processing-time', {
-      description: 'The time it takes to process a block.',
-      unit: 'ms',
-    });
+    this.telemetryBlockProcessingTime = this.telemetryMeter.createGauge(
+      `${TELEMETRY_PREFIX}.monitoring-chain.block-processing-time`,
+      {
+        description: 'The time it takes to process a block.',
+        unit: 'ms',
+      },
+    );
   }
 
   // This setter is used just to hide the telemetry calls
