@@ -15,4 +15,11 @@ spec:
           annotations:
             summary: The last processed block is more than 100 blocks behind the latest block on the chain.
             description: "Chain service {{`{{ $labels.pod }}`}}: The last processed block is {{`{{ $value }}`}} behind the latest block on the chain."
+        - alert: ProcessingStoppedAlert
+          expr: "changes(monitoring_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"}[15m]) == 0"
+          labels:
+            severity: warning
+          annotations:
+            summary: The chain service has not processed a new block in more than 15 minutes.
+            description: "Chain service {{`{{ $labels.pod }}`}}: The chain service has not processed a new block in more than 15 minutes."
 {{- end }}
