@@ -13,6 +13,7 @@ export interface TestCase {
   block: number;
   account: any;
   description?: string;
+  expectedIncidents?: number;
 }
 
 export interface TestResult {
@@ -90,6 +91,7 @@ export class TestRunner {
             block: test.block,
             account: test.account,
             description: test.description,
+            expectedIncidents: test.expectedIncidents || 1,
           });
         }
       }
@@ -171,15 +173,20 @@ export class TestRunner {
       await watcher.initializeMonitors();
       await watcher.processBlock(testCase.block);
 
-      const assetsMonitor = watcher.monitors[0] as any;
-      const token = assetsMonitor.reg.getUniqueTokens()[0];
-
-      const success = incidentHandler.wasIncidentCreated(
+      const actualIncidents = incidentHandler.getIncidentCount(
         testCase.account.address,
         group.id,
         testCase.handlerType,
-        token,
       );
+
+      const expectedIncidents = testCase.expectedIncidents || 1;
+      const success = actualIncidents === expectedIncidents;
+
+      if (debug || !success) {
+        console.log(
+          `${colors.yellow}[${testId}] Expected ${expectedIncidents} incident(s), got ${actualIncidents}${colors.reset}`,
+        );
+      }
 
       return {
         chain: testCase.chain,

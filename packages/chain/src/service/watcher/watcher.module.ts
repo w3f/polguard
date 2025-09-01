@@ -11,7 +11,7 @@ import { LastBlockModule } from '../last-block/last-block.module';
     ConfigModule,
     MonitoringConfigModule.forRootAsync(),
     LastBlockModule.forRootAsync(),
-    StorageModule.forRootAsync(),
+    StorageModule,
     IncidentModule.forRootAsync(),
   ],
   providers: [Logger, WatcherService],

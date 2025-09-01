@@ -82,33 +82,15 @@ export class IncidentService {
   async createIncident(dto: CreateIncidentDto): Promise<Incident> {
     await this.lastBlockService.setLastBlock(dto.chain, dto.blockNumber);
 
-    // Idempotency check for ongoing incidents.
-    if (!dto.isResolved) {
-      const existingIncident = await this.incidentRepository.findOne({
-        where: {
-          idempotencyKey: dto.idempotencyKey,
-          isResolved: false,
-        },
-      });
+    const existingIncident = await this.incidentRepository.findOne({
+      where: {
+        idempotencyKey: dto.idempotencyKey,
+        isResolved: dto.isResolved,
+      },
+    });
 
-      if (existingIncident) {
-        return existingIncident;
-      }
-    }
-
-    // Idempotency check for one-time incidents.
-    if (dto.isResolved) {
-      const existingOneTimeIncident = await this.incidentRepository.findOne({
-        where: {
-          idempotencyKey: dto.idempotencyKey,
-          blockNumber: dto.blockNumber,
-          isResolved: true,
-        },
-      });
-
-      if (existingOneTimeIncident) {
-        return existingOneTimeIncident;
-      }
+    if (existingIncident) {
+      return existingIncident;
     }
 
     const { notificationChannels, ...incidentData } = dto;

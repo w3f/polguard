@@ -12,6 +12,40 @@ import {
 } from '@w3f/monitoring-types';
 
 /**
+ * Build a unified idempotency key for both ongoing & one-time incidents.
+ * Rule:
+ * - Base = chain + (groupId, handlerType, account?, token?)
+ * - Ongoing (no indexes): key = hash(Base)
+ * - One-time (event):     key = hash(Base + block + eventIdx)
+ * - One-time (call):      key = hash(Base + block + extrinsicIdx + callIdx)
+ *
+ * This same key is also used as the KV store key for ongoing lifecycle.
+ */
+function md5_16(parts: unknown[]): string {
+  return createHash('md5').update(JSON.stringify(parts)).digest('hex').slice(0, 16);
+}
+
+function buildIdempotencyKey(chain: Chain, ik: IncidentKey, ctx: BlockContext): string {
+  const base: unknown[] = [chain, ik.groupId, ik.handlerType, ik.account ?? null, ik.token ?? null];
+
+  const isEvent = ctx.eventIdx !== undefined;
+  const isCall = ctx.extrinsicIdx !== undefined && ctx.callIdx !== undefined;
+
+  // Ongoing/state: stable across blocks (no blockNumber in key)
+  if (!isEvent && !isCall) {
+    return `inc:${md5_16(base)}`;
+  }
+
+  // One-time (event)
+  if (isEvent) {
+    return `inc:${md5_16([...base, ctx.blockNumber, 'ev', ctx.eventIdx])}`;
+  }
+
+  // One-time (call leaf)
+  return `inc:${md5_16([...base, ctx.blockNumber, 'ex', ctx.extrinsicIdx, 'call', ctx.callIdx])}`;
+}
+
+/**
  * IncidentHandler is responsible for managing and sending incidents to the monitoring service.
  * It handles both ongoing incidents and one-time incidents.
  *
@@ -36,24 +70,26 @@ export class IncidentHandler implements IncidentHandlerClient {
     blockContext: BlockContext,
     isFiring?: boolean,
   ): Promise<void> {
+    // Compute the unified key once; use it for both API idempotency and KV store (ongoing).
+    const idempotencyKey = buildIdempotencyKey(this.chain, incidentKey, blockContext);
+
     // One-time incident (created as immediately resolved)
     if (isFiring === undefined) {
-      await this.createIncident(message, notifications, incidentKey, blockContext, true);
+      await this.createIncident(message, notifications, incidentKey, blockContext, true, idempotencyKey);
       return;
     }
 
-    // Ongoing incident
-    const storeKey = this.getStoreKey(incidentKey);
-    const incidentId = await this.store.get<number>(storeKey);
+    // Ongoing incident lifecycle
+    const incidentId = await this.store.get<number>(idempotencyKey);
 
     if (isFiring && !incidentId) {
-      const id = await this.createIncident(message, notifications, incidentKey, blockContext, false);
+      const id = await this.createIncident(message, notifications, incidentKey, blockContext, false, idempotencyKey);
       if (id) {
-        await this.store.set(storeKey, id);
+        await this.store.set(idempotencyKey, id);
       }
     } else if (!isFiring && incidentId) {
       await this.resolveIncident(incidentId, blockContext.blockNumber);
-      await this.store.del(storeKey);
+      await this.store.del(idempotencyKey);
     }
   }
 
@@ -62,7 +98,8 @@ export class IncidentHandler implements IncidentHandlerClient {
     notifications: NotificationSettings,
     incidentKey: IncidentKey,
     blockContext: BlockContext,
-    isResolved: boolean = false,
+    isResolved: boolean,
+    idempotencyKey: string,
   ): Promise<string | null> {
     const { channels, escalationChannels, escalationTimeoutMs, messengerType, repeatFiringMs } = notifications;
 
@@ -74,13 +111,14 @@ export class IncidentHandler implements IncidentHandlerClient {
       account: incidentKey.account,
       groupId: incidentKey.groupId,
       handlerType: incidentKey.handlerType,
-      idempotencyKey: this.getStoreKey(incidentKey),
+      idempotencyKey,
       notificationChannels: channels.map(channelId => ({ channelId, messengerType, repeatFiringMs })),
       // Optional fields
       escalationChannels: escalationChannels?.map(channelId => ({ channelId, messengerType })),
       escalationTimeoutMs,
       needsAck: notifications.needsAck || false,
       isResolved,
+      // Used to build Subscan URLs
       eventIdx: blockContext.eventIdx,
       extrinsicIdx: blockContext.extrinsicIdx,
     };
@@ -91,7 +129,7 @@ export class IncidentHandler implements IncidentHandlerClient {
     if (incidentId) {
       this.logger.debug(`Sent incident with ID: ${incidentId}`);
     } else {
-      this.logger.debug('Skipping incident.');
+      this.logger.debug('Skipping incident (API returned null).');
     }
     return incidentId;
   }
@@ -99,12 +137,5 @@ export class IncidentHandler implements IncidentHandlerClient {
   private async resolveIncident(incidentId: number, blockNumber: number): Promise<void> {
     this.logger.debug(`Resolving incident with ID: ${incidentId}`);
     await this.incidentApi.resolveIncident(incidentId, { chain: this.chain, blockNumber });
-  }
-
-  private getStoreKey(incidentKey: IncidentKey): string {
-    const { account, groupId, handlerType, token } = incidentKey;
-    const key = `${account}:${groupId}:${handlerType}:${token || 'none'}`;
-    const hash = createHash('md5').update(key).digest('hex').substring(0, 16);
-    return `inc:${hash}`;
   }
 }

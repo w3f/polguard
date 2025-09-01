@@ -57,13 +57,13 @@ export class Formatter {
     if (blockContext) {
       result.push(`Block: ${blockContext.blockNumber}`);
       if (blockContext.eventIdx !== undefined) {
-        result.push(this.link('Subscan Event', this.getEventURL(blockContext.blockNumber, blockContext.eventIdx)));
+        result.push(this.link('Subscan: event', this.getEventURL(blockContext.blockNumber, blockContext.eventIdx)));
       } else if (blockContext.extrinsicIdx !== undefined) {
         result.push(
-          this.link('Subscan Extrinsic', this.getExtrinsicURL(blockContext.blockNumber, blockContext.extrinsicIdx)),
+          this.link('Subscan: extrinsic', this.getExtrinsicURL(blockContext.blockNumber, blockContext.extrinsicIdx)),
         );
       } else {
-        result.push(this.link('Subscan Block', this.getBlockURL(blockContext.blockNumber)));
+        result.push(this.link('Subscan: block', this.getBlockURL(blockContext.blockNumber)));
       }
     }
 

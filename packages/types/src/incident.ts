@@ -41,9 +41,10 @@ export interface IncidentKey {
 }
 
 export interface BlockContext {
-  blockNumber: number;
-  eventIdx?: number;
-  extrinsicIdx?: number;
+  blockNumber: number;     // always set
+  eventIdx?: number;       // set for event handlers
+  extrinsicIdx?: number;   // set for call handlers
+  callIdx?: number;        // set for call handlers (leaf call inside an extrinsic)
 }
 
 export interface ResolveIncidentDto {

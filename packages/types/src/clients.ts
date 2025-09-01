@@ -37,8 +37,6 @@ export interface KeyValueStorageClient {
   setex(key: string, seconds: number, value: any): Promise<void>;
   del(key: string): Promise<void>;
   exists(key: string): Promise<boolean>;
-  mget<T>(keys: string[]): Promise<(T | null)[]>;
-  flush(): Promise<void>; // Added for testing purposes
 }
 
 

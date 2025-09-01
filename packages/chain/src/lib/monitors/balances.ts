@@ -70,7 +70,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
 
   // This handler was added just for testing purposes (multisig, proxy, nested calls)
   // TODO: Should follow same approach as event-based handler: Ingress, Egress
-  @Call(H.TransferCall, [Chain.Polkadot, Chain.Kusama], 'balances.transfer')
+  @Call(H.TransferCall, [Chain.Polkadot, Chain.Kusama], ['balances.transfer', 'balances.transferKeepAlive'])
   async balancesTransfer({
     call,
     origin,

@@ -1,48 +1,77 @@
-import { Injectable } from '@nestjs/common';
-import Keyv from 'keyv';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { KeyValueStorageClient } from '@w3f/monitoring-types';
 import { parse, stringify } from 'json-bigint';
 
-@Injectable()
-export class StorageService implements KeyValueStorageClient {
-  private readonly storage: Keyv;
+interface CacheEntry {
+  payload: string;
+  expiresAt?: number;
+}
 
-  constructor(private namespace: string) {
-    this.storage = new Keyv({
-      namespace: this.namespace,
-      serialize: stringify,
-      deserialize: parse,
-    });
+@Injectable()
+export class StorageService implements KeyValueStorageClient, OnModuleDestroy {
+  private readonly storage = new Map<string, CacheEntry>();
+  private readonly logger = new Logger(StorageService.name);
+  private cleanupInterval: NodeJS.Timeout;
+
+  constructor() {
+    const sweepMs = 60_000;
+    this.cleanupInterval = setInterval(() => this.cleanup(), sweepMs);
+    (this.cleanupInterval as any).unref?.();
+    this.logger.log(`In-memory cache started, sweep every ${sweepMs}ms`);
+  }
+
+  private cleanup(): void {
+    const now = Date.now();
+    let removed = 0;
+    for (const [key, entry] of this.storage) {
+      if (entry.expiresAt !== undefined && entry.expiresAt <= now) {
+        this.storage.delete(key);
+        removed++;
+      }
+    }
+    if (removed) {
+      this.logger.debug(`Sweeper removed ${removed} expired (size=${this.storage.size})`);
+    }
   }
 
   async get<T>(key: string): Promise<T | null> {
-    const result = await this.storage.get(key);
-    return result === undefined ? null : result;
+    const entry = this.storage.get(key);
+    if (!entry) return null;
+    try {
+      return parse(entry.payload) as T;
+    } catch {
+      await this.del(key); // drop corrupted payload
+      return null;
+    }
   }
 
-  async set(key: string, value: any): Promise<void> {
-    await this.storage.set(key, value);
+  async set<T = any>(key: string, value: T): Promise<void> {
+    this.storage.set(key, { payload: stringify(value) });
   }
 
-  async setex(key: string, seconds: number, value: any): Promise<void> {
-    await this.storage.set(key, value, seconds * 1000);
+  async setex<T = any>(key: string, seconds: number, value: T): Promise<void> {
+    if (!Number.isFinite(seconds) || seconds < 0) {
+      throw new Error(`Invalid TTL seconds: ${seconds}`);
+    }
+    if (seconds === 0) {
+      await this.del(key);
+      return;
+    }
+    this.storage.set(key, {
+      payload: stringify(value),
+      expiresAt: Date.now() + 1 * 1000,
+    });
   }
 
   async del(key: string): Promise<void> {
-    await this.storage.delete(key);
+    this.storage.delete(key);
   }
 
   async exists(key: string): Promise<boolean> {
     return this.storage.has(key);
   }
 
-  async mget<T>(keys: string[]): Promise<(T | null)[]> {
-    if (keys.length === 0) return [];
-    const values = await this.storage.get(keys);
-    return values.map(value => (value === undefined ? null : value));
-  }
-
-  async flush(): Promise<void> {
-    await this.storage.clear();
+  onModuleDestroy(): void {
+    clearInterval(this.cleanupInterval);
   }
 }

@@ -105,23 +105,13 @@ describe('Incident API (integration)', () => {
       expect(response.body.resolvedAt).toBeDefined();
     });
 
-    it('handles idempotency for same key and block', async () => {
+    it('handles idempotency for same key', async () => {
       const dto = createOneTimeIncident({ idempotencyKey: 'same-key' });
 
       const first = await postIncident(dto).expect(201);
       const second = await postIncident(dto).expect(201);
 
       expect(first.body.id).toBe(second.body.id);
-    });
-
-    it('creates new incident for same key but different block', async () => {
-      const baseDto = createOneTimeIncident({ idempotencyKey: 'same-key' });
-
-      const first = await postIncident(baseDto).expect(201);
-      const second = await postIncident({ ...baseDto, blockNumber: 2000 }).expect(201);
-
-      expect(first.body.id).not.toBe(second.body.id);
-      expect(second.body.blockNumber).toBe(2000);
     });
 
     it('validates required fields', async () => {

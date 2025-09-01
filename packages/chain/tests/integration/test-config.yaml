@@ -104,12 +104,25 @@ tests:
         block: 25700136
         account:
           address: 13hyXGa1E6Gprm1RQo56WwTGuvZWw4q2MoQHBPXFiGfVRx4f
+      - description: "Event (balances.Transfer)"
+        chain: Polkadot
+        block: 27532114
+        account:
+          address: 12K2F1PeLUiVmt7GfBgiQvtGP4HbtUJ55cLvwbybE8W3nau5
+        expectedIncidents: 4
     TransferCall:
-      - description: "Call (balances.Transfer). Nested call: multisig -> proxy -> balances.transfer. Should generate two incidents"
+      - description: "Call (balances.Transfer). Nested call: multisig -> proxy -> utility.batch -> balances.transfer"
         chain: Kusama
         block: 21441337
         account:
           address: ESVfLhWFe7pAePrxctqDPEx8jEZFPCWxfmyuGAzn8gAJdPU
+        expectedIncidents: 2
+      - description: "Call (balances.Transfer). Nested call: multisig -> proxy -> utility.batch_all -> balances.transferKeepAlive"
+        chain: Polkadot
+        block: 27532114
+        account:
+          address: 12K2F1PeLUiVmt7GfBgiQvtGP4HbtUJ55cLvwbybE8W3nau5
+        expectedIncidents: 4
 
   Identity:
     IdentityUnexpectedState:

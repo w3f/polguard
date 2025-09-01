@@ -56,7 +56,7 @@ import {
 export class ChainWatcher {
   monitors: Monitor[] = [];
   private isRunning = false;
-  private readonly configRefreshIntervalMs = 15 * 60 * 1000; // 15 minutes
+  private readonly configRefreshIntervalMs = 10 * 60 * 1000; // 10 minutes
   private _latestBlockNumber = 0;
 
   private readonly telemetryMeter: Meter;
@@ -219,7 +219,6 @@ export class ChainWatcher {
    *    - Processing extrinsic calls and their nested calls
    * 3. Periodically refreshes monitor configurations based on configRefreshIntervalMs
    *    - This ensures monitors stay up-to-date with the latest monitoring groups
-   *    - Default refresh interval is 15 minutes
    * 4. Persists the last processed block number for continuity across restarts
    *
    * @param startBlock Optional starting block number
@@ -290,7 +289,8 @@ export class ChainWatcher {
     for (let extrinsicIdx = 0; extrinsicIdx < block.block.extrinsics.length; extrinsicIdx++) {
       const extrinsic = block.block.extrinsics[extrinsicIdx];
       const origin = extrinsic.signer.toString();
-      await this.traverseCallTree(blockNumber, extrinsic.method, origin, extrinsicIdx);
+      const callSeq = { value: 0 };
+      await this.traverseCallTree(blockNumber, extrinsic.method, origin, extrinsicIdx, callSeq);
     }
 
     const end = performance.now();
@@ -307,47 +307,58 @@ export class ChainWatcher {
    * @param call The call to process
    * @param origin The origin address of the call
    * @param extrinsicIdx The index of the extrinsic in the block
+   * @param callSeq Mutable counter used to assign sequential callIdx values
    */
   private async traverseCallTree(
     blockNumber: number,
     call: CallBase<AnyTuple>,
     origin: string,
     extrinsicIdx: number,
+    callSeq: { value: number },
   ): Promise<void> {
-    if (!call.meta?.args) return;
+    const metaArgs = call.meta?.args;
+    if (!metaArgs) return;
 
     const { section, method } = call;
-    const metaArgs = call.meta.args;
     // Find the index of a param by name
     const idxOf = (name: string) => metaArgs.findIndex(a => a.name.toString() === name);
 
+    const argIdxCall = idxOf('call');
+    const argIdxCalls = idxOf('calls');
+
     // 1. Proxy pallet: unwrap call & override origin
     if (section === 'proxy' && method === 'proxy') {
-      const real = call.args[idxOf('real')].toString();
-      const inner = call.args[idxOf('call')] as unknown as CallBase<AnyTuple>;
-      return this.traverseCallTree(blockNumber, inner, real, extrinsicIdx);
+      const realIdx = idxOf('real');
+      const real = call.args[realIdx].toString();
+      const inner = call.args[argIdxCall] as unknown as CallBase<AnyTuple>;
+      return this.traverseCallTree(blockNumber, inner, real, extrinsicIdx, callSeq);
     }
 
     // 2. Generic Vec<RuntimeCall>: batch-style wrappers (e.g. utility.batch, etc.)
-    const callsIdx = idxOf('calls');
-    if (callsIdx >= 0) {
-      const innerCalls = call.args[callsIdx] as unknown as CallBase<AnyTuple>[];
+    if (argIdxCalls >= 0) {
+      const innerCalls = call.args[argIdxCalls] as unknown as CallBase<AnyTuple>[];
       for (const c of innerCalls) {
-        await this.traverseCallTree(blockNumber, c, origin, extrinsicIdx);
+        await this.traverseCallTree(blockNumber, c, origin, extrinsicIdx, callSeq);
       }
       return;
     }
 
     // 3. Generic Box<RuntimeCall>: single-call wrappers (e.g. multisig.asMulti, sudo, scheduler.execute, etc.)
-    const callIdx = idxOf('call');
-    if (callIdx >= 0) {
-      const inner = call.args[callIdx] as unknown as CallBase<AnyTuple>;
-      return this.traverseCallTree(blockNumber, inner, origin, extrinsicIdx);
+    if (argIdxCall >= 0) {
+      const inner = call.args[argIdxCall] as unknown as CallBase<AnyTuple>;
+      return this.traverseCallTree(blockNumber, inner, origin, extrinsicIdx, callSeq);
     }
 
-    // 4. Base: dispatch to all monitors
+    // 4. Base leaf: assign callIdx and dispatch
+    const leafCallIdx = callSeq.value++;
     await Promise.all(
-      this.monitors.map(m => m.processCall({ blockContext: { blockNumber, extrinsicIdx }, call, origin })),
+      this.monitors.map(m =>
+        m.processCall({
+          blockContext: { blockNumber, extrinsicIdx, callIdx: leafCallIdx },
+          call,
+          origin,
+        }),
+      ),
     );
   }
 }

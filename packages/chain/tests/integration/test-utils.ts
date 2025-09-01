@@ -73,7 +73,7 @@ export class InMemoryKeyValueStorage implements KeyValueStorageClient {
 }
 
 export class TestIncidentHandler implements IncidentHandlerClient {
-  private incidents: Set<string> = new Set();
+  private incidents: Map<string, number> = new Map();
 
   constructor(private testId?: string) {}
 
@@ -86,16 +86,22 @@ export class TestIncidentHandler implements IncidentHandlerClient {
   ): Promise<void> {
     if (isFiring === false) return;
 
-    this.incidents.add(this.formatKey(incidentKey));
+    const key = this.formatKey(incidentKey);
+    const currentCount = this.incidents.get(key) || 0;
+    this.incidents.set(key, currentCount + 1);
 
     const testId = this.testId || 'Unknown';
     const formattedMessage = message.join('\n  ');
     console.log(`${colors.yellow}${testId}${colors.reset}\n  ${colors.cyan}${formattedMessage}${colors.reset}`);
   }
 
-  wasIncidentCreated(account: string, groupId: string, handlerType: string, token?: string): boolean {
-    const key = this.formatKey({ account, groupId, handlerType, token });
-    return this.incidents.has(key);
+  getIncidentCount(account: string, groupId: string, handlerType: string): number {
+    const prefix = `${account}:${groupId}:${handlerType}:`;
+    let total = 0;
+    for (const [k, v] of this.incidents.entries()) {
+      if (k.startsWith(prefix)) total += v;
+    }
+    return total;
   }
 
   private formatKey(incidentKey: IncidentKey): string {
