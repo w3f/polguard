@@ -1,13 +1,12 @@
 import { IdentityField } from '.';
 import '@polkadot/api-augment/polkadot';
-import { PalletReferendaReferendumInfo } from '@polkadot/types/lookup';
-import { Call, H256 } from '@polkadot/types/interfaces/runtime';
-import { Bytes } from '@polkadot/types';
+import { ApiDecoration } from '@polkadot/api/types';
 
 export type IdentityInfo = {
   [K in IdentityField]?: string;
 };
 export interface ChainDataProvider {
+  initializeBlock(blockNumber: number, apiAt: ApiDecoration<'promise'>): void;
   stakingValidators(blockNumber: number): Promise<string[]>;
   stakingValidatorsCommission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>>;
   stakingLedgerActive(addresses: string[], blockNumber: number): Promise<Record<string, bigint | null>>;

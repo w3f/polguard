@@ -1,4 +1,5 @@
 import { ApiPromise } from '@polkadot/api';
+import { ApiDecoration } from '@polkadot/api/types';
 import { Data, Struct } from '@polkadot/types';
 import type { Option, Vec } from '@polkadot/types-codec';
 import type { Codec } from '@polkadot/types-codec/types';
@@ -10,7 +11,6 @@ import { AccountInfo } from '@polkadot/types/interfaces/system';
 import { ChainDataProvider, KeyValueStorageClient, IdentityInfo, Logger } from '@w3f/monitoring-types';
 import { createCachedQueryDecorator } from './decorators';
 
-// TODO: Optimise getBlockHash(blockNumber)
 
 /**
  * Creates a chain data provider that implements chain queries with caching layer.
@@ -25,11 +25,31 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
   const Cached = createCachedQueryDecorator(client);
 
   class DataProvider implements ChainDataProvider {
+    private apiAtBlock: Map<number, ApiDecoration<'promise'>> = new Map();
+
     constructor(
       public api: ApiPromise,
       public logger: Logger,
       public chain: Chain,
     ) {}
+
+    initializeBlock(blockNumber: number, apiAt: ApiDecoration<'promise'>): void {
+      this.apiAtBlock.clear();
+      this.apiAtBlock.set(blockNumber, apiAt);
+    }
+
+    private async getApiAt(blockNumber: number): Promise<ApiDecoration<'promise'>> {
+      const apiAt = this.apiAtBlock.get(blockNumber);
+      if (apiAt) {
+        return apiAt;
+      }
+
+      this.logger.debug('DataProvider cold start. Should happen only once.')
+      const hash = await this.api.rpc.chain.getBlockHash(blockNumber);
+      const apiAtBlock = await this.api.at(hash);
+      this.apiAtBlock.set(blockNumber, apiAtBlock);
+      return apiAtBlock;
+    }
 
     /**
      * Helper method to work around ValueQuery behavior in stakingValidatorsCommission.
@@ -42,7 +62,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
      */
     @Cached()
     async stakingValidators(blockNumber: number): Promise<string[]> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const keys = await apiAt.query.staking.validators.keys();
       return keys.map(k => k.args[0].toString());
     }
@@ -52,7 +72,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       addresses: string[],
       blockNumber: number,
     ): Promise<Record<string, number | null>> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const validatorAddresses = new Set(await this.stakingValidators(blockNumber));
       const prefs = await apiAt.query.staking.validators.multi(addresses);
       const result: Record<string, number | null> = {};
@@ -70,7 +90,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
     @Cached()
     async stakingBonded(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const bondedInfo = await apiAt.query.staking.bonded.multi(addresses);
       const result: Record<string, string | null> = {};
 
@@ -85,7 +105,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
     @Cached()
     async stakingLedgerActive(addresses: string[], blockNumber: number): Promise<Record<string, bigint | null>> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const ledgers = await apiAt.query.staking.ledger.multi(addresses);
       const result: Record<string, bigint | null> = {};
 
@@ -103,7 +123,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
     @Cached()
     async stakingPayee(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const payees = await apiAt.query.staking.payee.multi(addresses);
       const result: Record<string, string | null> = {};
 
@@ -126,14 +146,14 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
     @Cached()
     async stakingActiveEra(blockNumber: number): Promise<number> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const activeEra = await apiAt.query.staking.activeEra();
       return activeEra.unwrapOrDefault().index.toNumber();
     }
 
     @Cached()
     async sessionValidators(blockNumber: number): Promise<Record<string, boolean>> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const validators = (await apiAt.query.session.validators()) as Vec<Codec>;
       const result: Record<string, boolean> = {};
 
@@ -146,7 +166,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
     @Cached()
     async systemAccountBalance(addresses: string[], blockNumber: number): Promise<Record<string, bigint>> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const accounts = await apiAt.query.system.account.multi(addresses);
       const result: Record<string, bigint> = {};
 
@@ -160,7 +180,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
     @Cached()
     async identityOf(addresses: string[], blockNumber: number): Promise<Record<string, IdentityInfo | null>> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const identities = await apiAt.query.identity.identityOf.multi(addresses);
       const result: Record<string, IdentityInfo | null> = {};
 
@@ -181,7 +201,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
     @Cached()
     async identitySuperOf(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const result: Record<string, string | null> = {};
 
       const superIds = await apiAt.query.identity.superOf.multi(addresses);
@@ -222,7 +242,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
     @Cached()
     async assetsAccountBalance(addresses: string[], tokenNames: string[], blockNumber: number): Promise<TokenBalances> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const result: TokenBalances = {};
 
       for (const tokenName of tokenNames) {
@@ -249,7 +269,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
       tokenNames: string[],
       blockNumber: number,
     ): Promise<TokenBalances> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const result: TokenBalances = {};
 
       for (const tokenName of tokenNames) {
@@ -269,7 +289,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
     @Cached()
     async referendaInfoFor(referendumIndex: string | number, blockNumber: number): Promise<string | null> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
       const info = await apiAt.query.referenda.referendumInfoFor(referendumIndex);
       if (info.isNone) {
         return null;
@@ -285,7 +305,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
 
     @Cached()
     async referendaTrack(trackId: number | string, blockNumber: number): Promise<string> {
-      const apiAt = await this.api.at(await this.api.rpc.chain.getBlockHash(blockNumber));
+      const apiAt = await this.getApiAt(blockNumber);
 
       const rawTracks = apiAt.consts.referenda.tracks as any;
       const idToFind = typeof trackId === 'string' ? parseInt(trackId, 10) : trackId;

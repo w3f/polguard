@@ -273,6 +273,8 @@ export class ChainWatcher {
     const block = await this.api.rpc.chain.getBlock(blockHash);
     const apiAt = await this.api.at(blockHash);
 
+    this.chainProvider.initializeBlock(blockNumber, apiAt);
+
     // Apply every block handlers: process custom logic, usually storage calls
     await Promise.all(this.monitors.map(m => m.processState({ blockContext: { blockNumber } })));
 

@@ -22,15 +22,10 @@ export class StorageService implements KeyValueStorageClient, OnModuleDestroy {
 
   private cleanup(): void {
     const now = Date.now();
-    let removed = 0;
     for (const [key, entry] of this.storage) {
       if (entry.expiresAt !== undefined && entry.expiresAt <= now) {
         this.storage.delete(key);
-        removed++;
       }
-    }
-    if (removed) {
-      this.logger.debug(`Sweeper removed ${removed} expired (size=${this.storage.size})`);
     }
   }
 
@@ -59,7 +54,7 @@ export class StorageService implements KeyValueStorageClient, OnModuleDestroy {
     }
     this.storage.set(key, {
       payload: stringify(value),
-      expiresAt: Date.now() + 1 * 1000,
+      expiresAt: Date.now() + seconds * 1000,
     });
   }
 
