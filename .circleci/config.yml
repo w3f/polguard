@@ -100,8 +100,9 @@ jobs:
       - run:
           name: Add Helm chart repos
           command: |
-            helm repo add bitnami https://charts.bitnami.com/bitnami
+            helm repo add w3f https://w3f.github.io/helm-charts
             helm repo update
+            helm repo list
 
       - run:
           name: Build E2E runner image
@@ -161,8 +162,21 @@ jobs:
           name: Dump logs on failure
           when: on_fail
           command: |
-            kubectl -n e2e get pods -o wide
-            kubectl -n e2e logs --all-containers -l app.kubernetes.io/instance=$RELEASE || true
+            NS=e2e
+            for comp in api chain matrix postgresql; do
+              echo "=== Logs for component=$comp ==="
+              kubectl -n $NS logs \
+                --selector app.kubernetes.io/component=$comp \
+                --all-containers --tail=-1 || true
+            done
+
+            echo "=== Logs for test pod(s) ==="
+            kubectl -n $NS logs \
+              --selector app.kubernetes.io/component=test \
+              --all-containers --tail=-1 || true
+
+            echo "=== Pod status ==="
+            kubectl -n $NS get pods -o wide
 
   release_tag:
     machine: true

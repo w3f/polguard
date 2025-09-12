@@ -40,11 +40,14 @@ yarn test:integration Staking
 # Run a specific test handler
 yarn test:integration Staking.SelfStakeUnexpected
 
+# Run tests for a specific chain
+yarn test:integration --chain=Polkadot
+
 # Run tests with debug output (shows application logs)
 yarn test:integration --debug
 
-# Combine filtering and debug mode
-yarn test:integration Staking.SelfStakeUnexpected --debug
+# Combine all options
+yarn test:integration Staking.SelfStakeUnexpected --chain=Polkadot --debug
 ```
 
 Tests run in parallel by default, grouped by chain to optimize API connections.

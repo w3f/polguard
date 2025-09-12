@@ -10,11 +10,22 @@ async function main() {
 
     if (debugIndex !== -1) args.splice(debugIndex, 1);
 
+    // Parse --chain=ChainName argument
+    const chainArgIndex = args.findIndex(arg => arg.startsWith('--chain='));
+    let chainFilter = '';
+    if (chainArgIndex !== -1) {
+      chainFilter = args[chainArgIndex].split('=')[1];
+      args.splice(chainArgIndex, 1);
+    }
+
     const filterPattern = args.find(arg => !arg.startsWith('--')) || '';
-    if (debug) console.log(`Debug mode enabled. Filter pattern: "${filterPattern}"`);
+    if (debug) {
+      console.log(`Debug mode enabled. Filter pattern: "${filterPattern}"`);
+      if (chainFilter) console.log(`Chain filter: "${chainFilter}"`);
+    }
 
     const configPath = path.resolve(__dirname, 'test-config.yaml');
-    const results = await new TestRunner(configPath).run(filterPattern, debug);
+    const results = await new TestRunner(configPath).run(filterPattern, debug, chainFilter);
 
     printResults(results);
 

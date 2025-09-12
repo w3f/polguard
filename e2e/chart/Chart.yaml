@@ -6,8 +6,8 @@ version: 0.1.0
 appVersion: "1.0.0"
 dependencies:
   - name: postgresql
-    repository: https://charts.bitnami.com/bitnami
-    version: "16.6.3"
+    repository: https://w3f.github.io/helm-charts
+    version: "1.0.7"
   - name: monitoring-platform
     repository: file://../../deployment/chart
     version: "*"

@@ -12,7 +12,7 @@ import {
 import { AbstractMonitor } from './abstract-monitor';
 
 export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
-  @Event(H.SlashReportedEvent, [Chain.Polkadot, Chain.Kusama], 'staking.SlashReported')
+  @Event(H.SlashReportedEvent, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo], 'staking.SlashReported')
   async slashReported({
     eventRecord,
     blockContext,
@@ -27,7 +27,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @Event(H.CommissionChangedEvent, [Chain.Polkadot, Chain.Kusama], 'staking.ValidatorPrefsSet')
+  @Event(H.CommissionChangedEvent, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo], 'staking.ValidatorPrefsSet')
   async commissionChanged({
     eventRecord,
     blockContext,
@@ -49,7 +49,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @Event(H.UnbondedEvent, [Chain.Polkadot, Chain.Kusama], 'staking.Unbonded')
+  @Event(H.UnbondedEvent, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo], 'staking.Unbonded')
   async unbonded({ eventRecord, blockContext, handlerType }: EventHandlerParams<H.UnbondedEvent>): Promise<void> {
     const [stash, amount] = eventRecord.event.data.map(d => d.toString());
 
@@ -66,7 +66,11 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @Call(H.DestinationChangedCall, [Chain.Polkadot, Chain.Kusama], ['staking.setPayee', 'staking.bond'])
+  @Call(
+    H.DestinationChangedCall,
+    [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo],
+    ['staking.setPayee', 'staking.bond'],
+  )
   async destinationChanged({
     call,
     origin,
@@ -89,7 +93,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @State(H.DestinationChangedState, [Chain.Polkadot, Chain.Kusama])
+  @State(H.DestinationChangedState, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo])
   async destinationChangedState({
     blockContext,
     handlerType,
@@ -121,7 +125,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @State(H.CommissionUnexpectedState, [Chain.Polkadot, Chain.Kusama])
+  @State(H.CommissionUnexpectedState, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo])
   async commissionUnexpected({
     blockContext,
     handlerType,
@@ -149,7 +153,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.SelfStakeUnexpectedState, [Chain.Polkadot, Chain.Kusama])
+  @State(H.SelfStakeUnexpectedState, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo])
   async selfStakeUnexpected({
     blockContext,
     handlerType,
@@ -188,7 +192,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @State(H.ValidatorIntentionMissingState, [Chain.Polkadot, Chain.Kusama])
+  @State(H.ValidatorIntentionMissingState, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo])
   async validatorIntentionMissing({
     blockContext,
     handlerType,
@@ -218,7 +222,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.DestinationUnexpectedState, [Chain.Polkadot, Chain.Kusama])
+  @State(H.DestinationUnexpectedState, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo])
   async destinationUnexpected({
     blockContext,
     handlerType,
@@ -245,7 +249,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.ActiveSetPresenceState, [Chain.Polkadot, Chain.Kusama])
+  @State(H.ActiveSetPresenceState, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo])
   async activeSetPresense({ blockContext, handlerType }: StateHandlerParams<H.ActiveSetPresenceState>): Promise<void> {
     const validators = await this.chain.sessionValidators(blockContext.blockNumber);
 

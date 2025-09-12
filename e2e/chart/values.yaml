@@ -76,7 +76,7 @@ monitoring:
     config:
       matrix:
         url: "https://matrix.web3.foundation"
-        userId: "@cibot:web3.foundation"
+        userId: "@mp-ci-bot:web3.foundation"
         tokenAuth:
           deviceId: "BAD_DEVICE_ID"
         # accessToken is provided via MATRIX_TOKEN environment variable
@@ -126,7 +126,7 @@ tests:
       roomId: "!qheQMilERwmQosvZnI:web3.foundation"
       # MonitoringPlatformCI (escalation) non-encrypted room
       escalationRoomId: "!YfPVnKvvxefYreTclH:web3.foundation"
-      userId: "@cibot:web3.foundation"
+      userId: "@mp-ci-bot:web3.foundation"
       tokenAuth:
         deviceId: "BAD_DEVICE_ID_IN_TESTS"
       # accessToken is provided via MATRIX_TOKEN environment variable
@@ -139,16 +139,8 @@ secrets:
 
 postgresql:
   auth:
-    enablePostgresUser: true
-    postgresPassword: "postgres"
+    username: "postgres"
+    password: "postgres"
     database: "monitoring"
-  primary:
-    persistence:
-      enabled: false
-    resources:
-      requests:
-        cpu: "100m"
-        memory: "128Mi"
-      limits:
-        cpu: "500m"
-        memory: "256Mi"
+  persistence:
+    size: "100Mi"

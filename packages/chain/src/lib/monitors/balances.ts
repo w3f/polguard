@@ -10,7 +10,7 @@ import { Call, Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 
 export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
-  @State(H.BalanceDecreaseState, [Chain.Polkadot, Chain.Kusama])
+  @State(H.BalanceDecreaseState, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo])
   async balanceDecrease({ blockContext, handlerType }: StateHandlerParams<H.BalanceDecreaseState>): Promise<void> {
     const { blockNumber } = blockContext;
     const addresses = this.reg.getUniqueAddresses();
@@ -43,7 +43,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     }
   }
 
-  @State(H.BalanceThresholdState, [Chain.Polkadot, Chain.Kusama])
+  @State(H.BalanceThresholdState, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo])
   async balanceThreshold({ blockContext, handlerType }: StateHandlerParams<H.BalanceThresholdState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
     const cur = await this.chain.systemAccountBalance(addresses, blockContext.blockNumber);
@@ -70,7 +70,11 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
 
   // This handler was added just for testing purposes (multisig, proxy, nested calls)
   // TODO: Should follow same approach as event-based handler: Ingress, Egress
-  @Call(H.TransferCall, [Chain.Polkadot, Chain.Kusama], ['balances.transfer', 'balances.transferKeepAlive'])
+  @Call(
+    H.TransferCall,
+    [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo],
+    ['balances.transfer', 'balances.transferKeepAlive'],
+  )
   async balancesTransfer({
     call,
     origin,
@@ -92,7 +96,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     }
   }
 
-  @Event(H.TransferIngressEvent, [Chain.Polkadot, Chain.Kusama], 'balances.Transfer')
+  @Event(H.TransferIngressEvent, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo], 'balances.Transfer')
   async balancesTransferIngress({
     eventRecord,
     blockContext,
@@ -113,7 +117,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     }
   }
 
-  @Event(H.TransferEgressEvent, [Chain.Polkadot, Chain.Kusama], 'balances.Transfer')
+  @Event(H.TransferEgressEvent, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPaseo], 'balances.Transfer')
   async balancesTransferEgress({
     eventRecord,
     blockContext,

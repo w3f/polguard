@@ -10,7 +10,7 @@ import {
 import { AbstractMonitor } from './abstract-monitor';
 
 export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
-  @State(H.IdentityUnexpectedState, [Chain.PeoplePolkadot, Chain.PeopleKusama])
+  @State(H.IdentityUnexpectedState, [Chain.PeoplePolkadot, Chain.PeopleKusama, Chain.PeoplePaseo])
   async identityUnexpected({
     blockContext,
     handlerType,
@@ -49,7 +49,7 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
 
   @Event(
     H.IdentityChangedEvent,
-    [Chain.PeoplePolkadot, Chain.PeopleKusama],
+    [Chain.PeoplePolkadot, Chain.PeopleKusama, Chain.PeoplePaseo],
     ['identity.IdentitySet', 'identity.IdentityCleared', 'identity.IdentityKilled'],
   )
   async identityChanged({
@@ -92,7 +92,7 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
     }
   }
 
-  @State(H.IdentityMissingState, [Chain.PeoplePolkadot, Chain.PeopleKusama])
+  @State(H.IdentityMissingState, [Chain.PeoplePolkadot, Chain.PeopleKusama, Chain.PeoplePaseo])
   async identityMissing({ blockContext, handlerType }: StateHandlerParams<H.IdentityMissingState>): Promise<void> {
     const addressToParent = await this.getAddressToParent(blockContext.blockNumber);
     const parents = Array.from(new Set(addressToParent.values()));
@@ -112,7 +112,7 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
     }
   }
 
-  @State(H.IdentityFieldsMissingState, [Chain.PeoplePolkadot, Chain.PeopleKusama])
+  @State(H.IdentityFieldsMissingState, [Chain.PeoplePolkadot, Chain.PeopleKusama, Chain.PeoplePaseo])
   async identityFieldsMissing({
     blockContext,
     handlerType,

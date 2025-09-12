@@ -11,7 +11,7 @@ import { Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 
 export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
-  @State(H.AssetBalanceDecreaseState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama])
+  @State(H.AssetBalanceDecreaseState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
   async assetBalanceDecrease(params: StateHandlerParams<H.AssetBalanceDecreaseState>): Promise<void> {
     return this.handleBalanceDecrease(
       (addrs, tokens, block) => this.chain.assetsAccountBalance(addrs, tokens, block),
@@ -27,7 +27,7 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
     );
   }
 
-  @State(H.AssetBalanceThresholdState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama])
+  @State(H.AssetBalanceThresholdState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
   async assetBalanceThreshold(params: StateHandlerParams<H.AssetBalanceThresholdState>): Promise<void> {
     return this.handleBalanceThreshold(
       (addrs, tokens, block) => this.chain.assetsAccountBalance(addrs, tokens, block),
@@ -43,7 +43,11 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
     );
   }
 
-  @Event(H.AssetTransferIngressEvent, [Chain.AssetHubPolkadot, Chain.AssetHubKusama], 'assets.Transferred')
+  @Event(
+    H.AssetTransferIngressEvent,
+    [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
+    'assets.Transferred',
+  )
   @Event(H.AssetTransferIngressEvent, [Chain.Centrifuge], 'ormlTokens.Transfer')
   async onTransferIngress({
     eventRecord,
@@ -69,7 +73,11 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
     }
   }
 
-  @Event(H.AssetTransferEgressEvent, [Chain.AssetHubPolkadot, Chain.AssetHubKusama], 'assets.Transferred')
+  @Event(
+    H.AssetTransferEgressEvent,
+    [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
+    'assets.Transferred',
+  )
   @Event(H.AssetTransferEgressEvent, [Chain.Centrifuge], 'ormlTokens.Transfer')
   async onTransferEgress({
     eventRecord,

@@ -11,7 +11,6 @@ import { AccountInfo } from '@polkadot/types/interfaces/system';
 import { ChainDataProvider, KeyValueStorageClient, IdentityInfo, Logger } from '@w3f/monitoring-types';
 import { createCachedQueryDecorator } from './decorators';
 
-
 /**
  * Creates a chain data provider that implements chain queries with caching layer.
  * Uses multi-query for batch processing and includes proper error handling.
@@ -44,7 +43,7 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
         return apiAt;
       }
 
-      this.logger.debug('DataProvider cold start. Should happen only once.')
+      this.logger.debug('DataProvider cold start. Should happen only once.');
       const hash = await this.api.rpc.chain.getBlockHash(blockNumber);
       const apiAtBlock = await this.api.at(hash);
       this.apiAtBlock.set(blockNumber, apiAtBlock);

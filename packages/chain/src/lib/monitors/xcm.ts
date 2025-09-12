@@ -16,7 +16,7 @@ import { AbstractMonitor } from './abstract-monitor';
 export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
   @Event(
     H.XcmTransferEgressEvent,
-    [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPolkadot, Chain.AssetHubKusama],
+    [Chain.Polkadot, Chain.Kusama, Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
     ['polkadotXcm.Sent', 'xcmPallet.Sent'],
   )
   async xcmTransferEgress({

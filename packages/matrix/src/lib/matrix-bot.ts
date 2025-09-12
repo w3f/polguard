@@ -154,7 +154,7 @@ export class MatrixBot extends MatrixClient {
     try {
       const incidents = await this.incidentService.getNonAcked(roomId);
       if (incidents.length === 0) {
-        await this.sendMessage(roomId, '<p><strong>No incidents requiring acknowledgment for this room.</strong></p>');
+        await this.sendMessage(roomId, '<p>No incidents requiring acknowledgment for this room</p>');
       } else {
         const html = '<p><strong>Incidents requiring acknowledgment:</strong></p>' + this.formatIncidentList(incidents);
         await this.sendMessage(roomId, html);

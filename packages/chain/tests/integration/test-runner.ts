@@ -29,11 +29,16 @@ export interface TestResult {
 export class TestRunner {
   constructor(private configPath: string) {}
 
-  async run(filterPattern: string = '', debug: boolean = false): Promise<TestResult[]> {
+  async run(filterPattern: string = '', debug: boolean = false, chainFilter: string = ''): Promise<TestResult[]> {
     const config = this.loadConfig();
 
     try {
       let testCases = this.flattenTestCases(config);
+
+      if (chainFilter) {
+        testCases = this.filterTestCasesByChain(testCases, chainFilter);
+        console.log(`Filtered to ${testCases.length} tests for chain: ${chainFilter}`);
+      }
 
       if (filterPattern) {
         testCases = this.filterTestCases(testCases, filterPattern);
@@ -63,6 +68,10 @@ export class TestRunner {
         ? testCase.monitor === monitorName && testCase.handlerType === handlerName
         : testCase.monitor === monitorName,
     );
+  }
+
+  private filterTestCasesByChain(testCases: TestCase[], chainName: string): TestCase[] {
+    return testCases.filter(testCase => testCase.chain === chainName);
   }
 
   private groupByChain(testCases: TestCase[]): Record<string, TestCase[]> {

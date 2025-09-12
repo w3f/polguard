@@ -1,10 +1,13 @@
 rpcEndpoints:
   Polkadot: wss://rpc-polkadot.luckyfriday.io
   Kusama: wss://rpc-kusama.luckyfriday.io
+  Paseo: wss://paseo-rpc.n.dwellir.com
   PeoplePolkadot: wss://rpc-people-polkadot.luckyfriday.io
   PeopleKusama: wss://rpc-people-kusama.luckyfriday.io
+  PeoplePaseo: wss://people-paseo.rpc.amforc.com
   AssetHubPolkadot: wss://polkadot-asset-hub-rpc.polkadot.io
   AssetHubKusama: wss://kusama-asset-hub-rpc.polkadot.io
+  AssetHubPaseo: wss://asset-hub-paseo-rpc.n.dwellir.com
   Centrifuge: wss://rpc-centrifuge.luckyfriday.io
 
 tests:
@@ -22,6 +25,11 @@ tests:
         account:
           address: 15ZvLonEseaWZNy8LDkXXj3Y8bmAjxCjwvpy4pXWSL4nGSBs
     UnbondedEvent:
+      - description: "Event (staking.Unbonded) - AssetHubPaseo (test AssetHubKusama migration)"
+        chain: AssetHubPaseo
+        block: 2760197
+        account:
+          address: 15mXctuqEB8T93MVRYXsuQ7n3yseAgNGMe57QMVKu8XyqdeF
       - description: "Event (staking.Unbonded)"
         chain: Polkadot
         block: 26090579
@@ -52,12 +60,18 @@ tests:
           address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
           commission: 9
     SelfStakeUnexpectedState:
+      - description: "State (staking.bonded, staking.ledger) - AssetHubPaseo (test AssetHubKusama migration)"
+        chain: AssetHubPaseo
+        block: 2797662
+        account:
+          address: 1LfAfKweyPjXs4JkKW4AxHPTe7pu4w4HjcZbEtB6a8vMqkd
+          selfStake: '1000000000000001'
       - description: "State (staking.bonded, staking.ledger)"
         chain: Polkadot
         block: 25690601
         account:
           address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
-          selfStake: 9000000000000
+          selfStake: '9000000000000'
     ValidatorIntentionMissingState:
       - description: "State (staking.bonded, staking.validators)"
         chain: Polkadot
@@ -93,12 +107,22 @@ tests:
           address: 12iTqoDYN18NkUbi7H3S1DWfMA99xporWhrjdyo2bvMZqJv5
           threshold: 1630000000000
     TransferIngressEvent:
+      - description: "Event (balances.Transfer) - AssetHubPaseo (test AssetHubKusama migration)"
+        chain: AssetHubPaseo
+        block: 2796532
+        account:
+          address: 14EQvBy9h8xGbh2R3ustnkfkF514E7wpmHtg27gDaTLM2str
       - description: "Event (balances.Transfer)"
         chain: Polkadot
         block: 25700136
         account:
           address: 13sWK9B3PVxQyzeeGVtW1sZ9qBJJLa68pwtwP1asnUBMKXYz
     TransferEgressEvent:
+      - description: "Event (balances.Transfer) - AssetHubPaseo (test AssetHubKusama migration)"
+        chain: AssetHubPaseo
+        block: 2796532
+        account:
+          address: 13UVJyLgBASGhE2ok3TvxUfaQBGUt88JCcdYjHvUhvQkFTTx
       - description: "Event (balances.Transfer)"
         chain: Polkadot
         block: 25700136
@@ -137,6 +161,11 @@ tests:
           matrix: test
           email: test
     IdentityChangedEvent:
+      - description: "Event (identity.IdentitySet) - PeoplePaseo"
+        chain: PeoplePaseo
+        block: 2466381
+        account:
+          address: 1nXqaKahcCYTbkgGQ9fV6U3SV2tdixkp4JyR2MajieJM8nh
       - description: "Event (identity.IdentitySet)"
         chain: PeoplePolkadot
         block: 1952394
@@ -162,6 +191,11 @@ tests:
 
   Xcm:
     XcmTransferEgressEvent:
+      - description: "Event (polkadotXcm.Sent) - AssetHubPaseo (test AssetHubKusama migration)"
+        chain: AssetHubPaseo
+        block: 2797201
+        account:
+          address: 167U3jKTwAJZwFDKXLaGad8yykSYtAg6di994AVoe33o7VQF
       - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Multisig dest 1000"
         chain: Polkadot
         block: 21497354
@@ -277,12 +311,22 @@ tests:
           address: 4dtAmm2K7vs75h3AfyjEtsbseR9dmN3PPzVsxAsCiEgHCeKZ
   Governance:
     ReferendaSubmittedEvent:
+      - description: "Event (referenda.Submitted) - AssetHubPaseo (test AssetHubKusama migration)"
+        chain: AssetHubPaseo
+        block: 2720703
+        account:
+          address: 'None'
       - description: "Event (referenda.Submitted), part of utility.batch_all"
         chain: Polkadot
         block: 26344616
         account:
           address: 'None'
     ConvictionVoteCall:
+      - description: "Call (convictionVoting.vote) - AssetHubPaseo (test AssetHubKusama migration)"
+        chain: AssetHubPaseo
+        block: 2779629
+        account:
+          address: 15wJAhbBiPFWfJvHXn4JVa8VyKvanDZazeMtsaFtvogKeLDQ
       - description: "Call (convictionVoting.vote)"
         chain: Polkadot
         block: 25771956

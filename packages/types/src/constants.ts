@@ -9,10 +9,13 @@ export interface ChainProperties {
 export enum Chain {
   Polkadot = 'Polkadot',
   Kusama = 'Kusama',
+  Paseo = 'Paseo',
   AssetHubPolkadot = 'AssetHubPolkadot',
   AssetHubKusama = 'AssetHubKusama',
+  AssetHubPaseo = 'AssetHubPaseo',
   PeoplePolkadot = 'PeoplePolkadot',
   PeopleKusama = 'PeopleKusama',
+  PeoplePaseo = 'PeoplePaseo',
   Centrifuge = 'Centrifuge',
 }
 
@@ -85,6 +88,13 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainToken: 'KSM',
     ss58Format: 2,
   },
+  [Chain.Paseo]: {
+    chain: Chain.Paseo,
+    specName: 'paseo',
+    chainDecimals: 10,
+    chainToken: 'PAS',
+    ss58Format: 0,
+  },
   [Chain.AssetHubPolkadot]: {
     chain: Chain.AssetHubPolkadot,
     specName: 'statemint',
@@ -99,6 +109,13 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainToken: 'KSM',
     ss58Format: 2,
   },
+  [Chain.AssetHubPaseo]: {
+    chain: Chain.AssetHubPaseo,
+    specName: 'asset-hub-paseo',
+    chainDecimals: 10,
+    chainToken: 'PAS',
+    ss58Format: 0,
+  },
   [Chain.PeoplePolkadot]: {
     chain: Chain.PeoplePolkadot,
     specName: 'people-polkadot',
@@ -112,6 +129,13 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 12,
     chainToken: 'KSM',
     ss58Format: 2,
+  },
+  [Chain.PeoplePaseo]: {
+    chain: Chain.PeoplePaseo,
+    specName: 'people-paseo',
+    chainDecimals: 10,
+    chainToken: 'PAS',
+    ss58Format: 0,
   },
   [Chain.Centrifuge]: {
     chain: Chain.Centrifuge,
@@ -213,6 +237,12 @@ export const PARACHAIN_NAMES = {
     '2281': 'Kreivo',
     '3339': 'Curio',
     '3344': 'Xode'
+  },
+  [Chain.Paseo]: {
+    '1000': 'AssetHubPaseo',
+    '1001': 'CollectivesPaseo',
+    '1002': 'BridgeHubPaseo',
+    '1004': 'PeoplePaseo',
   }
 };
 
@@ -224,10 +254,13 @@ export const CHAIN_TOKENS: Record<Chain, Record<string, { id: string; decimals: 
   [Chain.AssetHubKusama]: {
     USDT: { id: '1984', decimals: 6 },
   },
+  [Chain.AssetHubPaseo]: {},
   [Chain.Polkadot]: {},
   [Chain.Kusama]: {},
+  [Chain.Paseo]: {},
   [Chain.PeoplePolkadot]: {},
   [Chain.PeopleKusama]: {},
+  [Chain.PeoplePaseo]: {},
   [Chain.Centrifuge]: {
     localUSDC: { id: '{"localAsset":1}', decimals: 6 },
   },
