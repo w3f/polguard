@@ -4,6 +4,8 @@ import { Logger, MessengerType, NotificationType, Chain } from '@w3f/monitoring-
 import { MatrixEvent } from 'matrix-js-sdk';
 
 export class MatrixBot extends MatrixClient {
+  // This property handles "Message too long (112988 bytes)"
+  private static readonly MAX_INCIDENTS_PER_LIST = 50;
   private incidentService: IncidentServiceInterface;
   private monitoringConfigService: MonitoringConfigServiceInterface;
 
@@ -175,7 +177,12 @@ export class MatrixBot extends MatrixClient {
       await this.sendMessage(roomId, `<p>${displayMessage}</p>`);
     } catch (error) {
       this.logger.error(`Error fetching incident message: ${error.message}`);
-      await this.sendErrorMessage(roomId, 'An error occurred while fetching incident message. Please try again later');
+      
+      if (error.response?.status === 404) {
+        await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
+      } else {
+        await this.sendErrorMessage(roomId, 'An error occurred while fetching incident message. Please try again later');
+      }
     }
   }
 
@@ -192,7 +199,12 @@ export class MatrixBot extends MatrixClient {
       await this.sendMessage(roomId, debugInfo);
     } catch (error) {
       this.logger.error(`Error fetching incident details: ${error.message}`);
-      await this.sendErrorMessage(roomId, 'An error occurred while fetching incident details. Please try again later');
+      
+      if (error.response?.status === 404) {
+        await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
+      } else {
+        await this.sendErrorMessage(roomId, 'An error occurred while fetching incident details. Please try again later');
+      }
     }
   }
 
@@ -230,7 +242,14 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
       await this.sendMessage(roomId, `<p>Incident <strong>${incidentId}</strong> has been acknowledged</p>`);
     } catch (error) {
       this.logger.error(`Error acknowledging incident: ${error.message}`);
-      await this.sendErrorMessage(roomId, 'An error occurred while acknowledging incident. Please try again later');
+      
+      if (error.response?.status === 404) {
+        await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
+      } else if (error.response?.status === 403) {
+        await this.sendErrorMessage(roomId, 'This incident cannot be acknowledged. It belongs to a different room');
+      } else {
+        await this.sendErrorMessage(roomId, 'An error occurred while acknowledging incident. Please try again later');
+      }
     }
   }
 
@@ -385,13 +404,19 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
   }
 
   private formatIncidentList(incidents: any[]): string {
-    const items = incidents
+    const limitedIncidents = incidents.slice(0, MatrixBot.MAX_INCIDENTS_PER_LIST);
+    const items = limitedIncidents
       .map(inc => {
         const subscanLink = this.generateSubscanLink(inc);
         return `<li><strong>${inc.id}</strong> &ndash; <i>${this.formatDate(inc.createdAt)}</i> &ndash; ${inc.handlerType} &ndash; ${subscanLink}</li>`;
       })
       .join('');
-    return `<ul>${items}</ul><br>`;
+    
+    let html = `<ul>${items}</ul>`;
+    if (incidents.length > MatrixBot.MAX_INCIDENTS_PER_LIST) {
+      html += `<p><em>List limited to first ${MatrixBot.MAX_INCIDENTS_PER_LIST} incidents (total: ${incidents.length})</em></p>`;
+    }
+    return html + '<br>';
   }
 
   private generateSubscanLink(incident: any): string {
