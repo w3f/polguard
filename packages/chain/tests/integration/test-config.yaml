@@ -1,6 +1,5 @@
 rpcEndpoints:
   Polkadot: wss://rpc-polkadot.luckyfriday.io
-  Kusama: wss://rpc-kusama.luckyfriday.io
   Paseo: wss://paseo-rpc.n.dwellir.com
   PeoplePolkadot: wss://rpc-people-polkadot.luckyfriday.io
   PeopleKusama: wss://rpc-people-kusama.luckyfriday.io
@@ -135,12 +134,6 @@ tests:
           address: 12K2F1PeLUiVmt7GfBgiQvtGP4HbtUJ55cLvwbybE8W3nau5
         expectedIncidents: 4
     TransferCall:
-      - description: "Call (balances.Transfer). Nested call: multisig -> proxy -> utility.batch -> balances.transfer"
-        chain: Kusama
-        block: 21441337
-        account:
-          address: ESVfLhWFe7pAePrxctqDPEx8jEZFPCWxfmyuGAzn8gAJdPU
-        expectedIncidents: 2
       - description: "Call (balances.Transfer). Nested call: multisig -> proxy -> utility.batch_all -> balances.transferKeepAlive"
         chain: Polkadot
         block: 27532114
@@ -241,16 +234,6 @@ tests:
         block: 21821595
         account:
           address: 12jEnW69xZzGrU7HKZpiya3w2W6ns4ULWJwsPsnGKgUcyRAs
-      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call limited_teleport_assets - V2 dest 1000"
-        chain: Kusama
-        block: 24265902
-        account:
-          address: EAs8ocCfK72QQNC3H3PzC4hdmo9dtUth8Unb4kgbozZyuAz
-      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call send. Unknown asset instruction"
-        chain: Kusama
-        block: 24673667
-        account:
-          address: HCksmaxivAsisGDkWtm5dhdAt3Ti2e5P2Gt7JXZYFiEHMSH
       - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. USDT token transfer"
         chain: AssetHubPolkadot
         block: 8764910

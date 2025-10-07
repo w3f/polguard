@@ -148,7 +148,10 @@ export class MatrixBot extends MatrixClient {
       }
     } catch (error) {
       this.logger.error(`Error unresolved active incidents: ${error.message}`);
-      await this.sendErrorMessage(roomId, 'An error occurred while fetching unresolved incidents. Please try again later');
+      await this.sendErrorMessage(
+        roomId,
+        'An error occurred while fetching unresolved incidents. Please try again later',
+      );
     }
   }
 
@@ -177,11 +180,14 @@ export class MatrixBot extends MatrixClient {
       await this.sendMessage(roomId, `<p>${displayMessage}</p>`);
     } catch (error) {
       this.logger.error(`Error fetching incident message: ${error.message}`);
-      
+
       if (error.response?.status === 404) {
         await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
       } else {
-        await this.sendErrorMessage(roomId, 'An error occurred while fetching incident message. Please try again later');
+        await this.sendErrorMessage(
+          roomId,
+          'An error occurred while fetching incident message. Please try again later',
+        );
       }
     }
   }
@@ -199,11 +205,14 @@ export class MatrixBot extends MatrixClient {
       await this.sendMessage(roomId, debugInfo);
     } catch (error) {
       this.logger.error(`Error fetching incident details: ${error.message}`);
-      
+
       if (error.response?.status === 404) {
         await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
       } else {
-        await this.sendErrorMessage(roomId, 'An error occurred while fetching incident details. Please try again later');
+        await this.sendErrorMessage(
+          roomId,
+          'An error occurred while fetching incident details. Please try again later',
+        );
       }
     }
   }
@@ -242,7 +251,7 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
       await this.sendMessage(roomId, `<p>Incident <strong>${incidentId}</strong> has been acknowledged</p>`);
     } catch (error) {
       this.logger.error(`Error acknowledging incident: ${error.message}`);
-      
+
       if (error.response?.status === 404) {
         await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
       } else if (error.response?.status === 403) {
@@ -411,7 +420,7 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
         return `<li><strong>${inc.id}</strong> &ndash; <i>${this.formatDate(inc.createdAt)}</i> &ndash; ${inc.handlerType} &ndash; ${subscanLink}</li>`;
       })
       .join('');
-    
+
     let html = `<ul>${items}</ul>`;
     if (incidents.length > MatrixBot.MAX_INCIDENTS_PER_LIST) {
       html += `<p><em>List limited to first ${MatrixBot.MAX_INCIDENTS_PER_LIST} incidents (total: ${incidents.length})</em></p>`;

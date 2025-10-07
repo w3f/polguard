@@ -10,7 +10,7 @@ import { AbstractMonitor } from './abstract-monitor';
 import { Call, Event } from '../decorators';
 
 export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
-  @Event(H.ReferendaSubmittedEvent, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'referenda.Submitted')
+  @Event(H.ReferendaSubmittedEvent, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'referenda.Submitted')
   async referendaSubmitted({
     eventRecord,
     blockContext,
@@ -44,7 +44,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     }
   }
 
-  @Call(H.ConvictionVoteCall, [Chain.Polkadot, Chain.Kusama, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'convictionVoting.vote')
+  @Call(H.ConvictionVoteCall, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'convictionVoting.vote')
   async convictionVote({
     call,
     origin,

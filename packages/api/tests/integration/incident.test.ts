@@ -444,13 +444,10 @@ describe('Incident API (integration)', () => {
   describe('Auto resolution', () => {
     it('auto-resolves stale incidents after 30 days', async () => {
       const incident = await postIncident(createOngoingIncident()).expect(201);
-      
+
       // Set incident to be 31 days old
       const thirtyOneDaysAgo = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
-      await dataSource.getRepository(Incident).update(
-        { id: incident.body.id },
-        { createdAt: thirtyOneDaysAgo }
-      );
+      await dataSource.getRepository(Incident).update({ id: incident.body.id }, { createdAt: thirtyOneDaysAgo });
 
       const incidentService = app.get(IncidentService);
       await incidentService.autoResolveStaleIncidents();
