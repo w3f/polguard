@@ -253,7 +253,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.ActiveSetPresenceState, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
+  @State(H.ActiveSetPresenceState, [Chain.Polkadot, Chain.Kusama])
   async activeSetPresense({ blockContext, handlerType }: StateHandlerParams<H.ActiveSetPresenceState>): Promise<void> {
     const validators = await this.chain.sessionValidators(blockContext.blockNumber);
 

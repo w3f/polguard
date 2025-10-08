@@ -14,6 +14,7 @@ metadata:
   labels: {{ include "foundation.web3.mp.common.labels" . | nindent 4 }}
 spec:
   replicas: {{ .svc.replicas | default 1 }}
+  revisionHistoryLimit: 3
   strategy:
     type: Recreate
   selector:
