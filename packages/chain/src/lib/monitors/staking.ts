@@ -262,7 +262,6 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const message = this.fmt.message(
         [
           `Target ${this.fmt.accountLink(account.name, account.ss58)} is not present in the validation active set`,
-          `Era: ${await this.chain.stakingActiveEra(blockContext.blockNumber)}`,
         ],
         blockContext,
       );
