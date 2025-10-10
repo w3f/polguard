@@ -85,7 +85,8 @@ export class IncidentHandler implements IncidentHandlerClient {
     if (isFiring && !incidentId) {
       const id = await this.createIncident(message, notifications, incidentKey, blockContext, false, idempotencyKey);
       if (id) {
-        await this.store.set(idempotencyKey, id);
+        // Setex: once in a while try creating a new incident just in case the old one was manually resolved
+        await this.store.setex(idempotencyKey, 3600 * 3, id);
       }
     } else if (!isFiring && incidentId) {
       await this.resolveIncident(incidentId, blockContext.blockNumber);

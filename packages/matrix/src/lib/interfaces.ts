@@ -76,6 +76,7 @@ export interface IncidentServiceInterface {
   getNonAcked(roomId: string): Promise<Incident[]>;
   getIncidentById(incidentId: string): Promise<Incident>;
   acknowledgeIncident(incidentId: string, username: string, channelId: string): Promise<void>;
+  resolveIncident(incidentId: string, username: string, channelId: string): Promise<void>;
   queryIncidents(roomId: string, filters: QueryFilters): Promise<Incident[]>;
 }
 

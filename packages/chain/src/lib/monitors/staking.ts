@@ -260,9 +260,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
       const isFiring = !validators[account.ss58];
       const message = this.fmt.message(
-        [
-          `Target ${this.fmt.accountLink(account.name, account.ss58)} is not present in the validation active set`,
-        ],
+        [`Target ${this.fmt.accountLink(account.name, account.ss58)} is not present in the validation active set`],
         blockContext,
       );
       const key = { account: account.ss58, groupId, handlerType };

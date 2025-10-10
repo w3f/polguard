@@ -83,6 +83,18 @@ export class MatrixBot extends MatrixClient {
           }
         }
         break;
+      case 'resolve':
+        if (parts.length < 2) {
+          this.sendMessage(roomId, 'Usage: !resolve &ltincident-id|ALL&gt');
+        } else {
+          const resolveId = parts[1]?.trim();
+          if (!resolveId) {
+            this.sendErrorMessage(roomId, 'Invalid incident ID');
+          } else {
+            this.handleResolveCommand(roomId, resolveId, event);
+          }
+        }
+        break;
       case 'query':
         this.handleQueryCommand(roomId, parts.slice(1));
         break;
@@ -248,16 +260,78 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
     try {
       const userId = event.getSender();
       await this.incidentService.acknowledgeIncident(incidentId, userId, roomId);
-      await this.sendMessage(roomId, `<p>Incident <strong>${incidentId}</strong> has been acknowledged</p>`);
+
+      let message = `<p>Incident <strong>${incidentId}</strong> has been acknowledged</p>`;
+
+      // Fetch remaining unacked incidents and show next 3
+      try {
+        const remainingIncidents = await this.incidentService.getNonAcked(roomId);
+        if (remainingIncidents.length > 0) {
+          const nextIncidents = remainingIncidents.slice(0, 3);
+          message += `<p>Next incidents (${remainingIncidents.length} remaining):</p>`;
+          message += this.formatIncidentList(nextIncidents);
+        }
+      } catch (error) {
+        // Don't fail the ack if fetching next incidents fails, just log it
+        this.logger.error(`Error fetching next incidents: ${error.message}`);
+      }
+
+      await this.sendMessage(roomId, message);
     } catch (error) {
       this.logger.error(`Error acknowledging incident: ${error.message}`);
 
       if (error.response?.status === 404) {
         await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
       } else if (error.response?.status === 403) {
-        await this.sendErrorMessage(roomId, 'This incident cannot be acknowledged. It belongs to a different room');
+        await this.sendErrorMessage(roomId, 'You do not have permission to acknowledge this incident');
       } else {
         await this.sendErrorMessage(roomId, 'An error occurred while acknowledging incident. Please try again later');
+      }
+    }
+  }
+
+  private async handleResolveCommand(roomId: string, incidentId: string, event: MatrixEvent) {
+    try {
+      const userId = event.getSender();
+
+      if (incidentId.toUpperCase() === 'ALL') {
+        const incidents = await this.incidentService.getNonResolved(roomId);
+
+        if (incidents.length === 0) {
+          await this.sendMessage(roomId, '<p>No unresolved incidents to resolve</p>');
+          return;
+        }
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const incident of incidents) {
+          try {
+            await this.incidentService.resolveIncident(incident.id, userId, roomId);
+            successCount++;
+          } catch (error) {
+            this.logger.error(`Error resolving incident ${incident.id}: ${error.message}`);
+            failCount++;
+          }
+        }
+
+        await this.sendMessage(
+          roomId,
+          `<p>Resolved <strong>${successCount}</strong> incident(s)${failCount > 0 ? `, failed to resolve ${failCount}` : ''}</p>`,
+        );
+      } else {
+        await this.incidentService.resolveIncident(incidentId, userId, roomId);
+        await this.sendMessage(roomId, `<p>Incident <strong>${incidentId}</strong> has been resolved manually</p>`);
+      }
+    } catch (error) {
+      this.logger.error(`Error resolving incident: ${error.message}`);
+
+      if (error.response?.status === 404) {
+        await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
+      } else if (error.response?.status === 403) {
+        await this.sendErrorMessage(roomId, 'You do not have permission to resolve this incident');
+      } else {
+        await this.sendErrorMessage(roomId, 'An error occurred while resolving incident. Please try again later');
       }
     }
   }

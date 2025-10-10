@@ -8,7 +8,7 @@ import {
   OneToMany,
   BeforeInsert,
 } from 'typeorm';
-import { Chain, MessengerType } from '@w3f/monitoring-types';
+import { Chain, MessengerType, ResolutionType } from '@w3f/monitoring-types';
 import type { Notification } from './notification.entity';
 import { generateIncidentId } from './id-generator';
 
@@ -76,8 +76,11 @@ export class Incident {
   @Column({ default: false })
   isResolved: boolean;
 
-  @Column({ default: false })
-  isAutoResolved: boolean;
+  @Column({ type: 'simple-enum', enum: ResolutionType, nullable: true })
+  resolutionType?: ResolutionType;
+
+  @Column({ nullable: true })
+  resolvedBy?: string;
 
   @Column({ nullable: true })
   resolvedAt: Date;

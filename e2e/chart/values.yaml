@@ -91,6 +91,7 @@ monitoring:
           getIncidents: "/incidents"
           getIncident: "/incidents/:id"
           acknowledgeIncident: "/incidents/:id/acknowledge"
+          resolveIncidentManually: "/incidents/:id/resolve-manual"
           getAccounts: "/monitoring-config/accounts"
       environment: "test"
       logging:

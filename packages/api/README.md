@@ -18,8 +18,8 @@ The API service serves as the central control point for the Monitoring Platform,
 - `GET /incidents`: List incidents with filtering options
 - `GET /incidents/:id`: Get incident details
 - `POST /incidents/:id/acknowledge`: Acknowledge an incident
-- `POST /incidents/:id/resolve`: Resolve an incident by ID
-- `POST /incidents/resolve`: Resolve an incident by criteria
+- `POST /incidents/:id/resolve`: Resolve an incident
+- `POST /incidents/:id/resolve-manual`: Resolve an incident manually (Matrix Bot)
 
 ### Monitoring Configuration
 

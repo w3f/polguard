@@ -1,6 +1,12 @@
 import { Chain } from './constants';
 import { MessengerType } from './notification';
 
+export enum ResolutionType {
+  ChainService = 'ChainService',
+  AutoTimeout = 'AutoTimeout',
+  Manual = 'Manual',
+}
+
 export interface NotificationSettings {
   messengerType: MessengerType;
   channels: string[];
@@ -47,9 +53,14 @@ export interface BlockContext {
   callIdx?: number;        // set for call handlers (leaf call inside an extrinsic)
 }
 
-export interface ResolveIncidentDto {
+export interface ResolveIncidentByChainDto {
   chain: Chain;
   blockNumber: number;
+}
+
+export interface ResolveIncidentManuallyDto {
+  username: string;
+  channelId: string;
 }
 
 export interface IncidentHandlerClient {

@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { Chain, MessengerType, NotificationType } from '@w3f/monitoring-types';
+import { Chain, MessengerType, NotificationType, ResolutionType } from '@w3f/monitoring-types';
 import { DataSource } from 'typeorm';
 import { cleanupTestDatabase, createTestApp } from './test-utils';
 import { Incident } from '../../src/database/incident.entity';
@@ -153,7 +153,7 @@ describe('Incident API (integration)', () => {
       const dto = createOngoingIncident({ idempotencyKey: 'resolve-test' });
 
       const first = await postIncident(dto).expect(201);
-      await resolveIncident(first.body.id).expect(201);
+      await resolveIncident(first.body.id).expect(200);
       const second = await postIncident(dto).expect(201);
 
       expect(first.body.id).not.toBe(second.body.id);
@@ -163,7 +163,7 @@ describe('Incident API (integration)', () => {
   describe('POST /incidents/:id/acknowledge', () => {
     it('acknowledges incident successfully', async () => {
       const incident = await postIncident(createOngoingIncident()).expect(201);
-      const response = await acknowledgeIncident(incident.body.id, 'testuser').expect(201);
+      const response = await acknowledgeIncident(incident.body.id, 'testuser').expect(200);
 
       expect(response.body).toMatchObject({
         id: incident.body.id,
@@ -185,8 +185,8 @@ describe('Incident API (integration)', () => {
     it('preserves original acker on multiple acknowledgments', async () => {
       const incident = await postIncident(createOngoingIncident()).expect(201);
 
-      const first = await acknowledgeIncident(incident.body.id, 'user1').expect(201);
-      const second = await acknowledgeIncident(incident.body.id, 'user2').expect(201);
+      const first = await acknowledgeIncident(incident.body.id, 'user1').expect(200);
+      const second = await acknowledgeIncident(incident.body.id, 'user2').expect(200);
 
       expect(first.body.ackedBy).toBe('user1');
       expect(second.body.ackedBy).toBe('user1');
@@ -218,12 +218,12 @@ describe('Incident API (integration)', () => {
 
     it('allows resolving with same block number', async () => {
       const incident = await postIncident(createOngoingIncident()).expect(201);
-      await resolveIncident(incident.body.id, 1000).expect(201);
+      await resolveIncident(incident.body.id, 1000).expect(200);
     });
 
     it('allows resolving with greater block and updates last block', async () => {
       const incident = await postIncident(createOngoingIncident()).expect(201);
-      await resolveIncident(incident.body.id, 1200).expect(201);
+      await resolveIncident(incident.body.id, 1200).expect(200);
 
       const lastBlock = await dataSource.getRepository(LastBlock).findOne({
         where: { chain: TEST_CHAIN },
@@ -317,7 +317,7 @@ describe('Incident API (integration)', () => {
   describe('POST /incidents/:id/resolve', () => {
     it('resolves incident successfully', async () => {
       const incident = await postIncident(createOngoingIncident()).expect(201);
-      const resolved = await resolveIncident(incident.body.id).expect(201);
+      const resolved = await resolveIncident(incident.body.id).expect(200);
 
       expect(resolved.body).toMatchObject({
         id: incident.body.id,
@@ -328,7 +328,7 @@ describe('Incident API (integration)', () => {
 
     it('handles already resolved incident', async () => {
       const incident = await postIncident(createOneTimeIncident()).expect(201);
-      const resolved = await resolveIncident(incident.body.id).expect(201);
+      const resolved = await resolveIncident(incident.body.id).expect(200);
 
       expect(resolved.body.isResolved).toBe(true);
     });
@@ -458,9 +458,71 @@ describe('Incident API (integration)', () => {
 
       expect(resolvedIncident).toMatchObject({
         isResolved: true,
-        isAutoResolved: true,
+        resolutionType: ResolutionType.AutoTimeout,
       });
       expect(resolvedIncident?.resolvedAt).toBeDefined();
+    });
+  });
+
+  describe('POST /incidents/:id/resolve-manual', () => {
+    const resolveIncidentManually = (id: string, username = 'testuser', channelId = TEST_CHANNEL_ID) =>
+      request(app.getHttpServer()).post(`/incidents/${id}/resolve-manual`).send({ username, channelId });
+
+    it('resolves incident manually successfully', async () => {
+      const incident = await postIncident(createOngoingIncident()).expect(201);
+      const resolved = await resolveIncidentManually(incident.body.id, 'testuser').expect(200);
+
+      expect(resolved.body).toMatchObject({
+        id: incident.body.id,
+        isResolved: true,
+        resolutionType: ResolutionType.Manual,
+        resolvedBy: 'testuser',
+      });
+      expect(resolved.body.resolvedAt).toBeDefined();
+    });
+
+    it('prevents manual resolution from wrong channel', async () => {
+      const incident = await postIncident(createOngoingIncident()).expect(201);
+      await resolveIncidentManually(incident.body.id, 'testuser', '!wrong:matrix.org').expect(403);
+    });
+
+    it('returns 404 for non-existent incident', async () => {
+      await resolveIncidentManually('non-existent-id').expect(404);
+    });
+
+    it('handles already resolved incident', async () => {
+      const incident = await postIncident(createOneTimeIncident()).expect(201);
+      const resolved = await resolveIncidentManually(incident.body.id).expect(200);
+
+      expect(resolved.body.isResolved).toBe(true);
+    });
+  });
+
+  describe('Resolution types', () => {
+    it('sets ChainService resolution type for chain-resolved incidents', async () => {
+      const incident = await postIncident(createOngoingIncident()).expect(201);
+      const resolved = await resolveIncident(incident.body.id).expect(200);
+
+      expect(resolved.body.resolutionType).toBe(ResolutionType.ChainService);
+      expect(resolved.body.resolvedBy).toBeNull();
+    });
+
+    it('sets ChainService resolution type for one-time incidents', async () => {
+      const incident = await postIncident(createOneTimeIncident()).expect(201);
+
+      expect(incident.body.resolutionType).toBe(ResolutionType.ChainService);
+      expect(incident.body.resolvedBy).toBeNull();
+    });
+
+    it('sets Manual resolution type for manually resolved incidents', async () => {
+      const incident = await postIncident(createOngoingIncident()).expect(201);
+      const resolved = await request(app.getHttpServer())
+        .post(`/incidents/${incident.body.id}/resolve-manual`)
+        .send({ username: 'testuser', channelId: TEST_CHANNEL_ID })
+        .expect(200);
+
+      expect(resolved.body.resolutionType).toBe(ResolutionType.Manual);
+      expect(resolved.body.resolvedBy).toBe('testuser');
     });
   });
 });

@@ -102,6 +102,7 @@ export class ConfigService {
           getIncidents: Joi.string().required(),
           getIncident: Joi.string().required(),
           acknowledgeIncident: Joi.string().required(),
+          resolveIncidentManually: Joi.string().required(),
           getAccounts: Joi.string().required(),
         }).required(),
       }).required(),
@@ -135,6 +136,7 @@ export class ConfigService {
       getIncidents: string;
       getIncident: string;
       acknowledgeIncident: string;
+      resolveIncidentManually: string;
       getAccounts: string;
     };
   } {
@@ -163,6 +165,7 @@ interface AppConfig {
       getIncidents: string;
       getIncident: string;
       acknowledgeIncident: string;
+      resolveIncidentManually: string;
       getAccounts: string;
     };
   };

@@ -1,4 +1,4 @@
-import { IncidentApiClient, CreateIncidentDto, ResolveIncidentDto } from '@w3f/monitoring-types';
+import { IncidentApiClient, CreateIncidentDto, ResolveIncidentByChainDto } from '@w3f/monitoring-types';
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '../config/config.service';
@@ -38,7 +38,7 @@ export class IncidentApiService implements IncidentApiClient {
     }
   }
 
-  async resolveIncident(id: number, resolveData: ResolveIncidentDto): Promise<void> {
+  async resolveIncident(id: number, resolveData: ResolveIncidentByChainDto): Promise<void> {
     try {
       const url = this.resolveUrl.replace(':id', id.toString());
       const response = await lastValueFrom(this.httpService.post(url, resolveData));

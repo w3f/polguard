@@ -63,6 +63,17 @@ export class IncidentService implements IncidentServiceInterface {
     );
   }
 
+  async resolveIncident(incidentId: string, username: string, channelId: string): Promise<void> {
+    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const url = `${baseUrl}${endpoints.resolveIncidentManually.replace(':id', incidentId)}`;
+    await firstValueFrom(
+      this.httpService.post(url, {
+        username,
+        channelId,
+      }),
+    );
+  }
+
   async queryIncidents(roomId: string, filters: QueryFilters): Promise<Incident[]> {
     const { baseUrl, endpoints } = this.configService.getMonitoringApi();
     const url = `${baseUrl}${endpoints.getIncidents}`;

@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Incident } from '../database/incident.entity';
 import { Notification } from '../database/notification.entity';
-import { CreateIncidentDto, GetIncidentsDto, ResolveIncidentDto } from './dto';
+import { CreateIncidentDto, GetIncidentsDto, ResolveIncidentByChainDto, ResolveIncidentManuallyDto } from './dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType, MessengerType } from '@w3f/monitoring-types';
+import { NotificationType, MessengerType, ResolutionType } from '@w3f/monitoring-types';
 import { LastBlockService } from '../last-block/last-block.service';
 
 @Injectable()
@@ -100,6 +100,7 @@ export class IncidentService {
     });
     if (incident.isResolved) {
       incident.resolvedAt = new Date();
+      incident.resolutionType = ResolutionType.ChainService;
     }
 
     const savedIncident = await this.incidentRepository.save(incident);
@@ -123,7 +124,7 @@ export class IncidentService {
       },
     });
     if (!hasNotificationForChannel) {
-      throw new ForbiddenException('Channel ID does not match any notification for this incident');
+      throw new ForbiddenException('User does not have permission to acknowledge this incident');
     }
 
     if (!incident.ackedAt) {
@@ -135,8 +136,9 @@ export class IncidentService {
     return this.incidentRepository.save(incident);
   }
 
-  async resolveIncidentById(id: string, dto: ResolveIncidentDto): Promise<Incident> {
+  async resolveIncidentByChain(id: string, dto: ResolveIncidentByChainDto): Promise<Incident> {
     await this.lastBlockService.setLastBlock(dto.chain, dto.blockNumber);
+
     const incident = await this.incidentRepository.findOne({ where: { id } });
 
     if (!incident) {
@@ -146,10 +148,45 @@ export class IncidentService {
       return incident;
     }
 
+    incident.resolutionType = ResolutionType.ChainService;
     incident.isResolved = true;
     incident.resolvedAt = new Date();
+
     const savedIncident = await this.incidentRepository.save(incident);
-    this.logger.debug(`Incident ${id} resolved.`);
+    this.logger.debug(`Incident ${id} resolved by chain service.`);
+
+    await this.notificationService.createResolutionNotifications(savedIncident);
+    return savedIncident;
+  }
+
+  async resolveIncidentManually(id: string, dto: ResolveIncidentManuallyDto): Promise<Incident> {
+    const incident = await this.incidentRepository.findOne({ where: { id } });
+
+    if (!incident) {
+      throw new NotFoundException(`Incident with ID ${id} not found`);
+    }
+    if (incident.resolvedAt) {
+      return incident;
+    }
+
+    // Validate channel ID by checking if there's a notification for this channel
+    const hasNotificationForChannel = await this.notificationRepository.findOne({
+      where: {
+        incident: { id },
+        channelId: dto.channelId,
+      },
+    });
+    if (!hasNotificationForChannel) {
+      throw new ForbiddenException('User does not have permission to resolve this incident');
+    }
+
+    incident.resolutionType = ResolutionType.Manual;
+    incident.resolvedBy = dto.username;
+    incident.isResolved = true;
+    incident.resolvedAt = new Date();
+
+    const savedIncident = await this.incidentRepository.save(incident);
+    this.logger.debug(`Incident ${id} manually resolved by: ${dto.username}.`);
 
     await this.notificationService.createResolutionNotifications(savedIncident);
     return savedIncident;
@@ -217,7 +254,7 @@ export class IncidentService {
 
     for (const incident of staleIncidents) {
       incident.isResolved = true;
-      incident.isAutoResolved = true;
+      incident.resolutionType = ResolutionType.AutoTimeout;
       incident.resolvedAt = new Date();
 
       const savedIncident = await this.incidentRepository.save(incident);

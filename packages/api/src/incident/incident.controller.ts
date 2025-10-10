@@ -1,11 +1,12 @@
-import { Controller, Get, Post, Body, Param, Query, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Logger, HttpCode } from '@nestjs/common';
 import { IncidentService } from './incident.service';
 import {
   CreateIncidentDto,
   AcknowledgeIncidentDto,
   GetIncidentsDto,
   IncidentResponseDto,
-  ResolveIncidentDto,
+  ResolveIncidentByChainDto,
+  ResolveIncidentManuallyDto,
 } from './dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 
@@ -91,6 +92,7 @@ Used by Watcher service to automatically create incidents when issues are detect
   }
 
   @Post(':id/acknowledge')
+  @HttpCode(200)
   @ApiOperation({
     summary: 'Acknowledge an incident by ID',
     description: `Mark an incident as acknowledged by a specific user.
@@ -101,6 +103,14 @@ Used by the notification service (Matrix) for incident acknowledgment.`,
     status: 200,
     description: 'The incident has been successfully acknowledged',
     type: IncidentResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'User does not have permission to acknowledge this incident',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Incident not found',
   })
   @ApiParam({ name: 'id', description: 'Incident ID', type: 'string' })
   @ApiBody({ type: AcknowledgeIncidentDto })
@@ -118,9 +128,12 @@ Used by the notification service (Matrix) for incident acknowledgment.`,
   }
 
   @Post(':id/resolve')
+  @HttpCode(200)
   @ApiOperation({
-    summary: 'Resolve an incident by ID',
-    description: `Used for testing purposes.`,
+    summary: 'Resolve an incident by ID (Chain Service)',
+    description: `Resolve an incident automatically by the chain service when the underlying condition returns to normal.
+    
+Requires chain and blockNumber for block consistency check.`,
   })
   @ApiResponse({
     status: 200,
@@ -128,16 +141,53 @@ Used by the notification service (Matrix) for incident acknowledgment.`,
     type: IncidentResponseDto,
   })
   @ApiResponse({
+    status: 404,
+    description: 'Incident not found',
+  })
+  @ApiResponse({
     status: 409,
     description: 'Block already processed',
   })
   @ApiParam({ name: 'id', description: 'Incident ID', type: 'string' })
-  async resolveIncidentById(
+  @ApiBody({ type: ResolveIncidentByChainDto })
+  async resolveIncidentByChain(
     @Param('id') id: string,
-    @Body() resolveIncidentDto: ResolveIncidentDto,
+    @Body() resolveDto: ResolveIncidentByChainDto,
   ): Promise<IncidentResponseDto> {
-    this.logger.debug(`Resolving incident ${id}.`);
-    const incident = await this.incidentService.resolveIncidentById(id, resolveIncidentDto);
+    this.logger.debug(`Resolving incident ${id} by chain service.`);
+    const incident = await this.incidentService.resolveIncidentByChain(id, resolveDto);
+    return incident;
+  }
+
+  @Post(':id/resolve-manual')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Resolve an incident manually (Matrix Bot)',
+    description: `Manually resolve an incident via Matrix bot command.
+    
+Requires username and channelId for authentication and validation.`,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The incident has been successfully resolved manually',
+    type: IncidentResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'User does not have permission to resolve this incident',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Incident not found',
+  })
+  @ApiParam({ name: 'id', description: 'Incident ID', type: 'string' })
+  @ApiBody({ type: ResolveIncidentManuallyDto })
+  async resolveIncidentManually(
+    @Param('id') id: string,
+    @Body() resolveDto: ResolveIncidentManuallyDto,
+  ): Promise<IncidentResponseDto> {
+    this.logger.debug(`Manually resolving incident ${id} by ${resolveDto.username}.`);
+    const incident = await this.incidentService.resolveIncidentManually(id, resolveDto);
     return incident;
   }
 }
