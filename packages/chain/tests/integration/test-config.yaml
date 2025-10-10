@@ -5,7 +5,7 @@ rpcEndpoints:
   PeopleKusama: wss://rpc-people-kusama.luckyfriday.io
   PeoplePaseo: wss://people-paseo.rpc.amforc.com
   AssetHubPolkadot: wss://polkadot-asset-hub-rpc.polkadot.io
-  AssetHubKusama: wss://kusama-asset-hub-rpc.polkadot.io
+  AssetHubKusama: wss://rpc-asset-hub-kusama.luckyfriday.io
   AssetHubPaseo: wss://asset-hub-paseo-rpc.n.dwellir.com
   Centrifuge: wss://rpc-centrifuge.luckyfriday.io
 
@@ -90,6 +90,11 @@ tests:
         block: 25700079
         account:
           address: 12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ
+      - description: "State (session.validators) - AssetHubKusama"
+        chain: AssetHubKusama
+        block: 11188342
+        account:
+          address: F3opxRUwkBj1LqjZ7DyiHCRh9Z4zVPLaVjoxfD5ddbip8mt
 
   Balances:
     BalanceDecreaseState:

@@ -253,14 +253,18 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.ActiveSetPresenceState, [Chain.Polkadot, Chain.Kusama])
+  @State(H.ActiveSetPresenceState, [Chain.Polkadot, Chain.AssetHubKusama])
   async activeSetPresense({ blockContext, handlerType }: StateHandlerParams<H.ActiveSetPresenceState>): Promise<void> {
-    const validators = await this.chain.sessionValidators(blockContext.blockNumber);
+    const activeEra = await this.chain.stakingActiveEra(blockContext.blockNumber);
+    const validators = await this.chain.stakingEraValidators(activeEra, blockContext.blockNumber);
 
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
       const isFiring = !validators[account.ss58];
       const message = this.fmt.message(
-        [`Target ${this.fmt.accountLink(account.name, account.ss58)} is not present in the validation active set`],
+        [
+          `Target ${this.fmt.accountLink(account.name, account.ss58)} is not present in the validation active set`,
+          `Era: ${activeEra}`,
+        ],
         blockContext,
       );
       const key = { account: account.ss58, groupId, handlerType };

@@ -151,6 +151,20 @@ export function createChainDataProvider(api: ApiPromise, client: KeyValueStorage
     }
 
     @Cached()
+    async stakingEraValidators(era: number, blockNumber: number): Promise<Record<string, boolean>> {
+      const apiAt = await this.getApiAt(blockNumber);
+      const keys = await apiAt.query.staking.erasStakersOverview.keys(era);
+      const result: Record<string, boolean> = {};
+
+      keys.forEach(key => {
+        const validator = key.args[1].toString();
+        result[validator] = true;
+      });
+
+      return result;
+    }
+
+    @Cached()
     async sessionValidators(blockNumber: number): Promise<Record<string, boolean>> {
       const apiAt = await this.getApiAt(blockNumber);
       const validators = (await apiAt.query.session.validators()) as Vec<Codec>;

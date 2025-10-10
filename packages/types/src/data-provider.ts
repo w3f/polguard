@@ -13,6 +13,7 @@ export interface ChainDataProvider {
   stakingBonded(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
   stakingPayee(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
   stakingActiveEra(blockNumber: number): Promise<number>;
+  stakingEraValidators(era: number, blockNumber: number): Promise<Record<string, boolean>>;
   sessionValidators(blockNumber: number): Promise<Record<string, boolean>>;
   systemAccountBalance(addresses: string[], blockNumber: number): Promise<Record<string, bigint>>;
   identityOf(addresses: string[], blockNumber: number): Promise<Record<string, IdentityInfo | null>>;

@@ -153,7 +153,7 @@ export class MatrixBot extends MatrixClient {
     try {
       const incidents = await this.incidentService.getNonResolved(roomId);
       if (incidents.length === 0) {
-        await this.sendMessage(roomId, '<p><strong>No unresolved incidents for this room.</strong></p>');
+        await this.sendMessage(roomId, '<p><strong>No unresolved incidents for this room</strong></p>');
       } else {
         const html = '<p><strong>Unresolved incidents:</strong></p>' + this.formatIncidentList(incidents);
         await this.sendMessage(roomId, html);
