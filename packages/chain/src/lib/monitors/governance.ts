@@ -10,6 +10,17 @@ import { AbstractMonitor } from './abstract-monitor';
 import { Call, Event } from '../decorators';
 
 export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
+  private getGovernanceChainSlug(): string {
+    switch (this.chainProps.chain) {
+      case Chain.AssetHubKusama:
+        return 'kusama';
+      case Chain.AssetHubPaseo:
+        return 'paseo';
+      default:
+        return this.chainProps.chain.toLowerCase();
+    }
+  }
+
   @Event(H.ReferendaSubmittedEvent, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'referenda.Submitted')
   async referendaSubmitted({
     eventRecord,
@@ -19,13 +30,14 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     const { blockNumber } = blockContext;
     const [referendumIndex, trackId] = eventRecord.event.data.map(arg => arg.toString());
     const proposer = (await this.chain.referendaInfoFor(referendumIndex, blockNumber)) ?? 'unknown';
+    const chainSlug = this.getGovernanceChainSlug();
     const subsquareLink = this.fmt.link(
       'Subsquare',
-      `https://${this.chainProps.chain.toLowerCase()}.subsquare.io/referenda/${referendumIndex}`,
+      `https://${chainSlug}.subsquare.io/referenda/${referendumIndex}`,
     );
     const polkassemblyLink = this.fmt.link(
       'Polkassembly',
-      `https://${this.chainProps.chain.toLowerCase()}.polkassembly.io/referenda/${referendumIndex}`,
+      `https://${chainSlug}.polkassembly.io/referenda/${referendumIndex}`,
     );
     // Sanitize C-style string
     const trackName = (await this.chain.referendaTrack(trackId, blockNumber)).replace(/\0/g, '');
