@@ -85,9 +85,22 @@ const stakingMonitorSchema = Joi.object({
   commission: Joi.number().min(0).max(100),
   selfStake: decimalStringSchema,
   payee: Joi.string(),
+  fromEra: Joi.number().integer().min(0),
+  untilEra: Joi.number().integer().min(0),
   handlers: createHandlerSchema(StakingHandlerType, 'Staking'),
   annotations: Joi.object().optional(),
-});
+})
+  .custom((value, helpers) => {
+    if (value.fromEra !== undefined && value.untilEra !== undefined) {
+      if (value.fromEra >= value.untilEra) {
+        return helpers.error('any.invalid');
+      }
+    }
+    return value;
+  }, 'Era bounds validation')
+  .messages({
+    'any.invalid': 'fromEra must be less than untilEra when both are specified',
+  });
 
 const identityMonitorSchema = Joi.object({
   ...Object.fromEntries(IDENTITY_FIELDS.map(field => [field, Joi.string()])),

@@ -103,9 +103,10 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     handlerType,
   }: StateHandlerParams<H.DestinationChangedState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
-    const [curr, prev] = await Promise.all([
+    const [curr, prev, activeEra] = await Promise.all([
       await this.chain.stakingPayee(addresses, blockContext.blockNumber),
       await this.chain.stakingPayee(addresses, blockContext.blockNumber - 1),
+      await this.chain.stakingActiveEra(blockContext.blockNumber),
     ]);
 
     for (const address of addresses) {
@@ -113,6 +114,10 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const prevDestination = prev[address];
 
       for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
+        const { fromEra, untilEra } = account.settings;
+        if (fromEra !== undefined && activeEra < fromEra) continue;
+        if (untilEra !== undefined && activeEra >= untilEra) continue;
+
         if (currDestination !== null && prevDestination !== null && currDestination !== prevDestination) {
           const message = this.fmt.message(
             [
@@ -135,9 +140,16 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     handlerType,
   }: StateHandlerParams<H.CommissionUnexpectedState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
-    const commissions = await this.chain.stakingValidatorsCommission(addresses, blockContext.blockNumber);
+    const [commissions, activeEra] = await Promise.all([
+      this.chain.stakingValidatorsCommission(addresses, blockContext.blockNumber),
+      this.chain.stakingActiveEra(blockContext.blockNumber),
+    ]);
 
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
+      const { fromEra, untilEra } = account.settings;
+      if (fromEra !== undefined && activeEra < fromEra) return;
+      if (untilEra !== undefined && activeEra >= untilEra) return;
+
       const commission = commissions[account.ss58];
       if (commission === null) return;
 
@@ -167,7 +179,10 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     // we still need this two-step lookup process to access the ledger storage due to backward compatibility
     // with the existing storage layout.
     const addresses = this.reg.getUniqueAddresses();
-    const bondedInfo = await this.chain.stakingBonded(addresses, blockContext.blockNumber);
+    const [bondedInfo, activeEra] = await Promise.all([
+      this.chain.stakingBonded(addresses, blockContext.blockNumber),
+      this.chain.stakingActiveEra(blockContext.blockNumber),
+    ]);
     const bondedAddresses = Object.values(bondedInfo).filter((addr): addr is string => addr !== null);
     const ledgers = await this.chain.stakingLedgerActive(bondedAddresses, blockContext.blockNumber);
 
@@ -179,6 +194,10 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       if (stake === null) continue;
 
       for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
+        const { fromEra, untilEra } = account.settings;
+        if (fromEra !== undefined && activeEra < fromEra) continue;
+        if (untilEra !== undefined && activeEra >= untilEra) return;
+
         const expectedStake = account.settings?.selfStake;
         if (!expectedStake) continue;
 
@@ -202,10 +221,17 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     handlerType,
   }: StateHandlerParams<H.ValidatorIntentionMissingState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
-    const bondedInfo = await this.chain.stakingBonded(addresses, blockContext.blockNumber);
-    const commissions = await this.chain.stakingValidatorsCommission(addresses, blockContext.blockNumber);
+    const [bondedInfo, commissions, activeEra] = await Promise.all([
+      this.chain.stakingBonded(addresses, blockContext.blockNumber),
+      this.chain.stakingValidatorsCommission(addresses, blockContext.blockNumber),
+      this.chain.stakingActiveEra(blockContext.blockNumber),
+    ]);
 
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
+      const { fromEra, untilEra } = account.settings;
+      if (fromEra !== undefined && activeEra < fromEra) return;
+      if (untilEra !== undefined && activeEra >= untilEra) return;
+
       const isBonded = bondedInfo[account.ss58] !== null;
       const hasValidatorPrefs = commissions[account.ss58] !== null;
       const isFiring = !isBonded || !hasValidatorPrefs;
@@ -232,9 +258,16 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     handlerType,
   }: StateHandlerParams<H.DestinationUnexpectedState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
-    const payees = await this.chain.stakingPayee(addresses, blockContext.blockNumber);
+    const [payees, activeEra] = await Promise.all([
+      this.chain.stakingPayee(addresses, blockContext.blockNumber),
+      this.chain.stakingActiveEra(blockContext.blockNumber),
+    ]);
 
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
+      const { fromEra, untilEra } = account.settings;
+      if (fromEra !== undefined && activeEra < fromEra) return;
+      if (untilEra !== undefined && activeEra >= untilEra) return;
+
       const destination = payees[account.ss58];
       if (destination === null) return;
 
@@ -259,6 +292,10 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     const validators = await this.chain.stakingEraValidators(activeEra, blockContext.blockNumber);
 
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
+      const { fromEra, untilEra } = account.settings;
+      if (fromEra !== undefined && activeEra < fromEra) return;
+      if (untilEra !== undefined && activeEra >= untilEra) return;
+
       const isFiring = !validators[account.ss58];
       const message = this.fmt.message(
         [

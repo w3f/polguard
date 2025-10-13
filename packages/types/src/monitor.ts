@@ -30,6 +30,8 @@ export interface StakingSettings extends BaseMonitorSettings {
   commission: number;
   selfStake?: bigint;
   payee?: string;
+  fromEra?: number;
+  untilEra?: number;
   handlers: MonitorHandlerType[MonitorType.Staking][];
 }
 

@@ -191,7 +191,7 @@ export class MatrixBot extends MatrixClient {
       let message = `<p>${this.getDisplayMessage(incident, roomId, NotificationType.Alert)}</p>`;
       
       if (incident.isResolved && incident.resolutionMessage) {
-        message += `<br><p>${this.getDisplayMessage(incident, roomId, NotificationType.Resolution)}</p>`;
+        message += `<p>${this.getDisplayMessage(incident, roomId, NotificationType.Resolution)}</p>`;
       }
       
       await this.sendMessage(roomId, message);

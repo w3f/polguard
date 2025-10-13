@@ -43,6 +43,8 @@ Monitors validator staking activities.
 - **Description**: Alerts when commission doesn't match expected value
 - **Config Keys**:
   - `commission`: (number) Expected commission percentage (0-100)
+  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
+  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
 
 #### SelfStakeUnexpectedState
 - **Type**: State (`staking.bonded`, `staking.ledger`)
@@ -50,11 +52,16 @@ Monitors validator staking activities.
 - **Description**: Alerts when self-stake doesn't match expected value
 - **Config Keys**:
   - `selfStake`: (string) Expected self-stake amount as a decimal string (e.g., "1000.5")
+  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
+  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
 
 #### ValidatorIntentionMissingState
 - **Type**: State (`staking.bonded`, `staking.validators`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Alerts when validator intention is missing
+- **Config Keys**:
+  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
+  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
 
 #### DestinationUnexpectedState
 - **Type**: State (`staking.payee`)
@@ -62,16 +69,24 @@ Monitors validator staking activities.
 - **Description**: Alerts when reward destination doesn't match expected value
 - **Config Keys**:
   - `payee`: (string) Expected reward destination - one of: "Staked", "Stash", "Controller"
+  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
+  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
 
 #### DestinationChangedState
 - **Type**: State (`staking.payee`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects changes to reward destination between blocks
+- **Config Keys**:
+  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
+  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
 
 #### ActiveSetPresenceState
 - **Type**: State (`session.validators`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Monitors validator presence in the active set
+- **Config Keys**:
+  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
+  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
 
 ### Example Configuration
 
