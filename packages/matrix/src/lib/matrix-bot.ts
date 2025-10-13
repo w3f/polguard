@@ -188,8 +188,13 @@ export class MatrixBot extends MatrixClient {
   private async handleShowCommand(roomId: string, incidentId: string) {
     try {
       const incident = await this.incidentService.getIncidentById(incidentId);
-      const displayMessage = this.getDisplayMessage(incident, roomId);
-      await this.sendMessage(roomId, `<p>${displayMessage}</p>`);
+      let message = `<p>${this.getDisplayMessage(incident, roomId, NotificationType.Alert)}</p>`;
+      
+      if (incident.isResolved && incident.resolutionMessage) {
+        message += `<br><p>${this.getDisplayMessage(incident, roomId, NotificationType.Resolution)}</p>`;
+      }
+      
+      await this.sendMessage(roomId, message);
     } catch (error) {
       this.logger.error(`Error fetching incident message: ${error.message}`);
 
@@ -336,15 +341,20 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
     }
   }
 
-  private getDisplayMessage(incident: any, roomId: string): string {
-    const alertNotification = incident.notifications?.find(
+  private getDisplayMessage(incident: any, roomId: string, notificationType = NotificationType.Alert): string {
+    const notification = incident.notifications?.find(
       notification =>
         notification.messengerType === MessengerType.Matrix &&
         notification.channelId === roomId &&
-        notification.type === NotificationType.Alert,
+        notification.type === notificationType,
     );
 
-    return alertNotification?.message || incident.message;
+    if (notification) {
+      return notification.message;
+    }
+
+    // Fallback to raw incident data based on notification type
+    return notificationType === NotificationType.Resolution ? incident.resolutionMessage : incident.message;
   }
 
   private buildDebugInfo(incident: any): string {

@@ -54,10 +54,11 @@ describe('Incident API (integration)', () => {
   const acknowledgeIncident = (id: string, username = 'testuser', channelId = TEST_CHANNEL_ID) =>
     request(app.getHttpServer()).post(`/incidents/${id}/acknowledge`).send({ username, channelId });
 
-  const resolveIncident = (id: string, blockNumber = 1000) =>
+  const resolveIncident = (id: string, blockNumber = 1000, resolutionMessage = 'Test resolution message') =>
     request(app.getHttpServer()).post(`/incidents/${id}/resolve`).send({
       chain: TEST_CHAIN,
       blockNumber,
+      resolutionMessage,
     });
 
   const setLastBlock = async (blockNumber: number) => {

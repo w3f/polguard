@@ -105,7 +105,12 @@ export class IncidentService {
 
     const savedIncident = await this.incidentRepository.save(incident);
     this.logger.debug(`Incident created: ${savedIncident.id}.`);
-    await this.notificationService.createNotifications(savedIncident, notificationChannels, NotificationType.Alert);
+    await this.notificationService.createNotifications(
+      savedIncident,
+      notificationChannels,
+      NotificationType.Alert,
+      incident.message,
+    );
     return savedIncident;
   }
 
@@ -149,6 +154,7 @@ export class IncidentService {
     }
 
     incident.resolutionType = ResolutionType.ChainService;
+    incident.resolutionMessage = dto.resolutionMessage;
     incident.isResolved = true;
     incident.resolvedAt = new Date();
 
@@ -181,6 +187,7 @@ export class IncidentService {
     }
 
     incident.resolutionType = ResolutionType.Manual;
+    incident.resolutionMessage = `Incident manually resolved by ${dto.username}`;
     incident.resolvedBy = dto.username;
     incident.isResolved = true;
     incident.resolvedAt = new Date();
@@ -217,21 +224,25 @@ export class IncidentService {
       i.escalatedAt = new Date();
       await this.incidentRepository.save(i);
 
-      const { title: originalTitle, details: originalDetails } = this.notificationService.parseIncidentMessage(
-        i.message,
+      // Escalation channels: escalation message with destinations plus original alert
+      const escalationMessageWithOriginal =
+        `Escalation. The incident was not acknowledged within ${timeoutInMinutes} minutes in any of the following rooms: ${destinations}\n\n` +
+        `The original message notification is repeated below:\n\n${i.message}`;
+      await this.notificationService.createNotifications(
+        i,
+        i.escalationChannels,
+        NotificationType.Escalation,
+        escalationMessageWithOriginal,
       );
 
-      // Escalation channels: escalation message with destinations plus original alert
-      await this.notificationService.createNotifications(i, i.escalationChannels, NotificationType.Escalation, {
-        title: `Escalation. The incident was not acknowledged within ${timeoutInMinutes} minutes in any of the following rooms: ${destinations}\n\nThe original message notification is repeated below:\n\n${originalTitle}`,
-        details: originalDetails,
-      });
-
       // Normal notification channels: short escalation message
-      await this.notificationService.createNotifications(i, i.notificationChannels, NotificationType.Escalation, {
-        title: `The incident was not acknowledged within ${timeoutInMinutes} minutes and has therefore been escalated`,
-        details: [],
-      });
+      const shortEscalationMessage = `The incident was not acknowledged within ${timeoutInMinutes} minutes and has therefore been escalated`;
+      await this.notificationService.createNotifications(
+        i,
+        i.notificationChannels,
+        NotificationType.Escalation,
+        shortEscalationMessage,
+      );
     }
   }
 
@@ -255,6 +266,7 @@ export class IncidentService {
     for (const incident of staleIncidents) {
       incident.isResolved = true;
       incident.resolutionType = ResolutionType.AutoTimeout;
+      incident.resolutionMessage = 'Incident auto-resolved by timeout policy (30 days).';
       incident.resolvedAt = new Date();
 
       const savedIncident = await this.incidentRepository.save(incident);
@@ -264,10 +276,7 @@ export class IncidentService {
         savedIncident,
         incident.notificationChannels,
         NotificationType.Resolution,
-        {
-          title: 'Incident auto-resolved by timeout policy (30 days).',
-          details: [],
-        },
+        incident.resolutionMessage,
       );
     }
   }

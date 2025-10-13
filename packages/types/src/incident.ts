@@ -56,6 +56,7 @@ export interface BlockContext {
 export interface ResolveIncidentByChainDto {
   chain: Chain;
   blockNumber: number;
+  resolutionMessage: string;
 }
 
 export interface ResolveIncidentManuallyDto {

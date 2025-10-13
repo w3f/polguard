@@ -10,6 +10,10 @@ export class ResolveIncidentByChainDto {
   @ApiProperty({ description: 'Block number' })
   @IsNumber()
   blockNumber: number;
+
+  @ApiProperty({ description: 'Resolution message with current state details' })
+  @IsString()
+  resolutionMessage: string;
 }
 
 export class ResolveIncidentManuallyDto {

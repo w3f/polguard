@@ -85,6 +85,9 @@ export class Incident {
   @Column({ nullable: true })
   resolvedAt: Date;
 
+  @Column({ nullable: true })
+  resolutionMessage?: string;
+
   @Column({ default: false })
   isEscalated: boolean;
 

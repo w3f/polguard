@@ -89,7 +89,8 @@ export class IncidentHandler implements IncidentHandlerClient {
         await this.store.setex(idempotencyKey, 3600 * 3, id);
       }
     } else if (!isFiring && incidentId) {
-      await this.resolveIncident(incidentId, blockContext.blockNumber);
+      const resolutionMessage = message.join('\n');
+      await this.resolveIncident(incidentId, blockContext.blockNumber, resolutionMessage);
       await this.store.del(idempotencyKey);
     }
   }
@@ -135,8 +136,8 @@ export class IncidentHandler implements IncidentHandlerClient {
     return incidentId;
   }
 
-  private async resolveIncident(incidentId: number, blockNumber: number): Promise<void> {
+  private async resolveIncident(incidentId: number, blockNumber: number, resolutionMessage: string): Promise<void> {
     this.logger.debug(`Resolving incident with ID: ${incidentId}`);
-    await this.incidentApi.resolveIncident(incidentId, { chain: this.chain, blockNumber });
+    await this.incidentApi.resolveIncident(incidentId, { chain: this.chain, blockNumber, resolutionMessage });
   }
 }

@@ -32,15 +32,15 @@ export class NotificationService {
 
   /**
    * Create notifications for an incident.
-   * Optional overrides let the caller adjust title/details.
+   * @param message - Optional message to use instead of incident.message
    */
   async createNotifications(
     incident: Incident,
     channels: { channelId: string; messengerType: MessengerType; repeatFiringMs?: number }[],
     type: NotificationType,
-    overrides?: Partial<Pick<MessagePayload, 'title' | 'details'>>,
+    message: string,
   ): Promise<void> {
-    const { title, details } = this.parseIncidentMessage(incident.message);
+    const { title, details } = this.parseIncidentMessage(message);
 
     const basePayload: Omit<MessagePayload, 'kind'> = {
       title,
@@ -48,7 +48,6 @@ export class NotificationService {
       incidentId: incident.id,
       needsAck: incident.needsAck,
       isResolved: incident.isResolved,
-      ...overrides,
     };
 
     const notifications = channels.map(channel => {
@@ -93,7 +92,7 @@ export class NotificationService {
       repeatFiringMs: alert.repeatFiringMs,
     }));
 
-    await this.createNotifications(incident, channels, NotificationType.Resolution);
+    await this.createNotifications(incident, channels, NotificationType.Resolution, incident.resolutionMessage);
   }
 
   /**

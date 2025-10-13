@@ -48,6 +48,9 @@ export class IncidentResponseDto {
   @ApiProperty({ required: false })
   resolvedAt?: Date;
 
+  @ApiProperty({ required: false })
+  resolutionMessage?: string;
+
   @ApiProperty()
   createdAt: Date;
 

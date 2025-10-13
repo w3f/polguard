@@ -51,6 +51,7 @@ export interface Incident {
   ackedAt?: Date;
   isResolved: boolean;
   resolvedAt?: Date;
+  resolutionMessage?: string;
   isEscalated: boolean;
   escalatedAt?: Date;
   createdAt: Date;
