@@ -88,6 +88,57 @@ Monitors validator staking activities.
   - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
   - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
 
+### Era Bounds
+
+Era bounds allow you to limit monitoring to specific era ranges. This is particularly useful when transitioning between validator cohorts to avoid false incidents.
+
+**Example - Cohort Transition:**
+
+```yaml
+accountSets:
+  old-validators:
+    - address: "5GrwvaEF..."
+      name: "Validator Old"
+  
+  new-validators:
+    - address: "5HGjWAeF..."
+      name: "Validator New"
+
+groups:
+  # Monitor old cohort until era 1050 (exclusive)
+  - name: validators-cohort-1
+    chains: [Polkadot]
+    accountSet: old-validators
+    monitors:
+      - name: Staking
+        untilEra: 1050
+        handlers:
+          - ActiveSetPresenceState
+  
+  # Monitor new cohort from era 1050 onwards
+  - name: validators-cohort-2
+    chains: [Polkadot]
+    accountSet: new-validators
+    monitors:
+      - name: Staking
+        fromEra: 1050
+        handlers:
+          - ActiveSetPresenceState
+```
+
+Alternatively, set era bounds at the account level:
+
+```yaml
+accountSets:
+  mixed-validators:
+    - address: "5GrwvaEF..."
+      name: "Validator Old"
+      untilEra: 1050
+    - address: "5HGjWAeF..."
+      name: "Validator New"
+      fromEra: 1050
+```
+
 ### Example Configuration
 
 ```yaml
