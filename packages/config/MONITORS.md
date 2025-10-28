@@ -76,9 +76,6 @@ Monitors validator staking activities.
 - **Type**: State (`staking.payee`)
 - **Chains**: Polkadot, Kusama
 - **Description**: Detects changes to reward destination between blocks
-- **Config Keys**:
-  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
-  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
 
 #### ActiveSetPresenceState
 - **Type**: State (`session.validators`)

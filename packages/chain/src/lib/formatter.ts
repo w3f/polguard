@@ -52,7 +52,7 @@ export class Formatter {
   }
 
   message(rows: string[], blockContext?: BlockContext): string[] {
-    const result = [...rows];
+    const result = rows.filter(Boolean);
 
     if (blockContext) {
       result.push(`Block: ${blockContext.blockNumber}`);

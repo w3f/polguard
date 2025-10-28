@@ -11,7 +11,45 @@ import {
 } from '@w3f/monitoring-types';
 import { AbstractMonitor } from './abstract-monitor';
 
+/**
+ * StakingMonitor processes validator- and reward-related conditions such as
+ * commission, self-stake, and active set presence.
+ *
+ * Note: This monitor implements experimental era-based incident handling, which differs from
+ * other monitors. When an account’s configured era range ends, any previously active incident
+ * is automatically resolved, as it is no longer relevant outside its active era window.
+ * This behavior is experimental and may or may not become part of the core monitoring logic
+ * in the future.
+ */
 export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
+  private isAccountInEraRange(fromEra: number | undefined, untilEra: number | undefined, activeEra: number): boolean {
+    if (fromEra !== undefined && activeEra < fromEra) return false;
+    if (untilEra !== undefined && activeEra >= untilEra) return false;
+    return true;
+  }
+
+  private formatEraRangeInfo(
+    fromEra: number | undefined,
+    untilEra: number | undefined,
+    activeEra: number,
+  ): string | null {
+    if (fromEra === undefined && untilEra === undefined) return null;
+
+    const parts: string[] = [];
+    if (fromEra !== undefined) parts.push(`from ${fromEra}`);
+    if (untilEra !== undefined) parts.push(`until ${untilEra}`);
+
+    const range = parts.join(' ');
+    const status =
+      untilEra !== undefined && activeEra >= untilEra
+        ? '(expired)'
+        : fromEra !== undefined && activeEra < fromEra
+          ? '(not started)'
+          : '';
+
+    return `Era: ${range ? range + ', ' : ''}active ${activeEra} ${status}`;
+  }
+
   @Event(H.SlashReportedEvent, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'staking.SlashReported')
   async slashReported({
     eventRecord,
@@ -103,10 +141,9 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     handlerType,
   }: StateHandlerParams<H.DestinationChangedState>): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
-    const [curr, prev, activeEra] = await Promise.all([
-      await this.chain.stakingPayee(addresses, blockContext.blockNumber),
-      await this.chain.stakingPayee(addresses, blockContext.blockNumber - 1),
-      await this.chain.stakingActiveEra(blockContext.blockNumber),
+    const [curr, prev] = await Promise.all([
+      this.chain.stakingPayee(addresses, blockContext.blockNumber),
+      this.chain.stakingPayee(addresses, blockContext.blockNumber - 1),
     ]);
 
     for (const address of addresses) {
@@ -114,10 +151,6 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const prevDestination = prev[address];
 
       for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
-        const { fromEra, untilEra } = account.settings;
-        if (fromEra !== undefined && activeEra < fromEra) continue;
-        if (untilEra !== undefined && activeEra >= untilEra) continue;
-
         if (currDestination !== null && prevDestination !== null && currDestination !== prevDestination) {
           const message = this.fmt.message(
             [
@@ -147,8 +180,6 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
       const { fromEra, untilEra } = account.settings;
-      if (fromEra !== undefined && activeEra < fromEra) return;
-      if (untilEra !== undefined && activeEra >= untilEra) return;
 
       const commission = commissions[account.ss58];
       if (commission === null) return;
@@ -156,11 +187,13 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
       const expectedCommission = account.settings?.commission;
       if (!expectedCommission) return;
 
-      const isFiring = commission > expectedCommission;
+      const inRange = this.isAccountInEraRange(fromEra, untilEra, activeEra);
+      const isFiring = inRange && commission > expectedCommission;
       const message = this.fmt.message(
         [
           `Unexpected commission detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
           `Expected ${expectedCommission}, got ${commission}`,
+          this.formatEraRangeInfo(fromEra, untilEra, activeEra),
         ],
         blockContext,
       );
@@ -195,17 +228,16 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
       for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
         const { fromEra, untilEra } = account.settings;
-        if (fromEra !== undefined && activeEra < fromEra) continue;
-        if (untilEra !== undefined && activeEra >= untilEra) return;
-
         const expectedStake = account.settings?.selfStake;
         if (!expectedStake) continue;
 
-        const isFiring = stake < expectedStake;
+        const inRange = this.isAccountInEraRange(fromEra, untilEra, activeEra);
+        const isFiring = inRange && stake < expectedStake;
         const message = this.fmt.message(
           [
             `Unexpected self-stake detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
             `Expected ${this.fmt.balance(expectedStake)}, got ${this.fmt.balance(stake)}`,
+            this.formatEraRangeInfo(fromEra, untilEra, activeEra),
           ],
           blockContext,
         );
@@ -229,24 +261,21 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
       const { fromEra, untilEra } = account.settings;
-      if (fromEra !== undefined && activeEra < fromEra) return;
-      if (untilEra !== undefined && activeEra >= untilEra) return;
-
       const isBonded = bondedInfo[account.ss58] !== null;
       const hasValidatorPrefs = commissions[account.ss58] !== null;
-      const isFiring = !isBonded || !hasValidatorPrefs;
 
-      const messageLines = [
-        `Account ${this.fmt.accountLink(account.name, account.ss58)} is not properly set up as validator`,
-      ];
-      if (!isBonded) {
-        messageLines.push('Account is not bonded.');
-      }
-      if (!hasValidatorPrefs) {
-        messageLines.push('No validator preferences (commission) set.');
-      }
+      const inRange = this.isAccountInEraRange(fromEra, untilEra, activeEra);
+      const isFiring = inRange && (!isBonded || !hasValidatorPrefs);
 
-      const message = this.fmt.message(messageLines, blockContext);
+      const message = this.fmt.message(
+        [
+          `Account ${this.fmt.accountLink(account.name, account.ss58)} is not properly set up as validator`,
+          !isBonded && 'Account is not bonded.',
+          !hasValidatorPrefs && 'No validator preferences (commission) set.',
+          this.formatEraRangeInfo(fromEra, untilEra, activeEra),
+        ],
+        blockContext,
+      );
       const key = { account: account.ss58, groupId, handlerType };
       await this.incidents.handle(message, notifications, key, blockContext, isFiring);
     });
@@ -265,19 +294,20 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
       const { fromEra, untilEra } = account.settings;
-      if (fromEra !== undefined && activeEra < fromEra) return;
-      if (untilEra !== undefined && activeEra >= untilEra) return;
 
       const destination = payees[account.ss58];
       if (destination === null) return;
 
       const expectedDestination = account.settings?.payee;
       if (!expectedDestination) return;
-      const isFiring = destination !== expectedDestination;
+
+      const inRange = this.isAccountInEraRange(fromEra, untilEra, activeEra);
+      const isFiring = inRange && destination !== expectedDestination;
       const message = this.fmt.message(
         [
           `Unexpected reward destination detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
           `Expected "${expectedDestination}", got "${destination}"`,
+          this.formatEraRangeInfo(fromEra, untilEra, activeEra),
         ],
         blockContext,
       );
@@ -293,14 +323,13 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
     await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
       const { fromEra, untilEra } = account.settings;
-      if (fromEra !== undefined && activeEra < fromEra) return;
-      if (untilEra !== undefined && activeEra >= untilEra) return;
 
-      const isFiring = !validators[account.ss58];
+      const inRange = this.isAccountInEraRange(fromEra, untilEra, activeEra);
+      const isFiring = inRange && !validators[account.ss58];
       const message = this.fmt.message(
         [
           `Target ${this.fmt.accountLink(account.name, account.ss58)} is not present in the validation active set`,
-          `Era: ${activeEra}`,
+          this.formatEraRangeInfo(fromEra, untilEra, activeEra) || `Era: ${activeEra}`,
         ],
         blockContext,
       );

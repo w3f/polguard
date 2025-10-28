@@ -31,10 +31,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     const [referendumIndex, trackId] = eventRecord.event.data.map(arg => arg.toString());
     const proposer = (await this.chain.referendaInfoFor(referendumIndex, blockNumber)) ?? 'unknown';
     const chainSlug = this.getGovernanceChainSlug();
-    const subsquareLink = this.fmt.link(
-      'Subsquare',
-      `https://${chainSlug}.subsquare.io/referenda/${referendumIndex}`,
-    );
+    const subsquareLink = this.fmt.link('Subsquare', `https://${chainSlug}.subsquare.io/referenda/${referendumIndex}`);
     const polkassemblyLink = this.fmt.link(
       'Polkassembly',
       `https://${chainSlug}.polkassembly.io/referenda/${referendumIndex}`,
