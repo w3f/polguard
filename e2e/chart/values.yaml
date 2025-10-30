@@ -80,9 +80,6 @@ monitoring:
         tokenAuth:
           deviceId: "BAD_DEVICE_ID"
         # accessToken is provided via MATRIX_TOKEN environment variable
-        rooms:
-          # MonitoringPlatformCI non-encrypted room
-          - id: "!qheQMilERwmQosvZnI:web3.foundation"
         logging:
           level: "warn"
       monitoringApi:

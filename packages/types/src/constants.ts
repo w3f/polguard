@@ -17,6 +17,7 @@ export enum Chain {
   PeopleKusama = 'PeopleKusama',
   PeoplePaseo = 'PeoplePaseo',
   Centrifuge = 'Centrifuge',
+  Frequency = 'Frequency',
 }
 
 export enum MonitorType {
@@ -144,6 +145,13 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainToken: 'CFG',
     ss58Format: 36,
   },
+  [Chain.Frequency]: {
+    chain: Chain.Frequency,
+    specName: 'frequency',
+    chainDecimals: 8,
+    chainToken: 'FRQCY',
+    ss58Format: 90,
+  },
 } as const;
 
 export function getChainProperties(chain: Chain): ChainProperties {
@@ -196,6 +204,7 @@ export const PARACHAIN_NAMES = {
     '2056': 'Aventus',
     '2086': 'KILT Protocol',
     '2090': 'OAK Network',
+    '2091': 'Frequency',
     '2092': 'Zeitgeist',
     '2093': 'Hashed Network',
     '2094': 'Pendulum',
@@ -264,6 +273,7 @@ export const CHAIN_TOKENS: Record<Chain, Record<string, { id: string; decimals: 
   [Chain.Centrifuge]: {
     localUSDC: { id: '{"localAsset":1}', decimals: 6 },
   },
+  [Chain.Frequency]: {},
 };
 
 export const ID_TOKEN_MAP: Record<Chain, Record<string, string>> = Object.fromEntries(

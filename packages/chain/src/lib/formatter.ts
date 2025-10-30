@@ -1,23 +1,38 @@
 import { formatBalance } from '@polkadot/util';
-import { CHAIN_TOKENS, ChainProperties, BlockContext } from '@w3f/monitoring-types';
+import { CHAIN_TOKENS, ChainProperties, BlockContext, Chain } from '@w3f/monitoring-types';
+
+const STATESCAN_CHAINS: Chain[] = [Chain.Frequency];
 
 export class Formatter {
   constructor(private chainProps: ChainProperties) {}
 
+  private useStatescan(): boolean {
+    return STATESCAN_CHAINS.includes(this.chainProps.chain);
+  }
+
+  private buildExplorerURL(resource: string, identifier: string | number): string {
+    const isStatescan = this.useStatescan();
+    const domain = isStatescan ? 'statescan.io' : 'subscan.io';
+    const pathPrefix = isStatescan ? '/#/' : '/';
+    const resourceName = isStatescan ? `${resource}s` : resource;
+    
+    return `https://${this.chainProps.specName}.${domain}${pathPrefix}${resourceName}/${identifier}`;
+  }
+
   private getEventURL(blockNumber: number, eventIdx: number): string {
-    return `https://${this.chainProps.specName}.subscan.io/event/${blockNumber}-${eventIdx}`;
+    return this.buildExplorerURL('event', `${blockNumber}-${eventIdx}`);
   }
 
   private getExtrinsicURL(blockNumber: number, extrinsicIdx: number): string {
-    return `https://${this.chainProps.specName}.subscan.io/extrinsic/${blockNumber}-${extrinsicIdx}`;
+    return this.buildExplorerURL('extrinsic', `${blockNumber}-${extrinsicIdx}`);
   }
 
   private getBlockURL(blockNumber: number): string {
-    return `https://${this.chainProps.specName}.subscan.io/block/${blockNumber}`;
+    return this.buildExplorerURL('block', blockNumber);
   }
 
   private getAccountURL(address: string): string {
-    return `https://${this.chainProps.specName}.subscan.io/account/${address}`;
+    return this.buildExplorerURL('account', address);
   }
 
   link(title: string, url: string): string {
@@ -57,13 +72,13 @@ export class Formatter {
     if (blockContext) {
       result.push(`Block: ${blockContext.blockNumber}`);
       if (blockContext.eventIdx !== undefined) {
-        result.push(this.link('Subscan: event', this.getEventURL(blockContext.blockNumber, blockContext.eventIdx)));
+        result.push(this.link('Explorer: event', this.getEventURL(blockContext.blockNumber, blockContext.eventIdx)));
       } else if (blockContext.extrinsicIdx !== undefined) {
         result.push(
-          this.link('Subscan: extrinsic', this.getExtrinsicURL(blockContext.blockNumber, blockContext.extrinsicIdx)),
+          this.link('Explorer: extrinsic', this.getExtrinsicURL(blockContext.blockNumber, blockContext.extrinsicIdx)),
         );
       } else {
-        result.push(this.link('Subscan: block', this.getBlockURL(blockContext.blockNumber)));
+        result.push(this.link('Explorer: block', this.getBlockURL(blockContext.blockNumber)));
       }
     }
 

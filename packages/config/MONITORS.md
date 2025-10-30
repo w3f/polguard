@@ -161,29 +161,29 @@ Monitors account balances and transfers.
 
 #### BalanceDecreaseState
 - **Type**: State (`system.account`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: Polkadot, AssetHub Kusama, Frequency
 - **Description**: Detects any balance decreases between blocks
 
 #### BalanceThresholdState
 - **Type**: State (`system.account`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: Polkadot, AssetHub Kusama, Frequency
 - **Description**: Alerts when balance falls below a threshold
 - **Config Keys**:
   - `threshold`: (string) Balance threshold value as a decimal string (e.g., "1000.0")
 
 #### TransferIngressEvent
 - **Type**: Event (`balances.Transfer`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: Polkadot, AssetHub Kusama, Frequency
 - **Description**: Detects incoming transfers
 
 #### TransferEgressEvent
 - **Type**: Event (`balances.Transfer`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: Polkadot, AssetHub Kusama, Frequency
 - **Description**: Detects outgoing transfers
 
 #### TransferCall
 - **Type**: Call (`balances.transfer`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: Polkadot, AssetHub Kusama, Frequency
 - **Description**: Detects transfer calls (for testing purposes)
 
 ### Example Configuration

@@ -61,16 +61,6 @@ export class ConfigService {
         logging: Joi.object({
           level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error'),
         }).default({ level: 'warn' }),
-        rooms: Joi.array()
-          .items(
-            Joi.object({
-              id: Joi.string()
-                .pattern(/^[!#][A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/)
-                .required(),
-              acknowledgement: Joi.boolean().default(false).optional(),
-            }),
-          )
-          .required(),
         enableEncryption: Joi.boolean().optional(),
         passwordAuth: Joi.object({
           password: Joi.string().required().messages({
