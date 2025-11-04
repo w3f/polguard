@@ -50,7 +50,11 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     return `Era: ${range ? range + ', ' : ''}active ${activeEra} ${status}`;
   }
 
-  @Event(H.SlashReportedEvent, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'staking.SlashReported')
+  @Event(
+    H.SlashReportedEvent,
+    [Chain.Polkadot, Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
+    'staking.SlashReported',
+  )
   async slashReported({
     eventRecord,
     blockContext,
@@ -67,7 +71,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
   @Event(
     H.CommissionChangedEvent,
-    [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
+    [Chain.Polkadot, Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
     'staking.ValidatorPrefsSet',
   )
   async commissionChanged({
@@ -91,7 +95,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @Event(H.UnbondedEvent, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'staking.Unbonded')
+  @Event(H.UnbondedEvent, [Chain.Polkadot, Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'staking.Unbonded')
   async unbonded({ eventRecord, blockContext, handlerType }: EventHandlerParams<H.UnbondedEvent>): Promise<void> {
     const [stash, amount] = eventRecord.event.data.map(d => d.toString());
 
@@ -110,7 +114,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
 
   @Call(
     H.DestinationChangedCall,
-    [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
+    [Chain.Polkadot, Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
     ['staking.setPayee', 'staking.bond'],
   )
   async destinationChanged({
@@ -135,7 +139,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @State(H.DestinationChangedState, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
+  @State(H.DestinationChangedState, [Chain.Polkadot, Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
   async destinationChangedState({
     blockContext,
     handlerType,
@@ -167,7 +171,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @State(H.CommissionUnexpectedState, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
+  @State(H.CommissionUnexpectedState, [Chain.Polkadot, Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
   async commissionUnexpected({
     blockContext,
     handlerType,
@@ -202,7 +206,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.SelfStakeUnexpectedState, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
+  @State(H.SelfStakeUnexpectedState, [Chain.Polkadot, Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
   async selfStakeUnexpected({
     blockContext,
     handlerType,
@@ -247,7 +251,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @State(H.ValidatorIntentionMissingState, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
+  @State(H.ValidatorIntentionMissingState, [Chain.Polkadot, Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
   async validatorIntentionMissing({
     blockContext,
     handlerType,
@@ -281,7 +285,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.DestinationUnexpectedState, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
+  @State(H.DestinationUnexpectedState, [Chain.Polkadot, Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
   async destinationUnexpected({
     blockContext,
     handlerType,
@@ -316,7 +320,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     });
   }
 
-  @State(H.ActiveSetPresenceState, [Chain.Polkadot, Chain.AssetHubKusama])
+  @State(H.ActiveSetPresenceState, [Chain.Polkadot, Chain.AssetHubPolkadot, Chain.AssetHubKusama])
   async activeSetPresense({ blockContext, handlerType }: StateHandlerParams<H.ActiveSetPresenceState>): Promise<void> {
     const activeEra = await this.chain.stakingActiveEra(blockContext.blockNumber);
     const validators = await this.chain.stakingEraValidators(activeEra, blockContext.blockNumber);

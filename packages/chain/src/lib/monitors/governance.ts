@@ -14,6 +14,8 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     switch (this.chainProps.chain) {
       case Chain.AssetHubKusama:
         return 'kusama';
+      case Chain.AssetHubPolkadot:
+        return 'polkadot';
       case Chain.AssetHubPaseo:
         return 'paseo';
       default:
@@ -21,7 +23,11 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     }
   }
 
-  @Event(H.ReferendaSubmittedEvent, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'referenda.Submitted')
+  @Event(
+    H.ReferendaSubmittedEvent,
+    [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
+    'referenda.Submitted',
+  )
   async referendaSubmitted({
     eventRecord,
     blockContext,
@@ -53,7 +59,11 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     }
   }
 
-  @Call(H.ConvictionVoteCall, [Chain.Polkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'convictionVoting.vote')
+  @Call(
+    H.ConvictionVoteCall,
+    [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
+    'convictionVoting.vote',
+  )
   async convictionVote({
     call,
     origin,

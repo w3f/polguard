@@ -15,7 +15,7 @@ export class Formatter {
     const domain = isStatescan ? 'statescan.io' : 'subscan.io';
     const pathPrefix = isStatescan ? '/#/' : '/';
     const resourceName = isStatescan ? `${resource}s` : resource;
-    
+
     return `https://${this.chainProps.specName}.${domain}${pathPrefix}${resourceName}/${identifier}`;
   }
 
