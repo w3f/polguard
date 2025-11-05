@@ -53,6 +53,20 @@ export interface LastBlockClient {
 }
 
 /**
+ * Store: Unified persistence layer interface
+ * 
+ * This interface combines KV storage operations with last block tracking,
+ * providing a single abstraction for the chain service's persistence needs.
+ */
+export interface Store extends KeyValueStorageClient {
+  // KV operations inherited from KeyValueStorageClient
+  
+  // Last processed block operations
+  getLastBlock(chain: Chain): Promise<number | null>;
+  setLastBlock(chain: Chain, blockNumber: number): Promise<void>;
+}
+
+/**
  * Interface for chain API operations required by the ChainWatcher.
  * This decouples the watcher from the specific ApiPromise implementation.
  */

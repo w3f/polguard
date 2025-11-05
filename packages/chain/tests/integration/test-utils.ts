@@ -1,6 +1,5 @@
 import {
   Logger,
-  KeyValueStorageClient,
   NotificationSettings,
   IncidentHandlerClient,
   IncidentKey,
@@ -37,38 +36,6 @@ export class LoggerAdapter implements Logger {
 
   fatal(message: string, ...args: any[]): void {
     this.console.error(`[FATAL] ${message}`, ...args);
-  }
-}
-
-export class InMemoryKeyValueStorage implements KeyValueStorageClient {
-  private storage = new Map<string, any>();
-
-  async get<T>(key: string): Promise<T | null> {
-    return this.storage.get(key) || null;
-  }
-
-  async set(key: string, value: any): Promise<void> {
-    this.storage.set(key, value);
-  }
-
-  async setex(key: string, _seconds: number, value: any): Promise<void> {
-    this.storage.set(key, value);
-  }
-
-  async del(key: string): Promise<void> {
-    this.storage.delete(key);
-  }
-
-  async exists(key: string): Promise<boolean> {
-    return this.storage.has(key);
-  }
-
-  async mget<T>(keys: string[]): Promise<(T | null)[]> {
-    return keys.map(k => this.storage.get(k) || null);
-  }
-
-  async flush(): Promise<void> {
-    this.storage.clear();
   }
 }
 

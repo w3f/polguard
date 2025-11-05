@@ -8,7 +8,7 @@ import type { PalletAssetsAssetAccount } from '@polkadot/types/lookup';
 import { CHAIN_TOKENS, Chain, TokenBalances } from '@w3f/monitoring-types';
 import { AccountInfo } from '@polkadot/types/interfaces/system';
 
-import { ChainDataProvider, KeyValueStorageClient, IdentityInfo, Logger } from '@w3f/monitoring-types';
+import { ChainDataProvider, Store, IdentityInfo, Logger } from '@w3f/monitoring-types';
 import { createCachedQueryDecorator } from './decorators';
 
 /**
@@ -16,12 +16,12 @@ import { createCachedQueryDecorator } from './decorators';
  * Uses multi-query for batch processing and includes proper error handling.
  *
  * @param api - Polkadot API instance
- * @param client - Key-value storage client for caching
+ * @param store - Store instance for caching query results
  * @param logger - Logger instance
  * @returns DataProvider
  */
-export function createChainDataProvider(api: ApiPromise, client: KeyValueStorageClient, logger: Logger, chain: Chain) {
-  const Cached = createCachedQueryDecorator(client);
+export function createChainDataProvider(api: ApiPromise, store: Store, logger: Logger, chain: Chain) {
+  const Cached = createCachedQueryDecorator(store);
 
   class DataProvider implements ChainDataProvider {
     private apiAtBlock: Map<number, ApiDecoration<'promise'>> = new Map();

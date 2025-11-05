@@ -1,10 +1,8 @@
-import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Inject } from '@nestjs/common';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ConfigService } from '../config/config.service';
 import { MonitoringConfigService } from '../monitoring-config/monitoring-config.service';
-import { StorageService } from '../storage/storage.service';
-import { LastBlockService } from '../last-block/last-block.service';
-import { getChainProperties } from '@w3f/monitoring-types';
+import { getChainProperties, Store } from '@w3f/monitoring-types';
 import { ChainWatcher } from '../../lib/watcher';
 import { IncidentHandler } from '../../lib/incident-handler';
 import { createChainDataProvider } from '../../lib/data-provider';
@@ -19,9 +17,8 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     private readonly logger: Logger,
     private readonly config: ConfigService,
     private readonly monitoringConfig: MonitoringConfigService,
-    private readonly storage: StorageService,
+    @Inject('Store') private readonly store: Store,
     private readonly incidents: IncidentApiService,
-    private readonly lastBlock: LastBlockService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -29,8 +26,20 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
   }
 
   async onApplicationShutdown(): Promise<void> {
-    await this.watcher.stop();
-    await this.api.disconnect();
+    try {
+      // Flush last processed block to Store on shutdown
+      const lastProcessed = this.watcher?.getLastProcessedBlock();
+      if (lastProcessed !== undefined) {
+        const chain = this.config.getChain();
+        this.logger.log(`Flushing last processed block ${lastProcessed} for chain ${chain}`);
+        await this.store.setLastBlock(chain, lastProcessed);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to flush last processed block: ${error.message}`);
+    } finally {
+      await this.watcher?.stop();
+      await this.api?.disconnect();
+    }
   }
 
   private async start(): Promise<void> {
@@ -40,16 +49,15 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     const startBlock = this.config.getStartBlock();
 
     this.api = await this.createApi(rpc, chainProps.specName);
-    const chainDataProvider = createChainDataProvider(this.api, this.storage, this.logger, chainProps.chain);
-    const incidentHandler = new IncidentHandler(this.logger, this.storage, this.incidents, chainProps.chain);
+    const chainDataProvider = createChainDataProvider(this.api, this.store, this.logger, chainProps.chain);
+    const incidentHandler = new IncidentHandler(this.logger, this.store, this.incidents, chainProps.chain);
 
     this.watcher = new ChainWatcher(
       new Logger('ChainWatcher'),
       this.monitoringConfig,
-      this.lastBlock,
+      this.store,
       this.api,
       incidentHandler,
-      this.storage,
       chainProps,
       chainDataProvider,
     );

@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import {
   Logger,
   NotificationSettings,
-  KeyValueStorageClient,
+  Store,
   IncidentHandlerClient,
   Chain,
   IncidentApiClient,
@@ -50,15 +50,15 @@ function buildIdempotencyKey(chain: Chain, ik: IncidentKey, ctx: BlockContext): 
  * It handles both ongoing incidents and one-time incidents.
  *
  * Key features:
- * - Tracks incident state.
- * - Creates an incident when a condition starts firing (and wasn't firing before).
- * - Resolves an incident when a condition stops firing.
- * - Handles one-time incidents.
+ * - Tracks incident state using Store's KV operations
+ * - Creates an incident when a condition starts firing (and wasn't firing before)
+ * - Resolves an incident when a condition stops firing
+ * - Handles one-time incidents
  */
 export class IncidentHandler implements IncidentHandlerClient {
   constructor(
     private logger: Logger,
-    private store: KeyValueStorageClient,
+    private store: Store,
     private incidentApi: IncidentApiClient,
     private chain: Chain,
   ) {}

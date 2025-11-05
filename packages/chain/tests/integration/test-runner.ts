@@ -3,7 +3,8 @@ import * as yaml from 'js-yaml';
 import { createChainDataProvider } from '../../src/lib/data-provider';
 import { ChainWatcher } from '../../src/lib/watcher';
 import { Chain, MonitorType, MonitoringGroup, MessengerType, getChainProperties } from '@w3f/monitoring-types';
-import { InMemoryKeyValueStorage, LoggerAdapter, TestIncidentHandler, colors } from './test-utils';
+import { LoggerAdapter, TestIncidentHandler, colors } from './test-utils';
+import { InMemoryStore } from '../../src/service/store/in-memory.store';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 
 export interface TestCase {
@@ -157,10 +158,10 @@ export class TestRunner {
 
     try {
       const logger = new LoggerAdapter(console, debug);
-      const storage = new InMemoryKeyValueStorage();
+      const store = new InMemoryStore();
       const incidentHandler = new TestIncidentHandler(testId);
 
-      const chainProvider = createChainDataProvider(api, storage, logger, testCase.chain);
+      const chainProvider = createChainDataProvider(api, store, logger, testCase.chain);
       const group = this.createMonitoringGroup(
         testCase.chain,
         testCase.monitor,
@@ -171,10 +172,9 @@ export class TestRunner {
       const watcher = new ChainWatcher(
         logger,
         { getMonitoringGroups: async () => [group] },
-        { getLastBlock: async () => null, setLastBlock: async () => null },
+        store,
         api,
         incidentHandler,
-        storage,
         getChainProperties(testCase.chain),
         chainProvider,
       );

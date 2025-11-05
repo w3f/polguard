@@ -7,7 +7,7 @@ import { TELEMETRY_PREFIX } from '@w3f/monitoring-telemetry';
 import {
   Logger,
   IncidentHandlerClient,
-  KeyValueStorageClient,
+  Store,
   MonitoringGroup,
   ChainProperties,
   MonitorType,
@@ -16,7 +16,6 @@ import {
   MonitoringConfigClient,
   Monitor,
   ChainApiClient,
-  LastBlockClient,
 } from '@w3f/monitoring-types';
 import {
   IdentityMonitor,
@@ -57,7 +56,8 @@ export class ChainWatcher {
   monitors: Monitor[] = [];
   private isRunning = false;
   private readonly configRefreshIntervalMs = 10 * 60 * 1000; // 10 minutes
-  private _latestBlockNumber = 0;
+  private latestBlockNumber = 0;
+  private latestProcessedBlock?: number;
 
   private readonly telemetryMeter: Meter;
   private readonly telemetryLatestBlockOnChain: Gauge;
@@ -81,10 +81,9 @@ export class ChainWatcher {
   constructor(
     private logger: Logger,
     private monitoringConfigClient: MonitoringConfigClient,
-    private lastBlockClient: LastBlockClient,
+    private store: Store,
     private api: ChainApiClient,
     private incidents: IncidentHandlerClient,
-    private store: KeyValueStorageClient,
     private chainProps: ChainProperties,
     private chainProvider: ChainDataProvider,
   ) {
@@ -116,14 +115,6 @@ export class ChainWatcher {
     );
   }
 
-  // This setter is used just to hide the telemetry calls
-  private set latestBlockNumber(i: number) {
-    this.telemetryLatestBlockOnChain.record(i);
-    this._latestBlockNumber = i;
-  }
-  private get latestBlockNumber(): number {
-    return this._latestBlockNumber;
-  }
 
   /**
    * Starts the watcher if it's not already running.
@@ -141,12 +132,14 @@ export class ChainWatcher {
     this.isRunning = true;
 
     const header = await this.api.rpc.chain.getHeader();
-    this.latestBlockNumber = header.number.toNumber();
+    const blockNumber = header.number.toNumber();
+    this.latestBlockNumber = blockNumber;
+    this.telemetryLatestBlockOnChain.record(blockNumber);
 
     this.api.rpc.chain.subscribeFinalizedHeads(async header => {
       const blockNumber = header.number.toNumber();
       this.latestBlockNumber = blockNumber;
-      await this.store.set('last_on_chain_block', blockNumber);
+      this.telemetryLatestBlockOnChain.record(blockNumber);
     });
 
     this.startBlockProcessingLoop(startBlock);
@@ -158,6 +151,13 @@ export class ChainWatcher {
    */
   async stop(): Promise<void> {
     this.isRunning = false;
+  }
+
+  /**
+   * Used to flush the watermark on shutdown.
+   */
+  getLastProcessedBlock(): number | undefined {
+    return this.latestProcessedBlock;
   }
 
   /**
@@ -219,26 +219,22 @@ export class ChainWatcher {
    *    - Processing extrinsic calls and their nested calls
    * 3. Periodically refreshes monitor configurations based on configRefreshIntervalMs
    *    - This ensures monitors stay up-to-date with the latest monitoring groups
-   * 4. Persists the last processed block number for continuity across restarts
+   * 4. Tracks last processed block internally (persisted on shutdown only)
    *
    * @param startBlock Optional starting block number
    */
   private async startBlockProcessingLoop(startBlock?: number): Promise<void> {
-    const lastProcessedBlock = await this.lastBlockClient.getLastBlock(this.chainProps.chain);
-    // Priority: startBlock from config YAML > API service lastProcessedBlock > latest chain block
-    let nextBlockToProcess = startBlock ?? lastProcessedBlock ?? this.latestBlockNumber;
+    const lastProcessedBlock = await this.store.getLastBlock(this.chainProps.chain);
+    // Priority: startBlock from config YAML > Store lastProcessedBlock > latest chain block
+    let nextBlockNumber = startBlock ?? lastProcessedBlock ?? this.latestBlockNumber;
     let lastConfigRefreshTime = Date.now();
 
     while (this.isRunning) {
       const now = Date.now();
 
-      // Periodic tasks: refresh config and checkpoint last processed block
+      // Periodic task: refresh config
       if (now - lastConfigRefreshTime >= this.configRefreshIntervalMs) {
         await this.initializeMonitors(false);
-        if (nextBlockToProcess > 0) {
-          this.logger.debug(`Setting the last block to: ${nextBlockToProcess - 1}`);
-          await this.lastBlockClient.setLastBlock(this.chainProps.chain, nextBlockToProcess - 1);
-        }
         lastConfigRefreshTime = now;
       }
 
@@ -246,9 +242,15 @@ export class ChainWatcher {
         await new Promise(resolve => setTimeout(resolve, 5000));
         continue;
       }
-      if (nextBlockToProcess <= this.latestBlockNumber) {
-        await this.processBlock(nextBlockToProcess);
-        nextBlockToProcess++;
+      if (nextBlockNumber <= this.latestBlockNumber) {
+        this.telemetryCurrentBlockProcessing.record(nextBlockNumber);
+        const start = performance.now();
+        await this.processBlock(nextBlockNumber);
+        const end = performance.now();
+        this.telemetryBlockProcessingTime.record(end - start);
+        this.latestProcessedBlock = nextBlockNumber;
+        this.telemetryLastBlockProcessed.record(nextBlockNumber);
+        nextBlockNumber++;
       } else {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
@@ -266,8 +268,6 @@ export class ChainWatcher {
    */
   async processBlock(blockNumber: number): Promise<void> {
     this.logger.log(`Processing block: #${blockNumber}`);
-    this.telemetryCurrentBlockProcessing.record(blockNumber);
-    const start = performance.now();
 
     const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
     const block = await this.api.rpc.chain.getBlock(blockHash);
@@ -275,7 +275,7 @@ export class ChainWatcher {
 
     this.chainProvider.initializeBlock(blockNumber, apiAt);
 
-    // Apply every block handlers: process custom logic, usually storage calls
+    // Apply state handlers: process custom logic, usually storage calls
     await Promise.all(this.monitors.map(m => m.processState({ blockContext: { blockNumber } })));
 
     // Apply event handlers: process event payload
@@ -294,11 +294,6 @@ export class ChainWatcher {
       const callSeq = { value: 0 };
       await this.traverseCallTree(blockNumber, extrinsic.method, origin, extrinsicIdx, callSeq);
     }
-
-    const end = performance.now();
-    this.telemetryBlockProcessingTime.record(end - start);
-
-    this.telemetryLastBlockProcessed.record(blockNumber);
   }
 
   /**

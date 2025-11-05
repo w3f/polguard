@@ -22,14 +22,18 @@ monitoring:
         startBlock: "10270357"
         rpc:
           url: "wss://polkadot-asset-hub-rpc.polkadot.io"
+        store:
+          type: service
+          baseUrl: http://e2e-api:80
+          endpoints:
+            getLastBlock: /last-block/:chain
+            setLastBlock: /last-block
         monitoringApi:
           baseUrl: "http://e2e-api:80"
           endpoints:
             createIncident: "/incidents"
             resolveIncident: "/incidents/:id/resolve"
             getConfig: "/monitoring-config/groups"
-            getLastBlock: "/last-block/:chain"
-            setLastBlock: "/last-block"
         environment: "test"
         logging:
           level: "debug"
