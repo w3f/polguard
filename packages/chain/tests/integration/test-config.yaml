@@ -18,47 +18,52 @@ tests:
     #     block: 23912156
     #     account:
     #       address: 13YJ7PrjwAhKHP9m99APDSuvLwWKSQSmKABfJY3H2Cepk2CA
-    # CommissionChangedEvent:
-    #   - description: "Event (staking.ValidatorPrefsSet)"
-    #     chain: Polkadot
-    #     block: 25687816
-    #     account:
-    #       address: 15ZvLonEseaWZNy8LDkXXj3Y8bmAjxCjwvpy4pXWSL4nGSBs
+    CommissionChangedEvent:
+      - description: "Event (staking.ValidatorPrefsSet) - commission 0"
+        chain: AssetHubPolkadot
+        block: 10270308
+        account:
+          address: 1HmAqbBRrWvsqbLkvpiVDkdA2PcctUE5JUe3qokEh1FN455
+      - description: "Event (staking.ValidatorPrefsSet) - commission 50000000"
+        chain: AssetHubPolkadot
+        block: 10270136
+        account:
+          address: 14tcxHSTAiZf7M4vcLfFdGkGJFjfx6zDqds5QVyz2H24hKgG
     UnbondedEvent:
       - description: "Event (staking.Unbonded) - AssetHubPaseo (test AssetHubKusama migration)"
         chain: AssetHubPaseo
         block: 2760197
         account:
           address: 15mXctuqEB8T93MVRYXsuQ7n3yseAgNGMe57QMVKu8XyqdeF
-    #   - description: "Event (staking.Unbonded)"
-    #     chain: Polkadot
-    #     block: 26090579
-    #     account:
-    #       address: 13UVJyLnbVp8c4FQeiGHuwQmjryMLyKsETR9mRHNkeHEwnPe
-    # DestinationChangedCall:
-    #   - description: "Call (staking.setPayee)"
-    #     chain: Polkadot
-    #     block: 25690413
-    #     account:
-    #       address: 16GHeAPkM9pja4XaigJ5XC7VBHyG7qHatm2hQcog4cmENeV6
-    #   - description: "Call (staking.bond)"
-    #     chain: Polkadot
-    #     block: 25690191
-    #     account:
-    #       address: 1aWpog533KKNYXQeKpvwCmrCaB8WXgFNhmo43oakFTP88TH
-    # DestinationChangedState:
-    #   - description: "State (staking.payee)"
-    #     chain: Polkadot
-    #     block: 25690413
-    #     account:
-    #       address: 16GHeAPkM9pja4XaigJ5XC7VBHyG7qHatm2hQcog4cmENeV6
-    # CommissionUnexpectedState:
-    #   - description: "State (staking.validators)"
-    #     chain: Polkadot
-    #     block: 25690600
-    #     account:
-    #       address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
-    #       commission: 9
+      - description: "Event (staking.Unbonded)"
+        chain: AssetHubPolkadot
+        block: 10270412
+        account:
+          address: 16UPpLJ5xZae2RUWJ9GgpFg1tFYwDhRbpMLqARMS3FpfV8bp
+    DestinationChangedCall:
+      - description: "Call (staking.setPayee)"
+        chain: AssetHubPolkadot
+        block: 10269756
+        account:
+          address: 15DHzT2ERMQBGKp2o2Er2bHgrama8PotS122diDLF4VfR1kT
+      - description: "Call (staking.bond)"
+        chain: AssetHubPolkadot
+        block: 10268746
+        account:
+          address: 1URxY7A7vc54oQhDUWJ16x42HiUFq43ntpSBHwLaoP8nABW
+    DestinationChangedState:
+      - description: "State (staking.payee)"
+        chain: AssetHubPolkadot
+        block: 10268891
+        account:
+          address: 16JGH5i7rNfAttzeXVwrqFnhbo9XasXe6BQiT9hq9qUtPSXH
+    CommissionUnexpectedState:
+      - description: "State (staking.validators)"
+        chain: AssetHubPolkadot
+        block: 10270136
+        account:
+          address: 14tcxHSTAiZf7M4vcLfFdGkGJFjfx6zDqds5QVyz2H24hKgG
+          commission: 4
     SelfStakeUnexpectedState:
       - description: "State (staking.bonded, staking.ledger) - AssetHubPaseo (test AssetHubKusama migration)"
         chain: AssetHubPaseo
@@ -86,11 +91,11 @@ tests:
     #       address: 16RfWatcKzDUqYyGKifUhHDcossWumW7bkyiX9fEMN77WKA
     #       payee: test
     ActiveSetPresenceState:
-      # - description: "State (session.validators)"
-      #   chain: Polkadot
-      #   block: 25700079
-      #   account:
-      #     address: 12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ
+      - description: "State (session.validators)"
+        chain: AssetHubPolkadot
+        block: 10270136
+        account:
+          address: 12BX8c7oEYo67PpGG7SHX9WrXp4vfAcEbM7qYJXeKTGaBNNQ
       - description: "State (session.validators) - AssetHubKusama"
         chain: AssetHubKusama
         block: 11229260
@@ -100,19 +105,19 @@ tests:
           untilEra: 8687
 
   Balances:
-    # BalanceDecreaseState:
-    #   - description: "State (system.account). Balance decreased"
-    #     chain: Polkadot
-    #     block: 25700153
-    #     account:
-    #       address: 12nr7GiDrYHzAYT9L8HdeXnMfWcBuYfAXpgfzf3upujeCciz
-    # BalanceThresholdState:
-    #   - description: "State (system.account)"
-    #     chain: Polkadot
-    #     block: 25700154
-    #     account:
-    #       address: 12iTqoDYN18NkUbi7H3S1DWfMA99xporWhrjdyo2bvMZqJv5
-    #       threshold: 1630000000000
+    BalanceDecreaseState:
+      - description: "State (system.account). Balance decreased"
+        chain: AssetHubPolkadot
+        block: 10270436
+        account:
+          address: 16RjzvQxLU1NiHHSKrWM6ueGRFmL8jkXgx59NRirimdfAAuL
+    BalanceThresholdState:
+      - description: "State (system.account)"
+        chain: AssetHubPolkadot
+        block: 10270465
+        account:
+          address: 137Bdf9QucUaLmD8vRTRc72b1rPu8GJXDr1FpBAzXLYQhzkp
+          threshold: 4648900000000
     TransferIngressEvent:
       - description: "Event (balances.Transfer) - Frequency"
         chain: Frequency
@@ -124,11 +129,11 @@ tests:
         block: 2796532
         account:
           address: 14EQvBy9h8xGbh2R3ustnkfkF514E7wpmHtg27gDaTLM2str
-      # - description: "Event (balances.Transfer)"
-      #   chain: Polkadot
-      #   block: 25700136
-      #   account:
-      #     address: 13sWK9B3PVxQyzeeGVtW1sZ9qBJJLa68pwtwP1asnUBMKXYz
+      - description: "Event (balances.Transfer)"
+        chain: AssetHubPolkadot
+        block: 10270439
+        account:
+          address: 1uwFRGq7M3JMVTVz4akMiVAG4m56smK9bPYAQuaX7zDns6q
     TransferEgressEvent:
       - description: "Event (balances.Transfer) - Frequency"
         chain: Frequency
@@ -140,11 +145,11 @@ tests:
         block: 2796532
         account:
           address: 13UVJyLgBASGhE2ok3TvxUfaQBGUt88JCcdYjHvUhvQkFTTx
-    #   - description: "Event (balances.Transfer)"
-    #     chain: Polkadot
-    #     block: 25700136
-    #     account:
-    #       address: 13hyXGa1E6Gprm1RQo56WwTGuvZWw4q2MoQHBPXFiGfVRx4f
+      - description: "Event (balances.Transfer)"
+        chain: AssetHubPolkadot
+        block: 10270500
+        account:
+          address: 14n8ferDrb3uorc5esxHgt2gePPFDTSn4qvxBywVEosejVFL
     #   - description: "Event (balances.Transfer)"
     #     chain: Polkadot
     #     block: 27532114
