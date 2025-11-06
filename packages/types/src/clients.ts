@@ -40,16 +40,10 @@ export interface KeyValueStorageClient {
 }
 
 
-/** Client for sending incidents to the incident management service */
-export interface IncidentApiClient {
+/** Client for sending incidents to various sinks (service, stdout, webhook, etc.) */
+export interface IncidentReporter {
   createIncident(incident: CreateIncidentDto): Promise<string | null>; // Returns incident ID or null for 409 conflicts
-  resolveIncident(id: number, resolveData: ResolveIncidentByChainDto): Promise<void>;
-}
-
-/** Client for managing last processed block information */
-export interface LastBlockClient {
-  getLastBlock(chain: Chain): Promise<number | null>;
-  setLastBlock(chain: Chain, blockNumber: number): Promise<void>;
+  resolveIncident(id: string, resolveData: ResolveIncidentByChainDto): Promise<void>;
 }
 
 /**

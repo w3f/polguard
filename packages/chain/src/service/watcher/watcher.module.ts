@@ -2,7 +2,7 @@ import { Logger, Module } from '@nestjs/common';
 import { WatcherService } from './watcher.service';
 import { ConfigModule } from '../config/config.module';
 import { StoreModule } from '../store/store.module';
-import { IncidentModule } from '../incident/incident.module';
+import { IncidentReporterModule } from '../reporter/reporter.module';
 import { MonitoringConfigModule } from '../monitoring-config/monitoring-config.module';
 
 @Module({
@@ -10,7 +10,7 @@ import { MonitoringConfigModule } from '../monitoring-config/monitoring-config.m
     ConfigModule,
     MonitoringConfigModule.forRootAsync(),
     StoreModule.forRootAsync(),
-    IncidentModule.forRootAsync(),
+    IncidentReporterModule.forRootAsync(),
   ],
   providers: [Logger, WatcherService],
   exports: [WatcherService],

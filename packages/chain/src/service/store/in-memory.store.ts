@@ -9,16 +9,16 @@ interface CacheEntry {
 
 /**
  * InMemoryStore: Fully ephemeral storage for development/testing
- * 
+ *
  * Both KV and last block operations use the same in-memory KV storage.
  * Last block is stored with special key pattern: __last_block__:{chain}
  * All data is lost on process restart.
- * 
+ *
  * Suitable for:
  * - Local development
  * - Testing
  * - Temporary monitoring experiments
- * 
+ *
  * NOT suitable for production use without understanding data loss implications.
  */
 @Injectable()

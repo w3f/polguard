@@ -6,6 +6,38 @@ import * as Joi from 'joi';
 import { Chain } from '@w3f/monitoring-types';
 
 type StoreType = 'inMemory' | 'service' | 'file';
+interface StoreConfig {
+  type: StoreType;
+  file?: {
+    path: string;
+  };
+  service?: {
+    baseUrl: string;
+    endpoints: {
+      getLastBlock: string;
+      setLastBlock: string;
+    };
+  };
+}
+
+type IncidentReporterType = 'stdout' | 'service' | 'webhook';
+interface IncidentReporterConfig {
+  type: IncidentReporterType;
+  stdout?: {
+    format: 'json' | 'pretty';
+  };
+  service?: {
+    baseUrl: string;
+    endpoints: {
+      createIncident: string;
+      resolveIncident: string;
+    };
+  };
+  webhook?: {
+    url: string;
+    headers?: Record<string, string>;
+  };
+}
 
 @Injectable()
 export class ConfigService {
@@ -34,48 +66,77 @@ export class ConfigService {
     const schema = Joi.object({
       chain: Joi.string()
         .valid(...Object.values(Chain))
-        .required(),
+        .default(Chain.AssetHubPolkadot),
       rpc: Joi.object({
         url: Joi.string().uri().required(),
-      }).required(),
+      }).default({ url: 'wss://polkadot-asset-hub-rpc.polkadot.io' }),
       startBlock: Joi.number().integer().min(0).optional(),
-      environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
+      environment: Joi.string().valid('development', 'production', 'test', 'staging').default('development'),
       logging: Joi.object({
-        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
-      }).optional(),
+        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').required(),
+      }).default({ level: 'debug' }),
       monitoringApi: Joi.object({
         baseUrl: Joi.string().uri().required(),
         endpoints: Joi.object({
-          createIncident: Joi.string().required(),
-          resolveIncident: Joi.string().required(),
           getConfig: Joi.string().required(),
         }).required(),
       }).required(),
       httpServer: Joi.object({
         port: Joi.number().default(3000),
         host: Joi.string().default('0.0.0.0'),
-      }).optional(),
+      }).default({ host: '0.0.0.0', port: 3000 }),
       store: Joi.object({
-        type: Joi.string().valid('inMemory', 'service', 'file').default('inMemory'),
-        filePath: Joi.string().when('type', {
-          is: 'file',
-          then: Joi.string().default('data/chain-store.json'),
-          otherwise: Joi.string().optional(),
-        }),
-        baseUrl: Joi.string().uri().when('type', {
-          is: 'service',
-          then: Joi.required(),
-          otherwise: Joi.optional(),
-        }),
-        endpoints: Joi.object({
-          getLastBlock: Joi.string().required(),
-          setLastBlock: Joi.string().required(),
+        type: Joi.string().valid('inMemory', 'service', 'file').required(),
+        file: Joi.object({
+          path: Joi.string().required(),
+        })
+          .when('type', {
+            is: 'file',
+            then: Joi.required(),
+            otherwise: Joi.forbidden(),
+          })
+          .default({ path: './data/chain-store.json' }),
+        service: Joi.object({
+          baseUrl: Joi.string().uri().required(),
+          endpoints: Joi.object({
+            getLastBlock: Joi.string().required(),
+            setLastBlock: Joi.string().required(),
+          }).required(),
         }).when('type', {
           is: 'service',
           then: Joi.required(),
-          otherwise: Joi.optional(),
+          otherwise: Joi.forbidden(),
         }),
-      }).optional(),
+      }).default({ type: 'inMemory' }),
+      incidentReporter: Joi.object({
+        type: Joi.string().valid('stdout', 'service', 'webhook').required(),
+        stdout: Joi.object({
+          format: Joi.string().valid('json', 'pretty').default('json'),
+        }).when('type', {
+          is: 'stdout',
+          then: Joi.optional(),
+          otherwise: Joi.forbidden(),
+        }),
+        service: Joi.object({
+          baseUrl: Joi.string().uri().required(),
+          endpoints: Joi.object({
+            createIncident: Joi.string().required(),
+            resolveIncident: Joi.string().required(),
+          }).required(),
+        }).when('type', {
+          is: 'service',
+          then: Joi.required(),
+          otherwise: Joi.forbidden(),
+        }),
+        webhook: Joi.object({
+          url: Joi.string().uri().required(),
+          headers: Joi.object().pattern(Joi.string(), Joi.string()).optional(),
+        }).when('type', {
+          is: 'webhook',
+          then: Joi.required(),
+          otherwise: Joi.forbidden(),
+        }),
+      }).default({ type: 'stdout', stdout: { format: 'json' } }),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -94,7 +155,7 @@ export class ConfigService {
     return this.config.rpc.url;
   }
 
-  getStartBlock(): number {
+  getStartBlock(): number | undefined {
     return this.config.startBlock;
   }
 
@@ -103,14 +164,12 @@ export class ConfigService {
   }
 
   getLoggingLevel(): string {
-    return this.config.logging?.level || 'info';
+    return this.config.logging.level;
   }
 
   getMonitoringApi(): {
     baseUrl: string;
     endpoints: {
-      createIncident: string;
-      resolveIncident: string;
       getConfig: string;
     };
   } {
@@ -118,32 +177,15 @@ export class ConfigService {
   }
 
   getServerConfig(): { host: string; port: number } {
-    return this.config.httpServer || { host: '0.0.0.0', port: 3000 };
+    return this.config.httpServer;
   }
 
-  getStorageDataPath(): string {
-    return this.config.storage?.dataPath || 'data/node-persist';
+  getStoreConfig(): StoreConfig {
+    return this.config.store;
   }
 
-  getStoreType(): StoreType {
-    return this.config?.store?.type ?? 'inMemory';
-  }
-
-  getStoreConfig(): {
-    type: StoreType;
-    filePath?: string;
-    baseUrl?: string;
-    endpoints?: {
-      getLastBlock: string;
-      setLastBlock: string;
-    };
-  } {
-    return {
-      type: this.config?.store?.type ?? 'inMemory',
-      filePath: this.config?.store?.filePath,
-      baseUrl: this.config?.store?.baseUrl,
-      endpoints: this.config?.store?.endpoints,
-    };
+  getIncidentReporterConfig(): IncidentReporterConfig {
+    return this.config.incidentReporter;
   }
 }
 
@@ -156,31 +198,17 @@ interface Config {
   monitoringApi: {
     baseUrl: string;
     endpoints: {
-      createIncident: string;
-      resolveIncident: string;
       getConfig: string;
-      getLastBlock: string;
-      setLastBlock: string;
     };
   };
-  httpServer?: {
+  httpServer: {
     port: number;
     host: string;
   };
   environment: string;
-  logging?: {
+  logging: {
     level: string;
   };
-  storage?: {
-    dataPath: string;
-  };
-  store?: {
-    type: StoreType;
-    filePath?: string;
-    baseUrl?: string;
-    endpoints?: {
-      getLastBlock: string;
-      setLastBlock: string;
-    };
-  };
+  store: StoreConfig;
+  incidentReporter: IncidentReporterConfig;
 }

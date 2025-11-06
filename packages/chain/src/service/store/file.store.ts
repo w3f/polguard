@@ -11,15 +11,15 @@ interface CacheEntry {
 
 /**
  * FileStore: File-based persistent storage for standalone deployments
- * 
+ *
  * Both KV and last block operations are persisted to disk using the same KV storage.
  * Last block is stored with special key pattern: __last_block__:{chain}
- * 
+ *
  * Suitable for:
  * - Standalone deployments without API service
  * - Development/testing with persistence across restarts
  * - Small-scale production deployments
- * 
+ *
  * Storage structure:
  * - Single JSON file with all KV data
  * - Periodic auto-save (every 30 seconds)
@@ -37,7 +37,7 @@ export class FileStore implements Store, OnModuleDestroy {
 
   constructor(dataPath: string = 'data/chain-store.json') {
     this.filePath = path.resolve(process.cwd(), dataPath);
-    
+
     // Ensure directory exists
     const dir = path.dirname(this.filePath);
     if (!fs.existsSync(dir)) {
@@ -72,7 +72,7 @@ export class FileStore implements Store, OnModuleDestroy {
 
         const now = Date.now();
         let loadedCount = 0;
-        
+
         for (const [key, entry] of Object.entries(parsed)) {
           // Skip expired entries
           if (entry.expiresAt && entry.expiresAt <= now) {
@@ -103,7 +103,7 @@ export class FileStore implements Store, OnModuleDestroy {
   private cleanup(): void {
     const now = Date.now();
     let cleanedCount = 0;
-    
+
     for (const [key, entry] of this.kv.entries()) {
       if (entry.expiresAt !== undefined && entry.expiresAt <= now) {
         this.kv.delete(key);
@@ -189,7 +189,7 @@ export class FileStore implements Store, OnModuleDestroy {
   onModuleDestroy(): void {
     clearInterval(this.cleanupInterval);
     clearInterval(this.saveInterval);
-    
+
     // Final save on shutdown
     if (this.isDirty) {
       this.save();

@@ -7,17 +7,17 @@ import { lastValueFrom } from 'rxjs';
 
 /**
  * ServiceStore: Hybrid storage for managed service mode
- * 
+ *
  * Storage characteristics:
  * - KV operations: In-memory ephemeral cache
  *   Purpose: Track ongoing incident IDs between fire/resolve cycles, working as cache for data provider
  *   Durability: Not needed - incidents are already persisted in API postgres
  *   On restart: Cache is empty, but idempotency at API level prevents duplicate creation
- * 
+ *
  * - Last block operations: Remote persistent storage via HTTP
  *   Purpose: Share processing state across chain service restarts/instances
  *   Durability: Required to prevent reprocessing blocks
- * 
+ *
  * We use hybrid approach because incident data lives in the API service's db,
  * while the KV cache is just a performance optimization for tracking
  * incident IDs locally.
@@ -37,8 +37,9 @@ export class ServiceStore implements Store {
 
     // Last block operations use HTTP (persistent via API service)
     const storeConfig = this.config.getStoreConfig();
-    this.getUrl = `${storeConfig.baseUrl}${storeConfig.endpoints.getLastBlock}`;
-    this.setUrl = `${storeConfig.baseUrl}${storeConfig.endpoints.setLastBlock}`;
+    const { baseUrl, endpoints } = storeConfig.service!;
+    this.getUrl = `${baseUrl}${endpoints.getLastBlock}`;
+    this.setUrl = `${baseUrl}${endpoints.setLastBlock}`;
   }
 
   // KV operations: delegate to in-memory store (ephemeral)

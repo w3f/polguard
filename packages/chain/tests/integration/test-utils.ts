@@ -1,10 +1,4 @@
-import {
-  Logger,
-  NotificationSettings,
-  IncidentHandlerClient,
-  IncidentKey,
-  BlockContext,
-} from '@w3f/monitoring-types';
+import { Logger, NotificationSettings, IncidentHandlerClient, IncidentKey, BlockContext } from '@w3f/monitoring-types';
 
 export class LoggerAdapter implements Logger {
   constructor(

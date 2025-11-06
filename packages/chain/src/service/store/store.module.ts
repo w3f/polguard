@@ -18,12 +18,12 @@ export class StoreModule {
           provide: 'Store',
           useFactory: (config: ConfigService, http: HttpService) => {
             const storeConfig = config.getStoreConfig();
-            
+
             switch (storeConfig.type) {
               case 'service':
                 return new ServiceStore(http, config);
               case 'file':
-                return new FileStore(storeConfig.filePath);
+                return new FileStore(storeConfig.file.path);
               case 'inMemory':
               default:
                 return new InMemoryStore();

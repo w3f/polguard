@@ -2,11 +2,10 @@ import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Inje
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ConfigService } from '../config/config.service';
 import { MonitoringConfigService } from '../monitoring-config/monitoring-config.service';
-import { getChainProperties, Store } from '@w3f/monitoring-types';
+import { getChainProperties, Store, IncidentReporter } from '@w3f/monitoring-types';
 import { ChainWatcher } from '../../lib/watcher';
 import { IncidentHandler } from '../../lib/incident-handler';
 import { createChainDataProvider } from '../../lib/data-provider';
-import { IncidentApiService } from '../incident/incident-publisher.service';
 
 @Injectable()
 export class WatcherService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -18,7 +17,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     private readonly config: ConfigService,
     private readonly monitoringConfig: MonitoringConfigService,
     @Inject('Store') private readonly store: Store,
-    private readonly incidents: IncidentApiService,
+    @Inject('IncidentReporter') private readonly reporter: IncidentReporter,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -50,7 +49,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
 
     this.api = await this.createApi(rpc, chainProps.specName);
     const chainDataProvider = createChainDataProvider(this.api, this.store, this.logger, chainProps.chain);
-    const incidentHandler = new IncidentHandler(this.logger, this.store, this.incidents, chainProps.chain);
+    const incidentHandler = new IncidentHandler(this.logger, this.store, this.reporter, chainProps.chain);
 
     this.watcher = new ChainWatcher(
       new Logger('ChainWatcher'),

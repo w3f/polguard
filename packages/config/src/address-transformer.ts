@@ -14,7 +14,7 @@ import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
  *
  * // Using SS58 input from Kusama, but requesting Polkadot format
  * const kusamaSS58 = 'HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F';
- * const result1 = AddressTransformer.transform(kusamaSS58, undefined, Chain.Polkadot);
+ * const result1 = AddressTransformer.transform(kusamaSS58, undefined, Chain.AssetHubPolkadot);
  *
  * // Result1 will contain:
  * // {

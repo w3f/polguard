@@ -5,7 +5,7 @@ import {
   Store,
   IncidentHandlerClient,
   Chain,
-  IncidentApiClient,
+  IncidentReporter,
   CreateIncidentDto,
   IncidentKey,
   BlockContext,
@@ -59,7 +59,7 @@ export class IncidentHandler implements IncidentHandlerClient {
   constructor(
     private logger: Logger,
     private store: Store,
-    private incidentApi: IncidentApiClient,
+    private reporter: IncidentReporter,
     private chain: Chain,
   ) {}
 
@@ -80,7 +80,7 @@ export class IncidentHandler implements IncidentHandlerClient {
     }
 
     // Ongoing incident lifecycle
-    const incidentId = await this.store.get<number>(idempotencyKey);
+    const incidentId = await this.store.get<string>(idempotencyKey);
 
     if (isFiring && !incidentId) {
       const id = await this.createIncident(message, notifications, incidentKey, blockContext, false, idempotencyKey);
@@ -127,17 +127,17 @@ export class IncidentHandler implements IncidentHandlerClient {
 
     this.logger.debug(`Sending incident: ${JSON.stringify(createIncidentDto)}`);
 
-    const incidentId = await this.incidentApi.createIncident(createIncidentDto);
+    const incidentId = await this.reporter.createIncident(createIncidentDto);
     if (incidentId) {
       this.logger.debug(`Sent incident with ID: ${incidentId}`);
     } else {
-      this.logger.debug('Skipping incident (API returned null).');
+      this.logger.debug('Skipping incident (reporter returned null).');
     }
     return incidentId;
   }
 
-  private async resolveIncident(incidentId: number, blockNumber: number, resolutionMessage: string): Promise<void> {
+  private async resolveIncident(incidentId: string, blockNumber: number, resolutionMessage: string): Promise<void> {
     this.logger.debug(`Resolving incident with ID: ${incidentId}`);
-    await this.incidentApi.resolveIncident(incidentId, { chain: this.chain, blockNumber, resolutionMessage });
+    await this.reporter.resolveIncident(incidentId, { chain: this.chain, blockNumber, resolutionMessage });
   }
 }

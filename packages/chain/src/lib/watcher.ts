@@ -115,7 +115,6 @@ export class ChainWatcher {
     );
   }
 
-
   /**
    * Starts the watcher if it's not already running.
    * Initializes monitors, subscribes to finalized blocks, and begins block processing.

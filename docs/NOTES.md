@@ -18,7 +18,7 @@ For most services, we've intentionally split the NestJS implementation from the 
 The chain monitoring system uses TypeScript decorators to register handler methods for chain events, calls, and state checks. This approach provides a clean, declarative API for defining handlers, but introduces some complexity in the initialization process:
 
 ```typescript
-@Event(H.TransferIngress, [Chain.Polkadot, Chain.Kusama], 'balances.Transfer')
+@Event(H.TransferIngress, [Chain.AssetHubPolkadot, Chain.AssetHubKusama], 'balances.Transfer')
 async balancesTransferIngress({ eventRecord, blockNumber, handler }) {
   // Handler implementation
 }
