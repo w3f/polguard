@@ -44,7 +44,6 @@ async function bootstrap() {
     .setDescription('The Monitoring Platform API documentation')
     .setVersion('1.0')
     .addTag('incidents')
-    .addTag('monitoring-config')
     .addTag('health')
     .addTag('metrics')
     .build();

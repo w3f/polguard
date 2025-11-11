@@ -93,7 +93,6 @@ export class ConfigService {
           getIncident: Joi.string().required(),
           acknowledgeIncident: Joi.string().required(),
           resolveIncidentManually: Joi.string().required(),
-          getAccounts: Joi.string().required(),
         }).required(),
       }).required(),
       httpServer: Joi.object({
@@ -106,6 +105,9 @@ export class ConfigService {
       storage: Joi.object({
         dataPath: Joi.string().default('data/local-storage'),
       }).optional(),
+      monitoringConfigs: Joi.object({
+        dir: Joi.string().required(),
+      }).default({ dir: '../config/examples' }),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -127,7 +129,6 @@ export class ConfigService {
       getIncident: string;
       acknowledgeIncident: string;
       resolveIncidentManually: string;
-      getAccounts: string;
     };
   } {
     return this.config.monitoringApi;
@@ -144,6 +145,10 @@ export class ConfigService {
   getStorageDataPath(): string {
     return this.config.storage?.dataPath || 'data/local-storage';
   }
+
+  getMonitoringConfigsDir(): string {
+    return this.config.monitoringConfigs.dir;
+  }
 }
 
 interface AppConfig {
@@ -156,7 +161,6 @@ interface AppConfig {
       getIncident: string;
       acknowledgeIncident: string;
       resolveIncidentManually: string;
-      getAccounts: string;
     };
   };
   httpServer: {
@@ -168,5 +172,8 @@ interface AppConfig {
   };
   storage?: {
     dataPath: string;
+  };
+  monitoringConfigs: {
+    dir: string;
   };
 }

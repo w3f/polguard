@@ -15,8 +15,12 @@ import { Hash, Header, SignedBlock } from '@polkadot/types/interfaces';
 import { ApiDecoration } from '@polkadot/api/types';
 import { Chain } from './constants';
 
-export interface MonitoringConfigClient {
-  getMonitoringGroups(): Promise<MonitoringGroup[]>;
+export interface ChainTelemetryClient {
+  recordLatestBlock(blockNumber: number): void;
+  recordProcessedBlock(blockNumber: number): void;
+  recordCurrentBlock(blockNumber: number): void;
+  recordProcessingTime(ms: number): void;
+  recordMonitoringConfig(groups: MonitoringGroup[]): void;
 }
 
 export interface EventEmitterClient {
@@ -75,4 +79,8 @@ export interface ChainApiClient {
   };
   
   at(blockHash: Hash): Promise<ApiDecoration<"promise">>;
+}
+
+export interface MonitoringConfigClient {
+  getMonitoringGroups(): Promise<MonitoringGroup[]>;
 }

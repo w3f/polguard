@@ -1,3 +1,2 @@
-export * from './config-processor';
-export * from './config-fetcher';
+export { getMonitoringGroups, getGroupsForChannel } from './loader';
 export { validateConfig } from './config-validator';

@@ -1,24 +1,25 @@
 import { MatrixClient } from './matrix-client';
-import { MatrixConfig, IncidentServiceInterface, MonitoringConfigServiceInterface, QueryFilters } from './interfaces';
+import { MatrixConfig, IncidentServiceInterface, QueryFilters } from './interfaces';
 import { Logger, MessengerType, NotificationType, Chain } from '@w3f/monitoring-types';
 import { MatrixEvent } from 'matrix-js-sdk';
+import { getGroupsForChannel } from '@w3f/monitoring-config';
 
 export class MatrixBot extends MatrixClient {
   // This property handles "Message too long (112988 bytes)"
   private static readonly MAX_INCIDENTS_PER_LIST = 50;
   private incidentService: IncidentServiceInterface;
-  private monitoringConfigService: MonitoringConfigServiceInterface;
+  private readonly monitoringConfigsDir: string;
 
   constructor(
     config: MatrixConfig,
     logger: Logger,
     incidentService: IncidentServiceInterface,
-    monitoringConfigService: MonitoringConfigServiceInterface,
+    monitoringConfigsDir: string,
     dataPath?: string,
   ) {
     super(config, logger, dataPath);
     this.incidentService = incidentService;
-    this.monitoringConfigService = monitoringConfigService;
+    this.monitoringConfigsDir = monitoringConfigsDir;
   }
 
   async init() {
@@ -189,11 +190,11 @@ export class MatrixBot extends MatrixClient {
     try {
       const incident = await this.incidentService.getIncidentById(incidentId);
       let message = `<p>${this.getDisplayMessage(incident, roomId, NotificationType.Alert)}</p>`;
-      
+
       if (incident.isResolved && incident.resolutionMessage) {
         message += `<p>${this.getDisplayMessage(incident, roomId, NotificationType.Resolution)}</p>`;
       }
-      
+
       await this.sendMessage(roomId, message);
     } catch (error) {
       this.logger.error(`Error fetching incident message: ${error.message}`);
@@ -466,12 +467,20 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
         return;
       }
 
-      const accounts = await this.monitoringConfigService.getAccounts(chain, roomId);
+      // TODO: Ideally matrix should not have access to the monitoring configs. This command may be removed soon.
+      const groups = await getGroupsForChannel(
+        chain,
+        MessengerType.Matrix,
+        roomId,
+        this.monitoringConfigsDir,
+        this.logger,
+      );
 
       const matchingGroups: string[] = [];
-      for (const [groupId, groupAccounts] of Object.entries(accounts)) {
-        if (groupAccounts.includes(account)) {
-          matchingGroups.push(groupId);
+      for (const group of groups) {
+        const hasAccount = group.accounts.some(acc => acc.ss58 === account);
+        if (hasAccount) {
+          matchingGroups.push(group.id);
         }
       }
 

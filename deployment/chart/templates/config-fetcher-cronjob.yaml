@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "common.names.fullname" . }}-config-fetcher
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: config-fetcher
+spec:
+  schedule: {{ .Values.configFetcher.schedule | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "common.names.name" . }}
+            app.kubernetes.io/instance: {{ .Release.Name }}
+            app.kubernetes.io/component: config-fetcher
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: fetch-configs
+              image: node:20-alpine
+              imagePullPolicy: IfNotPresent
+              command: ["node"]
+              args: ["/scripts/fetch-monitoring-configs.js"]
+              env:
+                # SECURITY NOTE: SOURCES is stored in ConfigMap (not encrypted).
+                # Per-source tokens (if specified in sources[].token) are visible in plain text.
+                - name: SOURCES
+                  valueFrom:
+                    configMapKeyRef:
+                      name: {{ include "common.names.fullname" . }}-config-fetcher
+                      key: sources.json
+                {{- if .Values.configFetcher.defaultToken }}
+                - name: MONITORING_DEFAULT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "common.names.fullname" . }}-config-fetcher
+                      key: default-token
+                {{- end }}
+              volumeMounts:
+                - name: monitoring-configs
+                  mountPath: /app/monitoring-configs
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: monitoring-configs
+              persistentVolumeClaim:
+                claimName: {{ include "common.names.fullname" . }}-monitoring-configs
+            - name: scripts
+              configMap:
+                name: {{ include "common.names.fullname" . }}-config-fetcher-scripts
+                defaultMode: 0755

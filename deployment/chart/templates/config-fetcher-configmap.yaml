@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" . }}-config-fetcher
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: config-fetcher
+data:
+  sources.json: {{ toJson .Values.configFetcher.sources | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" . }}-config-fetcher-scripts
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: config-fetcher
+data:
+  fetch-monitoring-configs.js: |
+{{ .Files.Get "scripts/fetch-monitoring-configs.js" | indent 4 }}

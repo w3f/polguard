@@ -1,25 +1,25 @@
 
-# ------------------------------------ configs for the monitoring-service subchart -------------------------------------
+# ------------------------------------ Configs for the monitoring-service subchart -------------------------------------
 
 
-# values under the "monitoring:" key will be applied to the monitoring-platform subchart
+# Values under the "monitoring:" key will be applied to the monitoring-platform subchart
 # n.b. we alias monitoring-platform to monitoring as helm prefers camelCase values and monitoring-platform includes a dash
 monitoring:
 
-  # global stuff
+  # Global
   fullnameOverride: "e2e" # used to create consistently named resources from the monitoring-platform subchart
 
-  # disable the default servicemonitors and prometheusrules
+  # Disable the default servicemonitors and prometheusrules
   serviceMonitorsEnabled: false
   prometheusRulesEnabled: false
 
-  # chain stuff
   chainServices:
     chain: # this will create a single chain service called "e2e-chain"
       config:
         chain: "AssetHubPolkadot"
-        # Target Event is at block 10270358
-        startBlock: "10270357"
+        startBlock: "10351963"
+        monitoringConfigs:
+          dir: "/app/monitoring-configs/current"
         rpc:
           url: "wss://rpc-asset-hub-polkadot.luckyfriday.io"
         store:
@@ -36,21 +36,13 @@ monitoring:
             endpoints:
               createIncident: "/incidents"
               resolveIncident: "/incidents/:id/resolve"
-        monitoringApi:
-          baseUrl: "http://e2e-api:80"
-          endpoints:
-            getConfig: "/monitoring-config/groups"
         environment: "test"
         logging:
           level: "debug"
       secrets: {}
       containerArgs: [ "start:chain" ]
-  chainInitContainers:
-    - name: "wait-for-api"
-      image: "busybox:1.28"
-      command: ['sh', '-c', 'until nc -z e2e-api 80; do echo waiting for api; sleep 2; done;']
+  chainInitContainers: []
 
-  # api stuff
   apiService:
     config:
       database:
@@ -62,26 +54,18 @@ monitoring:
       notificationApi:
         matrix:
           url: "http://e2e-matrix:80/notifications"
-      monitoringConfigSources:
-        - name: "gitlab"
-          # E2E Test project
-          url: "https://gitlab.w3f.tech/api/v4/projects/101/repository/files/accounts.yaml/raw?ref=main"
-          # authToken is provided via GITLAB_TOKEN environment variable
       crons:
         # Every 5 seconds
         escalations: "*/5 * * * * *"
       environment: "test"
       logging:
         level: "debug"
-    secrets:
-      GITLAB_TOKEN: "BAD_TOKEN"
     containerArgs: ["start:api"] # not explicitly required but added or consistency
   apiInitContainers:
     - name: "wait-for-postgresql"
       image: "busybox:1.28"
       command: [ 'sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;' ]
 
-  # matrix stuff
   matrixService:
     config:
       matrix:
@@ -99,7 +83,8 @@ monitoring:
           getIncident: "/incidents/:id"
           acknowledgeIncident: "/incidents/:id/acknowledge"
           resolveIncidentManually: "/incidents/:id/resolve-manual"
-          getAccounts: "/monitoring-config/accounts"
+      monitoringConfigs:
+        dir: "/app/monitoring-configs/current"
       environment: "test"
       logging:
         level: "debug"
@@ -111,7 +96,18 @@ monitoring:
       image: "busybox:1.28"
       command: [ 'sh', '-c', 'until nc -z e2e-api 80; do echo waiting for api; sleep 2; done;' ]
 
-# --------------------------------------- configs for parent the e2e test chart ----------------------------------------
+  configFetcher:
+    schedule: "*/15 * * * *"  # Every 15 minutes (for e2e will be triggered manually)
+    defaultToken: ""  # Will be set via GITLAB_TOKEN
+    sources:
+      - name: "e2e-accounts"
+        url: "https://gitlab.w3f.tech/api/v4/projects/101/repository/files/accounts.yaml/raw?ref=main"
+    persistence:
+      size: "100Mi"
+      accessModes:
+        - "ReadWriteOnce"
+
+# --------------------------------------- Configs for parent the e2e test chart ----------------------------------------
 
 tests:
   image:
@@ -127,7 +123,7 @@ tests:
     chain:
       url: "http://e2e-chain:80"
       metricsUrl: "http://e2e-chain:9464"
-      targetBlock: 10270358
+      targetBlock: "10351963"
     matrix:
       homeserver: "https://matrix.web3.foundation"
       # MonitoringPlatformCI non-encrypted room
@@ -138,7 +134,7 @@ tests:
       tokenAuth:
         deviceId: "BAD_DEVICE_ID_IN_TESTS"
       # accessToken is provided via MATRIX_TOKEN environment variable
-      messagePattern: "sent 958.6781 DOT"
+      messagePattern: "sent 4.4984 DOT"
       escalationMessagePattern: "The incident was not acknowledged"
 
 # Secrets configuration for the test runner pod

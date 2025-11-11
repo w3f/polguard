@@ -1,11 +1,12 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Inject } from '@nestjs/common';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ConfigService } from '../config/config.service';
-import { MonitoringConfigService } from '../monitoring-config/monitoring-config.service';
+import { ChainTelemetryService } from '../telemetry/chain-telemetry.service';
 import { getChainProperties, Store, IncidentReporter } from '@w3f/monitoring-types';
 import { ChainWatcher } from '../../lib/watcher';
 import { IncidentHandler } from '../../lib/incident-handler';
 import { createChainDataProvider } from '../../lib/data-provider';
+import { getMonitoringGroups } from '@w3f/monitoring-config';
 
 @Injectable()
 export class WatcherService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -15,7 +16,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
   constructor(
     private readonly logger: Logger,
     private readonly config: ConfigService,
-    private readonly monitoringConfig: MonitoringConfigService,
+    private readonly telemetry: ChainTelemetryService,
     @Inject('Store') private readonly store: Store,
     @Inject('IncidentReporter') private readonly reporter: IncidentReporter,
   ) {}
@@ -46,19 +47,24 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     const chainProps = getChainProperties(chain);
     const rpc = this.config.getRpcUrl();
     const startBlock = this.config.getStartBlock();
+    const configsDir = this.config.getMonitoringConfigsDir();
 
     this.api = await this.createApi(rpc, chainProps.specName);
     const chainDataProvider = createChainDataProvider(this.api, this.store, this.logger, chainProps.chain);
     const incidentHandler = new IncidentHandler(this.logger, this.store, this.reporter, chainProps.chain);
+    const configLogger = new Logger('MonitoringConfig');
 
     this.watcher = new ChainWatcher(
       new Logger('ChainWatcher'),
-      this.monitoringConfig,
+      {
+        getMonitoringGroups: () => getMonitoringGroups(chain, configsDir, configLogger),
+      },
       this.store,
       this.api,
       incidentHandler,
       chainProps,
       chainDataProvider,
+      this.telemetry,
     );
 
     await this.watcher.start(startBlock);

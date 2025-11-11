@@ -26,11 +26,13 @@ prometheusRulesEnabled: true
 # chainServices: # each chain listed here will create a new set of chain svc instances (x replica count)
 
 chainInitContainers:
-  - name: "wait-for-api"
+  - name: "wait-for-monitoring-configs"
     image: "busybox:1.28"
-    command: [ 'sh', '-c', 'until nc -z api 3000; do echo waiting for api; sleep 2; done;' ]
-
-chainConfigMountPath: "/app/packages/chain/config"
+    command: [ 'sh', '-c', 'until [ -f /app/monitoring-configs/current/.checksum ]; do echo waiting for monitoring configs; sleep 2; done;' ]
+    volumeMounts:
+      - name: monitoring-configs
+        mountPath: /app/monitoring-configs
+        readOnly: true
 
 # ---------------------------------------------------- api service -----------------------------------------------------
 
@@ -57,8 +59,6 @@ apiInitContainers:
     image: "busybox:1.28"
     command: [ 'sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;' ]
 
-apiConfigMountPath: "/app/packages/api/config"
-
 # --------------------------------------------------- matrix service ---------------------------------------------------
 
 # for the default values.yaml file, all fields MUST be provided
@@ -71,21 +71,39 @@ matrixService:
   serviceHttpPort: 80
   containerMetricsPort: 9464
   serviceMetricsPort: 9464
+  persistence:
+    # Matrix requires persistent storage for session data and encryption keys
+    size: "200Mi"
+    accessModes:
+      - "ReadWriteOnce"
 
 matrixInitContainers:
   - name: "wait-for-api"
     image: "busybox:1.28"
     command: [ 'sh', '-c', 'until nc -z api 80; do echo waiting for api; sleep 2; done;' ]
+  - name: "wait-for-monitoring-configs"
+    image: "busybox:1.28"
+    command: [ 'sh', '-c', 'until [ -f /app/monitoring-configs/current/.checksum ]; do echo waiting for monitoring configs; sleep 2; done;' ]
+    volumeMounts:
+      - name: monitoring-configs
+        mountPath: /app/monitoring-configs
+        readOnly: true
 
-matrixPersistence:
-  enabled: true
-  size: "200Mi"
-  accessModes:
-    - "ReadWriteOnce"
+# ------------------------------------------------ config fetcher ------------------------------------------------------
 
-matrixConfigMountPath: "/app/packages/matrix/config"
-
-matrixDataMountPath: "/app/packages/matrix/data"
+configFetcher:
+  schedule: "*/15 * * * *"  # Every 15 minutes
+  defaultToken: ""  # Optional: default auth token for all sources
+  sources: []
+    # Example:
+    # - name: "polkadot"
+    #   url: "https://gitlab.com/path/to/polkadot.yaml"
+    #   token: ""  # Optional: override default token for this source
+  persistence:
+    size: "100Mi"
+    accessModes:
+      - "ReadWriteMany"  # Required for multiple pods to read
+    # storageClass: ""
 
 # ----- the following variables are not part of the schema but are still supported. they come from bitnami/common ------
 

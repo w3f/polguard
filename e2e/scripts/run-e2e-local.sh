@@ -72,12 +72,17 @@ helm upgrade --install "$RELEASE_NAME" ./e2e/chart \
               --set tests.image.repository=web3f/monitoring-platform-e2e \
               --set tests.image.tag=${IMAGE_TAG} \
               --set monitoring.image.tag=${IMAGE_TAG} \
-              --set monitoring.apiService.secrets.GITLAB_TOKEN=${GITLAB_TOKEN} \
+              --set monitoring.configFetcher.defaultToken=${GITLAB_TOKEN} \
               --set monitoring.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set tests.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set monitoring.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --set secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --wait \
               --debug
+
+echo "Manually triggering config-fetcher CronJob to bootstrap monitoring configs..."
+kubectl create job --from=cronjob/e2e-config-fetcher e2e-config-fetcher-initial -n ${NAMESPACE}
+kubectl wait --for=condition=complete --timeout=60s job/e2e-config-fetcher-initial -n ${NAMESPACE}
+echo "Config fetcher completed successfully"
 
 helm test "$RELEASE_NAME" -n "$NAMESPACE"

@@ -14,10 +14,7 @@ COPY packages/api/package.json packages/api/
 COPY packages/chain/package.json packages/chain/
 COPY packages/matrix/package.json packages/matrix/
 
-# Enable Yarn Berry
-RUN corepack enable && corepack prepare yarn@4.6.0 --activate
-
-# Install dependencies
+# Install dependencies (uses bundled Yarn from .yarn/releases via .yarnrc.yml)
 RUN yarn install
 
 # Copy source files for all packages
@@ -28,7 +25,7 @@ COPY packages/api packages/api
 COPY packages/chain packages/chain
 COPY packages/matrix packages/matrix
 
-# Build all packages in dependency order
+# Build all packages in dependency order (uses bundled Yarn from .yarn/releases via .yarnrc.yml)
 RUN yarn build
 
 FROM node:20-alpine AS production
@@ -46,9 +43,6 @@ COPY packages/config/package.json packages/config/
 COPY packages/api/package.json packages/api/
 COPY packages/chain/package.json packages/chain/
 COPY packages/matrix/package.json packages/matrix/
-
-# Enable Yarn Berry
-RUN corepack enable && corepack prepare yarn@4.6.0 --activate
 
 # Copy node_modules from builder stage
 COPY --from=builder /app/node_modules /app/node_modules
@@ -69,7 +63,7 @@ RUN mkdir -p packages/api/config \
 EXPOSE 3000
 EXPOSE 9464
 
-# Set yarn as the entrypoint
+# Set yarn as the entrypoint (uses bundled Yarn from .yarn/releases via .yarnrc.yml)
 ENTRYPOINT ["yarn"]
 
 # No default command - users must specify which service to run

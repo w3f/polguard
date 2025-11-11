@@ -1,21 +1,19 @@
-import { metrics, Meter, Gauge } from '@opentelemetry/api';
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
 import { EventRecord } from '@polkadot/types/interfaces';
-import { TELEMETRY_PREFIX } from '@w3f/monitoring-telemetry';
 
 import {
   Logger,
   IncidentHandlerClient,
   Store,
-  MonitoringGroup,
   ChainProperties,
   MonitorType,
   MonitorConstructor,
   ChainDataProvider,
-  MonitoringConfigClient,
   Monitor,
   ChainApiClient,
+  ChainTelemetryClient,
+  MonitoringConfigClient,
 } from '@w3f/monitoring-types';
 import {
   IdentityMonitor,
@@ -29,45 +27,12 @@ import {
 /**
  * ChainWatcher is responsible for monitoring blockchain activities and coordinating monitors.
  * It processes blocks sequentially and distributes events, calls, and block data to appropriate monitors.
- *
- * Key responsibilities:
- * 1. Monitor Management
- *    - Initializes configured monitors
- *    - Periodically refreshes monitoring configuration
- *
- * 2. Lifecycle Management
- *    - Controls watcher's running state
- *    - Handles startup and shutdown
- *
- * 3. Block Processing
- *    - Subscribes to new finalized blocks
- *    - Processes blocks sequentially to ensure order
- *    - Tracks last processed block for continuity
- *
- * 4. Monitor Coordination
- *    - Executes periodic checks on every block
- *    - Distributes chain events to relevant monitors
- *    - Processes extrinsic calls including nested calls
- *
- * 5. State Management
- *    - Persists processing progress
  */
 export class ChainWatcher {
   monitors: Monitor[] = [];
   private isRunning = false;
-  private readonly configRefreshIntervalMs = 10 * 60 * 1000; // 10 minutes
   private latestBlockNumber = 0;
   private latestProcessedBlock?: number;
-
-  private readonly telemetryMeter: Meter;
-  private readonly telemetryLatestBlockOnChain: Gauge;
-  private readonly telemetryLastBlockProcessed: Gauge;
-  private readonly telemetryCurrentBlockProcessing: Gauge;
-
-  // the time it takes to process a block
-  // this should be available via traces, if traces are enabled
-  // since traces may not be enabled, we provide this additionally as a metric
-  private readonly telemetryBlockProcessingTime: Gauge;
 
   private static readonly monitorConfigs: [MonitorType, MonitorConstructor<MonitorType>][] = [
     [MonitorType.Governance, GovernanceMonitor],
@@ -80,40 +45,14 @@ export class ChainWatcher {
 
   constructor(
     private logger: Logger,
-    private monitoringConfigClient: MonitoringConfigClient,
+    private configClient: MonitoringConfigClient,
     private store: Store,
     private api: ChainApiClient,
     private incidents: IncidentHandlerClient,
     private chainProps: ChainProperties,
     private chainProvider: ChainDataProvider,
-  ) {
-    this.telemetryMeter = metrics.getMeter(`${TELEMETRY_PREFIX}.monitoring-chain`);
-    this.telemetryLatestBlockOnChain = this.telemetryMeter.createGauge(
-      `${TELEMETRY_PREFIX}.monitoring-chain.latest-block-on-chain`,
-      {
-        description: "The chain's latest block, as reported by the RPC subscription.",
-      },
-    );
-    this.telemetryLastBlockProcessed = this.telemetryMeter.createGauge(
-      `${TELEMETRY_PREFIX}.monitoring-chain.last-block-processed`,
-      {
-        description: 'The last block that the chain-service has processed.',
-      },
-    );
-    this.telemetryCurrentBlockProcessing = this.telemetryMeter.createGauge(
-      `${TELEMETRY_PREFIX}.monitoring-chain.current-block-processing`,
-      {
-        description: 'The block that the chain-service is currently processing.',
-      },
-    );
-    this.telemetryBlockProcessingTime = this.telemetryMeter.createGauge(
-      `${TELEMETRY_PREFIX}.monitoring-chain.block-processing-time`,
-      {
-        description: 'The time it takes to process a block.',
-        unit: 'ms',
-      },
-    );
-  }
+    private telemetry?: ChainTelemetryClient,
+  ) {}
 
   /**
    * Starts the watcher if it's not already running.
@@ -133,12 +72,12 @@ export class ChainWatcher {
     const header = await this.api.rpc.chain.getHeader();
     const blockNumber = header.number.toNumber();
     this.latestBlockNumber = blockNumber;
-    this.telemetryLatestBlockOnChain.record(blockNumber);
+    this.telemetry?.recordLatestBlock(blockNumber);
 
     this.api.rpc.chain.subscribeFinalizedHeads(async header => {
       const blockNumber = header.number.toNumber();
       this.latestBlockNumber = blockNumber;
-      this.telemetryLatestBlockOnChain.record(blockNumber);
+      this.telemetry?.recordLatestBlock(blockNumber);
     });
 
     this.startBlockProcessingLoop(startBlock);
@@ -161,30 +100,14 @@ export class ChainWatcher {
 
   /**
    * Initializes monitors based on the latest configuration.
-   * For each monitor type:
-   * 1. Fetches the latest monitoring groups from the client
-   * 2. Filters relevant monitoring groups
-   * 3. Creates monitor instance if there are matching groups
-   *
-   * @param throwError Whether to throw an error if fetching monitoring groups fails
    */
-  async initializeMonitors(throwError: boolean = true): Promise<void> {
-    let groups: MonitoringGroup[];
-    try {
-      groups = await this.monitoringConfigClient.getMonitoringGroups();
-    } catch (error) {
-      this.logger.error(`Failed to fetch monitoring groups: ${error.message}`);
-      if (throwError) {
-        throw new Error(`Failed to fetch monitoring groups: ${error.message}`);
-      }
-      return;
-    }
+  async initializeMonitors(): Promise<void> {
+    const groups = await this.configClient.getMonitoringGroups();
 
-    this.monitors = [];
+    this.telemetry?.recordMonitoringConfig(groups);
+
     this.monitors = ChainWatcher.monitorConfigs.flatMap(([monitorType, MonitorClass]) => {
-      const filteredGroups = groups.filter(
-        group => group.chain === this.chainProps.chain && group.monitors.some(monitor => monitor.name === monitorType),
-      );
+      const filteredGroups = groups.filter(group => group.monitors.some(monitor => monitor.name === monitorType));
 
       if (filteredGroups.length > 0) {
         return [
@@ -201,24 +124,13 @@ export class ChainWatcher {
       return [];
     });
 
-    this.logger.debug(`Initialized ${this.monitors.length} monitors for chain ${this.chainProps.chain}`);
     if (this.monitors.length === 0) {
-      this.logger.warn(`No monitors were initialized for chain ${this.chainProps.chain}`);
+      this.logger.warn(`No monitors configured for chain ${this.chainProps.chain}`);
     }
   }
 
   /**
    * Processes blocks sequentially, ensuring order and continuity.
-   *
-   * This method:
-   * 1. Starts from the provided block number or the last processed block + 1
-   * 2. Processes each block by:
-   *    - Executing state handlers for all monitors
-   *    - Distributing events to relevant monitors
-   *    - Processing extrinsic calls and their nested calls
-   * 3. Periodically refreshes monitor configurations based on configRefreshIntervalMs
-   *    - This ensures monitors stay up-to-date with the latest monitoring groups
-   * 4. Tracks last processed block internally (persisted on shutdown only)
    *
    * @param startBlock Optional starting block number
    */
@@ -226,29 +138,24 @@ export class ChainWatcher {
     const lastProcessedBlock = await this.store.getLastBlock(this.chainProps.chain);
     // Priority: startBlock from config YAML > Store lastProcessedBlock > latest chain block
     let nextBlockNumber = startBlock ?? lastProcessedBlock ?? this.latestBlockNumber;
-    let lastConfigRefreshTime = Date.now();
 
     while (this.isRunning) {
-      const now = Date.now();
-
-      // Periodic task: refresh config
-      if (now - lastConfigRefreshTime >= this.configRefreshIntervalMs) {
-        await this.initializeMonitors(false);
-        lastConfigRefreshTime = now;
-      }
+      // Check for config changes every block
+      await this.initializeMonitors();
 
       if (this.monitors.length === 0) {
         await new Promise(resolve => setTimeout(resolve, 5000));
         continue;
       }
+
       if (nextBlockNumber <= this.latestBlockNumber) {
-        this.telemetryCurrentBlockProcessing.record(nextBlockNumber);
+        this.telemetry?.recordCurrentBlock(nextBlockNumber);
         const start = performance.now();
         await this.processBlock(nextBlockNumber);
         const end = performance.now();
-        this.telemetryBlockProcessingTime.record(end - start);
+        this.telemetry?.recordProcessingTime(end - start);
         this.latestProcessedBlock = nextBlockNumber;
-        this.telemetryLastBlockProcessed.record(nextBlockNumber);
+        this.telemetry?.recordProcessedBlock(nextBlockNumber);
         nextBlockNumber++;
       } else {
         await new Promise(resolve => setTimeout(resolve, 1000));

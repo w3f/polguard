@@ -12,16 +12,6 @@ export class ConfigService {
     const configPath = this.getConfigPath();
     const rawConfig: any = this.loadConfig(configPath);
 
-    // Handle GitLab token for monitoring config sources
-    if (rawConfig?.monitoringConfigSources) {
-      for (const source of rawConfig.monitoringConfigSources) {
-        if (!source.authToken && !process.env.GITLAB_TOKEN) {
-          throw new Error('Missing GitLab token: set GITLAB_TOKEN env var or provide it in config.');
-        }
-        source.authToken = process.env.GITLAB_TOKEN ?? source.authToken;
-      }
-    }
-
     // Handle PostgreSQL password from environment variable
     if (rawConfig?.database) {
       if (!rawConfig.database.password && !process.env.POSTGRES_PASSWORD) {
@@ -42,10 +32,6 @@ export class ConfigService {
             ...this.config.database,
             password: this.config.database.password ? '***' : undefined,
           },
-          monitoringConfigSources: this.config.monitoringConfigSources?.map(source => ({
-            ...source,
-            authToken: source.authToken ? '***' : undefined,
-          })),
         },
         null,
         2,
@@ -86,15 +72,6 @@ export class ConfigService {
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
       }).optional(),
-      monitoringConfigSources: Joi.array()
-        .items(
-          Joi.object({
-            name: Joi.string().required(),
-            url: Joi.string().uri().required(),
-            authToken: Joi.string().optional(),
-          }),
-        )
-        .optional(),
       crons: Joi.object({
         escalations: Joi.string().optional(),
         retries: Joi.string().optional(),
@@ -131,10 +108,6 @@ export class ConfigService {
     return this.config.environment;
   }
 
-  getMonitoringConfigSources() {
-    return this.config.monitoringConfigSources || [];
-  }
-
   getCronsConfig() {
     return this.config.crons || {};
   }
@@ -161,11 +134,6 @@ interface AppConfig {
   logging?: {
     level: string;
   };
-  monitoringConfigSources?: {
-    name: string;
-    url: string;
-    authToken?: string;
-  }[];
   crons?: {
     escalations?: string;
     retries?: string;

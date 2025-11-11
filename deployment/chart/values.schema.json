@@ -25,7 +25,6 @@
       }
     },
     "chainInitContainers": { "$ref": "#/definitions/initContainers" },
-    "chainConfigMountPath": { "$ref": "#/definitions/mountPath" },
 
     "apiService": {
       "allOf": [
@@ -34,18 +33,52 @@
       ]
     },
     "apiInitContainers": { "$ref": "#/definitions/initContainers" },
-    "apiConfigMountPath": { "$ref": "#/definitions/mountPath" },
 
     "matrixService": {
       "allOf": [
         { "$ref": "#/definitions/svc" },
-        { "required": ["config", "containerArgs"] }
+        { "required": ["config", "containerArgs", "persistence"] }
       ]
     },
     "matrixInitContainers": { "$ref": "#/definitions/initContainers" },
-    "matrixPersistence": { "$ref": "#/definitions/persistence" },
-    "matrixConfigMountPath": { "$ref": "#/definitions/mountPath" },
-    "matrixDataMountPath": { "$ref": "#/definitions/mountPath" }
+
+    "configFetcher": {
+      "type": "object",
+      "properties": {
+        "schedule": {
+          "type": "string",
+          "description": "Cron schedule for fetching configs"
+        },
+        "defaultToken": {
+          "type": "string",
+          "description": "Default auth token for all sources"
+        },
+        "sources": {
+          "type": "array",
+          "description": "List of config sources to fetch",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Name of the config source"
+              },
+              "url": {
+                "type": "string",
+                "description": "URL to fetch the config from"
+              },
+              "token": {
+                "type": "string",
+                "description": "Optional per-source auth token"
+              }
+            },
+            "required": ["name", "url"]
+          }
+        },
+        "persistence": { "$ref": "#/definitions/persistence" }
+      },
+      "required": ["persistence"]
+    }
   },
   "required": [],
   "definitions": {
@@ -89,7 +122,8 @@
           "type": "integer",
           "description": "Port number exposed by the service for exposing the container's Prometheus-compatible metrics API. Prometheus should send requests to this port."
         },
-        "resources": { "$ref": "#/definitions/resources" }
+        "resources": { "$ref": "#/definitions/resources" },
+        "persistence": { "$ref": "#/definitions/persistence" }
       },
       "required": ["config"]
     },
@@ -129,13 +163,9 @@
       "required": ["requests", "limits"]
     },
     "persistence": {
-      "$comment": "Persistence configuration for this service's pods.",
+      "$comment": "Persistence configuration for persistent volumes. Always creates a PVC when specified.",
       "type": "object",
       "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Enable persistent storage. If disabled, chain services will not mount persistent storage and store-related components will not be created."
-        },
         "size": {
           "type": "string",
           "description": "Storage size request"
@@ -147,9 +177,13 @@
             "enum": ["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany"]
           },
           "description": "Kubernetes persistent volume access modes"
+        },
+        "storageClass": {
+          "type": "string",
+          "description": "Storage class name for the persistent volume"
         }
       },
-      "required": ["enabled"]
+      "required": ["size", "accessModes"]
     },
     "initContainers": {
       "type": "array",

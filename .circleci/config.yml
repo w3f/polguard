@@ -145,13 +145,21 @@ jobs:
               --set tests.image.repository=web3f/monitoring-platform-e2e \
               --set tests.image.tag=${CIRCLE_SHA1} \
               --set monitoring.image.tag=${CIRCLE_SHA1} \
-              --set monitoring.apiService.secrets.GITLAB_TOKEN=${GITLAB_TOKEN} \
+              --set monitoring.configFetcher.defaultToken=${GITLAB_TOKEN} \
               --set monitoring.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set tests.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set monitoring.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --set secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --wait
           no_output_timeout: 10m
+
+      - run:
+          name: Manually trigger config fetcher
+          command: |
+            echo "Triggering config-fetcher CronJob to bootstrap monitoring configs..."
+            kubectl create job --from=cronjob/e2e-config-fetcher e2e-config-fetcher-initial -n e2e
+            kubectl wait --for=condition=complete --timeout=60s job/e2e-config-fetcher-initial -n e2e
+            echo "Config fetcher completed successfully"
 
       - run:
           name: Execute E2E tests

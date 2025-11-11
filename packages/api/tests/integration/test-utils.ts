@@ -3,7 +3,6 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { AppModule } from '../../src/app.module';
-import { MonitoringConfigService } from '../../src/monitoring-config/monitoring-config.service';
 import { ConfigService } from '../../src/config/config.service';
 import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
@@ -13,7 +12,6 @@ import * as JSONbig from 'json-bigint';
 import { Incident } from '../../src/database/incident.entity';
 import { Notification } from '../../src/database/notification.entity';
 import { LastBlock } from '../../src/database/last-block.entity';
-import { ConfigFetcher } from '@w3f/monitoring-config';
 
 const workerId = process.env.JEST_WORKER_ID ?? '0'; // "0" when runInBand
 export const dbFile = path.join(process.cwd(), `test-${workerId}.sqlite`);
@@ -38,28 +36,7 @@ const SQLITE_TEST_CONFIG = {
   extra: { pragmas: ['foreign_keys=ON'] },
 };
 
-/**
- * Creates a test fixture for monitoring groups using a YAML file
- * @param service The MonitoringConfigService instance
- * @param fixturePath Path to the YAML fixture file (defaults to the shared test fixture)
- */
-export async function setupMonitoringConfigService(
-  service: MonitoringConfigService,
-  fixturePath: string = path.join(__dirname, './fixtures/test-config.yaml'),
-): Promise<void> {
-  jest.spyOn(ConfigFetcher, 'fetchAndProcessConfigs').mockImplementation(async () => {
-    const { ConfigProcessor } = await import('@w3f/monitoring-config');
-    return ConfigProcessor.processConfigs([fixturePath]);
-  });
-
-  await service.refreshConfigurations();
-}
-
-/**
- * Creates a NestJS application for integration tests
- * @param fixtureOptions Options for configuring test fixtures (optional)
- */
-export async function createTestApp(fixtureOptions?: { monitoringConfigFixturePath?: string }): Promise<{
+export async function createTestApp(): Promise<{
   app: INestApplication;
   moduleFixture: TestingModule;
 }> {
@@ -116,12 +93,6 @@ export async function createTestApp(fixtureOptions?: { monitoringConfigFixturePa
 
     next();
   });
-
-  // Get the MonitoringConfigService to inject our test data
-  const monitoringConfigService = moduleFixture.get<MonitoringConfigService>(MonitoringConfigService);
-
-  // Setup the monitoring config service with test data
-  await setupMonitoringConfigService(monitoringConfigService, fixtureOptions?.monitoringConfigFixturePath);
 
   await app.init();
 

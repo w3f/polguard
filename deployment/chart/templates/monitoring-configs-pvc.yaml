@@ -1,0 +1,2 @@
+{{ $context := dict "name" "monitoring-configs" "persistence" $.Values.configFetcher.persistence "global" $ }}
+{{ include "foundation.web3.mp.pvc" $context }}

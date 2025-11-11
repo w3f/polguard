@@ -107,10 +107,6 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
         }
       }
     }
-
-    this.logger.debug(
-      `Initialized handlers for ${this.constructor.name}: ${this.handlers.event.size} event handlers, ${this.handlers.call.size} call handlers, ${this.handlers.state.size} state handlers`,
-    );
   }
 
   async processEvent({ eventRecord, blockContext }: EventHandlerParams): Promise<void> {

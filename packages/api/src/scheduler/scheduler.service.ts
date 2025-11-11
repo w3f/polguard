@@ -4,7 +4,6 @@ import { SchedulerRegistry, CronExpression } from '@nestjs/schedule';
 
 import { ConfigService } from '../config/config.service';
 import { NotificationService } from '../notification/notification.service';
-import { MonitoringConfigService } from '../monitoring-config/monitoring-config.service';
 import { IncidentService } from '../incident/incident.service';
 
 @Injectable()
@@ -15,7 +14,6 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly configService: ConfigService,
     private readonly notificationService: NotificationService,
-    private readonly monitoringConfigService: MonitoringConfigService,
     private readonly incidentService: IncidentService,
   ) {}
 
@@ -24,7 +22,6 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
 
     const exprEscalations = sched.escalations ?? CronExpression.EVERY_5_MINUTES;
     const exprRetries = sched.retries ?? CronExpression.EVERY_5_MINUTES;
-    const exprRefreshCfg = sched.refreshConfig ?? CronExpression.EVERY_10_MINUTES;
     const exprAutoResolve = sched.autoResolve ?? CronExpression.EVERY_6_HOURS;
 
     this.addCronJob('notifications-escalations', exprEscalations, async () => {
@@ -35,11 +32,6 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
     this.addCronJob('notifications-retries', exprRetries, async () => {
       this.logger.debug('Running notification retry job');
       await this.notificationService.retryNotifications();
-    });
-
-    this.addCronJob('refresh-config', exprRefreshCfg, async () => {
-      this.logger.debug('Refreshing monitoring configurations');
-      await this.monitoringConfigService.refreshConfigurations();
     });
 
     this.addCronJob('auto-resolve-stale', exprAutoResolve, async () => {

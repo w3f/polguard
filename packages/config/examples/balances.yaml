@@ -1,0 +1,33 @@
+defaults:
+  notifications:
+    messengerType: Matrix
+    channels:
+      - "!ZRBUkvtLMgvAvKiaLF:web3.foundation"
+
+groups:
+  - id: balances-kusama-examples
+    chains:
+      - AssetHubKusama
+    monitors:
+      - name: Balances
+        # Start from block 11588659 to test
+        handlers: ["TransferEgressEvent"]
+    accountSet: kusama-accounts
+
+  - id: balances-polkadot-example
+    chains:
+      - AssetHubPolkadot
+    monitors:
+      - name: Balances
+        # Start from block 10338234 to test
+        handlers: ["TransferEgressEvent"]
+    accountSet: polkadot-accounts
+
+accountSets:
+  kusama-accounts:
+    - name: "kusama-random-account"
+      address: "GFMAV1nYH2hzUAXuwSioDXSnQb7iAkQSjGgmeKKWaLML4V3"
+
+  polkadot-accounts:
+    - name: "polkadot-random-account"
+      address: "1i1vQ39YeQk4QiKF16wuA4neTuQfCRWwnwm7Xuk2yuQtd8Q"

@@ -82,30 +82,26 @@ spec:
 
           volumeMounts:
             - name: config
-              mountPath: {{ if eq .kind "chain"  }}
-              {{- .global.Values.chainConfigMountPath }}
-              {{- else if eq .kind "api" }}
-              {{- .global.Values.apiConfigMountPath }}
-              {{- else if eq .kind "matrix" }}
-              {{- .global.Values.matrixConfigMountPath }}
-              {{- end }}
+              mountPath: {{ if eq .kind "chain" }}/app/packages/chain/config{{ else if eq .kind "api" }}/app/packages/api/config{{ else if eq .kind "matrix" }}/app/packages/matrix/config{{ end }}
               readOnly: true
             {{- if eq .kind "matrix" }}
-            {{- if .global.Values.matrixPersistence.enabled }}
             - name: data
-              mountPath: {{ .global.Values.matrixDataMountPath }}
+              mountPath: /app/packages/matrix/data
             {{- end }}
-            {{- end }}
+            - name: monitoring-configs
+              mountPath: /app/monitoring-configs
+              readOnly: true
 
       volumes:
         - name: config
           configMap:
             name: {{ include "common.names.fullname" .global }}-{{ .name }}
         {{- if eq .kind "matrix" }}
-        {{- if .global.Values.matrixPersistence.enabled }}
         - name: data
           persistentVolumeClaim:
             claimName: {{ include "common.names.fullname" .global }}-{{ .name }}
         {{- end }}
-        {{- end }}
+        - name: monitoring-configs
+          persistentVolumeClaim:
+            claimName: {{ include "common.names.fullname" .global }}-monitoring-configs
 {{- end }}

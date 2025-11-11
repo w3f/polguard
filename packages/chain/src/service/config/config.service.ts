@@ -57,7 +57,8 @@ export class ConfigService {
 
   private loadConfig(configPath: string): unknown {
     if (!fs.existsSync(configPath)) {
-      throw new Error(`Configuration file not found: ${configPath}`);
+      // Use default values only (development)
+      return {};
     }
     return yaml.load(fs.readFileSync(configPath, 'utf8'));
   }
@@ -75,12 +76,6 @@ export class ConfigService {
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').required(),
       }).default({ level: 'debug' }),
-      monitoringApi: Joi.object({
-        baseUrl: Joi.string().uri().required(),
-        endpoints: Joi.object({
-          getConfig: Joi.string().required(),
-        }).required(),
-      }).required(),
       httpServer: Joi.object({
         port: Joi.number().default(3000),
         host: Joi.string().default('0.0.0.0'),
@@ -137,6 +132,9 @@ export class ConfigService {
           otherwise: Joi.forbidden(),
         }),
       }).default({ type: 'stdout', stdout: { format: 'json' } }),
+      monitoringConfigs: Joi.object({
+        dir: Joi.string().required(),
+      }).default({ dir: '../config/examples' }),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -167,15 +165,6 @@ export class ConfigService {
     return this.config.logging.level;
   }
 
-  getMonitoringApi(): {
-    baseUrl: string;
-    endpoints: {
-      getConfig: string;
-    };
-  } {
-    return this.config.monitoringApi;
-  }
-
   getServerConfig(): { host: string; port: number } {
     return this.config.httpServer;
   }
@@ -187,6 +176,10 @@ export class ConfigService {
   getIncidentReporterConfig(): IncidentReporterConfig {
     return this.config.incidentReporter;
   }
+
+  getMonitoringConfigsDir(): string {
+    return this.config.monitoringConfigs.dir;
+  }
 }
 
 interface Config {
@@ -195,12 +188,6 @@ interface Config {
     url: string;
   };
   startBlock?: number;
-  monitoringApi: {
-    baseUrl: string;
-    endpoints: {
-      getConfig: string;
-    };
-  };
   httpServer: {
     port: number;
     host: string;
@@ -211,4 +198,7 @@ interface Config {
   };
   store: StoreConfig;
   incidentReporter: IncidentReporterConfig;
+  monitoringConfigs: {
+    dir: string;
+  };
 }
