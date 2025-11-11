@@ -54,12 +54,13 @@ export class ConfigService {
 
   private validateConfig(config: unknown): AppConfig {
     const schema = Joi.object({
-      environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
+      environment: Joi.string().valid('development', 'production', 'test', 'staging').default('development'),
       matrix: Joi.object({
         url: Joi.string().uri().required(),
         userId: Joi.string().required(),
+        storageDir: Joi.string().default('data/local-storage'),
         logging: Joi.object({
-          level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error'),
+          level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error').default('warn'),
         }).default({ level: 'warn' }),
         enableEncryption: Joi.boolean().optional(),
         passwordAuth: Joi.object({
@@ -86,8 +87,8 @@ export class ConfigService {
           }
           return value;
         }),
-      monitoringApi: Joi.object({
-        baseUrl: Joi.string().uri().required(),
+      incidents: Joi.object({
+        url: Joi.string().uri().required(),
         endpoints: Joi.object({
           getIncidents: Joi.string().required(),
           getIncident: Joi.string().required(),
@@ -95,16 +96,13 @@ export class ConfigService {
           resolveIncidentManually: Joi.string().required(),
         }).required(),
       }).required(),
-      httpServer: Joi.object({
+      server: Joi.object({
         port: Joi.number().default(3000),
         host: Joi.string().default('0.0.0.0'),
-      }).optional(),
+      }).default({ port: 3000, host: '0.0.0.0' }),
       logging: Joi.object({
-        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
-      }).optional(),
-      storage: Joi.object({
-        dataPath: Joi.string().default('data/local-storage'),
-      }).optional(),
+        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('debug'),
+      }).default({ level: 'debug' }),
       monitoringConfigs: Joi.object({
         dir: Joi.string().required(),
       }).default({ dir: '../config/examples' }),
@@ -122,8 +120,8 @@ export class ConfigService {
     return this.config.matrix;
   }
 
-  getMonitoringApi(): {
-    baseUrl: string;
+  getIncidentsApi(): {
+    url: string;
     endpoints: {
       getIncidents: string;
       getIncident: string;
@@ -131,19 +129,19 @@ export class ConfigService {
       resolveIncidentManually: string;
     };
   } {
-    return this.config.monitoringApi;
+    return this.config.incidents;
   }
 
   getLoggingLevel(): string {
-    return this.config.logging?.level || 'info';
+    return this.config.logging.level;
   }
 
   getServerConfig() {
-    return this.config.httpServer || { port: 3000, host: '0.0.0.0' };
+    return this.config.server;
   }
 
-  getStorageDataPath(): string {
-    return this.config.storage?.dataPath || 'data/local-storage';
+  getMatrixStorageDir(): string {
+    return this.config.matrix.storageDir;
   }
 
   getMonitoringConfigsDir(): string {
@@ -154,8 +152,8 @@ export class ConfigService {
 interface AppConfig {
   environment: string;
   matrix: MatrixConfig;
-  monitoringApi: {
-    baseUrl: string;
+  incidents: {
+    url: string;
     endpoints: {
       getIncidents: string;
       getIncident: string;
@@ -163,15 +161,12 @@ interface AppConfig {
       resolveIncidentManually: string;
     };
   };
-  httpServer: {
+  server: {
     port: number;
     host: string;
   };
-  logging?: {
+  logging: {
     level: string;
-  };
-  storage?: {
-    dataPath: string;
   };
   monitoringConfigs: {
     dir: string;

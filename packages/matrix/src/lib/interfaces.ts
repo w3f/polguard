@@ -10,6 +10,7 @@ export interface TokenAuth {
 export interface MatrixConfig {
   url: string;
   userId: string;
+  storageDir: string;
   logging: { level: 'trace' | 'debug' | 'info' | 'warn' | 'error' };
   enableEncryption?: boolean;
 

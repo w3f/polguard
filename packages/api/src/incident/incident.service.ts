@@ -226,8 +226,8 @@ export class IncidentService {
 
       // Escalation channels: escalation message with destinations plus original alert
       const escalationMessageWithOriginal =
-        `Escalation. The incident was not acknowledged within ${timeoutInMinutes} minutes in any of the following rooms: ${destinations}. ` +
-        `(the original message is repeated below).\n\n${i.message}`;
+        `Escalation. The incident was not acknowledged within ${timeoutInMinutes} minutes in any of the following rooms: ${destinations} ` +
+        `(the original message is repeated below)\n\n${i.message}`;
       await this.notificationService.createNotifications(
         i,
         i.escalationChannels,

@@ -12,7 +12,7 @@ interface StoreConfig {
     path: string;
   };
   service?: {
-    baseUrl: string;
+    url: string;
     endpoints: {
       getLastBlock: string;
       setLastBlock: string;
@@ -27,7 +27,7 @@ interface IncidentReporterConfig {
     format: 'json' | 'pretty';
   };
   service?: {
-    baseUrl: string;
+    url: string;
     endpoints: {
       createIncident: string;
       resolveIncident: string;
@@ -65,21 +65,24 @@ export class ConfigService {
 
   private validateConfig(config: unknown): Config {
     const schema = Joi.object({
-      chain: Joi.string()
-        .valid(...Object.values(Chain))
-        .default(Chain.AssetHubPolkadot),
-      rpc: Joi.object({
-        url: Joi.string().uri().required(),
-      }).default({ url: 'wss://polkadot-asset-hub-rpc.polkadot.io' }),
-      startBlock: Joi.number().integer().min(0).optional(),
+      chain: Joi.object({
+        name: Joi.string()
+          .valid(...Object.values(Chain))
+          .default(Chain.AssetHubPolkadot),
+        rpcUrl: Joi.string().uri().default('wss://polkadot-asset-hub-rpc.polkadot.io'),
+        startBlock: Joi.number().integer().min(0).optional(),
+      }).default({
+        name: Chain.AssetHubPolkadot,
+        rpcUrl: 'wss://polkadot-asset-hub-rpc.polkadot.io',
+      }),
       environment: Joi.string().valid('development', 'production', 'test', 'staging').default('development'),
       logging: Joi.object({
-        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').required(),
+        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('debug'),
       }).default({ level: 'debug' }),
-      httpServer: Joi.object({
+      server: Joi.object({
         port: Joi.number().default(3000),
         host: Joi.string().default('0.0.0.0'),
-      }).default({ host: '0.0.0.0', port: 3000 }),
+      }).default({ port: 3000, host: '0.0.0.0' }),
       store: Joi.object({
         type: Joi.string().valid('inMemory', 'service', 'file').required(),
         file: Joi.object({
@@ -92,7 +95,7 @@ export class ConfigService {
           })
           .default({ path: './data/chain-store.json' }),
         service: Joi.object({
-          baseUrl: Joi.string().uri().required(),
+          url: Joi.string().uri().required(),
           endpoints: Joi.object({
             getLastBlock: Joi.string().required(),
             setLastBlock: Joi.string().required(),
@@ -113,7 +116,7 @@ export class ConfigService {
           otherwise: Joi.forbidden(),
         }),
         service: Joi.object({
-          baseUrl: Joi.string().uri().required(),
+          url: Joi.string().uri().required(),
           endpoints: Joi.object({
             createIncident: Joi.string().required(),
             resolveIncident: Joi.string().required(),
@@ -146,15 +149,15 @@ export class ConfigService {
   }
 
   getChain(): Chain {
-    return this.config.chain;
+    return this.config.chain.name;
   }
 
   getRpcUrl(): string {
-    return this.config.rpc.url;
+    return this.config.chain.rpcUrl;
   }
 
   getStartBlock(): number | undefined {
-    return this.config.startBlock;
+    return this.config.chain.startBlock;
   }
 
   getEnvironment(): string {
@@ -166,7 +169,7 @@ export class ConfigService {
   }
 
   getServerConfig(): { host: string; port: number } {
-    return this.config.httpServer;
+    return this.config.server;
   }
 
   getStoreConfig(): StoreConfig {
@@ -183,12 +186,12 @@ export class ConfigService {
 }
 
 interface Config {
-  chain: Chain;
-  rpc: {
-    url: string;
+  chain: {
+    name: Chain;
+    rpcUrl: string;
+    startBlock?: number;
   };
-  startBlock?: number;
-  httpServer: {
+  server: {
     port: number;
     host: string;
   };

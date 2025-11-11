@@ -37,9 +37,9 @@ export class ServiceStore implements Store {
 
     // Last block operations use HTTP (persistent via API service)
     const storeConfig = this.config.getStoreConfig();
-    const { baseUrl, endpoints } = storeConfig.service!;
-    this.getUrl = `${baseUrl}${endpoints.getLastBlock}`;
-    this.setUrl = `${baseUrl}${endpoints.setLastBlock}`;
+    const { url, endpoints } = storeConfig.service!;
+    this.getUrl = `${url}${endpoints.getLastBlock}`;
+    this.setUrl = `${url}${endpoints.setLastBlock}`;
   }
 
   // KV operations: delegate to in-memory store (ephemeral)

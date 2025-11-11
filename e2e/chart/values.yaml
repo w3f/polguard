@@ -16,23 +16,23 @@ monitoring:
   chainServices:
     chain: # this will create a single chain service called "e2e-chain"
       config:
-        chain: "AssetHubPolkadot"
-        startBlock: "10351963"
+        chain:
+          name: "AssetHubPolkadot"
+          rpcUrl: "wss://rpc-asset-hub-polkadot.luckyfriday.io"
+          startBlock: "10351963"
         monitoringConfigs:
           dir: "/app/monitoring-configs/current"
-        rpc:
-          url: "wss://rpc-asset-hub-polkadot.luckyfriday.io"
         store:
           type: service
           service:
-            baseUrl: http://e2e-api:80
+            url: http://e2e-api:80
             endpoints:
               getLastBlock: /last-block/:chain
               setLastBlock: /last-block
         incidentReporter:
           type: service
           service:
-            baseUrl: http://e2e-api:80
+            url: http://e2e-api:80
             endpoints:
               createIncident: "/incidents"
               resolveIncident: "/incidents/:id/resolve"
@@ -51,7 +51,7 @@ monitoring:
         username: "postgres"
         password: "postgres"
         database: "monitoring"
-      notificationApi:
+      notifications:
         matrix:
           url: "http://e2e-matrix:80/notifications"
       crons:
@@ -76,8 +76,8 @@ monitoring:
         # accessToken is provided via MATRIX_TOKEN environment variable
         logging:
           level: "warn"
-      monitoringApi:
-        baseUrl: "http://e2e-api:80"
+      incidents:
+        url: "http://e2e-api:80"
         endpoints:
           getIncidents: "/incidents"
           getIncident: "/incidents/:id"

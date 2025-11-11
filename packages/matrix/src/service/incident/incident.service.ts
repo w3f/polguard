@@ -15,7 +15,7 @@ export class IncidentService implements IncidentServiceInterface {
   ) {}
 
   async getNonResolved(roomId: string): Promise<Incident[]> {
-    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
     const url = `${baseUrl}${endpoints.getIncidents}`;
     const response = await firstValueFrom(
       this.httpService.get(url, {
@@ -30,7 +30,7 @@ export class IncidentService implements IncidentServiceInterface {
   }
 
   async getNonAcked(roomId: string): Promise<Incident[]> {
-    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
     const url = `${baseUrl}${endpoints.getIncidents}`;
     const response = await firstValueFrom(
       this.httpService.get(url, {
@@ -46,14 +46,14 @@ export class IncidentService implements IncidentServiceInterface {
   }
 
   async getIncidentById(incidentId: string): Promise<Incident> {
-    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
     const url = `${baseUrl}${endpoints.getIncident.replace(':id', incidentId)}`;
     const response = await firstValueFrom(this.httpService.get(url));
     return response.data;
   }
 
   async acknowledgeIncident(incidentId: string, username: string, channelId: string): Promise<void> {
-    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
     const url = `${baseUrl}${endpoints.acknowledgeIncident.replace(':id', incidentId)}`;
     await firstValueFrom(
       this.httpService.post(url, {
@@ -64,7 +64,7 @@ export class IncidentService implements IncidentServiceInterface {
   }
 
   async resolveIncident(incidentId: string, username: string, channelId: string): Promise<void> {
-    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
     const url = `${baseUrl}${endpoints.resolveIncidentManually.replace(':id', incidentId)}`;
     await firstValueFrom(
       this.httpService.post(url, {
@@ -75,7 +75,7 @@ export class IncidentService implements IncidentServiceInterface {
   }
 
   async queryIncidents(roomId: string, filters: QueryFilters): Promise<Incident[]> {
-    const { baseUrl, endpoints } = this.configService.getMonitoringApi();
+    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
     const url = `${baseUrl}${endpoints.getIncidents}`;
 
     const params = {

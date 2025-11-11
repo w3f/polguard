@@ -24,9 +24,9 @@ export class IncidentServiceReporter implements IncidentReporter {
     private readonly configService: ConfigService,
   ) {
     const config = this.configService.getIncidentReporterConfig();
-    const { baseUrl, endpoints } = config.service!;
-    this.createUrl = `${baseUrl}${endpoints.createIncident}`;
-    this.resolveUrl = `${baseUrl}${endpoints.resolveIncident}`;
+    const { url, endpoints } = config.service!;
+    this.createUrl = `${url}${endpoints.createIncident}`;
+    this.resolveUrl = `${url}${endpoints.resolveIncident}`;
   }
 
   async createIncident(incident: CreateIncidentDto): Promise<string | null> {

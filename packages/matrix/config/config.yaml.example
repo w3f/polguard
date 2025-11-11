@@ -1,21 +1,52 @@
+# Matrix Service Configuration
+
+# Environment (optional, default: development)
+# Values: development, production, test, staging
+environment: development
+
+# Matrix client configuration (required)
 matrix:
   url: https://matrix.web3.foundation
-  userId: "@stagingbot:web3.foundation"
-  passwordAuth:
-    password: ***
-  rooms:
-    - id: "!ZRBUkvtLMgvAvKiaLF:web3.foundation"
+  userId: "@bot:server.org"
+  storageDir: data/local-storage    # default: data/local-storage
+  
+  # Matrix SDK logging (optional, default: warn)
+  # Values: trace, debug, info, warn, error
   logging:
     level: warn
-httpServer:
-  port: 3001
-  host: 0.0.0.0
-monitoringApi:
-  baseUrl: http://localhost:3000
+  
+  # Authentication: choose ONE method
+  passwordAuth:
+    password: ***    # or use MATRIX_PASSWORD env var
+  
+  # OR use token auth (requires enableEncryption: false)
+  # tokenAuth:
+  #   accessToken: ***    # or use MATRIX_TOKEN env var
+  #   deviceId: device123
+  
+  # enableEncryption: false    # auto-inferred from auth type
+
+# Incident Service API (required)
+incidents:
+  url: http://localhost:3000
   endpoints:
     getIncidents: /incidents
     getIncident: /incidents/:id
     acknowledgeIncident: /incidents/:id/acknowledge
-environment: development
+    resolveIncidentManually: /incidents/:id/resolve-manual
+
+# HTTP Server (optional, default: 3000/0.0.0.0)
+# Exposes notification webhook and health endpoints
+server:
+  port: 3001
+  host: 0.0.0.0
+
+# Logging (optional, default: debug)
+# Values: error, warn, info, debug, verbose
 logging:
   level: debug
+
+# Monitoring configuration (optional)
+# Used for !check command to verify monitored accounts
+monitoringConfigs:
+  dir: ../config/examples    # default: ../config/examples

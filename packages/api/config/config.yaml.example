@@ -1,19 +1,34 @@
+# Incident Service Configuration
+
+# Environment (optional, default: development)
+# Values: development, production, test, staging
+environment: development
+
+# Database configuration (required)
 database:
   host: localhost
-  port: 5432
+  port: 5432              # default: 5432
   username: postgres
-  password: postgres
+  password: postgres      # or use POSTGRES_PASSWORD env var
   database: monitoring
-notificationApi:
+
+# HTTP Server (optional, default: 3000/0.0.0.0)
+server:
+  port: 3000
+  host: 0.0.0.0
+
+# Notification services (required)
+notifications:
   matrix:
-    url: http://localhost:3001/notifications
-monitoringConfigSources:
-  - name: dn
-    url: https://gitlab.w3f.tech/api/v4/projects/102/repository/files/dn.yaml/raw?ref=main
-    authToken: ***
-  - name: assets
-    url: https://gitlab.w3f.tech/api/v4/projects/102/repository/files/assets.yaml/raw?ref=main
-    authToken: ***
-environment: development
+    url: http://localhost:3001
+
+# Logging (optional, default: debug)
+# Values: error, warn, info, debug, verbose
 logging:
   level: debug
+
+# Cron schedules (optional, cron format)
+crons:
+  escalations: "*/5 * * * *"    # Check unacknowledged incidents
+  retries: "*/2 * * * *"         # Retry failed notifications
+  autoResolve: "0 */6 * * *"     # Auto-resolve orphaned incidents

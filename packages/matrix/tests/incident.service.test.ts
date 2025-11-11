@@ -20,13 +20,13 @@ describe('IncidentService', () => {
     };
 
     configServiceMock = {
-      getMonitoringApi: jest.fn().mockReturnValue({
-        baseUrl: 'http://api:3000',
+      getIncidentsApi: jest.fn().mockReturnValue({
+        url: 'http://api:3000',
         endpoints: {
           getIncidents: '/incidents',
           getIncident: '/incidents/:id',
           acknowledgeIncident: '/incidents/:id/acknowledge',
-          getAccounts: '/monitoring-config/accounts',
+          resolveIncidentManually: '/incidents/:id/resolve-manual',
         },
       }),
     };

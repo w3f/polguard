@@ -52,7 +52,7 @@ export class ConfigService {
 
   private validateConfig(config: unknown): AppConfig {
     const schema = Joi.object({
-      environment: Joi.string().valid('development', 'production', 'test', 'staging').required(),
+      environment: Joi.string().valid('development', 'production', 'test', 'staging').default('development'),
       database: Joi.object({
         host: Joi.string().required(),
         port: Joi.number().default(5432),
@@ -60,22 +60,21 @@ export class ConfigService {
         password: Joi.string().optional(),
         database: Joi.string().required(),
       }).required(),
-      httpServer: Joi.object({
+      server: Joi.object({
         port: Joi.number().default(3000),
         host: Joi.string().default('0.0.0.0'),
-      }).optional(),
-      notificationApi: Joi.object({
+      }).default({ port: 3000, host: '0.0.0.0' }),
+      notifications: Joi.object({
         matrix: Joi.object({
           url: Joi.string().uri().required(),
         }).required(),
       }).required(),
       logging: Joi.object({
-        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('info'),
-      }).optional(),
+        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('debug'),
+      }).default({ level: 'debug' }),
       crons: Joi.object({
         escalations: Joi.string().optional(),
         retries: Joi.string().optional(),
-        refreshConfig: Joi.string().optional(),
         autoResolve: Joi.string().optional(),
       }).optional(),
     });
@@ -93,15 +92,15 @@ export class ConfigService {
   }
 
   getServerConfig() {
-    return this.config.httpServer || { port: 3000, host: '0.0.0.0' };
+    return this.config.server;
   }
 
   getNotificationConfig() {
-    return this.config.notificationApi;
+    return this.config.notifications;
   }
 
   getLoggingLevel(): string {
-    return this.config.logging?.level || 'info';
+    return this.config.logging.level;
   }
 
   getEnvironment(): string {
@@ -122,22 +121,21 @@ interface AppConfig {
     password?: string;
     database: string;
   };
-  httpServer?: {
+  server: {
     port: number;
     host: string;
   };
-  notificationApi: {
+  notifications: {
     matrix: {
       url: string;
     };
   };
-  logging?: {
+  logging: {
     level: string;
   };
   crons?: {
     escalations?: string;
     retries?: string;
-    refreshConfig?: string;
     autoResolve?: string;
   };
 }
