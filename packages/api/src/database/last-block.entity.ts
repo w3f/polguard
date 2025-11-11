@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Chain } from '@w3f/monitoring-types';
+import { Chain } from '@w3f/monitoring-common';
 
 @Entity()
 export class LastBlock {

@@ -5,7 +5,7 @@ import { ConfigService } from '../src/service/config/config.service';
 import { Logger } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 import { AxiosResponse } from 'axios';
-import { MessengerType } from '@w3f/monitoring-types';
+import { MessengerType } from '@w3f/monitoring-common';
 
 describe('IncidentService', () => {
   let service: IncidentService;

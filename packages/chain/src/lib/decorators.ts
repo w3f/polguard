@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { Store, HandlerType, Chain } from '@w3f/monitoring-types';
+import { Store, HandlerType, Chain } from '@w3f/monitoring-common';
 
 /**
  * Handler Registration System

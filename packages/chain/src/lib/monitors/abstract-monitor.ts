@@ -12,7 +12,7 @@ import {
   CallHandlerParams,
   EventHandlerParams,
   StateHandlerParams,
-} from '@w3f/monitoring-types';
+} from '@w3f/monitoring-common';
 import { Formatter } from '../formatter';
 import { ConfigRegistry } from '../config-registry';
 

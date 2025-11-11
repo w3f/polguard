@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { Store, Chain } from '@w3f/monitoring-types';
+import { Store, Chain } from '@w3f/monitoring-common';
 import * as JSONbig from 'json-bigint';
 import * as fs from 'node:fs';
 import * as path from 'node:path';

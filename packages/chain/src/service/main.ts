@@ -2,8 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
-import { getLogLevels } from '@w3f/monitoring-types';
-import { buildOtelSdk } from '@w3f/monitoring-telemetry';
+import { getLogLevels } from '@w3f/monitoring-common';
+import { buildOtelSdk } from '@w3f/monitoring-common';
 import * as pkg from '../../package.json'; // "* as" import needed whilst we use commonJS
 
 async function bootstrap() {

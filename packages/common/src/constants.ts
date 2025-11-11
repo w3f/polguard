@@ -1,3 +1,5 @@
+export const TELEMETRY_PREFIX = 'foundation.web3.mp';
+
 export interface ChainProperties {
   chain: Chain,
   specName: string;

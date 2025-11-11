@@ -9,7 +9,7 @@ import {
   CreateIncidentDto,
   IncidentKey,
   BlockContext,
-} from '@w3f/monitoring-types';
+} from '@w3f/monitoring-common';
 
 /**
  * Build a unified idempotency key for both ongoing & one-time incidents.

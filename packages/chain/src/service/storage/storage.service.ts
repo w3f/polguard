@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { KeyValueStorageClient } from '@w3f/monitoring-types';
+import { KeyValueStorageClient } from '@w3f/monitoring-common';
 import { parse, stringify } from 'json-bigint';
 
 interface CacheEntry {

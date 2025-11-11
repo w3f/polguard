@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { Chain } from '@w3f/monitoring-types';
+import { Chain } from '@w3f/monitoring-common';
 import { DataSource } from 'typeorm';
 import { cleanupTestDatabase, createTestApp } from './test-utils';
 import { LastBlock } from '../../src/database/last-block.entity';

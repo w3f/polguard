@@ -51,8 +51,7 @@ graph LR
 | [**API**](packages/api/README.md)             | Incident & config control      | Incident CRUD API, monitoring config, last block handling |
 | [**Chain**](packages/chain/README.md)         | Blockchain monitor             | Balance changes, transfers, identity, voting and more     |
 | [**Matrix**](packages/matrix/README.md)       | Notifications & bot            | Deliver/ack incidents via Matrix rooms, bot commands      |
-| [**Types**](packages/types/README.md)         | Shared types                   | Core interfaces, constants, enums                         |
-| [**Telemetry**](packages/telemetry/README.md) | Shared telemetry configuration | Initializes OpenTelemetry with auto-instrumentation       |
+| [**Common**](packages/common/README.md)       | Shared utilities               | Types, constants, utilities, telemetry configuration      |
 | [**Config**](packages/config/README.md)       | YAML config & validation       | Load/validate monitoring rules                            |
 
 ## Installation & Setup
@@ -107,8 +106,7 @@ yarn test:integration
 - [**Matrix Service**](packages/matrix/README.md) - Notifications & bot service
 
 ### Supporting Packages
-- [**Types Package**](packages/types/README.md) - Shared interfaces and types
-- [**Telemetry Package**](packages/telemetry/README.md) - Shared telemetry configuration
+- [**Common Package**](packages/common/README.md) - Shared types, constants, utilities and telemetry
 - [**Config Package**](packages/config/README.md) - YAML monitoring config & validation
 
 ### Configuration & Monitoring

@@ -3,7 +3,7 @@
 This project contains both public and private packages:
 
 **Public packages**:
-- `@w3f/monitoring-types`: Common types, interfaces, and constants
+- `@w3f/monitoring-common`: Common types, interfaces, constants and utilities
 - `@w3f/monitoring-config`: Configuration processing and validation
 
 **Private packages**:

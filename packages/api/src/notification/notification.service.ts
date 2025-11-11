@@ -2,7 +2,7 @@ import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, Not, IsNull } from 'typeorm';
-import { MessengerType, NotificationType, MESSENGER_STYLE_MAP, MessagePayload } from '@w3f/monitoring-types';
+import { MessengerType, NotificationType, MESSENGER_STYLE_MAP, MessagePayload } from '@w3f/monitoring-common';
 import { Incident } from '../database/incident.entity';
 import { Notification } from '../database/notification.entity';
 import { MessageRenderer } from './message-renderer';

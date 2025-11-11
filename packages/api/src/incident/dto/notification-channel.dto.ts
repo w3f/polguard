@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsEnum, IsNumber, IsOptional } from 'class-validator';
-import { MessengerType } from '@w3f/monitoring-types';
+import { MessengerType } from '@w3f/monitoring-common';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class NotificationChannelDto {

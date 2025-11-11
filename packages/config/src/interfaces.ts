@@ -1,4 +1,4 @@
-import { Chain, MonitorType, NotificationSettings } from '@w3f/monitoring-types';
+import { Chain, MonitorType, NotificationSettings } from '@w3f/monitoring-common';
 
 export interface RawMonitoringGroup {
   id: string;

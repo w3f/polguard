@@ -1,6 +1,6 @@
 import { IsEnum, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Chain } from '@w3f/monitoring-types';
+import { Chain } from '@w3f/monitoring-common';
 
 export class SetLastBlockDto {
   @ApiProperty({ description: 'Blockchain network', enum: Chain })

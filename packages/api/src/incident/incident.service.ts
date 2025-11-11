@@ -5,7 +5,7 @@ import { Incident } from '../database/incident.entity';
 import { Notification } from '../database/notification.entity';
 import { CreateIncidentDto, GetIncidentsDto, ResolveIncidentByChainDto, ResolveIncidentManuallyDto } from './dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType, MessengerType, ResolutionType } from '@w3f/monitoring-types';
+import { NotificationType, MessengerType, ResolutionType } from '@w3f/monitoring-common';
 import { LastBlockService } from '../last-block/last-block.service';
 
 @Injectable()

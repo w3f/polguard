@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '../config/config.service';
 import { firstValueFrom } from 'rxjs';
-import { MessengerType } from '@w3f/monitoring-types';
+import { MessengerType } from '@w3f/monitoring-common';
 
 @Injectable()
 export class IncidentService implements IncidentServiceInterface {

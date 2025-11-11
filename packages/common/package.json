@@ -1,0 +1,42 @@
+{
+  "name": "@w3f/monitoring-common",
+  "version": "0.2.0",
+  "description": "Common types, interfaces, constants and utilities for W3F monitoring services including chain watcher, matrix notifications and configuration",
+  "author": "W3F SecOps Team <devops@web3.foundation>",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "clean": "yarn dlx rimraf ./dist ./node_modules",
+    "test": "echo \"No tests required for common package\" && exit 0"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.62.1",
+    "@opentelemetry/exporter-prometheus": "^0.203.0",
+    "@opentelemetry/resources": "^2.0.1",
+    "@opentelemetry/sdk-metrics": "^2.0.1",
+    "@opentelemetry/sdk-node": "^0.203.0",
+    "@opentelemetry/sdk-trace-node": "^2.0.1",
+    "@opentelemetry/semantic-conventions": "^1.29.0",
+    "@polkadot/api-augment": "^16.4.8",
+    "@polkadot/types": "^16.4.8"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.3"
+  }
+}

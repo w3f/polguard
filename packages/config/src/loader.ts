@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
-import { Chain, Logger, MessengerType, MonitoringGroup } from '@w3f/monitoring-types';
+import { Chain, Logger, MessengerType, MonitoringGroup } from '@w3f/monitoring-common';
 import { ConfigProcessor } from './config-processor';
 
 type MonitoringSnapshot = {

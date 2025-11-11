@@ -1,4 +1,4 @@
-import { MessagePayload, NotificationType, Style } from '@w3f/monitoring-types';
+import { MessagePayload, NotificationType, Style } from '@w3f/monitoring-common';
 
 type Renderer = {
   heading: (icon: string, id: string, title: string, ack: boolean, linkFmt: (s: string) => string) => string;

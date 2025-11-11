@@ -14,7 +14,7 @@ import {
   ChainApiClient,
   ChainTelemetryClient,
   MonitoringConfigClient,
-} from '@w3f/monitoring-types';
+} from '@w3f/monitoring-common';
 import {
   IdentityMonitor,
   BalancesMonitor,

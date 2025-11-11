@@ -8,7 +8,7 @@ import {
   EventHandlerParams,
   MonitorType,
   Chain,
-} from '@w3f/monitoring-types';
+} from '@w3f/monitoring-common';
 import { AbstractMonitor } from './abstract-monitor';
 
 /**

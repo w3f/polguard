@@ -5,10 +5,10 @@ import type { Option, Vec } from '@polkadot/types-codec';
 import type { Codec } from '@polkadot/types-codec/types';
 import type { H160 } from '@polkadot/types/interfaces';
 import type { PalletAssetsAssetAccount } from '@polkadot/types/lookup';
-import { CHAIN_TOKENS, Chain, TokenBalances } from '@w3f/monitoring-types';
+import { CHAIN_TOKENS, Chain, TokenBalances } from '@w3f/monitoring-common';
 import { AccountInfo } from '@polkadot/types/interfaces/system';
 
-import { ChainDataProvider, Store, IdentityInfo, Logger } from '@w3f/monitoring-types';
+import { ChainDataProvider, Store, IdentityInfo, Logger } from '@w3f/monitoring-common';
 import { createCachedQueryDecorator } from './decorators';
 
 /**

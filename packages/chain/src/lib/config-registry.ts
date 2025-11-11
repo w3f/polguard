@@ -7,7 +7,7 @@ import {
   MonitorSettings,
   MonitorType,
   AssetsSettings,
-} from '@w3f/monitoring-types';
+} from '@w3f/monitoring-common';
 
 type AccountConfig<T extends MonitorType> = {
   account: AccountSettings<T>;

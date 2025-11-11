@@ -2,7 +2,7 @@ import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LastBlock } from '../database/last-block.entity';
-import { Chain } from '@w3f/monitoring-types';
+import { Chain } from '@w3f/monitoring-common';
 
 @Injectable()
 export class LastBlockService {

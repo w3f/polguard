@@ -4,8 +4,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
 import * as JSONbig from 'json-bigint';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { getLogLevels } from '@w3f/monitoring-types';
-import { buildOtelSdk } from '@w3f/monitoring-telemetry';
+import { getLogLevels, buildOtelSdk } from '@w3f/monitoring-common';
 import * as pkg from '../package.json'; // "* as" import needed whilst we use commonJS
 
 async function bootstrap() {

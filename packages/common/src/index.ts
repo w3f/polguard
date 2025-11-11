@@ -25,3 +25,4 @@ export * from './constants';
 export * from './data-provider';
 export * from './logging';
 export * from './notification';
+export * from './telemetry';

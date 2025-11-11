@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { metrics, Meter, Gauge } from '@opentelemetry/api';
-import { TELEMETRY_PREFIX } from '@w3f/monitoring-telemetry';
-import { ChainTelemetryClient, MonitoringGroup } from '@w3f/monitoring-types';
+import { TELEMETRY_PREFIX } from '@w3f/monitoring-common';
+import { ChainTelemetryClient, MonitoringGroup } from '@w3f/monitoring-common';
 
 @Injectable()
 export class ChainTelemetryService implements ChainTelemetryClient {

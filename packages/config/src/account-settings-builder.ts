@@ -1,4 +1,4 @@
-import { MonitorType, MonitorConfig, ChainProperties, MonitorTypeSettings, CHAIN_TOKENS } from '@w3f/monitoring-types';
+import { MonitorType, MonitorConfig, ChainProperties, MonitorTypeSettings, CHAIN_TOKENS } from '@w3f/monitoring-common';
 import { monitorSchemas, extractFieldsFromSchema } from './config-validator';
 
 /**

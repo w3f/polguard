@@ -5,7 +5,7 @@ import {
   BalancesHandlerType as H,
   EventHandlerParams,
   CallHandlerParams,
-} from '@w3f/monitoring-types';
+} from '@w3f/monitoring-common';
 import { Call, Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 

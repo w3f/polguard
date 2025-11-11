@@ -1,6 +1,6 @@
 import { MatrixClient } from './matrix-client';
 import { MatrixConfig, IncidentServiceInterface, QueryFilters } from './interfaces';
-import { Logger, MessengerType, NotificationType, Chain } from '@w3f/monitoring-types';
+import { Logger, MessengerType, NotificationType, Chain } from '@w3f/monitoring-common';
 import { MatrixEvent } from 'matrix-js-sdk';
 import { getGroupsForChannel } from '@w3f/monitoring-config';
 
