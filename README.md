@@ -2,59 +2,150 @@
 
 # Monitoring Platform
 
-The Monitoring Platform provides real-time monitoring of Polkadot, Kusama, and parachains, mostly for security-related events. It is built as a modular system of microservices, including Chain, API, and Matrix services, with distributed configuration across multiple sources and centralized incident management.
+The Monitoring Platform provides real-time monitoring of Polkadot, Kusama, and parachains, tracking blockchain activities such as balance changes, governance events, identity updates, and more. Built with a modular architecture, it can run as a lightweight standalone service or as a complete platform with incident management and notifications.
 
-## Architecture
+## Quick Start
+
+```bash
+yarn start:chain
+```
+
+- Zero configuration needed
+- Monitors Polkadot Asset Hub by default
+- Starts from the recent block
+- Uses example [monitoring configs](packages/config/CONFIG_GUIDE.md) from `packages/config/examples/`
+
+## Key Features
+
+- **One-Time Incidents**: Generated from blockchain events and extrinsic calls when specific conditions are detected (e.g., transfer occurs)
+- **Ongoing Incidents**: Continuously monitor conditions and can transition between firing and resolved states (e.g., balance drops below threshold and later recovers)
+- **Acknowledgement**: Team members can acknowledge incidents via bot interface
+- **Escalation**: Automatically escalate unacknowledged incidents to additional notification channels after a configurable timeout
+
+## Deployment Modes
+
+### Standalone Mode
+
+_Perfect for trying out the platform, integrating with external systems via webhooks, or simple deployments_
 
 ```mermaid
 graph LR
-    %% Core Services
-    subgraph Services
-        subgraph "Chain services"
-            Chain1["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain service</a> 1<br>Polkadot"]:::service
-            Chain2["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain service</a> N<br>AssetHub"]:::service
-        end
-        Incident["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/incident/README.md' title='Incident Service Documentation'>Incident service</a><br>Incident & config management"]:::service
-        Matrix["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/matrix/README.md' title='Matrix Service Documentation'>Matrix service</a><br>Bot & notifications"]:::service
+    %% Chain Service
+    Chain["<a href='packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a>"]:::service
+    
+    %% Blockchain
+    Blockchain[("Blockchain<br>(Polkadot, Kusama,<br>Parachains)")]:::blockchain
+    
+    %% Storage Options
+    subgraph Storage ["Store (Last Block, Incident State & Cache)"]
+        InMemory["In-Memory<br>(ephemeral)"]:::storage
+        File["File-Based<br>(persistent)"]:::storage
+        ServiceStore["Service Mode<br>(for Platform)"]:::notused
     end
     
-    %% External Components
-    Postgres[(PostgreSQL<br><br>)]:::database
-    
-    subgraph "Distributed configuration"
-        GitLab1["GitLab repo 1<br><a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>config.yaml</a>"]:::config
-        GitLab2["GitLab repo N<br><a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>config.yaml</a>"]:::config
+    %% Incident Reporters
+    subgraph Reporters ["Incident Reporters"]
+        Stdout["Stdout<br>(logs)"]:::reporter
+        Webhook["Webhook<br>(HTTP endpoint)"]:::reporter
+        ServiceReporter["Service Mode<br>(for Platform)"]:::notused
     end
     
-    Room((Matrix Room)):::external
+    %% Monitoring Config
+    Config["<a href='packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
     
-    %% Connections with simplified labels
-    Chain1 & Chain2 -->|Creates/resolves<br>incidents| Incident
-    Chain1 & Chain2 -.->|Gets config,<br>last block| Incident
-    Incident -->|Sends notifications| Matrix
-    Matrix -->|Gets/acks incidents| Incident
-    Matrix <-->|Two-way communication| Room
-    Incident -.->|Fetches configs| GitLab1 & GitLab2
-    Incident --> Postgres
+    %% Connections
+    Chain -->|"Monitors events,<br>extrinsics, chain state"| Blockchain
+    Chain -.->|"Reads rules"| Config
+    Chain -->|"Reports incidents"| Reporters
+    Chain -->|"Persists data"| Storage
     
     %% Styling
-    classDef service fill:#FFF2CC,stroke:#D6B656,stroke-width:1px
-    classDef database fill:#D4E8D4,stroke:#82B366,stroke-width:1px
-    classDef config fill:#DAE8FC,stroke:#6C8EBF,stroke-width:1px
-    classDef external fill:#F5F5F5,stroke:#666666,stroke-width:1px
+    classDef service fill:#FFF2CC,stroke:#D6B656,stroke-width:2px
+    classDef blockchain fill:#E1D5E7,stroke:#9673A6,stroke-width:2px
+    classDef storage fill:#D4E8D4,stroke:#82B366,stroke-width:1px
+    classDef reporter fill:#DAE8FC,stroke:#6C8EBF,stroke-width:1px
+    classDef config fill:#F8CECC,stroke:#B85450,stroke-width:1px
+    classDef notused fill:#F5F5F5,stroke:#999999,stroke-width:1px,stroke-dasharray: 5 5
 ```
 
-## Packages
+The Chain service runs independently and can:
+- Monitor any Polkadot SDK-based blockchain
+- Report incidents to stdout or webhooks
+- Store last block and cache data in-memory or as local files
 
-| Package                                       | Role                           | Key features                                              |
-|-----------------------------------------------|--------------------------------|-----------------------------------------------------------|
-| [**Incident**](packages/incident/README.md)   | Incident & config control      | Incident CRUD API, monitoring config, last block handling |
-| [**Chain**](packages/chain/README.md)         | Blockchain monitor             | Balance changes, transfers, identity, voting and more     |
-| [**Matrix**](packages/matrix/README.md)       | Notifications & bot            | Deliver/ack incidents via Matrix rooms, bot commands      |
-| [**Common**](packages/common/README.md)       | Shared utilities               | Types, constants, utilities, telemetry configuration      |
-| [**Config**](packages/config/README.md)       | YAML config & validation       | Load/validate monitoring rules                            |
+**Great for:** Quick testing, webhook integrations, lightweight deployments
 
-## Installation & Setup
+### Platform Mode
+
+_Complete incident management with database persistence and notifications_
+
+```mermaid
+graph LR
+    %% External Components
+    Blockchain[("Blockchain<br>(Polkadot, Kusama,<br>Parachains)")]:::blockchain
+    Postgres[(PostgreSQL)]:::database
+    MatrixRoom((Matrix Room)):::external
+    Config["<a href='packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
+    
+    %% Core Services
+    subgraph Services ["Monitoring Platform"]
+        Incident["<a href='packages/incident/README.md' title='Incident Service Documentation'>Incident Service</a><br>Incident & state management"]:::service
+        Matrix["<a href='packages/matrix/README.md' title='Matrix Service Documentation'>Matrix Service</a><br>Notifications & bot"]:::service
+        Chain["<a href='packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a><br>Blockchain monitor"]:::service
+    end
+    
+    %% Connections
+    Chain -->|"Monitors events,<br>extrinsics, chain state"| Blockchain
+    Chain -.->|"Reads rules"| Config
+    Chain -->|"Creates/resolves<br>incidents"| Incident
+    Incident -->|"Sends<br>notifications"| Matrix
+    Matrix <-->|"Two-way<br>communication"| MatrixRoom
+    Incident -->|"Persists data"| Postgres
+    
+    %% Styling
+    classDef service fill:#FFF2CC,stroke:#D6B656,stroke-width:2px
+    classDef blockchain fill:#E1D5E7,stroke:#9673A6,stroke-width:2px
+    classDef database fill:#D4E8D4,stroke:#82B366,stroke-width:2px
+    classDef external fill:#F5F5F5,stroke:#666666,stroke-width:2px
+    classDef config fill:#F8CECC,stroke:#B85450,stroke-width:1px
+```
+
+All three services working together:
+- **Incident service**: Manages incident lifecycle and state in PostgreSQL
+- **Matrix service**: Delivers notifications and provides bot interface
+- **Chain service**: Monitors blockchains and reports incidents
+
+**Great for:** Production use, team notifications, incident tracking
+
+## Getting Started
+
+### Prerequisites
+
+Node.js 20+, Yarn 4.6+
+
+### Monitoring Configuration
+
+Both modes use the same approach for monitoring configuration. By default, the Chain service uses example configs from `packages/config/examples/`. To create your own monitoring rules:
+
+1. Create YAML config files following the [Config Guide](packages/config/CONFIG_GUIDE.md)
+2. Place them in a directory of your choice
+3. Update the `monitoringConfigs.dir` setting in `packages/chain/config/config.yaml` to point to your directory
+
+See [Monitors & Handlers](packages/config/MONITORS.md) for available monitoring capabilities.
+
+### Standalone Mode
+
+```bash
+git clone https://github.com/w3f/monitoring-platform.git
+cd monitoring-platform
+yarn install
+yarn build
+yarn start:chain
+```
+
+For custom configuration options (RPC endpoints, storage, incident reporters), see the [Chain service documentation](packages/chain/README.md).
+
+### Platform Mode
 
 **Prerequisites:** Node.js 20+, Yarn 4.6+, PostgreSQL
 
@@ -63,45 +154,36 @@ git clone https://github.com/w3f/monitoring-platform.git
 cd monitoring-platform
 yarn install
 yarn build
+
+# Start services in order
+yarn start:incident
+yarn start:matrix
+yarn start:chain
 ```
 
-**Development:**
-```bash
-yarn start:incident:dev
-yarn start:chain:dev
-yarn start:matrix:dev
-```
+**Setup requirements:**
+- PostgreSQL database for the Incident service
+- Service configuration files for each service (see examples in `packages/*/config/`)
+- Matrix server credentials for the Matrix service
 
-## Configuration
-
-- **Service config:** Per-package `config/config.yaml` files (connections, runtime params)
-- **Monitoring rules:** YAML files defining chains, accounts, thresholds; see [Config Guide](packages/config/CONFIG_GUIDE.md)
-
-## Deployment
-
-- **CI/CD:** CircleCI builds Docker images & Helm charts
-- **Helm charts:** Published to W3F Helm repo
-- **ArgoCD:** Deploys apps `monitoring-stage`, `monitoring-prod`, `monitoring-oncall`
-- **Kubernetes:** Each environment runs in its own namespace
-
-See [Deployment Guide](deployment/README.md) for details.
+For detailed configuration options, see individual service documentation below.
 
 ## Testing
 
 ```bash
-# Unit tests (per-package tests/ directory)
+# Unit tests
 yarn test
 
-# Integration tests (per-package tests/integration/ directory)  
+# Integration tests
 yarn test:integration
 ```
 
-**End-to-End tests:** Full flow (Chain → API → Matrix); see [E2E Tests](e2e/README.md)
+**End-to-End tests:** Full flow testing; see [E2E Tests](e2e/README.md)
 
 ## Documentation
 
 ### Core Services
-- [**Incident Service**](packages/incident/README.md) - REST API for incident & config management
+- [**Incident Service**](packages/incident/README.md) - REST API for incident & last block management
 - [**Chain Service**](packages/chain/README.md) - Blockchain monitoring service
 - [**Matrix Service**](packages/matrix/README.md) - Notifications & bot service
 

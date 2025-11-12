@@ -1,124 +1,102 @@
 # @w3f/monitoring-chain
 
-The Chain service is responsible for monitoring blockchain activities and generating or resolving incidents based on detected conditions. It processes blockchain events, extrinsic calls, and state changes to track various on-chain activities across the Polkadot ecosystem.
+The Chain service monitors blockchain activities and generates or resolves incidents based on detected conditions. It processes blockchain events, extrinsic calls, and state changes across Polkadot ecosystem chains.
 
 ## Key Features
 
-- **Block Processing**: Processes blockchain blocks sequentially to ensure ordered analysis
-- **Event Monitoring**: Tracks and analyzes blockchain events for anomalies and conditions
-- **Extrinsic Monitoring**: Processes extrinsics including nested calls
-- **State Monitoring**: Tracks on-chain state changes
-- **Multi-Monitor Architecture**: Supports specialized monitors for different blockchain aspects
-- **Configuration Refresh**: Periodically updates monitoring configuration
-- **Block Progress Tracking**: Updates last processed block information in the Incident service
-- **Incident Generation**: Creates and resolves incidents by sending calls to the Incident service. Supports two types of incidents:
-  - **One-time incidents**: Generated from events and calls when specific conditions are detected
-  - **Firing/Resolved incidents**: Generated from state handlers that continuously monitor conditions and can transition between firing and resolved states
+- **One-Time & Ongoing Incidents**: Supports both event-based incidents and continuous state monitoring with automatic resolution
+- **Multi-Chain Support**: Monitor any Polkadot SDK-based blockchain
+- **Flexible Architecture**: Configurable store (in-memory, file, service) and incident reporters (stdout, webhook, service)
+- **Comprehensive Monitoring**: Tracks balances, staking, governance, identity, assets, and XCM transfers
 
-### Monitors
+See [Monitors & Handlers Reference](../config/MONITORS.md) for complete list of monitoring capabilities.
 
-The Chain service includes several specialized monitors:
-
-- **Staking Monitor**: Tracks validator activities, commission rates, and staking parameters
-- **Balances Monitor**: Monitors account balances and transfers
-- **Assets Monitor**: Monitors asset/token balances and transfers
-- **Identity Monitor**: Tracks on-chain identity information
-- **Governance Monitor**: Monitors governance activities like referenda and voting
-- **XCM Monitor**: Tracks cross-chain asset transfers
-
-For a complete reference of all monitors and handlers, see the [Monitors & Handlers Reference](../config/MONITORS.md).
-
-## Simplified Architecture Overview
+## Architecture
 
 ```mermaid
-graph TD
-    NestService[NestJS Microservice]
-    ChainWatcher[Chain Watcher]
-    AbstractMonitor[Abstract Monitor]
-    ConcreteMonitors[Concrete Monitors]
-    IncidentHandler[Incident Handler]
-    IncidentService[Incident Service]
+graph TB
+    %% External
+    Blockchain[("Blockchain<br>(RPC)")]:::blockchain
+    Config["<a href='../config/CONFIG_GUIDE.md'>Monitoring Config</a><br>(YAML)"]:::config
     
-    NestService --> ChainWatcher
-    ChainWatcher --> AbstractMonitor
-    AbstractMonitor --> ConcreteMonitors
-    ConcreteMonitors --> IncidentHandler
-    IncidentHandler -- "Create/Resolve incident" --> IncidentService
+    %% Core Processing
+    subgraph Processing ["Block Processing"]
+        Watcher["Watcher<br>(Subscribe & Process Blocks)"]:::component
+        DataProvider["Data Provider<br>(Cached Chain Queries)"]:::component
+        Monitors["Monitors<br>(Balances, Staking, Governance,<br>Identity, Assets, XCM)"]:::component
+    end
+    
+    %% Incident Management
+    IncidentHandler["Incident Handler<br>(Incident Lifecycle)"]:::component
+    
+    %% Abstractions
+    subgraph Store ["Store"]
+        StoreImpl["In-Memory / File / Service"]:::impl
+    end
+    
+    subgraph Reporter ["Reporter"]
+        ReporterImpl["Stdout / Webhook / Service"]:::impl
+    end
+    
+    %% Connections
+    Blockchain -->|"Subscribes to<br>finalized blocks"| Watcher
+    Config -.->|"Loads rules"| Watcher
+    Watcher -->|"Distributes<br>events/calls/state"| Monitors
+    Monitors -->|"Query chain state"| DataProvider
+    DataProvider -->|"Cache queries"| Store
+    Monitors -->|"Create/resolve<br>incidents"| IncidentHandler
+    IncidentHandler -->|"Track incident state"| Store
+    IncidentHandler -->|"Send incidents"| Reporter
+    
+    %% Styling
+    classDef blockchain fill:#E1D5E7,stroke:#9673A6,stroke-width:2px
+    classDef component fill:#FFF2CC,stroke:#D6B656,stroke-width:2px
+    classDef impl fill:#DAE8FC,stroke:#6C8EBF,stroke-width:1px
+    classDef config fill:#F8CECC,stroke:#B85450,stroke-width:1px
 ```
 
-## REST API Endpoints
+**Key Components:**
+- **Watcher**: Subscribes to blocks, processes them sequentially, and distributes events/calls/state to monitors
+- **Monitors**: Analyze blockchain data and decide when to create or resolve incidents
+- **Data Provider**: Provides cached access to chain state queries
+- **Incident Handler**: Manages incident lifecycle (creation/resolution) and tracks ongoing incident state
+- **Store**: Persists last block, incident state, and caches chain queries
+- **Reporter**: Outputs incidents to configured destination
 
-### Health
+## API Endpoints
 
-- `GET /health`: Health check endpoint that returns a 200 status code when the service is healthy
+- `GET /health` - Health check
 
 ## Configuration
 
-The Chain service requires a configuration file to specify its behavior. For an example configuration, see the [example config file](./config/config.yaml.example).
+The service is configured via `config/config.yaml`. Key configuration areas:
+
+- **Chain**: RPC URL, starting block, chain name (e.g., AssetHubPolkadot)
+- **Store**: Type (inMemory/file/service) and connection details
+- **Incident Reporter**: Type (stdout/webhook/service) and connection details
+- **Monitoring Configs**: Directory path for YAML monitoring rules
+
+See [config.yaml.example](./config/config.yaml.example) for complete configuration options.
 
 ## Telemetry
 
-This service exposes additional Prometheus-compatible metrics on a seperate port/endpoint combination.
-The endpoint used is:
+Exposes Prometheus metrics on `localhost:9464/metrics`:
 
-```localhost:9464/metrics```
-
-In addition to metrics created by auto-instrumentation for Node.js, Nest.js, and the underlying fastify/express
-instance, we also expose the following custom metrics:
-
-- `latest-block-on-chain` -- the latest block on the chain, as reported by the RPC subscription to the chain node,
-- `last-block-processed` -- the last block that was fully processed,
-- `current-block-processing` -- the current block being processed,
-- `block-processing-time` -- the time it took to process the block (measured in ms),
-- `total-groups` -- the number of groups the service is monitoring,
-- `total-accounts` -- the number of accounts the service is monitoring,
-- `total-monitors` -- the number of monitors that are active.
-
-## Usage
-
-### Prerequisites
-
-- Node.js 20+
-- Yarn 4.6.0+
-- Access to a blockchain RPC node
-- Incident service (for monitoring configuration and incident management)
-
-### Running the Service
-
-```bash
-yarn install
-yarn build
-yarn start
-```
-
-### A Note Regarding Hostnames
-
-The telemetry generated by Open Telemetry (see above) assumes the hostname of the service to be unique among all running services.
-This includes other instances of the same service, when running in a high-availability (HA) setup.
-
-Kubernetes automatically assigns a unique hostname to every pod, so hostname uniqueness is handled automatically in Kubernetes environments.
+- `latest-block-on-chain`
+- `last-block-processed`
+- `current-block-processing`
+- `block-processing-time`
+- `total-groups`
+- `total-accounts`
+- `total-monitors`
 
 ## Development
 
 ```bash
+# Run in development mode
 yarn start:dev
+
+# Run tests
 yarn test
 yarn test:integration
 ```
-
-### Project Structure
-
-- `src/lib/`: Core monitoring logic
-  - `monitors/`: Specialized monitors for different blockchain aspects
-  - `watcher.ts`: Main block processing and monitor coordination
-  - `incident-handler.ts`: Incident creation and resolution
-  - `data-provider.ts`: Blockchain data access
-  - `account-registry.ts`: Account lookup and filtering
-  - `formatter.ts`: Message formatting utilities
-  - `decorators.ts`: Decorators for handler registration
-- `src/service/`: Service implementation
-  - `config/`: Configuration handling
-  - `health/`: Health check endpoints
-  - `incident/`: Incident publishing
-  - `metrics/`: Prometheus metrics
-  - `watcher/`: Watcher service implementation
