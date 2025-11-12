@@ -7,6 +7,8 @@ The Monitoring Platform provides real-time monitoring of Polkadot, Kusama, and p
 ## Quick Start
 
 ```bash
+yarn install
+yarn build
 yarn start:chain
 ```
 
@@ -31,7 +33,7 @@ _Perfect for trying out the platform, integrating with external systems via webh
 ```mermaid
 graph LR
     %% Chain Service
-    Chain["<a href='packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a>"]:::service
+    Chain["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a>"]:::service
     
     %% Blockchain
     Blockchain[("Blockchain<br>(Polkadot, Kusama,<br>Parachains)")]:::blockchain
@@ -51,7 +53,7 @@ graph LR
     end
     
     %% Monitoring Config
-    Config["<a href='packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
+    Config["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
     
     %% Connections
     Chain -->|"Monitors events,<br>extrinsics, chain state"| Blockchain
@@ -68,13 +70,6 @@ graph LR
     classDef notused fill:#F5F5F5,stroke:#999999,stroke-width:1px,stroke-dasharray: 5 5
 ```
 
-The Chain service runs independently and can:
-- Monitor any Polkadot SDK-based blockchain
-- Report incidents to stdout or webhooks
-- Store last block and cache data in-memory or as local files
-
-**Great for:** Quick testing, webhook integrations, lightweight deployments
-
 ### Platform Mode
 
 _Complete incident management with database persistence and notifications_
@@ -85,13 +80,13 @@ graph LR
     Blockchain[("Blockchain<br>(Polkadot, Kusama,<br>Parachains)")]:::blockchain
     Postgres[(PostgreSQL)]:::database
     MatrixRoom((Matrix Room)):::external
-    Config["<a href='packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
+    Config["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
     
     %% Core Services
     subgraph Services ["Monitoring Platform"]
-        Incident["<a href='packages/incident/README.md' title='Incident Service Documentation'>Incident Service</a><br>Incident & state management"]:::service
-        Matrix["<a href='packages/matrix/README.md' title='Matrix Service Documentation'>Matrix Service</a><br>Notifications & bot"]:::service
-        Chain["<a href='packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a><br>Blockchain monitor"]:::service
+        Incident["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/incident/README.md' title='Incident Service Documentation'>Incident Service</a><br>Incident & state management"]:::service
+        Matrix["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/matrix/README.md' title='Matrix Service Documentation'>Matrix Service</a><br>Notifications & bot"]:::service
+        Chain["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a><br>Blockchain monitor"]:::service
     end
     
     %% Connections
@@ -110,30 +105,20 @@ graph LR
     classDef config fill:#F8CECC,stroke:#B85450,stroke-width:1px
 ```
 
-All three services working together:
-- **Incident service**: Manages incident lifecycle and state in PostgreSQL
-- **Matrix service**: Delivers notifications and provides bot interface
-- **Chain service**: Monitors blockchains and reports incidents
-
-**Great for:** Production use, team notifications, incident tracking
-
 ## Getting Started
-
-### Prerequisites
-
-Node.js 20+, Yarn 4.6+
 
 ### Monitoring Configuration
 
-Both modes use the same approach for monitoring configuration. By default, the Chain service uses example configs from `packages/config/examples/`. To create your own monitoring rules:
+By default, the Chain service uses example configs from `packages/config/examples/`. To create your own monitoring rules:
 
-1. Create YAML config files following the [Config Guide](packages/config/CONFIG_GUIDE.md)
-2. Place them in a directory of your choice
-3. Update the `monitoringConfigs.dir` setting in `packages/chain/config/config.yaml` to point to your directory
+- Create YAML config files following the [Config Guide](packages/config/CONFIG_GUIDE.md)
+- Update the `monitoringConfigs.dir` setting in `packages/chain/config/config.yaml` to point to your directory
 
 See [Monitors & Handlers](packages/config/MONITORS.md) for available monitoring capabilities.
 
 ### Standalone Mode
+
+**Prerequisites:** Node.js 20+, Yarn 4.6+
 
 ```bash
 git clone https://github.com/w3f/monitoring-platform.git
@@ -168,23 +153,11 @@ yarn start:chain
 
 For detailed configuration options, see individual service documentation below.
 
-## Testing
-
-```bash
-# Unit tests
-yarn test
-
-# Integration tests
-yarn test:integration
-```
-
-**End-to-End tests:** Full flow testing; see [E2E Tests](e2e/README.md)
-
 ## Documentation
 
 ### Core Services
-- [**Incident Service**](packages/incident/README.md) - REST API for incident & last block management
 - [**Chain Service**](packages/chain/README.md) - Blockchain monitoring service
+- [**Incident Service**](packages/incident/README.md) - REST API for incident & last block management
 - [**Matrix Service**](packages/matrix/README.md) - Notifications & bot service
 
 ### Supporting Packages

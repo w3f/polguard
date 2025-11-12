@@ -13,6 +13,8 @@ For most services, we've intentionally split the NestJS implementation from the 
 - Clearer separation of concerns
 - Possibility to migrate from NestJS to other backend frameworks in the future
 
+The Chain service follows this pattern with `src/lib/` (core monitoring logic) and `src/service/` (NestJS implementations of Store/Reporter abstractions). The layers are loosely coupled through interfaces.
+
 ### Handler Registration System
 
 The chain monitoring system uses TypeScript decorators to register handler methods for chain events, calls, and state checks. This approach provides a clean, declarative API for defining handlers, but introduces some complexity in the initialization process:
@@ -34,34 +36,35 @@ This design decision prioritizes a simple interface for defining handlers over s
 
 Currently, notification handling logic exists in both the chain and Incident services. Ideally, only the Incident service should be responsible for the styling and formatting of notifications. This would simplify the chain service and maintain a consistent format across different notification consumers.
 
-### Runtime Environment
+### Polkadot Chain Libraries Support
 
-Long-term, we may consider moving from Node.js to Deno for the following reasons:
+The `lib/` layer is currently coupled with Polkadot.js throughout (API calls, types, event processing). Future work could abstract blockchain interactions to support multiple Polkadot chain libraries (dedot, papi, etc.) by introducing an adapter layer between `lib/` and blockchain SDKs.
+
+### NestJS and Module System
+
+We are not using all the features from NestJS; instead, we mostly use our own abstractions. Something simpler should work better, especially considering CommonJS limitations that restrict our ability to use modern ES modules and create compatibility issues with some dependencies.
+
+### Runtime Environment (Deno)
+
+Deno is only a consideration at this point, not a plan. If we were to explore it in the future, potential benefits could include:
 
 - Better security model
 - Native TypeScript support
 - Modern JavaScript features
 - Improved dependency management
 
-However, this would require some changes to the codebase and would need to address the NestJS compatibility issues.
+However, this would require significant changes to the codebase and would need to address framework compatibility.
 
 ### Matrix SDK Limitations
 
 We are currently stuck with matrix-js-sdk version 32 due to compatibility issues with newer versions that appear incompatible with CommonJS. After some attempts to resolve this, we decided to handle it later. This issue might be fixable but requires further investigation.
-
-### NestJS and Module System
-
-NestJS currently only supports CommonJS, which creates limitations:
-
-- Restricts our ability to use modern ES modules
-- Creates compatibility issues with some dependencies
 
 ### API Authorization
 
 As the platform evolves, we may need to implement proper API authorization for external clients that need to access the Incident service, such as:
 
 - Dashboards for incident visualization
-- Third-party services interested in monitoring configurations (ex. [payout claimer](https://github.com/w3f/polkadot-k8s-payouts), [telemetry exporter](https://github.com/w3f/telemetry-exporter))
+- Third-party services interested in monitoring configurations
 
 ### Database Migrations
 
