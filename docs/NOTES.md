@@ -32,7 +32,7 @@ This design decision prioritizes a simple interface for defining handlers over s
 
 ### Notification Formatting
 
-Currently, notification handling logic exists in both the chain and API services. Ideally, only the API service should be responsible for the styling and formatting of notifications. This would simplify the chain service and maintain a consistent format across different notification consumers.
+Currently, notification handling logic exists in both the chain and Incident services. Ideally, only the Incident service should be responsible for the styling and formatting of notifications. This would simplify the chain service and maintain a consistent format across different notification consumers.
 
 ### Runtime Environment
 
@@ -58,11 +58,11 @@ NestJS currently only supports CommonJS, which creates limitations:
 
 ### API Authorization
 
-As the platform evolves, we may need to implement proper API authorization for external clients that need to access the API service, such as:
+As the platform evolves, we may need to implement proper API authorization for external clients that need to access the Incident service, such as:
 
 - Dashboards for incident visualization
 - Third-party services interested in monitoring configurations (ex. [payout claimer](https://github.com/w3f/polkadot-k8s-payouts), [telemetry exporter](https://github.com/w3f/telemetry-exporter))
 
 ### Database Migrations
 
-We use `start:with-migrations` script in production with a single pod deployment. This approach runs migrations before starting the API service, which is simple but would have limitations if we scaled to multiple pods (race conditions, schema conflicts during updates). For now, this approach is sufficient for our needs.
+We use `start:with-migrations` script in production with a single pod deployment. This approach runs migrations before starting the Incident service, which is simple but would have limitations if we scaled to multiple pods (race conditions, schema conflicts during updates). For now, this approach is sufficient for our needs.

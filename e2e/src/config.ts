@@ -5,11 +5,9 @@ import yaml from 'js-yaml';
 
 export interface E2EConfig {
   timeoutSeconds?: number;
-  api: {
+  incident: {
     url: string;
-    incident: {
-      handlerType: string;
-    };
+    handlerType: string;
   };
   chain: {
     url: string;
@@ -65,11 +63,9 @@ export class ConfigService {
   private validateConfig(config: any): E2EConfig {
     const schema = Joi.object({
       timeoutSeconds: Joi.number().default(120),
-      api: Joi.object({
+      incident: Joi.object({
         url: Joi.string().required(),
-        incident: Joi.object({
-          handlerType: Joi.string().required(),
-        }).required(),
+        handlerType: Joi.string().required(),
       }).required(),
       chain: Joi.object({
         url: Joi.string().uri().required(),

@@ -5,5 +5,5 @@ The Common package provides shared types, interfaces, constants, utilities, and 
 This package is used by:
 - @w3f/monitoring-chain
 - @w3f/monitoring-matrix
-- @w3f/monitoring-api
+- @w3f/monitoring-incident
 - @w3f/monitoring-config

@@ -34,12 +34,12 @@ chainInitContainers:
         mountPath: /app/monitoring-configs
         readOnly: true
 
-# ---------------------------------------------------- api service -----------------------------------------------------
+# ---------------------------------------------------- incident service -----------------------------------------------------
 
 # for the default values.yaml file, all fields MUST be provided
-apiService:
+incidentService:
   replicas: 1
-  containerArgs: ["start:api"]
+  containerArgs: ["start:incident"]
   secrets: {} # OPTIONAL secrets map
   config: {}  # REQUIRED runtime configuration
   containerHttpPort: 3000
@@ -54,8 +54,8 @@ apiService:
       cpu: "800m"
       memory: "1024Mi"
 
-apiInitContainers:
-  - name: "wait-for-api"
+incidentInitContainers:
+  - name: "wait-for-postgresql"
     image: "busybox:1.28"
     command: [ 'sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;' ]
 
@@ -78,9 +78,9 @@ matrixService:
       - "ReadWriteOnce"
 
 matrixInitContainers:
-  - name: "wait-for-api"
+  - name: "wait-for-incident"
     image: "busybox:1.28"
-    command: [ 'sh', '-c', 'until nc -z api 80; do echo waiting for api; sleep 2; done;' ]
+    command: [ 'sh', '-c', 'until nc -z incident 80; do echo waiting for incident; sleep 2; done;' ]
   - name: "wait-for-monitoring-configs"
     image: "busybox:1.28"
     command: [ 'sh', '-c', 'until [ -f /app/monitoring-configs/current/.checksum ]; do echo waiting for monitoring configs; sleep 2; done;' ]

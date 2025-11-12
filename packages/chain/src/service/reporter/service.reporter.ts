@@ -9,7 +9,7 @@ import { lastValueFrom, timeout } from 'rxjs';
  *
  * Purpose:
  * - Managed production deployments with centralized incident management
- * - Persistent incident storage in PostgreSQL via API service
+ * - Persistent incident storage in PostgreSQL via Incident service
  * - Notification delivery through Matrix service
  */
 @Injectable()

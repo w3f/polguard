@@ -21,9 +21,9 @@ async function runE2ETest() {
     console.log('✅ Chain has processed the target block');
 
     // Wait for incident
-    console.log(`Waiting for incidents with handler type "${config.api.incident.handlerType}"...`);
-    await waitForIncident(config.api.incident.handlerType);
-    console.log(`✅ Found incidents with handler type "${config.api.incident.handlerType}"`);
+    console.log(`Waiting for incidents with handler type "${config.incident.handlerType}"...`);
+    await waitForIncident(config.incident.handlerType);
+    console.log(`✅ Found incidents with handler type "${config.incident.handlerType}"`);
 
     // Wait for Matrix notification
     console.log(`Checking Matrix notifications for message pattern "${config.matrix.messagePattern}"...`);
@@ -75,7 +75,7 @@ async function waitForChainBlock(targetBlock: number): Promise<void> {
 async function waitForIncident(handlerType: string): Promise<void> {
   while (true) {
     try {
-      const incidents: any[] = (await axios.get(`${config.api.url}/incidents`)).data;
+      const incidents: any[] = (await axios.get(`${config.incident.url}/incidents`)).data;
       if (incidents.some(incident => incident.handlerType === handlerType)) return;
       console.log(`Waiting for incidents with handler type "${handlerType}"...`);
     } catch (error) {

@@ -1,6 +1,6 @@
 # @w3f/monitoring-matrix
 
-The Matrix service is responsible for delivering incident notifications to Matrix rooms and providing a bot interface for incident management. It receives notification requests from the API service and sends them to the appropriate Matrix rooms.
+The Matrix service is responsible for delivering incident notifications to Matrix rooms and providing a bot interface for incident management. It receives notification requests from the Incident service and sends them to the appropriate Matrix rooms.
 
 ## Key Features
 
@@ -62,7 +62,7 @@ The endpoint used is:
 - Node.js 20+
 - Yarn 4.6.0+
 - Access to a Matrix homeserver
-- API service (for incident management)
+- Incident service (for incident management)
 
 ### Running the Service
 

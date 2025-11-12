@@ -21,8 +21,8 @@
     "start:chain": "yarn workspace @w3f/monitoring-chain start",
     "start:matrix:dev": "yarn workspace @w3f/monitoring-matrix start:dev",
     "start:matrix": "yarn workspace @w3f/monitoring-matrix start",
-    "start:api:dev": "yarn workspace @w3f/monitoring-api start:dev",
-    "start:api": "yarn workspace @w3f/monitoring-api start:with-migrations"
+    "start:incident:dev": "yarn workspace @w3f/monitoring-incident start:dev",
+    "start:incident": "yarn workspace @w3f/monitoring-incident start:with-migrations"
   },
   "engines": {
     "node": ">=20.0.0"

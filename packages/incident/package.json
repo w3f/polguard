@@ -1,5 +1,5 @@
 {
-  "name": "@w3f/monitoring-api",
+  "name": "@w3f/monitoring-incident",
   "version": "0.0.1",
   "description": "",
   "author": "W3F SecOps Team <devops@web3.foundation>",

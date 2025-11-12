@@ -26,13 +26,13 @@
     },
     "chainInitContainers": { "$ref": "#/definitions/initContainers" },
 
-    "apiService": {
+    "incidentService": {
       "allOf": [
         { "$ref": "#/definitions/svc" },
         { "required": ["config", "containerArgs"] }
       ]
     },
-    "apiInitContainers": { "$ref": "#/definitions/initContainers" },
+    "incidentInitContainers": { "$ref": "#/definitions/initContainers" },
 
     "matrixService": {
       "allOf": [
@@ -83,7 +83,7 @@
   "required": [],
   "definitions": {
     "svc": {
-      "$comment": "This object configures a single service. Either an api service, a matrix service, or a chain service for a single chain.",
+      "$comment": "This object configures a single service. Either an incident service, a matrix service, or a chain service for a single chain.",
       "type": "object",
       "properties": {
         "replicas": {

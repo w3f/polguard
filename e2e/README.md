@@ -18,7 +18,7 @@ e2e/
 The e2e tests follow this scenario:
 
 1. Wait for the Chain service to process a specific block number
-2. Check if the API service has created incidents with a specific handler type
+2. Check if the Incident service has created incidents with a specific handler type
 3. Verify that Matrix service sent notifications to the specific room with the expected message pattern
 
 ## Prerequisites
@@ -33,7 +33,7 @@ The e2e tests follow this scenario:
 The e2e tests are configured using the `e2e/configs/e2e.yaml` file. This file contains settings for:
 
 - Chain service: URL and target block number
-- API service: URL and incident handler type to check for
+- Incident service: URL and incident handler type to check for
 - Matrix service: Homeserver URL, room ID, and message pattern to look for
 
 ## Required Environment Variables
@@ -42,7 +42,7 @@ For CI and local testing, the following environment variables are required:
 
 ```bash
 export MATRIX_TOKEN="your-matrix-token"  # Required for Matrix authentication
-export GITLAB_TOKEN="your-gitlab-token"  # Required for API service
+export GITLAB_TOKEN="your-gitlab-token"  # Required for Incident service
 ```
 
 ## Running Tests Locally

@@ -37,10 +37,10 @@ spec:
 {{ tpl (toYaml .global.Values.chainInitContainers) . | indent 8 }}
       {{- end }}
       {{- end }}
-      {{- if eq .kind "api" }}
-      {{- if .global.Values.apiInitContainers }}
+      {{- if eq .kind "incident" }}
+      {{- if .global.Values.incidentInitContainers }}
       initContainers:
-{{ tpl (toYaml .global.Values.apiInitContainers) . | indent 8 }}
+{{ tpl (toYaml .global.Values.incidentInitContainers) . | indent 8 }}
       {{- end }}
       {{- end }}
       {{- if eq .kind "matrix" }}
@@ -82,7 +82,7 @@ spec:
 
           volumeMounts:
             - name: config
-              mountPath: {{ if eq .kind "chain" }}/app/packages/chain/config{{ else if eq .kind "api" }}/app/packages/api/config{{ else if eq .kind "matrix" }}/app/packages/matrix/config{{ end }}
+              mountPath: {{ if eq .kind "chain" }}/app/packages/chain/config{{ else if eq .kind "incident" }}/app/packages/incident/config{{ else if eq .kind "matrix" }}/app/packages/matrix/config{{ end }}
               readOnly: true
             {{- if eq .kind "matrix" }}
             - name: data

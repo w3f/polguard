@@ -16,7 +16,7 @@ interface CacheEntry {
  * Last block is stored with special key pattern: __last_block__:{chain}
  *
  * Suitable for:
- * - Standalone deployments without API service
+ * - Standalone deployments without Incident service
  * - Development/testing with persistence across restarts
  * - Small-scale production deployments
  *

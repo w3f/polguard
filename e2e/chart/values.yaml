@@ -25,14 +25,14 @@ monitoring:
         store:
           type: service
           service:
-            url: http://e2e-api:80
+            url: http://e2e-incident:80
             endpoints:
               getLastBlock: /last-block/:chain
               setLastBlock: /last-block
         incidentReporter:
           type: service
           service:
-            url: http://e2e-api:80
+            url: http://e2e-incident:80
             endpoints:
               createIncident: "/incidents"
               resolveIncident: "/incidents/:id/resolve"
@@ -43,7 +43,7 @@ monitoring:
       containerArgs: [ "start:chain" ]
   chainInitContainers: []
 
-  apiService:
+  incidentService:
     config:
       database:
         host: "postgresql"
@@ -60,8 +60,8 @@ monitoring:
       environment: "test"
       logging:
         level: "debug"
-    containerArgs: ["start:api"] # not explicitly required but added or consistency
-  apiInitContainers:
+    containerArgs: ["start:incident"] # not explicitly required but added or consistency
+  incidentInitContainers:
     - name: "wait-for-postgresql"
       image: "busybox:1.28"
       command: [ 'sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;' ]
@@ -77,7 +77,7 @@ monitoring:
         logging:
           level: "warn"
       incidents:
-        url: "http://e2e-api:80"
+        url: "http://e2e-incident:80"
         endpoints:
           getIncidents: "/incidents"
           getIncident: "/incidents/:id"
@@ -92,9 +92,9 @@ monitoring:
       MATRIX_TOKEN: "BAD_TOKEN" # this should match the value provided for /secrets.MATRIX_TOKEN (below)
     containerArgs: ["start:matrix"] # not explicitly required but added for consistency
   matrixInitContainers:
-    - name: "wait-for-api"
+    - name: "wait-for-incident"
       image: "busybox:1.28"
-      command: [ 'sh', '-c', 'until nc -z e2e-api 80; do echo waiting for api; sleep 2; done;' ]
+      command: [ 'sh', '-c', 'until nc -z e2e-incident 80; do echo waiting for incident; sleep 2; done;' ]
 
   configFetcher:
     schedule: "*/15 * * * *"  # Every 15 minutes (for e2e will be triggered manually)
@@ -116,10 +116,9 @@ tests:
     pullPolicy: "IfNotPresent"
   config:
     timeoutSeconds: 120
-    api:
-      url: "http://e2e-api:80"
-      incident:
-        handlerType: "TransferEgressEvent"
+    incident:
+      url: "http://e2e-incident:80"
+      handlerType: "TransferEgressEvent"
     chain:
       url: "http://e2e-chain:80"
       metricsUrl: "http://e2e-chain:9464"

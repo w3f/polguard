@@ -18,7 +18,7 @@ import { lastValueFrom } from 'rxjs';
  *   Purpose: Share processing state across chain service restarts/instances
  *   Durability: Required to prevent reprocessing blocks
  *
- * We use hybrid approach because incident data lives in the API service's db,
+ * We use hybrid approach because incident data lives in the Incident service's db,
  * while the KV cache is just a performance optimization for tracking
  * incident IDs locally.
  */
@@ -35,7 +35,7 @@ export class ServiceStore implements Store {
     // KV operations use in-memory store (ephemeral cache)
     this.kv = new InMemoryStore();
 
-    // Last block operations use HTTP (persistent via API service)
+    // Last block operations use HTTP (persistent via Incident service)
     const storeConfig = this.config.getStoreConfig();
     const { url, endpoints } = storeConfig.service!;
     this.getUrl = `${url}${endpoints.getLastBlock}`;

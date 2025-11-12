@@ -10,8 +10,8 @@ The Chain service is responsible for monitoring blockchain activities and genera
 - **State Monitoring**: Tracks on-chain state changes
 - **Multi-Monitor Architecture**: Supports specialized monitors for different blockchain aspects
 - **Configuration Refresh**: Periodically updates monitoring configuration
-- **Block Progress Tracking**: Updates last processed block information in the API service
-- **Incident Generation**: Creates and resolves incidents by sending calls to the API service. Supports two types of incidents:
+- **Block Progress Tracking**: Updates last processed block information in the Incident service
+- **Incident Generation**: Creates and resolves incidents by sending calls to the Incident service. Supports two types of incidents:
   - **One-time incidents**: Generated from events and calls when specific conditions are detected
   - **Firing/Resolved incidents**: Generated from state handlers that continuously monitor conditions and can transition between firing and resolved states
 
@@ -37,13 +37,13 @@ graph TD
     AbstractMonitor[Abstract Monitor]
     ConcreteMonitors[Concrete Monitors]
     IncidentHandler[Incident Handler]
-    ApiService[API Service]
+    IncidentService[Incident Service]
     
     NestService --> ChainWatcher
     ChainWatcher --> AbstractMonitor
     AbstractMonitor --> ConcreteMonitors
     ConcreteMonitors --> IncidentHandler
-    IncidentHandler -- "Create/Resolve incident" --> ApiService
+    IncidentHandler -- "Create/Resolve incident" --> IncidentService
 ```
 
 ## REST API Endpoints
@@ -81,7 +81,7 @@ instance, we also expose the following custom metrics:
 - Node.js 20+
 - Yarn 4.6.0+
 - Access to a blockchain RPC node
-- API service (for monitoring configuration and incident management)
+- Incident service (for monitoring configuration and incident management)
 
 ### Running the Service
 

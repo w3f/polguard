@@ -1,6 +1,6 @@
-# @w3f/monitoring-api
+# @w3f/monitoring-incident
 
-The API service serves as the central control point for the Monitoring Platform, managing incidents, configurations, and notifications. It provides a REST API for incident creation, acknowledgment, and resolution, as well as endpoints for retrieving monitoring configurations.
+The Incident service serves as the central control point for the Monitoring Platform, managing incidents, configurations, and notifications. It provides a REST API for incident creation, acknowledgment, and resolution, as well as endpoints for retrieving monitoring configurations.
 
 ## Key Features
 
@@ -38,7 +38,7 @@ The API service serves as the central control point for the Monitoring Platform,
 
 ## Scheduled Tasks
 
-The API service performs several scheduled tasks:
+The Incident service performs several scheduled tasks:
 
 - **Notification Retries**: Retries failed notifications
 - **Configuration Refresh**: Refreshes monitoring configurations
@@ -47,7 +47,7 @@ The API service performs several scheduled tasks:
 
 ## Configuration
 
-The API service requires a configuration file to specify its behavior. For an example configuration, see the [example config file](./config/config.yaml.example).
+The Incident service requires a configuration file to specify its behavior. For an example configuration, see the [example config file](./config/config.yaml.example).
 
 ## Telemetry
 

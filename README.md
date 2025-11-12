@@ -14,7 +14,7 @@ graph LR
             Chain1["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain service</a> 1<br>Polkadot"]:::service
             Chain2["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain service</a> N<br>AssetHub"]:::service
         end
-        API["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/api/README.md' title='API Service Documentation'>API service</a><br>Incident & config management"]:::service
+        Incident["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/incident/README.md' title='Incident Service Documentation'>Incident service</a><br>Incident & config management"]:::service
         Matrix["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/matrix/README.md' title='Matrix Service Documentation'>Matrix service</a><br>Bot & notifications"]:::service
     end
     
@@ -29,13 +29,13 @@ graph LR
     Room((Matrix Room)):::external
     
     %% Connections with simplified labels
-    Chain1 & Chain2 -->|Creates/resolves<br>incidents| API
-    Chain1 & Chain2 -.->|Gets config,<br>last block| API
-    API -->|Sends notifications| Matrix
-    Matrix -->|Gets/acks incidents| API
+    Chain1 & Chain2 -->|Creates/resolves<br>incidents| Incident
+    Chain1 & Chain2 -.->|Gets config,<br>last block| Incident
+    Incident -->|Sends notifications| Matrix
+    Matrix -->|Gets/acks incidents| Incident
     Matrix <-->|Two-way communication| Room
-    API -.->|Fetches configs| GitLab1 & GitLab2
-    API --> Postgres
+    Incident -.->|Fetches configs| GitLab1 & GitLab2
+    Incident --> Postgres
     
     %% Styling
     classDef service fill:#FFF2CC,stroke:#D6B656,stroke-width:1px
@@ -48,7 +48,7 @@ graph LR
 
 | Package                                       | Role                           | Key features                                              |
 |-----------------------------------------------|--------------------------------|-----------------------------------------------------------|
-| [**API**](packages/api/README.md)             | Incident & config control      | Incident CRUD API, monitoring config, last block handling |
+| [**Incident**](packages/incident/README.md)   | Incident & config control      | Incident CRUD API, monitoring config, last block handling |
 | [**Chain**](packages/chain/README.md)         | Blockchain monitor             | Balance changes, transfers, identity, voting and more     |
 | [**Matrix**](packages/matrix/README.md)       | Notifications & bot            | Deliver/ack incidents via Matrix rooms, bot commands      |
 | [**Common**](packages/common/README.md)       | Shared utilities               | Types, constants, utilities, telemetry configuration      |
@@ -67,7 +67,7 @@ yarn build
 
 **Development:**
 ```bash
-yarn start:api:dev
+yarn start:incident:dev
 yarn start:chain:dev
 yarn start:matrix:dev
 ```
@@ -101,7 +101,7 @@ yarn test:integration
 ## Documentation
 
 ### Core Services
-- [**API Service**](packages/api/README.md) - REST API for incident & config management
+- [**Incident Service**](packages/incident/README.md) - REST API for incident & config management
 - [**Chain Service**](packages/chain/README.md) - Blockchain monitoring service
 - [**Matrix Service**](packages/matrix/README.md) - Notifications & bot service
 
