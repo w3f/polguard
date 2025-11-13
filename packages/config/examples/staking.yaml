@@ -1,0 +1,21 @@
+defaults:
+  notifications:
+    messengerType: Matrix
+    channels:
+      - "!ZRBUkvtLMgvAvKiaLF:web3.foundation"
+
+groups:
+  - id: active-set-presence-example
+    chains:
+      - AssetHubKusama
+      - AssetHubPolkadot
+    monitors:
+      - name: Staking
+        handlers:
+          - ActiveSetPresenceState
+          - SlashReportedEvent
+    accountSet: example-accounts
+
+accountSets:
+  example-accounts:
+    - address: "1i1vQ39YeQk4QiKF16wuA4neTuQfCRWwnwm7Xuk2yuQtd8Q"

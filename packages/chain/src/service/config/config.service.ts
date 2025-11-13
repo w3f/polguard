@@ -13,10 +13,6 @@ interface StoreConfig {
   };
   service?: {
     url: string;
-    endpoints: {
-      getLastBlock: string;
-      setLastBlock: string;
-    };
   };
 }
 
@@ -28,10 +24,6 @@ interface IncidentReporterConfig {
   };
   service?: {
     url: string;
-    endpoints: {
-      createIncident: string;
-      resolveIncident: string;
-    };
   };
   webhook?: {
     url: string;
@@ -96,10 +88,6 @@ export class ConfigService {
           .default({ path: './data/chain-store.json' }),
         service: Joi.object({
           url: Joi.string().uri().required(),
-          endpoints: Joi.object({
-            getLastBlock: Joi.string().required(),
-            setLastBlock: Joi.string().required(),
-          }).required(),
         }).when('type', {
           is: 'service',
           then: Joi.required(),
@@ -109,7 +97,7 @@ export class ConfigService {
       incidentReporter: Joi.object({
         type: Joi.string().valid('stdout', 'service', 'webhook').required(),
         stdout: Joi.object({
-          format: Joi.string().valid('json', 'pretty').default('json'),
+          format: Joi.string().valid('json', 'pretty').default('pretty'),
         }).when('type', {
           is: 'stdout',
           then: Joi.optional(),
@@ -117,10 +105,6 @@ export class ConfigService {
         }),
         service: Joi.object({
           url: Joi.string().uri().required(),
-          endpoints: Joi.object({
-            createIncident: Joi.string().required(),
-            resolveIncident: Joi.string().required(),
-          }).required(),
         }).when('type', {
           is: 'service',
           then: Joi.required(),
@@ -134,10 +118,8 @@ export class ConfigService {
           then: Joi.required(),
           otherwise: Joi.forbidden(),
         }),
-      }).default({ type: 'stdout', stdout: { format: 'json' } }),
-      monitoringConfigs: Joi.object({
-        dir: Joi.string().required(),
-      }).default({ dir: '../config/examples' }),
+      }).default({ type: 'stdout', stdout: { format: 'pretty' } }),
+      monitoringConfigsDir: Joi.string().default('../config/examples'),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -181,7 +163,7 @@ export class ConfigService {
   }
 
   getMonitoringConfigsDir(): string {
-    return this.config.monitoringConfigs.dir;
+    return this.config.monitoringConfigsDir;
   }
 }
 
@@ -201,7 +183,5 @@ interface Config {
   };
   store: StoreConfig;
   incidentReporter: IncidentReporterConfig;
-  monitoringConfigs: {
-    dir: string;
-  };
+  monitoringConfigsDir: string;
 }

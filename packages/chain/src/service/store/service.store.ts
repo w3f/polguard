@@ -24,8 +24,7 @@ import { lastValueFrom } from 'rxjs';
  */
 @Injectable()
 export class ServiceStore implements Store {
-  private readonly getUrl: string;
-  private readonly setUrl: string;
+  private readonly lastBlockUrl: string;
   private readonly kv: InMemoryStore;
 
   constructor(
@@ -37,9 +36,7 @@ export class ServiceStore implements Store {
 
     // Last block operations use HTTP (persistent via Incident service)
     const storeConfig = this.config.getStoreConfig();
-    const { url, endpoints } = storeConfig.service!;
-    this.getUrl = `${url}${endpoints.getLastBlock}`;
-    this.setUrl = `${url}${endpoints.setLastBlock}`;
+    this.lastBlockUrl = storeConfig.service!.url;
   }
 
   // KV operations: delegate to in-memory store (ephemeral)
@@ -66,7 +63,7 @@ export class ServiceStore implements Store {
   // Last block operations: use HTTP (persistent)
   async getLastBlock(chain: Chain): Promise<number | null> {
     try {
-      const url = this.getUrl.replace(':chain', chain);
+      const url = this.lastBlockUrl.replace(':chain', chain);
       const response = await lastValueFrom(this.http.get(url));
       return response.data?.blockNumber ?? null;
     } catch (error) {
@@ -76,7 +73,8 @@ export class ServiceStore implements Store {
 
   async setLastBlock(chain: Chain, blockNumber: number): Promise<void> {
     try {
-      await lastValueFrom(this.http.post(this.setUrl, { chain, blockNumber }));
+      const url = this.lastBlockUrl.replace(':chain', chain);
+      await lastValueFrom(this.http.put(url, { blockNumber }));
     } catch (error) {
       if (error.response?.status === 409) {
         // Block already processed, this is fine

@@ -13,7 +13,7 @@ import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '
 export class StdoutIncidentReporter implements IncidentReporter {
   constructor(
     private readonly logger: Logger,
-    private readonly format: 'json' | 'pretty' = 'json',
+    private readonly format: 'json' | 'pretty' = 'pretty',
   ) {}
 
   async createIncident(dto: CreateIncidentDto): Promise<string | null> {
@@ -57,7 +57,7 @@ export class StdoutIncidentReporter implements IncidentReporter {
   private logPrettyCreate(dto: CreateIncidentDto): void {
     const lines = [
       '',
-      '🔔 INCIDENT CREATED',
+      'INCIDENT CREATED',
       `Chain: ${dto.chain}`,
       `Block: #${dto.blockNumber}`,
       dto.account ? `Account: ${dto.account}` : null,
@@ -65,7 +65,6 @@ export class StdoutIncidentReporter implements IncidentReporter {
       `Group: ${dto.groupId}`,
       'Message:',
       ...dto.message.split('\n').map(line => `  ${line}`),
-      `Idempotency: ${dto.idempotencyKey}`,
       '─'.repeat(50),
       '',
     ].filter(Boolean);
@@ -76,7 +75,7 @@ export class StdoutIncidentReporter implements IncidentReporter {
   private logPrettyResolve(id: string, data: ResolveIncidentByChainDto): void {
     const lines = [
       '',
-      '✅ INCIDENT RESOLVED',
+      'INCIDENT RESOLVED',
       `Incident ID: ${id}`,
       `Chain: ${data.chain}`,
       `Block: #${data.blockNumber}`,

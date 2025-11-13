@@ -14,8 +14,7 @@ import { lastValueFrom, timeout } from 'rxjs';
  */
 @Injectable()
 export class IncidentServiceReporter implements IncidentReporter {
-  private readonly createUrl: string;
-  private readonly resolveUrl: string;
+  private readonly baseUrl: string;
   private readonly timeoutMs = 5000;
 
   constructor(
@@ -24,16 +23,12 @@ export class IncidentServiceReporter implements IncidentReporter {
     private readonly configService: ConfigService,
   ) {
     const config = this.configService.getIncidentReporterConfig();
-    const { url, endpoints } = config.service!;
-    this.createUrl = `${url}${endpoints.createIncident}`;
-    this.resolveUrl = `${url}${endpoints.resolveIncident}`;
+    this.baseUrl = config.service!.url;
   }
 
   async createIncident(incident: CreateIncidentDto): Promise<string | null> {
     try {
-      const response = await lastValueFrom(
-        this.httpService.post(this.createUrl, incident).pipe(timeout(this.timeoutMs)),
-      );
+      const response = await lastValueFrom(this.httpService.post(this.baseUrl, incident).pipe(timeout(this.timeoutMs)));
 
       if (response.status >= 200 && response.status < 300) {
         return response.data.id;
@@ -52,7 +47,7 @@ export class IncidentServiceReporter implements IncidentReporter {
 
   async resolveIncident(id: string, resolveData: ResolveIncidentByChainDto): Promise<void> {
     try {
-      const url = this.resolveUrl.replace(':id', id);
+      const url = `${this.baseUrl}/${id}/resolve`;
       const response = await lastValueFrom(this.httpService.post(url, resolveData).pipe(timeout(this.timeoutMs)));
 
       if (response.status >= 200 && response.status < 300) {

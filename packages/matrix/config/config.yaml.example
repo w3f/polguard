@@ -28,12 +28,7 @@ matrix:
 
 # Incident Service API (required)
 incidents:
-  url: http://localhost:3000
-  endpoints:
-    getIncidents: /incidents
-    getIncident: /incidents/:id
-    acknowledgeIncident: /incidents/:id/acknowledge
-    resolveIncidentManually: /incidents/:id/resolve-manual
+  url: http://localhost:3000/incidents
 
 # HTTP Server (optional, default: 3000/0.0.0.0)
 # Exposes notification webhook and health endpoints
@@ -48,5 +43,4 @@ logging:
 
 # Monitoring configuration (optional)
 # Used for !check command to verify monitored accounts
-monitoringConfigs:
-  dir: ../config/examples    # default: ../config/examples
+monitoringConfigsDir: ../config/examples    # default: ../config/examples

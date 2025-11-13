@@ -20,15 +20,7 @@ describe('IncidentService', () => {
     };
 
     configServiceMock = {
-      getIncidentsApi: jest.fn().mockReturnValue({
-        url: 'http://api:3000',
-        endpoints: {
-          getIncidents: '/incidents',
-          getIncident: '/incidents/:id',
-          acknowledgeIncident: '/incidents/:id/acknowledge',
-          resolveIncidentManually: '/incidents/:id/resolve-manual',
-        },
-      }),
+      getIncidentsUrl: jest.fn().mockReturnValue('http://api:3000/incidents'),
     };
 
     const module: TestingModule = await Test.createTestingModule({

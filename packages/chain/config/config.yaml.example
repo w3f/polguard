@@ -32,10 +32,7 @@ store:
   
   # Only for type: service (production with API)
   # service:
-  #   url: http://localhost:3000
-  #   endpoints:
-  #     getLastBlock: /last-block/:chain
-  #     setLastBlock: /last-block
+  #   url: http://localhost:3000/last-block/:chain
 
 # Incident output (optional, default: stdout)
 # Determines where incidents are sent
@@ -44,14 +41,11 @@ incidentReporter:
   
   # Only for type: stdout
   stdout:
-    format: json    # json | pretty
+    format: pretty    # json | pretty
   
   # Only for type: service (production with API)
   # service:
-  #   url: http://localhost:3000
-  #   endpoints:
-  #     createIncident: /incidents
-  #     resolveIncident: /incidents/:id/resolve
+  #   url: http://localhost:3000/incidents
   
   # Only for type: webhook
   # webhook:
@@ -60,5 +54,4 @@ incidentReporter:
   #     Authorization: Bearer token
 
 # Monitoring configuration (optional)
-monitoringConfigs:
-  dir: ../config/examples    # default: ../config/examples
+monitoringConfigsDir: ../config/examples    # default: ../config/examples

@@ -15,10 +15,9 @@ export class IncidentService implements IncidentServiceInterface {
   ) {}
 
   async getNonResolved(roomId: string): Promise<Incident[]> {
-    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
-    const url = `${baseUrl}${endpoints.getIncidents}`;
+    const baseUrl = this.configService.getIncidentsUrl();
     const response = await firstValueFrom(
-      this.httpService.get(url, {
+      this.httpService.get(baseUrl, {
         params: {
           channelId: roomId,
           messengerType: MessengerType.Matrix,
@@ -30,10 +29,9 @@ export class IncidentService implements IncidentServiceInterface {
   }
 
   async getNonAcked(roomId: string): Promise<Incident[]> {
-    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
-    const url = `${baseUrl}${endpoints.getIncidents}`;
+    const baseUrl = this.configService.getIncidentsUrl();
     const response = await firstValueFrom(
-      this.httpService.get(url, {
+      this.httpService.get(baseUrl, {
         params: {
           channelId: roomId,
           messengerType: MessengerType.Matrix,
@@ -46,15 +44,15 @@ export class IncidentService implements IncidentServiceInterface {
   }
 
   async getIncidentById(incidentId: string): Promise<Incident> {
-    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
-    const url = `${baseUrl}${endpoints.getIncident.replace(':id', incidentId)}`;
+    const baseUrl = this.configService.getIncidentsUrl();
+    const url = `${baseUrl}/${incidentId}`;
     const response = await firstValueFrom(this.httpService.get(url));
     return response.data;
   }
 
   async acknowledgeIncident(incidentId: string, username: string, channelId: string): Promise<void> {
-    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
-    const url = `${baseUrl}${endpoints.acknowledgeIncident.replace(':id', incidentId)}`;
+    const baseUrl = this.configService.getIncidentsUrl();
+    const url = `${baseUrl}/${incidentId}/acknowledge`;
     await firstValueFrom(
       this.httpService.post(url, {
         username,
@@ -64,8 +62,8 @@ export class IncidentService implements IncidentServiceInterface {
   }
 
   async resolveIncident(incidentId: string, username: string, channelId: string): Promise<void> {
-    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
-    const url = `${baseUrl}${endpoints.resolveIncidentManually.replace(':id', incidentId)}`;
+    const baseUrl = this.configService.getIncidentsUrl();
+    const url = `${baseUrl}/${incidentId}/resolve-manual`;
     await firstValueFrom(
       this.httpService.post(url, {
         username,
@@ -75,8 +73,7 @@ export class IncidentService implements IncidentServiceInterface {
   }
 
   async queryIncidents(roomId: string, filters: QueryFilters): Promise<Incident[]> {
-    const { url: baseUrl, endpoints } = this.configService.getIncidentsApi();
-    const url = `${baseUrl}${endpoints.getIncidents}`;
+    const baseUrl = this.configService.getIncidentsUrl();
 
     const params = {
       channelId: roomId,
@@ -84,7 +81,7 @@ export class IncidentService implements IncidentServiceInterface {
       ...filters,
     };
 
-    const response = await firstValueFrom(this.httpService.get(url, { params }));
+    const response = await firstValueFrom(this.httpService.get(baseUrl, { params }));
     return response.data;
   }
 }

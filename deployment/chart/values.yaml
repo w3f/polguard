@@ -2,7 +2,7 @@
 # The values in this file provide sensible default for this chart.
 # The schema used is defined by ./values.schema.json
 
-# --------------------------------- global resource settings applied to every service  ---------------------------------
+# --------------------------------- Global resource settings applied to every service  ---------------------------------
 
 image:
   repository: "docker.io/web3f/monitoring-platform"
@@ -21,7 +21,7 @@ serviceMonitorsEnabled: true
 
 prometheusRulesEnabled: true
 
-# --------------------------------------------------- chain services ---------------------------------------------------
+# --------------------------------------------------- Chain services ---------------------------------------------------
 
 # chainServices: # each chain listed here will create a new set of chain svc instances (x replica count)
 
@@ -34,7 +34,7 @@ chainInitContainers:
         mountPath: /app/monitoring-configs
         readOnly: true
 
-# ---------------------------------------------------- incident service -----------------------------------------------------
+# ---------------------------------------------------- Incident service -----------------------------------------------------
 
 # for the default values.yaml file, all fields MUST be provided
 incidentService:
@@ -59,7 +59,7 @@ incidentInitContainers:
     image: "busybox:1.28"
     command: [ 'sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;' ]
 
-# --------------------------------------------------- matrix service ---------------------------------------------------
+# --------------------------------------------------- Matrix service ---------------------------------------------------
 
 # for the default values.yaml file, all fields MUST be provided
 matrixService:
@@ -77,19 +77,7 @@ matrixService:
     accessModes:
       - "ReadWriteOnce"
 
-matrixInitContainers:
-  - name: "wait-for-incident"
-    image: "busybox:1.28"
-    command: [ 'sh', '-c', 'until nc -z incident 80; do echo waiting for incident; sleep 2; done;' ]
-  - name: "wait-for-monitoring-configs"
-    image: "busybox:1.28"
-    command: [ 'sh', '-c', 'until [ -f /app/monitoring-configs/current/.checksum ]; do echo waiting for monitoring configs; sleep 2; done;' ]
-    volumeMounts:
-      - name: monitoring-configs
-        mountPath: /app/monitoring-configs
-        readOnly: true
-
-# ------------------------------------------------ config fetcher ------------------------------------------------------
+# ------------------------------------------------ Config fetcher ------------------------------------------------------
 
 configFetcher:
   schedule: "*/15 * * * *"  # Every 15 minutes

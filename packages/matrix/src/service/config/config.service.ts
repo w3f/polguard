@@ -89,12 +89,6 @@ export class ConfigService {
         }),
       incidents: Joi.object({
         url: Joi.string().uri().required(),
-        endpoints: Joi.object({
-          getIncidents: Joi.string().required(),
-          getIncident: Joi.string().required(),
-          acknowledgeIncident: Joi.string().required(),
-          resolveIncidentManually: Joi.string().required(),
-        }).required(),
       }).required(),
       server: Joi.object({
         port: Joi.number().default(3000),
@@ -103,9 +97,7 @@ export class ConfigService {
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('debug'),
       }).default({ level: 'debug' }),
-      monitoringConfigs: Joi.object({
-        dir: Joi.string().required(),
-      }).default({ dir: '../config/examples' }),
+      monitoringConfigsDir: Joi.string().default('../config/examples'),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -120,16 +112,8 @@ export class ConfigService {
     return this.config.matrix;
   }
 
-  getIncidentsApi(): {
-    url: string;
-    endpoints: {
-      getIncidents: string;
-      getIncident: string;
-      acknowledgeIncident: string;
-      resolveIncidentManually: string;
-    };
-  } {
-    return this.config.incidents;
+  getIncidentsUrl(): string {
+    return this.config.incidents.url;
   }
 
   getLoggingLevel(): string {
@@ -145,7 +129,7 @@ export class ConfigService {
   }
 
   getMonitoringConfigsDir(): string {
-    return this.config.monitoringConfigs.dir;
+    return this.config.monitoringConfigsDir;
   }
 }
 
@@ -154,12 +138,6 @@ interface AppConfig {
   matrix: MatrixConfig;
   incidents: {
     url: string;
-    endpoints: {
-      getIncidents: string;
-      getIncident: string;
-      acknowledgeIncident: string;
-      resolveIncidentManually: string;
-    };
   };
   server: {
     port: number;
@@ -168,7 +146,5 @@ interface AppConfig {
   logging: {
     level: string;
   };
-  monitoringConfigs: {
-    dir: string;
-  };
+  monitoringConfigsDir: string;
 }

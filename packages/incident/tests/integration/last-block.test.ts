@@ -15,7 +15,7 @@ describe('LastBlock API (integration)', () => {
   const getLastBlock = (chain: Chain) => request(app.getHttpServer()).get(`/last-block/${chain}`);
 
   const setLastBlock = (chain: Chain, blockNumber: number) =>
-    request(app.getHttpServer()).post('/last-block').send({ chain, blockNumber });
+    request(app.getHttpServer()).put(`/last-block/${chain}`).send({ blockNumber });
 
   const createLastBlockInDb = async (chain: Chain, blockNumber: number) => {
     await dataSource.getRepository(LastBlock).save({ chain, blockNumber });
@@ -76,9 +76,9 @@ describe('LastBlock API (integration)', () => {
     });
   });
 
-  describe('POST /last-block', () => {
+  describe('PUT /last-block/:chain', () => {
     it('creates new last block entry', async () => {
-      await setLastBlock(TEST_CHAIN, TEST_BLOCK_NUMBER).expect(201);
+      await setLastBlock(TEST_CHAIN, TEST_BLOCK_NUMBER).expect(200);
 
       const lastBlock = await dataSource.getRepository(LastBlock).findOne({
         where: { chain: TEST_CHAIN },
@@ -92,7 +92,7 @@ describe('LastBlock API (integration)', () => {
     it('updates existing last block with higher block number', async () => {
       await createLastBlockInDb(TEST_CHAIN, 1000);
 
-      await setLastBlock(TEST_CHAIN, 1500).expect(201);
+      await setLastBlock(TEST_CHAIN, 1500).expect(200);
 
       const lastBlock = await dataSource.getRepository(LastBlock).findOne({
         where: { chain: TEST_CHAIN },
@@ -103,7 +103,7 @@ describe('LastBlock API (integration)', () => {
     it('allows setting same block number', async () => {
       await createLastBlockInDb(TEST_CHAIN, 1000);
 
-      await setLastBlock(TEST_CHAIN, 1000).expect(201);
+      await setLastBlock(TEST_CHAIN, 1000).expect(200);
 
       const lastBlock = await dataSource.getRepository(LastBlock).findOne({
         where: { chain: TEST_CHAIN },
@@ -124,19 +124,14 @@ describe('LastBlock API (integration)', () => {
     });
 
     it('validates required fields', async () => {
-      await request(app.getHttpServer()).post('/last-block').send({ chain: TEST_CHAIN }).expect(400);
+      await request(app.getHttpServer()).put(`/last-block/${TEST_CHAIN}`).send({}).expect(400);
 
-      await request(app.getHttpServer()).post('/last-block').send({ blockNumber: 1000 }).expect(400);
-
-      await request(app.getHttpServer())
-        .post('/last-block')
-        .send({ chain: 'InvalidChain', blockNumber: 1000 })
-        .expect(400);
+      await request(app.getHttpServer()).put('/last-block/InvalidChain').send({ blockNumber: 1000 }).expect(400);
     });
 
     it('handles multiple chains independently', async () => {
-      await setLastBlock(Chain.Polkadot, 1000).expect(201);
-      await setLastBlock(Chain.Kusama, 2000).expect(201);
+      await setLastBlock(Chain.Polkadot, 1000).expect(200);
+      await setLastBlock(Chain.Kusama, 2000).expect(200);
 
       const polkadotBlock = await dataSource.getRepository(LastBlock).findOne({
         where: { chain: Chain.Polkadot },
@@ -152,7 +147,7 @@ describe('LastBlock API (integration)', () => {
     it('updates existing record when block number changes', async () => {
       await createLastBlockInDb(TEST_CHAIN, 1000);
 
-      await setLastBlock(TEST_CHAIN, 1500).expect(201);
+      await setLastBlock(TEST_CHAIN, 1500).expect(200);
 
       const updatedBlock = await dataSource.getRepository(LastBlock).findOne({
         where: { chain: TEST_CHAIN },

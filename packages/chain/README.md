@@ -16,7 +16,7 @@ See [Monitors & Handlers Reference](../config/MONITORS.md) for complete list of 
 ```mermaid
 graph TB
     %% External
-    Blockchain[("Blockchain<br>(RPC)")]:::blockchain
+    Blockchain[("RPC node")]:::blockchain
     Config["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md'>Monitoring Config</a><br>(YAML)"]:::config
     
     %% Core Processing
@@ -45,7 +45,7 @@ graph TB
     Monitors -->|"Query chain state"| DataProvider
     DataProvider -->|"Cache queries"| Store
     Monitors -->|"Create/resolve<br>incidents"| IncidentHandler
-    IncidentHandler -->|"Track incident state"| Store
+    IncidentHandler -->|"Track ongoing incident state"| Store
     IncidentHandler -->|"Send incidents"| Reporter
     
     %% Styling
@@ -67,7 +67,7 @@ graph TB
 
 The codebase is organized into two loosely coupled directories:
 
-- **`src/lib/`** - Core monitoring logic that is framework-agnostic. Contains the Watcher, Monitors, Data Provider, and Incident Handler. This code defines the monitoring business logic and can be integrated into any framework. Note: Currently coupled with Polkadot.js; future work includes abstracting blockchain interactions to support multiple Polkadot chain libraries (dedot, papi, etc.).
+- **`src/lib/`** - Core monitoring logic that is framework-agnostic. Contains the Watcher, Monitors, Data Provider, and Incident Handler. This code defines the monitoring business logic and can be integrated into any framework. Currently it is still coupled to some extent with Polkadot.js; future work includes abstracting all blockchain interactions and potentially support multiple Polkadot chain libraries (dedot, papi, etc.).
 
 - **`src/service/`** - NestJS service layer that provides concrete implementations of interfaces defined in `lib/`. Includes configuration management, health endpoints, and implementations of Store and Reporter abstractions.
 

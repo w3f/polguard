@@ -125,11 +125,11 @@ export class IncidentHandler implements IncidentHandlerClient {
       extrinsicIdx: blockContext.extrinsicIdx,
     };
 
-    this.logger.debug(`Sending incident: ${JSON.stringify(createIncidentDto)}`);
+    this.logger.debug(`Reporting incident: ${JSON.stringify(createIncidentDto)}`);
 
     const incidentId = await this.reporter.createIncident(createIncidentDto);
     if (incidentId) {
-      this.logger.debug(`Sent incident with ID: ${incidentId}`);
+      this.logger.debug(`Reported incident with ID: ${incidentId}`);
     } else {
       this.logger.debug('Skipping incident (reporter returned null).');
     }

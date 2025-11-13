@@ -1,4 +1,3 @@
-
 # ------------------------------------ Configs for the monitoring-service subchart -------------------------------------
 
 
@@ -20,22 +19,15 @@ monitoring:
           name: "AssetHubPolkadot"
           rpcUrl: "wss://rpc-asset-hub-polkadot.luckyfriday.io"
           startBlock: "10351963"
-        monitoringConfigs:
-          dir: "/app/monitoring-configs/current"
+        monitoringConfigsDir: "/app/monitoring-configs/current"
         store:
           type: service
           service:
-            url: http://e2e-incident:80
-            endpoints:
-              getLastBlock: /last-block/:chain
-              setLastBlock: /last-block
+            url: http://e2e-incident:80/last-block/:chain
         incidentReporter:
           type: service
           service:
-            url: http://e2e-incident:80
-            endpoints:
-              createIncident: "/incidents"
-              resolveIncident: "/incidents/:id/resolve"
+            url: http://e2e-incident:80/incidents
         environment: "test"
         logging:
           level: "debug"
@@ -77,14 +69,8 @@ monitoring:
         logging:
           level: "warn"
       incidents:
-        url: "http://e2e-incident:80"
-        endpoints:
-          getIncidents: "/incidents"
-          getIncident: "/incidents/:id"
-          acknowledgeIncident: "/incidents/:id/acknowledge"
-          resolveIncidentManually: "/incidents/:id/resolve-manual"
-      monitoringConfigs:
-        dir: "/app/monitoring-configs/current"
+        url: "http://e2e-incident:80/incidents"
+      monitoringConfigsDir: "/app/monitoring-configs/current"
       environment: "test"
       logging:
         level: "debug"

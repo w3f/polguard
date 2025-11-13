@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Body, Param, BadRequestException, Logger } from '@nestjs/common';
+import { Controller, Get, Put, Body, Param, BadRequestException, Logger } from '@nestjs/common';
 import { LastBlockService } from './last-block.service';
 import { Chain } from '@w3f/monitoring-common';
-import { SetLastBlockDto } from './dto';
+import { UpdateLastBlockDto } from './dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { LastBlock } from '../database/last-block.entity';
 
@@ -27,12 +27,17 @@ export class LastBlockController {
     return lastBlock;
   }
 
-  @Post()
-  @ApiOperation({ summary: 'Set the last processed block for a chain' })
-  @ApiResponse({ status: 201, description: 'The block was updated' })
+  @Put(':chain')
+  @ApiOperation({ summary: 'Update the last processed block for a chain' })
+  @ApiResponse({ status: 200, description: 'The block was updated' })
+  @ApiResponse({ status: 400, description: 'Invalid chain parameter' })
   @ApiResponse({ status: 409, description: 'Block already processed' })
-  async setLastBlock(@Body() setLastBlockDto: SetLastBlockDto): Promise<void> {
-    this.logger.debug(`Setting last block for chain: ${setLastBlockDto.chain}, block: ${setLastBlockDto.blockNumber}.`);
-    return this.lastBlockService.setLastBlock(setLastBlockDto.chain, setLastBlockDto.blockNumber);
+  @ApiParam({ name: 'chain', enum: Chain })
+  async updateLastBlock(@Param('chain') chain: string, @Body() updateLastBlockDto: UpdateLastBlockDto): Promise<void> {
+    this.logger.debug(`Updating last block for chain: ${chain}, block: ${updateLastBlockDto.blockNumber}.`);
+    if (!Object.values(Chain).includes(chain as Chain)) {
+      throw new BadRequestException(`Invalid chain parameter: ${chain}`);
+    }
+    return this.lastBlockService.setLastBlock(chain as Chain, updateLastBlockDto.blockNumber);
   }
 }

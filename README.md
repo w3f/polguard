@@ -36,10 +36,10 @@ graph LR
     Chain["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a>"]:::service
     
     %% Blockchain
-    Blockchain[("Blockchain<br>(Polkadot, Kusama,<br>Parachains)")]:::blockchain
+    Blockchain[("RPC node")]:::blockchain
     
     %% Storage Options
-    subgraph Storage ["Store (Last Block, Incident State & Cache)"]
+    subgraph Storage ["Store (Last Block, Incident State, Cache)"]
         InMemory["In-Memory<br>(ephemeral)"]:::storage
         File["File-Based<br>(persistent)"]:::storage
         ServiceStore["Service Mode<br>(for Platform)"]:::notused
@@ -77,7 +77,7 @@ _Complete incident management with database persistence and notifications_
 ```mermaid
 graph LR
     %% External Components
-    Blockchain[("Blockchain<br>(Polkadot, Kusama,<br>Parachains)")]:::blockchain
+    Blockchain[("RPC node")]:::blockchain
     Postgres[(PostgreSQL)]:::database
     MatrixRoom((Matrix Room)):::external
     Config["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
@@ -112,7 +112,7 @@ graph LR
 By default, the Chain service uses example configs from `packages/config/examples/`. To create your own monitoring rules:
 
 - Create YAML config files following the [Config Guide](packages/config/CONFIG_GUIDE.md)
-- Update the `monitoringConfigs.dir` setting in `packages/chain/config/config.yaml` to point to your directory
+- Update the `monitoringConfigsDir` setting in `packages/chain/config/config.yaml` to point to your directory
 
 See [Monitors & Handlers](packages/config/MONITORS.md) for available monitoring capabilities.
 
