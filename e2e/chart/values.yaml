@@ -32,7 +32,14 @@ polguard:
           level: "debug"
       secrets: {}
       containerArgs: [ "start:chain" ]
-  chainInitContainers: []
+  # Override chainInitContainers to remove the wait-for-monitoring-configs step.
+  # In e2e, the config-fetcher CronJob is triggered manually after helm install completes.
+  # If chain pods waited for configs during helm install, it would create a deadlock:
+  # helm --wait can't complete until pods are ready, but pods can't be ready without configs.
+  chainInitContainers:
+    - name: "wait-for-incident"
+      image: "busybox:1.28"
+      command: [ 'sh', '-c', 'until nc -z e2e-incident 80; do echo waiting for incident; sleep 2; done;' ]
 
   incidentService:
     config:
@@ -44,7 +51,7 @@ polguard:
         database: "monitoring"
       notifications:
         matrix:
-          url: "http://e2e-matrix:80/notifications"
+          url: http://e2e-matrix:80/notifications
       crons:
         # Every 5 seconds
         escalations: "*/5 * * * * *"
@@ -52,10 +59,6 @@ polguard:
       logging:
         level: "debug"
     containerArgs: ["start:incident"] # not explicitly required but added or consistency
-  incidentInitContainers:
-    - name: "wait-for-postgresql"
-      image: "busybox:1.28"
-      command: [ 'sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done;' ]
 
   matrixService:
     config:
@@ -68,7 +71,7 @@ polguard:
         logging:
           level: "warn"
       incidents:
-        url: "http://e2e-incident:80/incidents"
+        url: http://e2e-incident:80/incidents
       monitoringConfigsDir: "/app/monitoring-configs/current"
       environment: "test"
       logging:
@@ -76,10 +79,6 @@ polguard:
     secrets:
       MATRIX_TOKEN: "BAD_TOKEN" # this should match the value provided for /secrets.MATRIX_TOKEN (below)
     containerArgs: ["start:matrix"] # not explicitly required but added for consistency
-  matrixInitContainers:
-    - name: "wait-for-incident"
-      image: "busybox:1.28"
-      command: [ 'sh', '-c', 'until nc -z e2e-incident 80; do echo waiting for incident; sleep 2; done;' ]
 
   configFetcher:
     schedule: "*/15 * * * *"  # Every 15 minutes (for e2e will be triggered manually)
@@ -102,11 +101,11 @@ tests:
   config:
     timeoutSeconds: 120
     incident:
-      url: "http://e2e-incident:80"
+      url: http://e2e-incident:80
       handlerType: "TransferEgressEvent"
     chain:
-      url: "http://e2e-chain:80"
-      metricsUrl: "http://e2e-chain:9464"
+      url: http://e2e-chain:80
+      metricsUrl: http://e2e-chain:9464
       targetBlock: "10351963"
     matrix:
       homeserver: "https://matrix.web3.foundation"

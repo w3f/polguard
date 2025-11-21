@@ -1,5 +1,8 @@
 FROM node:20-alpine
 
+# Fixes CI fingerprint issue
+ENV GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
+
 WORKDIR /app
 
 # Copy package files
