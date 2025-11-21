@@ -1,6 +1,6 @@
 import { IsString, IsEnum, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Chain } from '@w3f/monitoring-common';
+import { Chain } from '@w3f/polguard-common';
 
 export class ResolveIncidentByChainDto {
   @ApiProperty({ description: 'Blockchain network', enum: Chain })

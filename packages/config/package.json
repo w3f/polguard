@@ -1,7 +1,7 @@
 {
-  "name": "@w3f/monitoring-config",
+  "name": "@w3f/polguard-config",
   "version": "0.1.15",
-  "description": "Configuration processor for W3F monitoring platform. Handles YAML configuration loading, validation and transformation for blockchain monitoring setup",
+  "description": "Configuration processor for W3F monitoring polkadot. Handles YAML configuration loading, validation and transformation for blockchain monitoring setup",
   "author": "W3F SecOps Team <devops@web3.foundation>",
   "license": "MIT",
   "main": "./dist/commonjs/index.js",
@@ -34,7 +34,7 @@
   "dependencies": {
     "@polkadot/util": "^13.5.6",
     "@polkadot/util-crypto": "^13.5.6",
-    "@w3f/monitoring-common": "workspace:*",
+    "@w3f/polguard-common": "workspace:*",
     "axios": "^1.7.7",
     "joi": "^17.13.3",
     "js-yaml": "^4.1.0"

@@ -8,7 +8,7 @@ import {
   getChainProperties,
   MonitorTypeSettings,
   MonitorType,
-} from '@w3f/monitoring-common';
+} from '@w3f/polguard-common';
 import { RawMonitoringGroup } from './interfaces';
 import { validateConfig } from './config-validator';
 import { AddressTransformer } from './address-transformer';

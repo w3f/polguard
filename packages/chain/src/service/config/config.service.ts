@@ -3,7 +3,7 @@ import * as yaml from 'js-yaml';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as Joi from 'joi';
-import { Chain } from '@w3f/monitoring-common';
+import { Chain } from '@w3f/polguard-common';
 
 type StoreType = 'inMemory' | 'service' | 'file';
 interface StoreConfig {

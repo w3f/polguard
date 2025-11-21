@@ -1,6 +1,6 @@
 # Development Notes
 
-This document contains important development decisions and future considerations for the Monitoring Platform.
+This document contains important development decisions and future considerations for PolGuard.
 
 ## Architectural Decisions
 

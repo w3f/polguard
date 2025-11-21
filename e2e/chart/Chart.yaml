@@ -1,6 +1,6 @@
 apiVersion: v2
 name: e2e
-description: E2E tests for the monitoring platform
+description: E2E tests for PolGuard
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
@@ -8,7 +8,7 @@ dependencies:
   - name: postgresql
     repository: https://w3f.github.io/helm-charts
     version: "1.0.7"
-  - name: monitoring-platform
+  - name: polguard
     repository: file://../../deployment/chart
     version: "*"
-    alias: monitoring
+    alias: polguard

@@ -1,5 +1,5 @@
 {
-  "name": "@w3f/monitoring-matrix",
+  "name": "@w3f/polguard-matrix",
   "version": "0.0.2",
   "description": "",
   "author": "W3F SecOps Team <devops@web3.foundation>",
@@ -29,8 +29,8 @@
     "@nestjs/platform-express": "^11.0.14",
     "@nestjs/terminus": "^11.0.0",
     "@types/node-localstorage": "^1.3.3",
-    "@w3f/monitoring-common": "workspace:*",
-    "@w3f/monitoring-config": "workspace:*",
+    "@w3f/polguard-common": "workspace:*",
+    "@w3f/polguard-config": "workspace:*",
     "axios": "^1.7.7",
     "joi": "^17.13.3",
     "js-yaml": "^4.1.0",

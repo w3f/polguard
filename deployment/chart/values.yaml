@@ -5,7 +5,7 @@
 # --------------------------------- Global resource settings applied to every service  ---------------------------------
 
 image:
-  repository: "docker.io/web3f/monitoring-platform"
+  repository: "docker.io/web3f/polguard"
   tag: "latest"
   pullPolicy: "IfNotPresent"
 
@@ -76,6 +76,18 @@ matrixService:
     size: "200Mi"
     accessModes:
       - "ReadWriteOnce"
+
+matrixInitContainers:
+  - name: "wait-for-incident"
+    image: "busybox:1.28"
+    command: [ 'sh', '-c', 'until nc -z incident 80; do echo waiting for incident; sleep 2; done;' ]
+  - name: "wait-for-monitoring-configs"
+    image: "busybox:1.28"
+    command: [ 'sh', '-c', 'until [ -f /app/monitoring-configs/current/.checksum ]; do echo waiting for monitoring configs; sleep 2; done;' ]
+    volumeMounts:
+      - name: monitoring-configs
+        mountPath: /app/monitoring-configs
+        readOnly: true
 
 # ------------------------------------------------ Config fetcher ------------------------------------------------------
 

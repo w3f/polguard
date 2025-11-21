@@ -1,7 +1,7 @@
 apiVersion: v2
 
-name: monitoring-platform
+name: polguard
 description: An application stack that allows monitoring of Polkadot and Kusama.
 
 type: application
-version: 1.6.4
+version: 1.6.5

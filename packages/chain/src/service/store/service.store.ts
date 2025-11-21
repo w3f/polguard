@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { Store, Chain } from '@w3f/monitoring-common';
+import { Store, Chain } from '@w3f/polguard-common';
 import { InMemoryStore } from './in-memory.store';
 import { ConfigService } from '../config/config.service';
 import { lastValueFrom } from 'rxjs';

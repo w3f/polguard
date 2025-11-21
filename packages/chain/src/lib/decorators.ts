@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { Store, HandlerType, Chain } from '@w3f/monitoring-common';
+import { Store, HandlerType, Chain } from '@w3f/polguard-common';
 
 /**
  * Handler Registration System

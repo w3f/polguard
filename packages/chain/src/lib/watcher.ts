@@ -14,7 +14,7 @@ import {
   ChainApiClient,
   ChainTelemetryClient,
   MonitoringConfigClient,
-} from '@w3f/monitoring-common';
+} from '@w3f/polguard-common';
 import {
   IdentityMonitor,
   BalancesMonitor,

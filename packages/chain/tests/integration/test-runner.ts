@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as yaml from 'js-yaml';
 import { createChainDataProvider } from '../../src/lib/data-provider';
 import { ChainWatcher } from '../../src/lib/watcher';
-import { Chain, MonitorType, MonitoringGroup, MessengerType, getChainProperties } from '@w3f/monitoring-common';
+import { Chain, MonitorType, MonitoringGroup, MessengerType, getChainProperties } from '@w3f/polguard-common';
 import { LoggerAdapter, TestIncidentHandler, colors } from './test-utils';
 import { InMemoryStore } from '../../src/service/store/in-memory.store';
 import { ApiPromise, WsProvider } from '@polkadot/api';

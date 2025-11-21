@@ -8,7 +8,7 @@ import {
   OneToMany,
   BeforeInsert,
 } from 'typeorm';
-import { Chain, MessengerType, ResolutionType } from '@w3f/monitoring-common';
+import { Chain, MessengerType, ResolutionType } from '@w3f/polguard-common';
 import type { Notification } from './notification.entity';
 import { generateIncidentId } from './id-generator';
 

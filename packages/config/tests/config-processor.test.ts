@@ -1,7 +1,7 @@
 import { encodeAddress } from '@polkadot/util-crypto';
 import { hexToU8a } from '@polkadot/util';
 import { ConfigProcessor } from '../src/config-processor';
-import { MonitorType, Chain, StakingHandlerType, getChainProperties, MessengerType } from '@w3f/monitoring-common';
+import { MonitorType, Chain, StakingHandlerType, getChainProperties, MessengerType } from '@w3f/polguard-common';
 import path from 'node:path';
 
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');

@@ -1,5 +1,5 @@
 {
-  "name": "@w3f/monitoring-incident",
+  "name": "@w3f/polguard-incident",
   "version": "0.0.1",
   "description": "",
   "author": "W3F SecOps Team <devops@web3.foundation>",
@@ -37,8 +37,8 @@
     "@nestjs/swagger": "^11.1.5",
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/typeorm": "^11.0.0",
-    "@w3f/monitoring-common": "workspace:*",
-    "@w3f/monitoring-config": "workspace:*",
+    "@w3f/polguard-common": "workspace:*",
+    "@w3f/polguard-config": "workspace:*",
     "axios": "^1.7.7",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",

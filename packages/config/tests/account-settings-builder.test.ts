@@ -5,7 +5,7 @@ import {
   MonitorConfig,
   StakingHandlerType,
   MonitorTypeSettings,
-} from '@w3f/monitoring-common';
+} from '@w3f/polguard-common';
 import { AccountSettingsBuilder } from '../src/account-settings-builder';
 import { monitorSchemas, extractFieldsFromSchema } from '../src/config-validator';
 

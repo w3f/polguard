@@ -1,8 +1,8 @@
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/w3f/monitoring-platform/tree/master.svg?style=svg&circle-token=CCIPRJ_SUB1G4oHMH8XwxjXskW3sc_0c9d235912138f0bba11f4c38895c0a0b30aba97)](https://dl.circleci.com/status-badge/redirect/gh/w3f/monitoring-platform/tree/master)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/w3f/polguard/tree/master.svg?style=svg&circle-token=CCIPRJ_SUB1G4oHMH8XwxjXskW3sc_0c9d235912138f0bba11f4c38895c0a0b30aba97)](https://dl.circleci.com/status-badge/redirect/gh/w3f/polguard/tree/master)
 
-# Monitoring Platform
+# PolGuard
 
-The Monitoring Platform provides real-time monitoring of Polkadot, Kusama, and parachains, tracking blockchain activities such as balance changes, governance events, identity updates, and more. Built with a modular architecture, it can run as a lightweight standalone service or as a complete platform with incident management and notifications.
+PolGuard provides real-time monitoring of Polkadot, Kusama, and parachains, tracking blockchain activities such as balance changes, governance events, identity updates, and more. Built with a modular architecture, it can run as a lightweight standalone service or as a complete platform with incident management and notifications.
 
 ## Quick Start
 
@@ -33,7 +33,7 @@ _Perfect for trying out the platform, integrating with external systems via webh
 ```mermaid
 graph LR
     %% Chain Service
-    Chain["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a>"]:::service
+    Chain["<a href='https://github.com/w3f/polguard/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a>"]:::service
     
     %% Blockchain
     Blockchain[("RPC node")]:::blockchain
@@ -53,10 +53,10 @@ graph LR
     end
     
     %% Monitoring Config
-    Config["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
+    Config["<a href='https://github.com/w3f/polguard/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
     
     %% Connections
-    Chain -->|"Monitors events,<br>extrinsics, chain state"| Blockchain
+    Chain -->|"Subscribes to blocks,<br>queries state"| Blockchain
     Chain -.->|"Reads rules"| Config
     Chain -->|"Reports incidents"| Reporters
     Chain -->|"Persists data"| Storage
@@ -79,22 +79,23 @@ graph LR
     %% External Components
     Blockchain[("RPC node")]:::blockchain
     Postgres[(PostgreSQL)]:::database
-    MatrixRoom((Matrix Room)):::external
-    Config["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
-    
+    MatrixExt["Matrix<br>(Server & Rooms)"]:::external
+    Config["<a href='https://github.com/w3f/polguard/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
+
     %% Core Services
-    subgraph Services ["Monitoring Platform"]
-        Incident["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/incident/README.md' title='Incident Service Documentation'>Incident Service</a><br>Incident & state management"]:::service
-        Matrix["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/matrix/README.md' title='Matrix Service Documentation'>Matrix Service</a><br>Notifications & bot"]:::service
-        Chain["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a><br>Blockchain monitor"]:::service
+    subgraph Services ["PolGuard"]
+        Incident["<a href='https://github.com/w3f/polguard/blob/master/packages/incident/README.md' title='Incident Service Documentation'>Incident Service</a><br>Incident & state management"]:::service
+        Matrix["<a href='https://github.com/w3f/polguard/blob/master/packages/matrix/README.md' title='Matrix Service Documentation'>Matrix Service</a><br>Notifications & bot"]:::service
+        Chain["<a href='https://github.com/w3f/polguard/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a><br>Blockchain monitor"]:::service
     end
     
     %% Connections
-    Chain -->|"Monitors events,<br>extrinsics, chain state"| Blockchain
+    Chain -->|"Subscribes to blocks,<br>queries state"| Blockchain
     Chain -.->|"Reads rules"| Config
     Chain -->|"Creates/resolves<br>incidents"| Incident
     Incident -->|"Sends<br>notifications"| Matrix
-    Matrix <-->|"Two-way<br>communication"| MatrixRoom
+    Matrix -->|"Acks, queries,<br>resolves incidents"| Incident
+    Matrix <-->|"Sends messages,<br>receives commands"| MatrixExt
     Incident -->|"Persists data"| Postgres
     
     %% Styling
@@ -118,11 +119,11 @@ See [Monitors & Handlers](packages/config/MONITORS.md) for available monitoring 
 
 ### Standalone Mode
 
-**Prerequisites:** Node.js 20+, Yarn 4.6+
+**Prerequisites:** Node.js 20+, Yarn 4.11+
 
 ```bash
-git clone https://github.com/w3f/monitoring-platform.git
-cd monitoring-platform
+git clone https://github.com/w3f/polguard.git
+cd polguard
 yarn install
 yarn build
 yarn start:chain
@@ -132,11 +133,11 @@ For custom configuration options (RPC endpoints, storage, incident reporters), s
 
 ### Platform Mode
 
-**Prerequisites:** Node.js 20+, Yarn 4.6+, PostgreSQL
+**Prerequisites:** Node.js 20+, Yarn 4.11+, PostgreSQL
 
 ```bash
-git clone https://github.com/w3f/monitoring-platform.git
-cd monitoring-platform
+git clone https://github.com/w3f/polguard.git
+cd polguard
 yarn install
 yarn build
 

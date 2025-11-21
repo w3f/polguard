@@ -7,7 +7,7 @@ import {
   MonitorSettings,
   MonitorType,
   AssetsSettings,
-} from '@w3f/monitoring-common';
+} from '@w3f/polguard-common';
 
 type AccountConfig<T extends MonitorType> = {
   account: AccountSettings<T>;

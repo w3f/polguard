@@ -6,7 +6,7 @@ import {
   Chain,
   EventHandlerParams,
   IDENTITY_FIELDS,
-} from '@w3f/monitoring-common';
+} from '@w3f/polguard-common';
 import { AbstractMonitor } from './abstract-monitor';
 
 export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {

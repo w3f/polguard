@@ -1,5 +1,5 @@
 {
-  "name": "@w3f/monitoring-chain",
+  "name": "@w3f/polguard-chain",
   "version": "0.0.8",
   "description": "",
   "author": "W3F SecOps Team <devops@web3.foundation>",
@@ -30,8 +30,8 @@
     "@nestjs/terminus": "^11.0.0",
     "@polkadot/api": "^16.4.8",
     "@types/json-bigint": "^1.0.4",
-    "@w3f/monitoring-common": "workspace:*",
-    "@w3f/monitoring-config": "workspace:*",
+    "@w3f/polguard-common": "workspace:*",
+    "@w3f/polguard-config": "workspace:*",
     "axios": "^1.7.7",
     "joi": "^17.13.3",
     "js-yaml": "^4.1.0",

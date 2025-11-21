@@ -1,10 +1,10 @@
 {
-  "name": "monitoring-platform",
-  "packageManager": "yarn@4.6.0",
+  "name": "polguard",
+  "packageManager": "yarn@4.11.0",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/w3f/monitoring-platform.git"
+    "url": "https://github.com/w3f/polguard.git"
   },
   "workspaces": [
     "packages/*",
@@ -17,12 +17,12 @@
     "test": "yarn workspaces foreach -W run test",
     "test:integration": "yarn workspaces foreach -W run test:integration",
     "lint": "yarn workspaces foreach -W run lint",
-    "start:chain:dev": "yarn workspace @w3f/monitoring-chain start:dev",
-    "start:chain": "yarn workspace @w3f/monitoring-chain start",
-    "start:matrix:dev": "yarn workspace @w3f/monitoring-matrix start:dev",
-    "start:matrix": "yarn workspace @w3f/monitoring-matrix start",
-    "start:incident:dev": "yarn workspace @w3f/monitoring-incident start:dev",
-    "start:incident": "yarn workspace @w3f/monitoring-incident start:with-migrations"
+    "start:chain:dev": "yarn workspace @w3f/polguard-chain start:dev",
+    "start:chain": "yarn workspace @w3f/polguard-chain start",
+    "start:matrix:dev": "yarn workspace @w3f/polguard-matrix start:dev",
+    "start:matrix": "yarn workspace @w3f/polguard-matrix start",
+    "start:incident:dev": "yarn workspace @w3f/polguard-incident start:dev",
+    "start:incident": "yarn workspace @w3f/polguard-incident start:with-migrations"
   },
   "engines": {
     "node": ">=20.0.0"

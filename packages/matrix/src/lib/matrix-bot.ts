@@ -1,8 +1,8 @@
 import { MatrixClient } from './matrix-client';
 import { MatrixConfig, IncidentServiceInterface, QueryFilters } from './interfaces';
-import { Logger, MessengerType, NotificationType, Chain } from '@w3f/monitoring-common';
+import { Logger, MessengerType, NotificationType, Chain } from '@w3f/polguard-common';
 import { MatrixEvent } from 'matrix-js-sdk';
-import { getGroupsForChannel } from '@w3f/monitoring-config';
+import { getGroupsForChannel } from '@w3f/polguard-config';
 
 export class MatrixBot extends MatrixClient {
   // This property handles "Message too long (112988 bytes)"
@@ -236,10 +236,10 @@ export class MatrixBot extends MatrixClient {
   }
 
   private async handleManualCommand(roomId: string) {
-    const manualMessage = `<p><strong>Monitoring Platform User Manual</strong></p>
+    const manualMessage = `<p><strong>PolGuard User Manual</strong></p>
 
 <p><strong>How It Works:</strong></p>
-<p>Responsible teams configure the monitoring system by updating YAML files in Git repositories following the <a href="https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md">configuration guide</a>. The monitoring system periodically updates its active configuration from these repositories.</p>
+<p>Responsible teams configure the monitoring system by updating YAML files in Git repositories following the <a href="https://github.com/w3f/polguard/blob/master/packages/config/CONFIG_GUIDE.md">configuration guide</a>. The monitoring system periodically updates its active configuration from these repositories.</p>
 
 <p>Every block, the system checks configured rules and generates incidents:</p>
 <ul>

@@ -2,8 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
-import { getLogLevels } from '@w3f/monitoring-common';
-import { buildOtelSdk } from '@w3f/monitoring-common';
+import { getLogLevels, buildOtelSdk } from '@w3f/polguard-common';
 import * as pkg from '../../package.json'; // "* as" import needed whilst we use commonJS
 
 async function bootstrap() {
@@ -16,7 +15,7 @@ async function bootstrap() {
   const logger = new Logger('Main');
   const serverConfig = configService.getServerConfig();
 
-  const otelSdk = buildOtelSdk(pkg.name, pkg.version, undefined, false, true);
+  const otelSdk = buildOtelSdk(pkg.name, pkg.version, false, true);
   otelSdk.start();
 
   logger.debug('Application created, starting initialization...');

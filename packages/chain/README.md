@@ -1,4 +1,4 @@
-# @w3f/monitoring-chain
+# @w3f/polguard-chain
 
 The Chain service monitors blockchain activities and generates or resolves incidents based on detected conditions. It processes blockchain events, extrinsic calls, and state changes across Polkadot ecosystem chains.
 
@@ -17,7 +17,7 @@ See [Monitors & Handlers Reference](../config/MONITORS.md) for complete list of 
 graph TB
     %% External
     Blockchain[("RPC node")]:::blockchain
-    Config["<a href='https://github.com/w3f/monitoring-platform/blob/master/packages/config/CONFIG_GUIDE.md'>Monitoring Config</a><br>(YAML)"]:::config
+    Config["<a href='https://github.com/w3f/polguard/blob/master/packages/config/CONFIG_GUIDE.md'>Monitoring Config</a><br>(YAML)"]:::config
     
     %% Core Processing
     subgraph Processing ["Block Processing"]
@@ -39,14 +39,14 @@ graph TB
     end
     
     %% Connections
-    Blockchain -->|"Subscribes to<br>finalized blocks"| Watcher
-    Config -.->|"Loads rules"| Watcher
+    Watcher -->|"Subscribes to<br>finalized blocks"| Blockchain
+    Watcher -.->|"Loads rules"| Config
     Watcher -->|"Distributes<br>events/calls/state"| Monitors
     Monitors -->|"Query chain state"| DataProvider
-    DataProvider -->|"Cache queries"| Store
+    DataProvider -->|"Caches queries"| Store
     Monitors -->|"Create/resolve<br>incidents"| IncidentHandler
-    IncidentHandler -->|"Track ongoing incident state"| Store
-    IncidentHandler -->|"Send incidents"| Reporter
+    IncidentHandler -->|"Tracks ongoing<br>incident state"| Store
+    IncidentHandler -->|"Sends incidents"| Reporter
     
     %% Styling
     classDef blockchain fill:#E1D5E7,stroke:#9673A6,stroke-width:2px
@@ -71,7 +71,7 @@ The codebase is organized into two loosely coupled directories:
 
 - **`src/service/`** - NestJS service layer that provides concrete implementations of interfaces defined in `lib/`. Includes configuration management, health endpoints, and implementations of Store and Reporter abstractions.
 
-See [Development Notes](https://github.com/w3f/monitoring-platform/blob/master/docs/NOTES.md) for detailed architectural decisions.
+See [Development Notes](https://github.com/w3f/polguard/blob/master/docs/NOTES.md) for detailed architectural decisions.
 
 ## API Endpoints
 

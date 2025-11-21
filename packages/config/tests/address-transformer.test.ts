@@ -1,5 +1,5 @@
 import { AddressTransformer } from '../src/address-transformer';
-import { Chain, getChainProperties } from '@w3f/monitoring-common';
+import { Chain, getChainProperties } from '@w3f/polguard-common';
 import { encodeAddress } from '@polkadot/util-crypto';
 import { hexToU8a } from '@polkadot/util';
 

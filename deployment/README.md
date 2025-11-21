@@ -33,7 +33,7 @@ CircleCI handles the build and release process:
 
 ### Docker Images
 
-Images are published to Docker Hub under `web3f/monitoring-platform` with the following tagging strategy:
+Images are published to Docker Hub under `web3f/polguard` with the following tagging strategy:
 
 - `${CIRCLE_SHA1}` - Every commit
 - `master`, `latest` - Master branch commits

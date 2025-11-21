@@ -12,12 +12,12 @@ import {
   CallHandlerParams,
   EventHandlerParams,
   StateHandlerParams,
-} from '@w3f/monitoring-common';
+} from '@w3f/polguard-common';
 import { Formatter } from '../formatter';
 import { ConfigRegistry } from '../config-registry';
 
 /**
- * Base class for all chain monitors in the monitoring platform.
+ * Base class for all chain monitors in the monitoring polkadot.
  * Provides common infrastructure for handler management and chain-specific processing.
  *
  * Chain monitors use three types of handlers:

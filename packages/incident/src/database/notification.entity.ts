@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { MessengerType, NotificationType } from '@w3f/monitoring-common';
+import { MessengerType, NotificationType } from '@w3f/polguard-common';
 import type { Incident } from './incident.entity';
 
 @Entity('notification')

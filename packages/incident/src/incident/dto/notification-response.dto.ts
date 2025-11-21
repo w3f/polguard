@@ -1,4 +1,4 @@
-import { NotificationType } from '@w3f/monitoring-common';
+import { NotificationType } from '@w3f/polguard-common';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class NotificationResponseDto {

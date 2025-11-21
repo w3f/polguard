@@ -10,7 +10,6 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
-import {TELEMETRY_PREFIX} from "./constants";
 
 /**
  * Creates and returns an OpenTelemetry SDK instance.
@@ -20,11 +19,10 @@ import {TELEMETRY_PREFIX} from "./constants";
  *
  * @param serviceName the name of the service, e.g. "monitoring-api" or "monitoring-chain"; usually taken from package.json
  * @param serviceVersion the version of the service, e.g. "1.0.1"; usually taken from package.json
- * @param chain if this instance is a monitoring-chain instance, which chain is it monitoring (e.g. kusama, asset-hub, etc.)
  * @param enableTraces enables traces which are exported to the console STDOUT.
  * @param enableMetrics enables metrics, a Prometheus metrics server, and exports the metrics to the metrics server.
  */
-export const buildOtelSdk = (serviceName: string, serviceVersion?: string, chain?: string, enableTraces: boolean = true, enableMetrics: boolean = true): NodeSDK => {
+export const buildOtelSdk = (serviceName: string, serviceVersion?: string, enableTraces: boolean = true, enableMetrics: boolean = true): NodeSDK => {
   const hostname = os.hostname();
 
   const otelSdk = new NodeSDK({
@@ -33,7 +31,6 @@ export const buildOtelSdk = (serviceName: string, serviceVersion?: string, chain
       [ATTR_SERVICE_VERSION]: serviceVersion ?? 'unknown',
       [SEMRESATTRS_SERVICE_INSTANCE_ID]: hostname, // will be updated to ATTR_SERVICE_INSTANCE_ID in the future
       [SEMRESATTRS_CONTAINER_ID]: hostname, // will update to ATTR_CONTAINER_ID in the future
-      [`${TELEMETRY_PREFIX}.chain`]: chain ?? undefined,
     }),
     traceExporter: !enableTraces ? undefined : new ConsoleSpanExporter(),
     metricReader: !enableMetrics ? undefined : new PrometheusExporter({

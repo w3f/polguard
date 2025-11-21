@@ -53,13 +53,13 @@ for t in docker kind kubectl helm; do
   command_exists "$t" || { echo "$t missing"; exit 1; }
 done
 
-docker build -t web3f/monitoring-platform:"$IMAGE_TAG" .
-docker build -t web3f/monitoring-platform-e2e:"$IMAGE_TAG" -f e2e/Dockerfile .
+docker build -t web3f/polguard:"$IMAGE_TAG" .
+docker build -t web3f/polguard-e2e:"$IMAGE_TAG" -f e2e/Dockerfile .
 
 kind get clusters --quiet | grep -q "^dev$" || kind create cluster --name dev
 
-kind load docker-image web3f/monitoring-platform:"$IMAGE_TAG" --name dev
-kind load docker-image web3f/monitoring-platform-e2e:"$IMAGE_TAG" --name dev
+kind load docker-image web3f/polguard:"$IMAGE_TAG" --name dev
+kind load docker-image web3f/polguard-e2e:"$IMAGE_TAG" --name dev
 
 kubectl create ns "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
@@ -69,13 +69,13 @@ helm lint ./e2e/chart
 
 helm upgrade --install "$RELEASE_NAME" ./e2e/chart \
               -n "$NAMESPACE" --create-namespace \
-              --set tests.image.repository=web3f/monitoring-platform-e2e \
+              --set tests.image.repository=web3f/polguard-e2e \
               --set tests.image.tag=${IMAGE_TAG} \
-              --set monitoring.image.tag=${IMAGE_TAG} \
-              --set monitoring.configFetcher.defaultToken=${GITLAB_TOKEN} \
-              --set monitoring.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
+              --set polguard.image.tag=${IMAGE_TAG} \
+              --set polguard.configFetcher.defaultToken=${GITLAB_TOKEN} \
+              --set polguard.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set tests.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
-              --set monitoring.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
+              --set polguard.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --set secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --wait \
               --debug

@@ -8,7 +8,7 @@ import {
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator';
-import { Chain } from '@w3f/monitoring-common';
+import { Chain } from '@w3f/polguard-common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { NotificationChannelDto } from './notification-channel.dto';

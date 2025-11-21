@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { metrics, Meter, Gauge } from '@opentelemetry/api';
-import { TELEMETRY_PREFIX } from '@w3f/monitoring-common';
-import { ChainTelemetryClient, MonitoringGroup } from '@w3f/monitoring-common';
+import { TELEMETRY_PREFIX } from '@w3f/polguard-common';
+import { ChainTelemetryClient, MonitoringGroup } from '@w3f/polguard-common';
 
 @Injectable()
 export class ChainTelemetryService implements ChainTelemetryClient {
@@ -13,8 +13,10 @@ export class ChainTelemetryService implements ChainTelemetryClient {
   private readonly totalGroups: Gauge;
   private readonly totalAccounts: Gauge;
   private readonly totalMonitors: Gauge;
+  private readonly chainName: string;
 
-  constructor() {
+  constructor(chainName: string) {
+    this.chainName = chainName;
     this.meter = metrics.getMeter(`${TELEMETRY_PREFIX}.monitoring-chain`);
 
     this.latestBlockOnChain = this.meter.createGauge(`${TELEMETRY_PREFIX}.monitoring-chain.latest-block-on-chain`, {
@@ -50,28 +52,28 @@ export class ChainTelemetryService implements ChainTelemetryClient {
   }
 
   recordLatestBlock(blockNumber: number): void {
-    this.latestBlockOnChain.record(blockNumber);
+    this.latestBlockOnChain.record(blockNumber, { chain: this.chainName });
   }
 
   recordProcessedBlock(blockNumber: number): void {
-    this.lastBlockProcessed.record(blockNumber);
+    this.lastBlockProcessed.record(blockNumber, { chain: this.chainName });
   }
 
   recordCurrentBlock(blockNumber: number): void {
-    this.currentBlockProcessing.record(blockNumber);
+    this.currentBlockProcessing.record(blockNumber, { chain: this.chainName });
   }
 
   recordProcessingTime(ms: number): void {
-    this.blockProcessingTime.record(ms);
+    this.blockProcessingTime.record(ms, { chain: this.chainName });
   }
 
   recordMonitoringConfig(groups: MonitoringGroup[]): void {
-    this.totalGroups.record(groups.length);
+    this.totalGroups.record(groups.length, { chain: this.chainName });
 
     const accounts = new Set(groups.flatMap(g => g.accounts.map(a => a.ss58)));
-    this.totalAccounts.record(accounts.size);
+    this.totalAccounts.record(accounts.size, { chain: this.chainName });
 
     const monitorTypes = new Set(groups.flatMap(g => g.monitors.map(m => m.name)));
-    this.totalMonitors.record(monitorTypes.size);
+    this.totalMonitors.record(monitorTypes.size, { chain: this.chainName });
   }
 }

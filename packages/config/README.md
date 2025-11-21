@@ -1,6 +1,6 @@
-# @w3f/monitoring-config
+# @w3f/polguard-config
 
-The Config package is responsible for loading, validating, and processing monitoring configuration files. It transforms raw YAML configurations into structured monitoring groups that can be used by the monitoring services.
+The Config package is responsible for loading, validating, and processing monitoring configuration files from the local filesystem. It transforms YAML configurations into structured monitoring groups that can be used by the monitoring services.
 
 ## Documentation
 
@@ -9,33 +9,9 @@ The Config package is responsible for loading, validating, and processing monito
 
 ## Components
 
-### Component Relationships
-
-```mermaid
-graph TD
-    RemoteYAML[Remote YAML Files] -->|input to| ConfigFetcher
-    ConfigFetcher -->|produces| LocalYAML[Local YAML Files]
-    LocalYAML -->|input to| ConfigProcessor
-    
-    ConfigFetcher -->|calls| ConfigProcessor
-    ConfigProcessor -->|uses| ConfigValidator
-    ConfigProcessor -->|uses| AddressTransformer
-    ConfigProcessor -->|uses| AccountSettingsBuilder
-    
-    ConfigProcessor -->|outputs| MonitoringGroup
-```
-
-#### ConfigFetcher
-
-Main entry point for fetching remote configurations:
-- Fetches YAML files from URLs (e.g., GitLab, GitHub)
-- Saves them locally for processing
-- Supports authentication tokens for private repositories
-- **Calls ConfigProcessor** to process the fetched files
-
 #### ConfigProcessor
 
-Main entry point for processing local configuration files:
+Internal component for processing configuration files:
 - Loads and validates YAML configuration files
 - Applies default settings when not explicitly provided
 - Creates separate group for each chain configuration
@@ -67,36 +43,17 @@ Handles blockchain address transformations:
 ## Installation
 
 ```bash
-yarn add @w3f/monitoring-config
+yarn add @w3f/polguard-config
 ```
 
-## Usage Examples
-
-The package exports two main classes:
-
-### ConfigFetcher
-
-Used to fetch remote configuration files and process them:
+## Usage
 
 ```typescript
-import { ConfigFetcher } from '@w3f/monitoring-config';
+import { getMonitoringGroups } from '@w3f/polguard-config';
+import { Chain } from '@w3f/polguard-common';
 
-// Fetch from remote sources and process
-const sources = [
-  { name: 'main', url: 'https://gitlab.com/config.yaml', authToken: 'token' }
-];
-const monitoringGroups = await ConfigFetcher.fetchAndProcessConfigs(sources, './monitoring-configs');
+// Load monitoring groups for a specific chain from local filesystem
+const groups = await getMonitoringGroups(Chain.Polkadot, './config-dir', logger);
 ```
 
-### ConfigProcessor
-
-Used directly with local YAML files:
-
-```typescript
-import { ConfigProcessor } from '@w3f/monitoring-config';
-import * as fs from 'fs';
-
-// Process existing YAML files in the filesystem
-const configFiles = ['./monitoring-configs/config1.yaml',];
-const monitoringGroups = ConfigProcessor.processConfigs(configFiles);
-```
+**Note:** The config directory must exist on the local filesystem and contain `.yaml` files.

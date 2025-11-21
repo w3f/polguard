@@ -6,7 +6,7 @@ import {
   EventHandlerParams,
   ID_TOKEN_MAP,
   TokenBalances,
-} from '@w3f/monitoring-common';
+} from '@w3f/polguard-common';
 import { Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 

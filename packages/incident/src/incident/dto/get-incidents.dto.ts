@@ -1,5 +1,5 @@
 import { IsOptional, IsEnum, IsDateString, IsString, IsBoolean } from 'class-validator';
-import { Chain, MessengerType } from '@w3f/monitoring-common';
+import { Chain, MessengerType } from '@w3f/polguard-common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 

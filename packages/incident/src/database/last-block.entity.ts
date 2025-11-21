@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Chain } from '@w3f/monitoring-common';
+import { Chain } from '@w3f/polguard-common';
 
 @Entity()
 export class LastBlock {

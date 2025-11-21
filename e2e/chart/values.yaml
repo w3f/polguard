@@ -1,12 +1,11 @@
 # ------------------------------------ Configs for the monitoring-service subchart -------------------------------------
 
 
-# Values under the "monitoring:" key will be applied to the monitoring-platform subchart
-# n.b. we alias monitoring-platform to monitoring as helm prefers camelCase values and monitoring-platform includes a dash
-monitoring:
+# Values under the "polguard:" key will be applied to the polguard subchart
+polguard:
 
   # Global
-  fullnameOverride: "e2e" # used to create consistently named resources from the monitoring-platform subchart
+  fullnameOverride: "e2e" # used to create consistently named resources from the polguard subchart
 
   # Disable the default servicemonitors and prometheusrules
   serviceMonitorsEnabled: false
@@ -97,7 +96,7 @@ monitoring:
 
 tests:
   image:
-    repository: "web3f/monitoring-platform-e2e"
+    repository: "web3f/polguard-e2e"
     tag: "latest"
     pullPolicy: "IfNotPresent"
   config:

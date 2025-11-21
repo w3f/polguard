@@ -5,7 +5,7 @@ import {
   BalancesHandlerType as H,
   EventHandlerParams,
   CallHandlerParams,
-} from '@w3f/monitoring-common';
+} from '@w3f/polguard-common';
 import { Call, Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 
@@ -34,7 +34,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
         );
         // TODO: We will implement a flexible value definition system so we can use BalanceChange
         // instead of two BalanceDecrease, BalanceIncrease
-        // See: https://github.com/w3f/monitoring-platform/issues/69
+        // See: https://github.com/w3f/polguard/issues/69
         if (currentBalance < previousBalance) {
           const key = { account: account.ss58, groupId, handlerType };
           await this.incidents.handle(message, notifications, key, blockContext);

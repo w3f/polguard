@@ -1,4 +1,4 @@
-import { Chain } from '@w3f/monitoring-common';
+import { Chain } from '@w3f/polguard-common';
 import { ApiProperty } from '@nestjs/swagger';
 import { NotificationResponseDto } from './notification-response.dto';
 

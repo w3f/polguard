@@ -1,6 +1,6 @@
 import { Controller, Get, Put, Body, Param, BadRequestException, Logger } from '@nestjs/common';
 import { LastBlockService } from './last-block.service';
-import { Chain } from '@w3f/monitoring-common';
+import { Chain } from '@w3f/polguard-common';
 import { UpdateLastBlockDto } from './dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { LastBlock } from '../database/last-block.entity';

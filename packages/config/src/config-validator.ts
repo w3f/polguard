@@ -24,7 +24,7 @@ import {
   AssetsHandlerType,
   IDENTITY_FIELDS,
   CHAIN_TOKENS,
-} from '@w3f/monitoring-common';
+} from '@w3f/polguard-common';
 
 const decimalStringPattern = /^-?\d*\.?\d*$/;
 const decimalStringSchema = Joi.string().pattern(decimalStringPattern).messages({

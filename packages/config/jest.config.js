@@ -26,7 +26,7 @@ module.exports = {
   moduleNameMapper: {
     '^@service/(.*)$': '<rootDir>/src/service/$1',
     '^@lib/(.*)$': '<rootDir>/src/lib/$1',
-    '^@w3f/monitoring-common$': '<rootDir>/../common/src'
+    '^@w3f/polguard-common$': '<rootDir>/../common/src'
   },
   roots: [
     "<rootDir>/src",

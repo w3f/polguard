@@ -1,6 +1,6 @@
 # Configuration Guide
 
-This guide explains how to configure the monitoring platform using YAML configuration files. It references the monitors and handlers described in the [Monitors & Handlers Reference](./MONITORS.md).
+This guide explains how to configure the monitoring polkadot using YAML configuration files. It references the monitors and handlers described in the [Monitors & Handlers Reference](./MONITORS.md).
 
 ## Configuration Structure
 

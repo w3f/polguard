@@ -1,6 +1,6 @@
-# End-to-End Tests for Monitoring Platform
+# End-to-End Tests for PolGuard
 
-This directory contains end-to-end tests for the Monitoring Platform. These tests verify the complete flow from chain events to API incidents to Matrix notifications.
+This directory contains end-to-end tests for PolGuard. These tests verify the complete flow from chain events to API incidents to Matrix notifications.
 
 ## Directory Structure
 
@@ -8,7 +8,6 @@ This directory contains end-to-end tests for the Monitoring Platform. These test
 e2e/
 ├── Dockerfile            # Docker image for running e2e tests
 ├── chart/                # Helm chart for deploying e2e tests in Kubernetes
-├── docker-compose.yml    # Docker Compose for local development
 ├── scripts/              # Utility scripts for running tests locally
 └── src/                  # Source code for e2e tests
 ```
@@ -57,12 +56,12 @@ To run the full e2e tests in a Kubernetes environment, use the provided script:
 
 This script will:
 1. Check for required tools (Docker, KinD, kubectl, Helm)
-2. Build Docker images for the monitoring platform and e2e tests
+2. Build Docker images for the monitoring polkadot and e2e tests
 3. Create a KinD cluster (or use an existing one)
 4. Load the Docker images into the KinD cluster
 5. Create necessary Kubernetes secrets
 6. Update Helm dependencies for both the deployment chart and e2e chart
-7. Deploy the e2e chart with all components (API, Chain, Matrix, PostgreSQL)
+7. Deploy the e2e chart with all components (Incident, Chain, Matrix, PostgreSQL)
 8. Run the e2e tests
 
 ## CI/CD Integration

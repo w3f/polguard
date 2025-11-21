@@ -53,7 +53,7 @@ async function waitForChainBlock(targetBlock: number): Promise<void> {
       console.log('Got metrics response.');
       console.log(`Response is ${response.data.length} bytes long.`);
 
-      const blockMatch = response.data.match(/^foundation_web3_mp_monitoring_chain_last_block_processed\s\d+$/gm);
+      const blockMatch = response.data.match(/^foundation_web3_mp_monitoring_chain_last_block_processed\{chain="[^"]+"\}\s+\d+$/gm);
       console.log(`blockMatch is: ${blockMatch}`);
 
       if (blockMatch) {

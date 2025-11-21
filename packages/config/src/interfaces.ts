@@ -1,4 +1,4 @@
-import { Chain, MonitorType, NotificationSettings } from '@w3f/monitoring-common';
+import { Chain, MonitorType, NotificationSettings } from '@w3f/polguard-common';
 
 export interface RawMonitoringGroup {
   id: string;

@@ -1,4 +1,4 @@
-import { Logger, NotificationSettings, IncidentHandlerClient, IncidentKey, BlockContext } from '@w3f/monitoring-common';
+import { Logger, NotificationSettings, IncidentHandlerClient, IncidentKey, BlockContext } from '@w3f/polguard-common';
 
 export class LoggerAdapter implements Logger {
   constructor(

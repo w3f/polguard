@@ -1,5 +1,5 @@
 {
-  "name": "@w3f/monitoring-common",
+  "name": "@w3f/polguard-common",
   "version": "0.2.0",
   "description": "Common types, interfaces, constants and utilities for W3F monitoring services including chain watcher, matrix notifications and configuration",
   "author": "W3F SecOps Team <devops@web3.foundation>",

@@ -4,11 +4,11 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
 import * as JSONbig from 'json-bigint';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { getLogLevels, buildOtelSdk } from '@w3f/monitoring-common';
+import { getLogLevels, buildOtelSdk } from '@w3f/polguard-common';
 import * as pkg from '../package.json'; // "* as" import needed whilst we use commonJS
 
 async function bootstrap() {
-  const otelSdk = buildOtelSdk(pkg.name, pkg.version, undefined, false, true);
+  const otelSdk = buildOtelSdk(pkg.name, pkg.version, false, true);
   otelSdk.start();
 
   const app = await NestFactory.create(AppModule);
@@ -40,7 +40,7 @@ async function bootstrap() {
   // Setup Swagger
   const config = new DocumentBuilder()
     .setTitle('Monitoring API')
-    .setDescription('The Monitoring Platform API documentation')
+    .setDescription('The PolGuard API documentation')
     .setVersion('1.0')
     .addTag('incidents')
     .addTag('health')

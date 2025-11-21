@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { Chain, MessengerType, NotificationType, ResolutionType } from '@w3f/monitoring-common';
+import { Chain, MessengerType, NotificationType, ResolutionType } from '@w3f/polguard-common';
 import { DataSource } from 'typeorm';
 import { cleanupTestDatabase, createTestApp } from './test-utils';
 import { Incident } from '../../src/database/incident.entity';

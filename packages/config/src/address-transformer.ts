@@ -1,4 +1,4 @@
-import { AccountId, ChainProperties } from '@w3f/monitoring-common';
+import { AccountId, ChainProperties } from '@w3f/polguard-common';
 import { u8aToHex, hexToU8a, isHex } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 

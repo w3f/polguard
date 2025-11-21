@@ -1,5 +1,5 @@
 import { MessageRenderer } from '../../../src/notification/message-renderer';
-import { NotificationType, Style, MessagePayload } from '@w3f/monitoring-common';
+import { NotificationType, Style, MessagePayload } from '@w3f/polguard-common';
 
 describe('MessageRenderer', () => {
   const incidentId = 'GEB7BN648733';

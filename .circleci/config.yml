@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────────────────────────────────────────
-#  CircleCI pipeline for “monitoring-platform”
+#  CircleCI pipeline for "polguard"
 #
 #  • JS ⇒ build / lint / tests
 #  • Docker ⇒ build & push images (SHA on every commit; master → master + latest)
@@ -49,10 +49,10 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - docker/build:
-          image: web3f/monitoring-platform
+          image: web3f/polguard
           tag: ${CIRCLE_SHA1}
       - docker/push:
-          image: web3f/monitoring-platform
+          image: web3f/polguard
           tag: ${CIRCLE_SHA1}
       - when:
           condition:
@@ -62,8 +62,8 @@ jobs:
                 name: Tag master & latest
                 command: |
                   for t in master latest; do
-                    docker tag web3f/monitoring-platform:${CIRCLE_SHA1} web3f/monitoring-platform:$t
-                    docker push web3f/monitoring-platform:$t
+                    docker tag web3f/polguard:${CIRCLE_SHA1} web3f/polguard:$t
+                    docker push web3f/polguard:$t
                   done
 
   end_to_end_tests:
@@ -75,7 +75,7 @@ jobs:
 
       - run:
           name: Pull app image from registry
-          command: docker pull web3f/monitoring-platform:${CIRCLE_SHA1}
+          command: docker pull web3f/polguard:${CIRCLE_SHA1}
 
       - run:
           name: Install kube tools
@@ -107,8 +107,8 @@ jobs:
       - run:
           name: Build E2E runner image
           command: |
-            docker build -t web3f/monitoring-platform-e2e:${CIRCLE_SHA1} -f e2e/Dockerfile .
-            docker push web3f/monitoring-platform-e2e:${CIRCLE_SHA1}
+            docker build -t web3f/polguard-e2e:${CIRCLE_SHA1} -f e2e/Dockerfile .
+            docker push web3f/polguard-e2e:${CIRCLE_SHA1}
 
       - run:
           name: Create KinD cluster
@@ -120,8 +120,8 @@ jobs:
               --image kindest/node:v1.30.0 \
               --wait 120s
 
-            kind load docker-image web3f/monitoring-platform:${CIRCLE_SHA1} --name=ci
-            kind load docker-image web3f/monitoring-platform-e2e:${CIRCLE_SHA1} --name=ci
+            kind load docker-image web3f/polguard:${CIRCLE_SHA1} --name=ci
+            kind load docker-image web3f/polguard-e2e:${CIRCLE_SHA1} --name=ci
 
       - run:
           name: Update and build Helm chart dependencies
@@ -138,17 +138,17 @@ jobs:
       - run:
           name: Install e2e chart
           command: |
-            echo "Now installing monitoring-platform with helm. This command will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state. If this command times out, check the status of esp. the Deployments and Pods."
+            echo "Now installing polguard with helm. This command will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state. If this command times out, check the status of esp. the Deployments and Pods."
             kubectl create ns e2e
             helm upgrade --install $RELEASE ./e2e/chart \
               -n e2e --create-namespace \
-              --set tests.image.repository=web3f/monitoring-platform-e2e \
+              --set tests.image.repository=web3f/polguard-e2e \
               --set tests.image.tag=${CIRCLE_SHA1} \
-              --set monitoring.image.tag=${CIRCLE_SHA1} \
-              --set monitoring.configFetcher.defaultToken=${GITLAB_TOKEN} \
-              --set monitoring.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set tests.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
-              --set monitoring.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
+              --set polguard.image.tag=${CIRCLE_SHA1} \
+              --set polguard.configFetcher.defaultToken=${GITLAB_TOKEN} \
+              --set polguard.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
+              --set polguard.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --set secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --wait
           no_output_timeout: 10m
@@ -171,7 +171,7 @@ jobs:
           when: on_fail
           command: |
             NS=e2e
-            for comp in api chain matrix postgresql; do
+            for comp in incident chain matrix postgresql; do
               echo "=== Logs for component=$comp ==="
               kubectl -n $NS logs \
                 --selector app.kubernetes.io/component=$comp \
@@ -189,7 +189,7 @@ jobs:
   release_tag:
     machine: true
     environment:
-      IMAGE: web3f/monitoring-platform
+      IMAGE: web3f/polguard
 
     steps:
       - docker_login
