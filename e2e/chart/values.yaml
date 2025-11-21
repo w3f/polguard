@@ -1,5 +1,12 @@
-# ------------------------------------ Configs for the monitoring-service subchart -------------------------------------
+# ------------------------------------ Configs for the subcharts -------------------------------------
 
+postgresql:
+  auth:
+    username: "postgres"
+    password: "postgres"
+    database: "monitoring"
+  persistence:
+    size: "100Mi"
 
 # Values under the "polguard:" key will be applied to the polguard subchart
 polguard:
@@ -91,7 +98,7 @@ polguard:
       accessModes:
         - "ReadWriteOnce"
 
-# --------------------------------------- Configs for parent the e2e test chart ----------------------------------------
+# --------------------------------------- Configs for the e2e test chart ----------------------------------------
 
 tests:
   image:
@@ -123,11 +130,3 @@ tests:
 # Secrets configuration for the test runner pod
 secrets:
   MATRIX_TOKEN: "BAD_TOKEN_IN_TEST_RUNER" # this should match the value provided for /monitoring.notificationService.secrets.MATRIX_TOKEN
-
-postgresql:
-  auth:
-    username: "postgres"
-    password: "postgres"
-    database: "monitoring"
-  persistence:
-    size: "100Mi"

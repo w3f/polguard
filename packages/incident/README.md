@@ -1,4 +1,4 @@
-# @w3f/monitoring-incident
+# @w3f/polguard-incident
 
 The Incident service manages incident lifecycle, state persistence, and notification delivery. It provides a REST API for incident creation, acknowledgment, and resolution, serving as the central coordination point in Platform Mode.
 

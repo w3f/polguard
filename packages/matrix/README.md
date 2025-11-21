@@ -1,4 +1,4 @@
-# @w3f/monitoring-matrix
+# @w3f/polguard-matrix
 
 The Matrix service delivers incident notifications to Matrix rooms and provides a bot interface for incident management. It receives notification requests from the Incident service and enables team interaction via bot commands.
 

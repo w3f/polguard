@@ -74,7 +74,7 @@ If the tests fail, check the logs:
 
 ```bash
 # For local tests
-kubectl -n dev logs -l app.kubernetes.io/instance=monitoring-e2e
+kubectl -n dev logs -l app.kubernetes.io/instance=polguard-e2e
 
 # For CI tests
 kubectl -n e2e logs -l app.kubernetes.io/instance=e2e-<job-id>

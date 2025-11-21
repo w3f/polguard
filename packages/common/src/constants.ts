@@ -1,4 +1,4 @@
-export const TELEMETRY_PREFIX = 'foundation.web3.mp';
+export const TELEMETRY_PREFIX = 'w3f.polguard';
 
 export interface ChainProperties {
   chain: Chain,

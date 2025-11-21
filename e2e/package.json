@@ -1,5 +1,5 @@
 {
-  "name": "@w3f/monitoring-e2e",
+  "name": "@w3f/polguard-e2e",
   "version": "1.0.0",
   "private": true,
   "type": "module",

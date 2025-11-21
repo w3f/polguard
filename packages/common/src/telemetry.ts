@@ -17,7 +17,7 @@ import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
  * The created instance is configured to export traces to the console, and metrics to Prometheus at `:9464/metrics`.
  * Additionally, a SIGTERM listener is registered to shut down the instance once a SIGTERM is received.
  *
- * @param serviceName the name of the service, e.g. "monitoring-api" or "monitoring-chain"; usually taken from package.json
+ * @param serviceName the name of the service, e.g. "polguard-incident" or "polguard-chain"; usually taken from package.json
  * @param serviceVersion the version of the service, e.g. "1.0.1"; usually taken from package.json
  * @param enableTraces enables traces which are exported to the console STDOUT.
  * @param enableMetrics enables metrics, a Prometheus metrics server, and exports the metrics to the metrics server.

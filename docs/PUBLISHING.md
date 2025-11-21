@@ -3,13 +3,13 @@
 This project contains both public and private packages:
 
 **Public packages**:
-- `@w3f/monitoring-common`: Common types, interfaces, constants and utilities
-- `@w3f/monitoring-config`: Configuration processing and validation
+- `@w3f/polguard-common`: Common types, interfaces, constants and utilities
+- `@w3f/polguard-config`: Configuration processing and validation
 
 **Private packages**:
-- `@w3f/monitoring-incident`: Central control service
-- `@w3f/monitoring-chain`: Blockchain monitoring service
-- `@w3f/monitoring-matrix`: Matrix notification service
+- `@w3f/polguard-incident`: Central control service
+- `@w3f/polguard-chain`: Blockchain monitoring service
+- `@w3f/polguard-matrix`: Matrix notification service
 
 ## Publishing Workflow
 
