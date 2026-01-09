@@ -11,11 +11,11 @@ image:
 
 resources:
   requests:
-    cpu: "200m"
-    memory: "256Mi"
-  limits:
-    cpu: "400m"
+    cpu: "600m"
     memory: "512Mi"
+  limits:
+    cpu: "1200m"
+    memory: "768Mi"
 
 serviceMonitorsEnabled: true
 
@@ -29,10 +29,9 @@ chainInitContainers:
   - name: "wait-for-monitoring-configs"
     image: "busybox:1.28"
     command: [ 'sh', '-c', 'until [ -f /app/monitoring-configs/current/.checksum ]; do echo waiting for monitoring configs; sleep 2; done;' ]
-    volumeMounts:
-      - name: monitoring-configs
-        mountPath: /app/monitoring-configs
-        readOnly: true
+    volumeMounts: [
+      { name: "monitoring-configs", mountPath: "/app/monitoring-configs", readOnly: true }
+    ]
   - name: "wait-for-incident"
     image: "busybox:1.28"
     command: [ 'sh', '-c', 'until nc -z {{ include "common.names.fullname" .global }}-incident 80; do echo waiting for incident; sleep 2; done;' ]
@@ -49,13 +48,6 @@ incidentService:
   serviceHttpPort: 80
   containerMetricsPort: 9464
   serviceMetricsPort: 9464
-  resources:
-    requests:
-      cpu: "400m"
-      memory: "512Mi"
-    limits:
-      cpu: "800m"
-      memory: "1024Mi"
 
 incidentInitContainers:
   - name: "wait-for-postgresql"
