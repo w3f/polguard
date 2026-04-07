@@ -12,6 +12,7 @@ import { getMonitoringGroups } from '@w3f/polguard-config';
 export class WatcherService implements OnApplicationBootstrap, OnApplicationShutdown {
   private api: ApiPromise;
   private watcher: ChainWatcher;
+  private persistenceInterval: NodeJS.Timeout;
 
   constructor(
     private readonly logger: Logger,
@@ -27,6 +28,11 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
 
   async onApplicationShutdown(): Promise<void> {
     try {
+      // Clear periodic persistence interval
+      if (this.persistenceInterval) {
+        clearInterval(this.persistenceInterval);
+      }
+
       // Flush last processed block to Store on shutdown
       const lastProcessed = this.watcher?.getLastProcessedBlock();
       if (lastProcessed !== undefined) {
@@ -35,7 +41,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
         await this.store.setLastBlock(chain, lastProcessed);
       }
     } catch (error) {
-      this.logger.error(`Failed to flush last processed block: ${error.message}`);
+      this.logger.error(`Failed to flush last processed block: ${(error as Error).message}`);
     } finally {
       await this.watcher?.stop();
       await this.api?.disconnect();
@@ -68,6 +74,20 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     );
 
     await this.watcher.start(startBlock);
+
+    // This ensures progress is saved even if the process crashes (OOM, SIGKILL, etc.)
+    const persistenceIntervalMs = 5 * 60 * 1000; // 5 minutes
+    this.persistenceInterval = setInterval(async () => {
+      try {
+        const lastProcessed = this.watcher?.getLastProcessedBlock();
+        if (lastProcessed !== undefined) {
+          await this.store.setLastBlock(chain, lastProcessed);
+          this.logger.debug(`Persisted last processed block: ${lastProcessed}`);
+        }
+      } catch (error) {
+        this.logger.error(`Failed to persist last processed block: ${(error as Error).message}`);
+      }
+    }, persistenceIntervalMs);
   }
 
   private async createApi(endpoint: string, expectedSpecName: string): Promise<ApiPromise> {

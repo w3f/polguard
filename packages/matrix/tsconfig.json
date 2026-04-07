@@ -16,8 +16,7 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "outDir": "./dist/commonjs",
-    "baseUrl": "./src"
+    "outDir": "./dist/commonjs"
   },
   "include": ["src/**/*", "tests/**/*"]
 }

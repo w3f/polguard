@@ -34,14 +34,14 @@ export class ChainWatcher {
   private latestBlockNumber = 0;
   private latestProcessedBlock?: number;
 
-  private static readonly monitorConfigs: [MonitorType, MonitorConstructor<MonitorType>][] = [
+  private static readonly monitorConfigs = [
     [MonitorType.Governance, GovernanceMonitor],
     [MonitorType.Staking, StakingMonitor],
     [MonitorType.Balances, BalancesMonitor],
     [MonitorType.Identity, IdentityMonitor],
     [MonitorType.Xcm, XcmMonitor],
     [MonitorType.Assets, AssetsMonitor],
-  ];
+  ] as [MonitorType, MonitorConstructor<MonitorType>][];
 
   constructor(
     private logger: Logger,

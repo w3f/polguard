@@ -17,8 +17,7 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
-    "outDir": "./dist/commonjs",
-    "baseUrl": "./src"
+    "outDir": "./dist/commonjs"
   },
   "include": ["src/**/*"]
 }
