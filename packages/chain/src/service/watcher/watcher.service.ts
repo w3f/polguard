@@ -28,7 +28,6 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
 
   async onApplicationShutdown(): Promise<void> {
     try {
-      // Clear periodic persistence interval
       if (this.persistenceInterval) {
         clearInterval(this.persistenceInterval);
       }

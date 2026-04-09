@@ -18,6 +18,14 @@ async function bootstrap() {
   const otelSdk = buildOtelSdk(pkg.name, pkg.version, false, true);
   otelSdk.start();
 
+  // Handle graceful shutdown
+  process.on('SIGTERM', async () => {
+    logger.log('SIGTERM signal received. Starting graceful shutdown...');
+    await app.close();
+    await otelSdk.shutdown();
+    logger.log('Application closed');
+  });
+
   logger.debug('Application created, starting initialization...');
   await app.init();
   await app.listen(serverConfig.port, serverConfig.host);

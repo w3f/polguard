@@ -27,12 +27,13 @@
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.62.1",
+    "@opentelemetry/core": "^2.0.1",
     "@opentelemetry/exporter-prometheus": "^0.203.0",
     "@opentelemetry/resources": "^2.0.1",
     "@opentelemetry/sdk-metrics": "^2.0.1",
     "@opentelemetry/sdk-node": "^0.203.0",
     "@opentelemetry/sdk-trace-node": "^2.0.1",
-    "@opentelemetry/semantic-conventions": "^1.29.0",
+    "@opentelemetry/semantic-conventions": "^1.40.0",
     "@polkadot/api-augment": "^16.4.8",
     "@polkadot/types": "^16.4.8"
   },

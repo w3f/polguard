@@ -52,6 +52,14 @@ async function bootstrap() {
   // Get server configuration
   const serverConfig = configService.getServerConfig();
 
+  // Handle graceful shutdown
+  process.on('SIGTERM', async () => {
+    logger.log('SIGTERM signal received. Starting graceful shutdown...');
+    await app.close();
+    await otelSdk.shutdown();
+    logger.log('Application closed');
+  });
+
   logger.debug('Application created, starting initialization...');
   await app.init();
   await app.listen(serverConfig.port, serverConfig.host);

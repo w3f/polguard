@@ -21,6 +21,7 @@ async function bootstrap() {
   process.on('SIGTERM', async () => {
     logger.log('SIGTERM signal received. Starting graceful shutdown...');
     await app.close();
+    await otelSdk.shutdown();
     logger.log('Application closed');
   });
 

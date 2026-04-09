@@ -32,7 +32,6 @@ export class ChainTelemetryService implements ChainTelemetryClient {
       { description: 'The block that the chain-service is currently processing.' },
     );
 
-    // This should be available via traces, if traces are enabled
     this.blockProcessingTime = this.meter.createGauge(`${TELEMETRY_PREFIX}.chain.block-processing-time`, {
       description: 'The time it takes to process a block.',
       unit: 'ms',
