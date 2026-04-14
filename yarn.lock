@@ -2855,7 +2855,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/api-augment@npm:16.5.2, @polkadot/api-augment@npm:^16.4.8":
+"@polkadot/api-augment@npm:16.5.2":
   version: 16.5.2
   resolution: "@polkadot/api-augment@npm:16.5.2"
   dependencies:
@@ -3060,7 +3060,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/types@npm:16.5.2, @polkadot/types@npm:^16.4.8":
+"@polkadot/types@npm:16.5.2":
   version: 16.5.2
   resolution: "@polkadot/types@npm:16.5.2"
   dependencies:
@@ -4341,8 +4341,6 @@ __metadata:
     "@opentelemetry/sdk-node": "npm:^0.203.0"
     "@opentelemetry/sdk-trace-node": "npm:^2.0.1"
     "@opentelemetry/semantic-conventions": "npm:^1.40.0"
-    "@polkadot/api-augment": "npm:^16.4.8"
-    "@polkadot/types": "npm:^16.4.8"
     typescript: "npm:~5.7.3"
   languageName: unknown
   linkType: soft

@@ -1,11 +1,11 @@
 import {
   Chain,
-  StateHandlerParams,
   MonitorType,
   BalancesHandlerType as H,
+  StateHandlerParams,
   EventHandlerParams,
   CallHandlerParams,
-} from '@w3f/polguard-common';
+} from '../../types';
 import { Call, Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 

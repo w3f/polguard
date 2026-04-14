@@ -1,5 +1,5 @@
 import { formatBalance } from '@polkadot/util';
-import { CHAIN_TOKENS, ChainProperties, BlockContext, Chain } from '@w3f/polguard-common';
+import { ChainProperties, Chain, CHAIN_TOKENS, BlockContext } from '../types';
 
 const STATESCAN_CHAINS: Chain[] = [Chain.Frequency];
 

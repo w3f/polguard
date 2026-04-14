@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '@w3f/polguard-common';
+import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '../../types';
 
 /**
  * StdoutIncidentReporter: Outputs incidents directly to stdout

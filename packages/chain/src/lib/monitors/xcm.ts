@@ -6,7 +6,7 @@ import {
   EventHandlerParams,
   ID_TOKEN_MAP,
   PARACHAIN_NAMES,
-} from '@w3f/polguard-common';
+} from '../../types';
 import { hexToU8a } from '@polkadot/util';
 import { encodeAddress } from '@polkadot/util-crypto';
 import { StagingXcmV4Location, StagingXcmV4Xcm, StagingXcmV4Asset } from '@polkadot/types/lookup';

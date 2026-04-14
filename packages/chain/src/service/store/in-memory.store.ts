@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { Store, Chain } from '@w3f/polguard-common';
+import { Store, Chain } from '../../types';
 import { parse, stringify } from 'json-bigint';
 
 interface CacheEntry {

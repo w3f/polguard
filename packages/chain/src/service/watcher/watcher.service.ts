@@ -2,7 +2,7 @@ import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Inje
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ConfigService } from '../config/config.service';
 import { ChainTelemetryService } from '../telemetry/chain-telemetry.service';
-import { getChainProperties, Store, IncidentReporter } from '@w3f/polguard-common';
+import { Store, IncidentReporter, getChainProperties } from '../../types';
 import { ChainWatcher } from '../../lib/watcher';
 import { IncidentHandler } from '../../lib/incident-handler';
 import { createChainDataProvider } from '../../lib/data-provider';

@@ -1,11 +1,5 @@
 import type { AccountVote } from '@polkadot/types/interfaces';
-import {
-  MonitorType,
-  EventHandlerParams,
-  Chain,
-  GovernanceHandlerType as H,
-  CallHandlerParams,
-} from '@w3f/polguard-common';
+import { MonitorType, Chain, GovernanceHandlerType as H, EventHandlerParams, CallHandlerParams } from '../../types';
 import { AbstractMonitor } from './abstract-monitor';
 import { Call, Event } from '../decorators';
 

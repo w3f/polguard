@@ -1,26 +1,6 @@
-import { ConfigAccountSettings, Logger, IdentityField, ChainDataProvider } from '.';
-import { Chain, ChainProperties, MonitorType } from './constants';
-import { NotificationSettings, IncidentHandlerClient } from './incident';
-import { CallHandlerParams, EventHandlerParams, StateHandlerParams, MonitorHandlerType } from './handlers';
-
-export interface Monitor {
-  processState(params: StateHandlerParams): Promise<void>;
-  processEvent(params: EventHandlerParams): Promise<void>;
-  processCall(params: CallHandlerParams): Promise<void>;
-}
-
-/**
- * Constructor type for monitors
- * @typeParam T - Type of monitor (e.g., Staking, Identity)
- */
-export type MonitorConstructor<T extends MonitorType> = new (
-  logger: Logger,
-  groups: MonitoringGroup[],
-  incidents: IncidentHandlerClient,
-  chainProps: ChainProperties,
-  provider: ChainDataProvider,
-  monitorType: T
-) => Monitor;
+import { Chain, MonitorType, MonitorHandlerType } from './constants';
+import { NotificationSettings } from './incident';
+import { AccountId } from './account';
 
 export interface BaseMonitorSettings {
   annotations?: Record<string, any>;
@@ -43,6 +23,20 @@ export interface BalancesSettings extends BaseMonitorSettings {
   threshold?: bigint;
   handlers: MonitorHandlerType[MonitorType.Balances][];
 }
+
+export type IdentityField = 'display' | 'legal' | 'web' | 'matrix' | 'email' | 'image' | 'twitter' | 'github' | 'discord';
+
+export const IDENTITY_FIELDS: IdentityField[] = [
+  'display',
+  'legal',
+  'web',
+  'matrix',
+  'email',
+  'image',
+  'twitter',
+  'github',
+  'discord',
+];
 
 export type IdentitySettings = {
   [K in IdentityField]?: string;
@@ -69,7 +63,10 @@ export type MonitorTypeSettings = {
   [MonitorType.Assets]: AssetsSettings;
 };
 
-export type MonitorSettings<T extends MonitorType> = MonitorTypeSettings[T];
+export interface MonitorConfig {
+  name: MonitorType;
+  settings: MonitorTypeSettings[MonitorType];
+}
 
 export interface MonitoringGroup {
   id: string;
@@ -80,7 +77,6 @@ export interface MonitoringGroup {
   annotations?: Record<string, any>;
 }
 
-export interface MonitorConfig {
-  name: MonitorType;
-  settings: MonitorTypeSettings[MonitorType];
+export interface ConfigAccountSettings extends AccountId {
+  [monitorType: string]: any;
 }

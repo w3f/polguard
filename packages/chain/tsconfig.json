@@ -8,6 +8,7 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "target": "ES2021",
+    "types": ["node", "jest"],
     "sourceMap": true,
     "incremental": true,
     "skipLibCheck": true,

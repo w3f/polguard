@@ -3,12 +3,12 @@ import { Event, State, Call } from '../decorators';
 import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
 import {
   StakingHandlerType as H,
+  MonitorType,
+  Chain,
   StateHandlerParams,
   CallHandlerParams,
   EventHandlerParams,
-  MonitorType,
-  Chain,
-} from '@w3f/polguard-common';
+} from '../../types';
 import { AbstractMonitor } from './abstract-monitor';
 
 /**

@@ -1,18 +1,18 @@
 import {
+  ChainProperties,
+  Logger,
+  MonitorType,
   CallHandlerFunction,
   ChainDataProvider,
   Monitor,
-  ChainProperties,
   EventHandlerFunction,
   IncidentHandlerClient,
-  Logger,
   MonitoringGroup,
-  MonitorType,
   StateHandlerFunction,
   CallHandlerParams,
   EventHandlerParams,
   StateHandlerParams,
-} from '@w3f/polguard-common';
+} from '../../types';
 import { Formatter } from '../formatter';
 import { ConfigRegistry } from '../config-registry';
 

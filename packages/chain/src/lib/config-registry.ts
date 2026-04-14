@@ -1,13 +1,13 @@
 import {
-  AccountSettings,
-  NotificationSettings,
-  ConfigAccountSettings,
   MonitorHandlerType,
+  MonitorType,
+  NotificationSettings,
+  AccountSettings,
+  ConfigAccountSettings,
   MonitoringGroup,
   MonitorSettings,
-  MonitorType,
   AssetsSettings,
-} from '@w3f/polguard-common';
+} from '../types';
 
 type AccountConfig<T extends MonitorType> = {
   account: AccountSettings<T>;

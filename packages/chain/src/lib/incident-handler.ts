@@ -2,14 +2,14 @@ import { createHash } from 'crypto';
 import {
   Logger,
   NotificationSettings,
-  Store,
-  IncidentHandlerClient,
   Chain,
-  IncidentReporter,
   CreateIncidentDto,
   IncidentKey,
+  Store,
+  IncidentHandlerClient,
+  IncidentReporter,
   BlockContext,
-} from '@w3f/polguard-common';
+} from '../types';
 
 /**
  * Build a unified idempotency key for both ongoing & one-time incidents.

@@ -1,5 +1,6 @@
 import { Event, Call, State } from '../../src/lib/decorators';
-import { Chain, HandlerType } from '@w3f/polguard-common';
+import type { HandlerType } from '../../src/types';
+import { Chain } from '@w3f/polguard-common';
 
 describe('Decorators', () => {
   describe('Event', () => {

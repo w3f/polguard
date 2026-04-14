@@ -1,12 +1,12 @@
 import { Event, State } from '../decorators';
 import {
   IdentityHandlerType as H,
-  StateHandlerParams,
   MonitorType,
   Chain,
+  StateHandlerParams,
   EventHandlerParams,
   IDENTITY_FIELDS,
-} from '@w3f/polguard-common';
+} from '../../types';
 import { AbstractMonitor } from './abstract-monitor';
 
 export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {

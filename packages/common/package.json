@@ -33,9 +33,7 @@
     "@opentelemetry/sdk-metrics": "^2.0.1",
     "@opentelemetry/sdk-node": "^0.203.0",
     "@opentelemetry/sdk-trace-node": "^2.0.1",
-    "@opentelemetry/semantic-conventions": "^1.40.0",
-    "@polkadot/api-augment": "^16.4.8",
-    "@polkadot/types": "^16.4.8"
+    "@opentelemetry/semantic-conventions": "^1.40.0"
   },
   "devDependencies": {
     "typescript": "~5.7.3"

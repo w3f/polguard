@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '@w3f/polguard-common';
+import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '../../types';
 import { ConfigService } from '../config/config.service';
 import { lastValueFrom, timeout } from 'rxjs';
 

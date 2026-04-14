@@ -4,17 +4,17 @@ import { EventRecord } from '@polkadot/types/interfaces';
 
 import {
   Logger,
-  IncidentHandlerClient,
-  Store,
   ChainProperties,
   MonitorType,
+  IncidentHandlerClient,
+  Store,
   MonitorConstructor,
   ChainDataProvider,
   Monitor,
   ChainApiClient,
   ChainTelemetryClient,
   MonitoringConfigClient,
-} from '@w3f/polguard-common';
+} from '../types';
 import {
   IdentityMonitor,
   BalancesMonitor,

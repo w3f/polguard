@@ -46,13 +46,6 @@ export interface IncidentKey {
   token?: string;
 }
 
-export interface BlockContext {
-  blockNumber: number;     // always set
-  eventIdx?: number;       // set for event handlers
-  extrinsicIdx?: number;   // set for call handlers
-  callIdx?: number;        // set for call handlers (leaf call inside an extrinsic)
-}
-
 export interface ResolveIncidentByChainDto {
   chain: Chain;
   blockNumber: number;
@@ -62,14 +55,4 @@ export interface ResolveIncidentByChainDto {
 export interface ResolveIncidentManuallyDto {
   username: string;
   channelId: string;
-}
-
-export interface IncidentHandlerClient {
-  handle(
-    message: string[],
-    notifications: NotificationSettings,
-    incidentKey: IncidentKey,
-    blockContext: BlockContext,
-    isFiring?: boolean
-  ): Promise<void>;
 }

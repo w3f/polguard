@@ -1,10 +1,11 @@
-import { IdentityField } from '.';
 import '@polkadot/api-augment/polkadot';
 import { ApiDecoration } from '@polkadot/api/types';
+import { IdentityField } from '../types';
 
 export type IdentityInfo = {
   [K in IdentityField]?: string;
 };
+
 export interface ChainDataProvider {
   initializeBlock(blockNumber: number, apiAt: ApiDecoration<'promise'>): void;
   stakingValidators(blockNumber: number): Promise<string[]>;
@@ -18,8 +19,16 @@ export interface ChainDataProvider {
   systemAccountBalance(addresses: string[], blockNumber: number): Promise<Record<string, bigint>>;
   identityOf(addresses: string[], blockNumber: number): Promise<Record<string, IdentityInfo | null>>;
   identitySuperOf(addresses: string[], blockNumber: number): Promise<Record<string, string | null>>;
-  assetsAccountBalance(addresses: string[], tokenNames: string[], blockNumber: number): Promise<Record<string, Record<string, bigint>>>;
-  ormlTokensAccountBalance(addresses: string[], tokenNames: string[], blockNumber: number): Promise<Record<string, Record<string, bigint>>>;
+  assetsAccountBalance(
+    addresses: string[],
+    tokenNames: string[],
+    blockNumber: number,
+  ): Promise<Record<string, Record<string, bigint>>>;
+  ormlTokensAccountBalance(
+    addresses: string[],
+    tokenNames: string[],
+    blockNumber: number,
+  ): Promise<Record<string, Record<string, bigint>>>;
   referendaInfoFor(referendumIndex: string | number, blockNumber: number): Promise<string | null>;
   referendaTrack(trackId: number | string, blockNumber: number): Promise<string>;
 }

@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { metrics, Meter, Gauge } from '@opentelemetry/api';
-import { TELEMETRY_PREFIX } from '@w3f/polguard-common';
-import { ChainTelemetryClient, MonitoringGroup } from '@w3f/polguard-common';
+import { ChainTelemetryClient, MonitoringGroup, TELEMETRY_PREFIX } from '../../types';
 
 @Injectable()
 export class ChainTelemetryService implements ChainTelemetryClient {
@@ -27,10 +26,9 @@ export class ChainTelemetryService implements ChainTelemetryClient {
       description: 'The last block that the chain-service has processed.',
     });
 
-    this.currentBlockProcessing = this.meter.createGauge(
-      `${TELEMETRY_PREFIX}.chain.current-block-processing`,
-      { description: 'The block that the chain-service is currently processing.' },
-    );
+    this.currentBlockProcessing = this.meter.createGauge(`${TELEMETRY_PREFIX}.chain.current-block-processing`, {
+      description: 'The block that the chain-service is currently processing.',
+    });
 
     this.blockProcessingTime = this.meter.createGauge(`${TELEMETRY_PREFIX}.chain.block-processing-time`, {
       description: 'The time it takes to process a block.',
