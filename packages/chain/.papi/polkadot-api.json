@@ -1,0 +1,48 @@
+{
+  "version": 0,
+  "descriptorPath": ".papi/descriptors",
+  "entries": {
+    "assetHubPolkadot": {
+      "chain": "polkadot_asset_hub",
+      "metadata": ".papi/metadata/assetHubPolkadot.scale",
+      "genesis": "0x68d56f15f85d3136970ec16946040bc1752654e906147f7e43e9d539d7c3de2f",
+      "codeHash": "0x04fa38c2fb117fbd73302c23b339ef18c4f3a200a0b487803208bf279161f1d7"
+    },
+    "assetHubKusama": {
+      "chain": "kusama_asset_hub",
+      "metadata": ".papi/metadata/assetHubKusama.scale",
+      "genesis": "0x48239ef607d7928874027a43a67689209727dfb3d3dc5e5b03a39bdc2eda771a",
+      "codeHash": "0xdefa3628d113f815fda8bbf9874c879adec02779df43737d77473347e72138c6"
+    },
+    "assetHubPaseo": {
+      "chain": "paseo_asset_hub",
+      "metadata": ".papi/metadata/assetHubPaseo.scale",
+      "genesis": "0xd6eec26135305a8ad257a20d003357284c8aa03d0bdb2b357ab0a22371e11ef2",
+      "codeHash": "0x3b36085f46d6213d6f5a2fb26415d7c46da8e397977f2f7404ac431931ab5ae6"
+    },
+    "peoplePolkadot": {
+      "chain": "polkadot_people",
+      "metadata": ".papi/metadata/peoplePolkadot.scale",
+      "genesis": "0x67fa177a097bfa18f77ea95ab56e9bcdfeb0e5b8a40e46298bb93e16b6fc5008",
+      "codeHash": "0xd7c36a7e033a490726c28d29ff83c192001ba8ade2e39d04940354cf15245a10"
+    },
+    "peopleKusama": {
+      "chain": "kusama_people",
+      "metadata": ".papi/metadata/peopleKusama.scale",
+      "genesis": "0xc1af4cb4eb3918e5db15086c0cc5ec17fb334f728b7c65dd44bfe1e174ff8b3f",
+      "codeHash": "0x89ce4be8a250100662b3e1ba66fe08c8235d02fed167e3810dc46d5b1c5f7ea4"
+    },
+    "peoplePaseo": {
+      "chain": "paseo_people",
+      "metadata": ".papi/metadata/peoplePaseo.scale",
+      "genesis": "0xe6c30d6e148f250b887105237bcaa5cb9f16dd203bf7b5b9d4f1da7387cb86ec",
+      "codeHash": "0x1342d7002b71ef050ff1ea05e4fdca7993c82222217a9c06ac31ab839d39d309"
+    },
+    "frequency": {
+      "wsUrl": "wss://1.rpc.frequency.xyz",
+      "metadata": ".papi/metadata/frequency.scale",
+      "genesis": "0x4a587bf17a404e3572747add7aab7bbe56e805a5479c6c436f07f36fcc8d3ae1",
+      "codeHash": "0x23ddf4d298d877f67d2253d2accc4734f764da4891a4d45b28b6ceb141803dfc"
+    }
+  }
+}

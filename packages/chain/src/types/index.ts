@@ -1,15 +1,7 @@
-/**
- * Chain Service Types
- *
- * Internal types for blockchain monitoring including monitors,
- * handlers, storage, and blockchain client interfaces.
- */
-
 export * from './data-provider';
 export * from './handlers';
 export * from './incident';
 export * from './monitors';
-export * from './tokens';
 export * from './parachains';
 export * from './clients';
 
@@ -32,6 +24,7 @@ export type {
   AccountId,
   CreateIncidentDto,
   ResolveIncidentByChainDto,
+  TokenBalances
 } from '@w3f/polguard-common';
 
 export {
@@ -49,4 +42,6 @@ export {
   TELEMETRY_PREFIX,
   getLogLevels,
   buildOtelSdk,
+  CHAIN_TOKENS,
+  ID_TOKEN_MAP
 } from '@w3f/polguard-common';

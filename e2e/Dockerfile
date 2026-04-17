@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Fixes CI fingerprint issue
 ENV GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"

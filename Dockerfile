@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Fixes CI fingerprint issue
 ENV GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
@@ -14,6 +14,7 @@ COPY packages/common/package.json packages/common/
 COPY packages/config/package.json packages/config/
 COPY packages/incident/package.json packages/incident/
 COPY packages/chain/package.json packages/chain/
+COPY packages/chain/.papi packages/chain/.papi
 COPY packages/matrix/package.json packages/matrix/
 
 # Install dependencies (uses bundled Yarn from .yarn/releases via .yarnrc.yml)
@@ -29,7 +30,7 @@ COPY packages/matrix packages/matrix
 # Build all packages in dependency order (uses bundled Yarn from .yarn/releases via .yarnrc.yml)
 RUN yarn build
 
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 
 WORKDIR /app
 

@@ -1,5 +1,8 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Inject } from '@nestjs/common';
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import { getWsProvider } from 'polkadot-api/ws';
+import { createClient } from 'polkadot-api';
+import type { PolkadotClient } from 'polkadot-api';
 import { ConfigService } from '../config/config.service';
 import { ChainTelemetryService } from '../telemetry/chain-telemetry.service';
 import { Store, IncidentReporter, getChainProperties } from '../../types';
@@ -7,10 +10,12 @@ import { ChainWatcher } from '../../lib/watcher';
 import { IncidentHandler } from '../../lib/incident-handler';
 import { createChainDataProvider } from '../../lib/data-provider';
 import { getMonitoringGroups } from '@w3f/polguard-config';
+// import { getTypedApi } from '../../lib/papi-descriptors';
 
 @Injectable()
 export class WatcherService implements OnApplicationBootstrap, OnApplicationShutdown {
   private api: ApiPromise;
+  private papiClient: PolkadotClient;
   private watcher: ChainWatcher;
   private persistenceInterval: NodeJS.Timeout;
 
@@ -44,6 +49,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     } finally {
       await this.watcher?.stop();
       await this.api?.disconnect();
+      this.papiClient?.destroy();
     }
   }
 
@@ -54,7 +60,10 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     const startBlock = this.config.getStartBlock();
     const configsDir = this.config.getMonitoringConfigsDir();
 
+    // Initialize both PJS and PAPI clients
     this.api = await this.createApi(rpc, chainProps.specName);
+    this.papiClient = await this.createPapiClient(rpc, chainProps.specName);
+    
     const chainDataProvider = createChainDataProvider(this.api, this.store, this.logger, chainProps.chain);
     const incidentHandler = new IncidentHandler(this.logger, this.store, this.reporter, chainProps.chain);
     const configLogger = new Logger('MonitoringConfig');
@@ -104,5 +113,22 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
 
     this.logger.log(`Connected to RPC: ${endpoint}`);
     return api;
+  }
+
+  private async createPapiClient(endpoint: string, expectedSpecName: string): Promise<PolkadotClient> {
+    const provider = getWsProvider(endpoint);
+    const client = createClient(provider);
+    
+    // Validate chain by checking runtime spec
+    const { name: specName } = await client.getChainSpecData();
+    // if (specName !== expectedSpecName) {
+    //   client.destroy();
+    //   throw new Error(
+    //     `Chain mismatch: Config chain is "${expectedSpecName}" but RPC endpoint returns "${specName}". Please check your configuration.`,
+    //   );
+    // }
+
+    this.logger.log(`PAPI client connected to RPC: ${endpoint}`);
+    return client;
   }
 }

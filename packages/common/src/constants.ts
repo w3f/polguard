@@ -173,6 +173,8 @@ export type MonitorHandlerType = {
   [MonitorType.Assets]: AssetsHandlerType;
 };
 
+export type TokenBalances = Record<string, Record<string, bigint>>;
+
 export const CHAIN_TOKENS: Record<Chain, Record<string, { id: string; decimals: number }>> = {
   [Chain.AssetHubPolkadot]: {
     USDC: { id: '1337', decimals: 6 },
@@ -193,3 +195,10 @@ export const CHAIN_TOKENS: Record<Chain, Record<string, { id: string; decimals: 
   },
   [Chain.Frequency]: {},
 };
+
+export const ID_TOKEN_MAP: Record<Chain, Record<string, string>> = Object.fromEntries(
+  Object.entries(CHAIN_TOKENS).map(([chain, tokenMetas]) => [
+    chain,
+    Object.fromEntries(Object.entries(tokenMetas).map(([symbol, { id }]) => [id, symbol])),
+  ]),
+) as Record<Chain, Record<string, string>>;

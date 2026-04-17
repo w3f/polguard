@@ -25,6 +25,6 @@
     "start:incident": "yarn workspace @w3f/polguard-incident start:with-migrations"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   }
 }
