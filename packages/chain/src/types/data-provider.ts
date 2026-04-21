@@ -1,5 +1,3 @@
-import '@polkadot/api-augment/polkadot';
-import { ApiDecoration } from '@polkadot/api/types';
 import { IdentityField } from '../types';
 
 export type IdentityInfo = {
@@ -7,7 +5,6 @@ export type IdentityInfo = {
 };
 
 export interface ChainDataProvider {
-  initializeBlock(blockNumber: number, apiAt: ApiDecoration<'promise'>): void;
   stakingValidators(blockNumber: number): Promise<string[]>;
   stakingValidatorsCommission(addresses: string[], blockNumber: number): Promise<Record<string, number | null>>;
   stakingLedgerActive(addresses: string[], blockNumber: number): Promise<Record<string, bigint | null>>;
@@ -30,5 +27,5 @@ export interface ChainDataProvider {
     blockNumber: number,
   ): Promise<Record<string, Record<string, bigint>>>;
   referendaInfoFor(referendumIndex: string | number, blockNumber: number): Promise<string | null>;
-  referendaTrack(trackId: number | string, blockNumber: number): Promise<string>;
+  referendaTrack(trackId: number | string): Promise<string>;
 }

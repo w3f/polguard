@@ -6,6 +6,9 @@ import { Chain, MonitorType, MonitoringGroup, MessengerType, getChainProperties 
 import { LoggerAdapter, TestIncidentHandler, colors } from './test-utils';
 import { InMemoryStore } from '../../src/service/store/in-memory.store';
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import { createClient } from 'polkadot-api';
+import { getWsProvider } from 'polkadot-api/ws';
+import type { PolkadotClient } from 'polkadot-api';
 
 export interface TestCase {
   chain: Chain;
@@ -135,6 +138,8 @@ export class TestRunner {
     console.log(`\n${colors.cyan}Running ${testCases.length} tests for ${chain}...${colors.reset}`);
     console.log(`Connecting to ${chain} at ${rpcEndpoint}`);
     const api = await this.connectWs(rpcEndpoint);
+    const provider = getWsProvider(rpcEndpoint);
+    const client = createClient(provider);
 
     try {
       const concurrencyLimit = 5;
@@ -142,7 +147,7 @@ export class TestRunner {
 
       for (let i = 0; i < testCases.length; i += concurrencyLimit) {
         const batch = testCases.slice(i, i + concurrencyLimit);
-        const batchResults = await Promise.all(batch.map(testCase => this.runSingleTest(testCase, api, debug)));
+        const batchResults = await Promise.all(batch.map(testCase => this.runSingleTest(testCase, api, client, debug)));
         results.push(...batchResults);
       }
 
@@ -150,10 +155,11 @@ export class TestRunner {
     } finally {
       console.log(`Disconnecting from ${chain}`);
       await api.disconnect();
+      client.destroy();
     }
   }
 
-  private async runSingleTest(testCase: TestCase, api: ApiPromise, debug: boolean): Promise<TestResult> {
+  private async runSingleTest(testCase: TestCase, api: ApiPromise, client: PolkadotClient, debug: boolean): Promise<TestResult> {
     const testId = `${testCase.monitor}.${testCase.handlerType}`;
 
     try {
@@ -161,7 +167,7 @@ export class TestRunner {
       const store = new InMemoryStore();
       const incidentHandler = new TestIncidentHandler(testId);
 
-      const chainProvider = createChainDataProvider(api, store, logger, testCase.chain);
+      const chainProvider = createChainDataProvider(client, store, logger, testCase.chain);
       const group = this.createMonitoringGroup(
         testCase.chain,
         testCase.monitor,

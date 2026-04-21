@@ -64,7 +64,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     this.api = await this.createApi(rpc, chainProps.specName);
     this.papiClient = await this.createPapiClient(rpc, chainProps.specName);
     
-    const chainDataProvider = createChainDataProvider(this.api, this.store, this.logger, chainProps.chain);
+    const chainDataProvider = createChainDataProvider(this.papiClient, this.store, this.logger, chainProps.chain);
     const incidentHandler = new IncidentHandler(this.logger, this.store, this.reporter, chainProps.chain);
     const configLogger = new Logger('MonitoringConfig');
 
@@ -121,6 +121,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     
     // Validate chain by checking runtime spec
     const { name: specName } = await client.getChainSpecData();
+    this.logger.debug(`Chain mismatch: Config chain is "${expectedSpecName}" but RPC endpoint returns "${specName}". Please check your configuration.`)
     // if (specName !== expectedSpecName) {
     //   client.destroy();
     //   throw new Error(

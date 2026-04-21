@@ -53,6 +53,7 @@ COPY --from=builder /app/packages/common/dist packages/common/dist
 COPY --from=builder /app/packages/config/dist packages/config/dist
 COPY --from=builder /app/packages/incident/dist packages/incident/dist
 COPY --from=builder /app/packages/chain/dist packages/chain/dist
+COPY --from=builder /app/packages/chain/.papi packages/chain/.papi
 COPY --from=builder /app/packages/matrix/dist packages/matrix/dist
 
 # Create config directories

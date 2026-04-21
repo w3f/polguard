@@ -37,7 +37,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
       `https://${chainSlug}.polkassembly.io/referenda/${referendumIndex}`,
     );
     // Sanitize C-style string
-    const trackName = (await this.chain.referendaTrack(trackId, blockNumber)).replace(/\0/g, '');
+    const trackName = (await this.chain.referendaTrack(trackId)).replace(/\0/g, '');
     const message = this.fmt.message(
       [
         `Referendum #${referendumIndex} submitted`,
