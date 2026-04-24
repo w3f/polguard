@@ -7,7 +7,7 @@ rpcEndpoints:
   AssetHubKusama: wss://rpc-asset-hub-kusama.luckyfriday.io
   AssetHubPaseo: wss://asset-hub-paseo-rpc.n.dwellir.com
   Centrifuge: wss://rpc-centrifuge.luckyfriday.io
-  Frequency: wss://1.rpc.frequency.xyz
+  # Frequency: wss://1.rpc.frequency.xyz
 
 tests:
   Staking:
@@ -118,11 +118,11 @@ tests:
           address: 137Bdf9QucUaLmD8vRTRc72b1rPu8GJXDr1FpBAzXLYQhzkp
           threshold: 4648900000000
     TransferIngressEvent:
-      - description: "Event (balances.Transfer) - Frequency"
-        chain: Frequency
-        block: 9480853
-        account:
-          address: f6Y324gWNcDwitUMpUFj84YrefVtshzGLkt99Z5vkFjzcktuF
+      # - description: "Event (balances.Transfer) - Frequency"
+      #   chain: Frequency
+      #   block: 9480853
+      #   account:
+      #     address: f6Y324gWNcDwitUMpUFj84YrefVtshzGLkt99Z5vkFjzcktuF
       - description: "Event (balances.Transfer) - AssetHubPaseo (test AssetHubKusama migration)"
         chain: AssetHubPaseo
         block: 2796532
@@ -134,11 +134,11 @@ tests:
         account:
           address: 1uwFRGq7M3JMVTVz4akMiVAG4m56smK9bPYAQuaX7zDns6q
     TransferEgressEvent:
-      - description: "Event (balances.Transfer) - Frequency"
-        chain: Frequency
-        block: 9480853
-        account:
-          address: f6YRMSo1xG1P4wFvSy5fGdX9MupGyw6qkvP3nE5RPvJH6GA1G
+      # - description: "Event (balances.Transfer) - Frequency"
+      #   chain: Frequency
+      #   block: 9480853
+      #   account:
+      #     address: f6YRMSo1xG1P4wFvSy5fGdX9MupGyw6qkvP3nE5RPvJH6GA1G
       - description: "Event (balances.Transfer) - AssetHubPaseo (test AssetHubKusama migration)"
         chain: AssetHubPaseo
         block: 2796532

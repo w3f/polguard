@@ -1,7 +1,55 @@
-import { formatBalance } from '@polkadot/util';
 import { ChainProperties, Chain, CHAIN_TOKENS, BlockContext } from '../types';
 
 const STATESCAN_CHAINS: Chain[] = [Chain.Frequency];
+
+/**
+ * Custom balance formatter that converts raw blockchain amounts to human-readable format.
+ * 
+ * @param amount - The raw amount (can be number, string, or bigint)
+ * @param decimals - Number of decimal places the token uses (e.g., 10 for DOT, 6 for USDT)
+ * @param unit - The token symbol to append (e.g., 'DOT', 'USDT')
+ * @returns Formatted string with comma separators and 2 decimal places (e.g., "1,234.56 DOT")
+ */
+function formatBalance(amount: number | string | bigint, decimals: number, unit: string): string {
+  let amountBigInt: bigint;
+  if (typeof amount === 'bigint') {
+    amountBigInt = amount;
+  } else if (typeof amount === 'string') {
+    const cleaned = amount.replace(/[^0-9.-]/g, '');
+    amountBigInt = BigInt(cleaned);
+  } else {
+    amountBigInt = BigInt(Math.floor(amount));
+  }
+
+  const isNegative = amountBigInt < 0n;
+  if (isNegative) {
+    amountBigInt = -amountBigInt;
+  }
+
+  const divisor = BigInt(10 ** decimals);
+  const integerPart = amountBigInt / divisor;
+  const fractionalPart = amountBigInt % divisor;
+  const scaledFractional = (fractionalPart * 100n) / divisor;
+  
+  // Round if necessary (happens when we have more than 2 decimal places)
+  // Check if the next digit would round up
+  const remainder = (fractionalPart * 1000n) / divisor % 10n;
+  const roundedFractional = remainder >= 5n ? scaledFractional + 1n : scaledFractional;
+  
+  // Handle rounding overflow (e.g., 99.996 -> 100.00)
+  let finalInteger = integerPart;
+  let finalFractional = roundedFractional;
+  if (finalFractional >= 100n) {
+    finalInteger += 1n;
+    finalFractional = 0n;
+  }
+  
+  const integerStr = finalInteger.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fractionalStr = finalFractional.toString().padStart(2, '0');
+  
+  const sign = isNegative ? '-' : '';
+  return `${sign}${integerStr}.${fractionalStr} ${unit}`;
+}
 
 export class Formatter {
   constructor(private chainProps: ChainProperties) {}
@@ -46,21 +94,15 @@ export class Formatter {
   balance(amount: number | string | bigint, tokenName?: string): string {
     // If no token is provided, use native token
     if (!tokenName) {
-      return formatBalance(amount, {
-        decimals: this.chainProps.chainDecimals,
-        withUnit: this.chainProps.chainToken,
-        withSi: true,
-        forceUnit: '-',
-      });
+      return formatBalance(amount, this.chainProps.chainDecimals, this.chainProps.chainToken);
     }
 
     if (CHAIN_TOKENS[this.chainProps.chain][tokenName]) {
-      return formatBalance(amount, {
-        decimals: CHAIN_TOKENS[this.chainProps.chain][tokenName].decimals,
-        withUnit: tokenName,
-        withSi: true,
-        forceUnit: '-',
-      });
+      return formatBalance(
+        amount,
+        CHAIN_TOKENS[this.chainProps.chain][tokenName].decimals,
+        tokenName,
+      );
     }
 
     return `${amount.toString()} token ${tokenName}`;
