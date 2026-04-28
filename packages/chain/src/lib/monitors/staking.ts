@@ -1,6 +1,6 @@
 import '@polkadot/api-augment/polkadot';
 import { Event, State, Call } from '../decorators';
-import { PalletStakingRewardDestination, PalletStakingValidatorPrefs } from '@polkadot/types/lookup';
+import { PalletStakingRewardDestination } from '@polkadot/types/lookup';
 import {
   StakingHandlerType as H,
   MonitorType,
@@ -55,12 +55,8 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
     'staking.SlashReported',
   )
-  async slashReported({
-    eventRecord,
-    blockContext,
-    handlerType,
-  }: EventHandlerParams<H.SlashReportedEvent>): Promise<void> {
-    const validatorId = eventRecord.event.data[0].toString();
+  async slashReported({ payload, blockContext, handlerType }: EventHandlerParams<H.SlashReportedEvent>): Promise<void> {
+    const validatorId = payload.validator;
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, validatorId)) {
       const message = this.fmt.message([`Validator ${account.name} has been slashed`], blockContext);
@@ -75,18 +71,18 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     'staking.ValidatorPrefsSet',
   )
   async commissionChanged({
-    eventRecord,
+    payload,
     blockContext,
     handlerType,
   }: EventHandlerParams<H.CommissionChangedEvent>): Promise<void> {
-    const stash = eventRecord.event.data[0].toString();
-    const prefs = eventRecord.event.data[1] as PalletStakingValidatorPrefs;
+    const stash = payload.stash;
+    const commission = payload.prefs.commission;
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, stash)) {
       const message = this.fmt.message(
         [
           `Commission change detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
-          `Commission: ${prefs.commission}`,
+          `Commission: ${commission}`,
         ],
         blockContext,
       );
@@ -96,8 +92,8 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
   }
 
   @Event(H.UnbondedEvent, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'staking.Unbonded')
-  async unbonded({ eventRecord, blockContext, handlerType }: EventHandlerParams<H.UnbondedEvent>): Promise<void> {
-    const [stash, amount] = eventRecord.event.data.map(d => d.toString());
+  async unbonded({ payload, blockContext, handlerType }: EventHandlerParams<H.UnbondedEvent>): Promise<void> {
+    const { stash, amount } = payload;
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, stash)) {
       const message = this.fmt.message(

@@ -1,6 +1,5 @@
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
-import { EventRecord } from '@polkadot/types/interfaces';
 
 import {
   Logger,
@@ -14,13 +13,14 @@ import {
   ChainApiClient,
   ChainTelemetryClient,
   MonitoringConfigClient,
+  TypedApi,
 } from '../types';
 import {
   IdentityMonitor,
   BalancesMonitor,
   GovernanceMonitor,
   StakingMonitor,
-  XcmMonitor,
+  // XcmMonitor,
   AssetsMonitor,
 } from './monitors';
 
@@ -39,7 +39,7 @@ export class ChainWatcher {
     [MonitorType.Staking, StakingMonitor],
     [MonitorType.Balances, BalancesMonitor],
     [MonitorType.Identity, IdentityMonitor],
-    [MonitorType.Xcm, XcmMonitor],
+    // [MonitorType.Xcm, XcmMonitor],
     [MonitorType.Assets, AssetsMonitor],
   ] as [MonitorType, MonitorConstructor<MonitorType>][];
 
@@ -51,6 +51,7 @@ export class ChainWatcher {
     private incidents: IncidentHandlerClient,
     private chainProps: ChainProperties,
     private chainProvider: ChainDataProvider,
+    private typedApi: TypedApi,
     private telemetry?: ChainTelemetryClient,
   ) {}
 
@@ -176,19 +177,17 @@ export class ChainWatcher {
     this.logger.log(`Processing block: #${blockNumber}`);
 
     const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
+    const blockHashHex = blockHash.toString();
     const block = await this.api.rpc.chain.getBlock(blockHash);
-    const apiAt = await this.api.at(blockHash);
 
     // Apply state handlers: process custom logic, usually storage calls
     await Promise.all(this.monitors.map(m => m.processState({ blockContext: { blockNumber } })));
 
     // Apply event handlers: process event payload
-    const records = (await apiAt.query.system.events()) as unknown as EventRecord[];
-    for (let eventIdx = 0; eventIdx < records.length; eventIdx++) {
-      const eventRecord = records[eventIdx];
-      await Promise.all(
-        this.monitors.map(m => m.processEvent({ blockContext: { blockNumber, eventIdx }, eventRecord })),
-      );
+    const systemEvents = await this.typedApi.query.System.Events.getValue({ at: blockHashHex });
+    for (let eventIdx = 0; eventIdx < systemEvents.length; eventIdx++) {
+      const systemEvent = systemEvents[eventIdx];
+      await Promise.all(this.monitors.map(m => m.processEvent(systemEvent, { blockNumber, eventIdx })));
     }
 
     // Apply call handlers: process call signature

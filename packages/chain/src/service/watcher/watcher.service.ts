@@ -10,7 +10,7 @@ import { ChainWatcher } from '../../lib/watcher';
 import { IncidentHandler } from '../../lib/incident-handler';
 import { createChainDataProvider } from '../../lib/data-provider';
 import { getMonitoringGroups } from '@w3f/polguard-config';
-// import { getTypedApi } from '../../lib/papi-descriptors';
+import { getTypedApi } from '../../lib/papi-descriptors';
 
 @Injectable()
 export class WatcherService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -63,8 +63,15 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     // Initialize both PJS and PAPI clients
     this.api = await this.createApi(rpc, chainProps.specName);
     this.papiClient = await this.createPapiClient(rpc, chainProps.specName);
-    
-    const chainDataProvider = createChainDataProvider(this.papiClient, this.store, this.logger, chainProps.chain);
+
+    const typedApi = getTypedApi(this.papiClient, chain);
+    const chainDataProvider = createChainDataProvider(
+      this.papiClient,
+      this.store,
+      this.logger,
+      chainProps.chain,
+      typedApi,
+    );
     const incidentHandler = new IncidentHandler(this.logger, this.store, this.reporter, chainProps.chain);
     const configLogger = new Logger('MonitoringConfig');
 
@@ -78,6 +85,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
       incidentHandler,
       chainProps,
       chainDataProvider,
+      typedApi,
       this.telemetry,
     );
 
@@ -118,10 +126,12 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
   private async createPapiClient(endpoint: string, expectedSpecName: string): Promise<PolkadotClient> {
     const provider = getWsProvider(endpoint);
     const client = createClient(provider);
-    
+
     // Validate chain by checking runtime spec
     const { name: specName } = await client.getChainSpecData();
-    this.logger.debug(`Chain mismatch: Config chain is "${expectedSpecName}" but RPC endpoint returns "${specName}". Please check your configuration.`)
+    this.logger.debug(
+      `Chain mismatch: Config chain is "${expectedSpecName}" but RPC endpoint returns "${specName}". Please check your configuration.`,
+    );
     // if (specName !== expectedSpecName) {
     //   client.destroy();
     //   throw new Error(

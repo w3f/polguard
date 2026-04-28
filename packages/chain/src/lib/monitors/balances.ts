@@ -102,11 +102,11 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     'balances.Transfer',
   )
   async balancesTransferIngress({
-    eventRecord,
+    payload,
     blockContext,
     handlerType,
   }: EventHandlerParams<H.TransferIngressEvent>): Promise<void> {
-    const [from, to, amount] = eventRecord.event.data.map(item => item.toString());
+    const { from, to, amount } = payload;
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, to)) {
       const message = this.fmt.message(
@@ -127,11 +127,11 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     'balances.Transfer',
   )
   async balancesTransferEgress({
-    eventRecord,
+    payload,
     blockContext,
     handlerType,
   }: EventHandlerParams<H.TransferEgressEvent>): Promise<void> {
-    const [from, to, amount] = eventRecord.event.data.map(item => item.toString());
+    const { from, to, amount } = payload;
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, from)) {
       const message = this.fmt.message(

@@ -1,11 +1,11 @@
 import { ChainDataProvider } from './data-provider';
-import { CallHandlerParams, EventHandlerParams, StateHandlerParams } from './handlers';
-import { IncidentHandlerClient } from './incident';
+import { CallHandlerParams, StateHandlerParams, SystemEvent } from './handlers';
+import { BlockContext, IncidentHandlerClient } from './incident';
 import { Logger, ChainProperties, MonitorType, MonitoringGroup, MonitorTypeSettings, AccountId } from '../types';
 
 export interface Monitor {
   processState(params: StateHandlerParams): Promise<void>;
-  processEvent(params: EventHandlerParams): Promise<void>;
+  processEvent(systemEvent: SystemEvent, blockContext: BlockContext): Promise<void>;
   processCall(params: CallHandlerParams): Promise<void>;
 }
 

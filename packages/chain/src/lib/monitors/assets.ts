@@ -50,12 +50,13 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
   )
   @Event(H.AssetTransferIngressEvent, [Chain.Centrifuge], 'ormlTokens.Transfer')
   async onTransferIngress({
-    eventRecord,
+    payload,
     blockContext,
     handlerType,
   }: EventHandlerParams<H.AssetTransferIngressEvent>): Promise<void> {
-    const [rawId, from, to, amount] = eventRecord.event.data.map(d => d.toString());
-    const token = ID_TOKEN_MAP[this.chainProps.chain][rawId];
+    const tokenId = String(payload.asset_id || payload.currency_id);
+    const { from, to, amount } = payload;
+    const token = ID_TOKEN_MAP[this.chainProps.chain][tokenId];
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, to)) {
       if (!account.settings.tokens?.includes(token)) continue;
@@ -80,12 +81,13 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
   )
   @Event(H.AssetTransferEgressEvent, [Chain.Centrifuge], 'ormlTokens.Transfer')
   async onTransferEgress({
-    eventRecord,
+    payload,
     blockContext,
     handlerType,
   }: EventHandlerParams<H.AssetTransferEgressEvent>): Promise<void> {
-    const [rawId, from, to, amount] = eventRecord.event.data.map(d => d.toString());
-    const token = ID_TOKEN_MAP[this.chainProps.chain][rawId];
+    const tokenId = String(payload.asset_id || payload.currency_id);
+    const { from, to, amount } = payload;
+    const token = ID_TOKEN_MAP[this.chainProps.chain][tokenId];
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, from)) {
       if (!account.settings.tokens?.includes(token)) continue;

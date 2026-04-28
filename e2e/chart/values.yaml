@@ -124,7 +124,7 @@ tests:
       tokenAuth:
         deviceId: "BAD_DEVICE_ID_IN_TESTS"
       # accessToken is provided via MATRIX_TOKEN environment variable
-      messagePattern: "sent 4.4984 DOT"
+      messagePattern: "sent 4.49 DOT"
       escalationMessagePattern: "The incident was not acknowledged"
 
 # Secrets configuration for the test runner pod

@@ -24,7 +24,7 @@ export type {
   AccountId,
   CreateIncidentDto,
   ResolveIncidentByChainDto,
-  TokenBalances
+  TokenBalances,
 } from '@w3f/polguard-common';
 
 export {
@@ -43,5 +43,5 @@ export {
   getLogLevels,
   buildOtelSdk,
   CHAIN_TOKENS,
-  ID_TOKEN_MAP
+  ID_TOKEN_MAP,
 } from '@w3f/polguard-common';

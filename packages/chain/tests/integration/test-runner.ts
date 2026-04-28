@@ -9,6 +9,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { createClient } from 'polkadot-api';
 import { getWsProvider } from 'polkadot-api/ws';
 import type { PolkadotClient } from 'polkadot-api';
+import { getTypedApi } from '../../src/lib/papi-descriptors';
 
 export interface TestCase {
   chain: Chain;
@@ -159,7 +160,12 @@ export class TestRunner {
     }
   }
 
-  private async runSingleTest(testCase: TestCase, api: ApiPromise, client: PolkadotClient, debug: boolean): Promise<TestResult> {
+  private async runSingleTest(
+    testCase: TestCase,
+    api: ApiPromise,
+    client: PolkadotClient,
+    debug: boolean,
+  ): Promise<TestResult> {
     const testId = `${testCase.monitor}.${testCase.handlerType}`;
 
     try {
@@ -167,7 +173,8 @@ export class TestRunner {
       const store = new InMemoryStore();
       const incidentHandler = new TestIncidentHandler(testId);
 
-      const chainProvider = createChainDataProvider(client, store, logger, testCase.chain);
+      const typedApi = getTypedApi(client, testCase.chain);
+      const chainProvider = createChainDataProvider(client, store, logger, testCase.chain, typedApi);
       const group = this.createMonitoringGroup(
         testCase.chain,
         testCase.monitor,
@@ -183,6 +190,7 @@ export class TestRunner {
         incidentHandler,
         getChainProperties(testCase.chain),
         chainProvider,
+        typedApi,
       );
 
       await watcher.initializeMonitors();

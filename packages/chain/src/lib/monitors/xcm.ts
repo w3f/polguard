@@ -20,11 +20,12 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
     ['polkadotXcm.Sent', 'xcmPallet.Sent'],
   )
   async xcmTransferEgress({
-    eventRecord,
+    payload,
     blockContext,
     handlerType,
   }: EventHandlerParams<H.XcmTransferEgressEvent>): Promise<void> {
-    const [rawOrigin, rawDestination, rawMessage] = eventRecord.event.data;
+    // TODO: XCM monitor is disabled - needs PAPI migration in future PR
+    const [rawOrigin, rawDestination, rawMessage] = (payload as any).event?.data || [];
     const transferInfo = this.extractXcmTransferInfo(rawOrigin, rawDestination, rawMessage, blockContext.blockNumber);
     const { origin, destination, destinationChain, transfers } = transferInfo;
 

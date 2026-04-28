@@ -23,24 +23,24 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     'referenda.Submitted',
   )
   async referendaSubmitted({
-    eventRecord,
+    payload,
     blockContext,
     handlerType,
   }: EventHandlerParams<H.ReferendaSubmittedEvent>): Promise<void> {
     const { blockNumber } = blockContext;
-    const [referendumIndex, trackId] = eventRecord.event.data.map(arg => arg.toString());
-    const proposer = (await this.chain.referendaInfoFor(referendumIndex, blockNumber)) ?? 'unknown';
+    const { index, track } = payload;
+    const proposer = (await this.chain.referendaInfoFor(index, blockNumber)) ?? 'unknown';
     const chainSlug = this.getGovernanceChainSlug();
-    const subsquareLink = this.fmt.link('Subsquare', `https://${chainSlug}.subsquare.io/referenda/${referendumIndex}`);
+    const subsquareLink = this.fmt.link('Subsquare', `https://${chainSlug}.subsquare.io/referenda/${index}`);
     const polkassemblyLink = this.fmt.link(
       'Polkassembly',
-      `https://${chainSlug}.polkassembly.io/referenda/${referendumIndex}`,
+      `https://${chainSlug}.polkassembly.io/referenda/${index}`,
     );
     // Sanitize C-style string
-    const trackName = (await this.chain.referendaTrack(trackId)).replace(/\0/g, '');
+    const trackName = (await this.chain.referendaTrack(track)).replace(/\0/g, '');
     const message = this.fmt.message(
       [
-        `Referendum #${referendumIndex} submitted`,
+        `Referendum #${index} submitted`,
         `Proposed by: ${this.fmt.accountLink(proposer, proposer)}`,
         `Track: ${trackName}`,
         `Links: ${subsquareLink} | ${polkassemblyLink}`,

@@ -4,7 +4,7 @@ const STATESCAN_CHAINS: Chain[] = [Chain.Frequency];
 
 /**
  * Custom balance formatter that converts raw blockchain amounts to human-readable format.
- * 
+ *
  * @param amount - The raw amount (can be number, string, or bigint)
  * @param decimals - Number of decimal places the token uses (e.g., 10 for DOT, 6 for USDT)
  * @param unit - The token symbol to append (e.g., 'DOT', 'USDT')
@@ -30,23 +30,8 @@ function formatBalance(amount: number | string | bigint, decimals: number, unit:
   const integerPart = amountBigInt / divisor;
   const fractionalPart = amountBigInt % divisor;
   const scaledFractional = (fractionalPart * 100n) / divisor;
-  
-  // Round if necessary (happens when we have more than 2 decimal places)
-  // Check if the next digit would round up
-  const remainder = (fractionalPart * 1000n) / divisor % 10n;
-  const roundedFractional = remainder >= 5n ? scaledFractional + 1n : scaledFractional;
-  
-  // Handle rounding overflow (e.g., 99.996 -> 100.00)
-  let finalInteger = integerPart;
-  let finalFractional = roundedFractional;
-  if (finalFractional >= 100n) {
-    finalInteger += 1n;
-    finalFractional = 0n;
-  }
-  
-  const integerStr = finalInteger.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const fractionalStr = finalFractional.toString().padStart(2, '0');
-  
+  const integerStr = integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fractionalStr = scaledFractional.toString().padStart(2, '0');
   const sign = isNegative ? '-' : '';
   return `${sign}${integerStr}.${fractionalStr} ${unit}`;
 }
@@ -98,11 +83,7 @@ export class Formatter {
     }
 
     if (CHAIN_TOKENS[this.chainProps.chain][tokenName]) {
-      return formatBalance(
-        amount,
-        CHAIN_TOKENS[this.chainProps.chain][tokenName].decimals,
-        tokenName,
-      );
+      return formatBalance(amount, CHAIN_TOKENS[this.chainProps.chain][tokenName].decimals, tokenName);
     }
 
     return `${amount.toString()} token ${tokenName}`;

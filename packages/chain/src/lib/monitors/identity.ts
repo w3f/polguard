@@ -53,12 +53,12 @@ export class IdentityMonitor extends AbstractMonitor<MonitorType.Identity> {
     ['identity.IdentitySet', 'identity.IdentityCleared', 'identity.IdentityKilled'],
   )
   async identityChanged({
-    eventRecord,
+    payload,
     blockContext,
     handlerType,
   }: EventHandlerParams<H.IdentityChangedEvent>): Promise<void> {
     const { blockNumber } = blockContext;
-    const parent = eventRecord.event.data[0].toString();
+    const parent = payload.who;
     const addressToParent = await this.getAddressToParent(blockNumber);
     const address = this.findAddressByParent(parent, addressToParent);
 

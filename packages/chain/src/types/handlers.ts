@@ -6,10 +6,33 @@ import {
   StakingHandlerType,
   XcmHandlerType,
 } from '../types';
-import { EventRecord } from '@polkadot/types/interfaces/system';
 import { CallBase } from '@polkadot/types/types/calls';
 import { AnyTuple } from '@polkadot/types/types';
 import { BlockContext } from './incident';
+
+export type EventPhase =
+  | { type: 'ApplyExtrinsic'; value: number }
+  | { type: 'Finalization' }
+  | { type: 'Initialization' };
+
+export type SystemEvent = {
+  phase: EventPhase;
+  event: {
+    type: string;
+    value: {
+      type: string;
+      value: any;
+    };
+  };
+  topics: string[];
+};
+
+export type TypedApi = {
+  query: any;
+  event: any;
+  tx: any;
+  constants: any;
+};
 
 export type HandlerFunction<T> = (params: T) => Promise<void>;
 export type EventHandlerFunction = HandlerFunction<EventHandlerParams>;
@@ -24,7 +47,7 @@ export interface CallHandlerParams<T extends HandlerType = HandlerType> {
 }
 
 export interface EventHandlerParams<T extends HandlerType = HandlerType> {
-  eventRecord: EventRecord;
+  payload: any; // Typed payload from PAPI event
   blockContext: BlockContext;
   handlerType?: T;
 }

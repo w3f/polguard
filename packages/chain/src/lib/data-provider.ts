@@ -1,14 +1,18 @@
 import { PolkadotClient } from 'polkadot-api';
-import { Logger, Chain, ChainDataProvider, Store, IdentityInfo, TokenBalances, CHAIN_TOKENS } from '../types';
+import { Logger, Chain, ChainDataProvider, Store, IdentityInfo, TokenBalances, CHAIN_TOKENS, TypedApi } from '../types';
 import { createCachedQueryDecorator } from './decorators';
-import { getTypedApi } from './papi-descriptors';
 
 /**
  * Creates a chain data provider that implements chain queries with caching layer.
  */
-export function createChainDataProvider(client: PolkadotClient, store: Store, logger: Logger, chain: Chain) {
+export function createChainDataProvider(
+  client: PolkadotClient,
+  store: Store,
+  logger: Logger,
+  chain: Chain,
+  typedApi: TypedApi,
+) {
   const Cached = createCachedQueryDecorator(store);
-  const typedApi = getTypedApi(client, chain);
 
   class DataProvider implements ChainDataProvider {
     private blockHashCache: Map<number, string> = new Map();

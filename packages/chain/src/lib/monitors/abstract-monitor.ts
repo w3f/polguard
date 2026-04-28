@@ -10,8 +10,9 @@ import {
   MonitoringGroup,
   StateHandlerFunction,
   CallHandlerParams,
-  EventHandlerParams,
   StateHandlerParams,
+  SystemEvent,
+  BlockContext,
 } from '../../types';
 import { Formatter } from '../formatter';
 import { ConfigRegistry } from '../config-registry';
@@ -109,14 +110,17 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     }
   }
 
-  async processEvent({ eventRecord, blockContext }: EventHandlerParams): Promise<void> {
-    const { event } = eventRecord;
-    const eventName = `${event.section}.${event.method}`;
+  async processEvent(systemEvent: SystemEvent, blockContext: BlockContext): Promise<void> {
+    const { event } = systemEvent;
+    const pallet = event.type.toLowerCase();
+    const eventType = event.value.type;
+    const eventName = `${pallet}.${eventType}`;
     const handlers = this.handlers.event.get(eventName);
 
     if (handlers && handlers.length > 0) {
+      const payload = event.value.value;
       for (const handler of handlers) {
-        await handler.call(this, { eventRecord, blockContext });
+        await handler.call(this, { payload, blockContext });
       }
     }
   }
