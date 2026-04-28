@@ -199,8 +199,8 @@ tests:
         account:
           address: 15iK81MWBDA5hLYMpAUSZF6ArGSdqiDD5mon2F7i5Pf3XtfT
 
-  # Xcm:
-    # XcmTransferEgressEvent:
+  Xcm:
+    XcmTransferEgressEvent:
       # - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Multisig dest 1000"
       #   chain: Polkadot
       #   block: 21497354
@@ -236,21 +236,21 @@ tests:
       #   block: 21816282
       #   account:
       #     address: 14zHCfbyPJVL2QwRE8KedRTV63dqydA5SKzfi966vAFwsGb2
-      # - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call transfer_assets_using_type_and_then - custom XCM on dest AssetHub"
-      #   chain: AssetHubPolkadot
-      #   block: 10284375
-      #   account:
-      #     address: 13b6hRRYPHTxFzs9prvL2YGHQepvd4YhdDb9Tc7khySp3hMN
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call transfer_assets_using_type_and_then - custom XCM on dest AssetHub"
+        chain: AssetHubPolkadot
+        block: 10284375
+        account:
+          address: 13b6hRRYPHTxFzs9prvL2YGHQepvd4YhdDb9Tc7khySp3hMN
       # - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. Call smart contract destination - 2004 Moonbeam"
       #   chain: Polkadot
       #   block: 21821595
       #   account:
       #     address: 12jEnW69xZzGrU7HKZpiya3w2W6ns4ULWJwsPsnGKgUcyRAs
-      # - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. USDT token transfer"
-      #   chain: AssetHubPolkadot
-      #   block: 8764910
-      #   account:
-      #     address: 12NpELGHzDaMspRH3E5zThqNpW24KeZ3TMjXdYVxmEH4caCS
+      - description: "Event (polkadotXcm.Sent, xcmPallet.Sent). Pallet XCM. USDT token transfer"
+        chain: AssetHubPolkadot
+        block: 8764910
+        account:
+          address: 12NpELGHzDaMspRH3E5zThqNpW24KeZ3TMjXdYVxmEH4caCS
   Assets:
     # AssetBalanceDecreaseState:
     #   - description: "State (assets.account). Balance decreased"

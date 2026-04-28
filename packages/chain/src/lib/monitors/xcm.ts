@@ -1,4 +1,4 @@
-import '@polkadot/api-augment/polkadot';
+import { encodeAddress } from '@polkadot/util-crypto';
 import {
   Chain,
   MonitorType,
@@ -7,33 +7,41 @@ import {
   ID_TOKEN_MAP,
   PARACHAIN_NAMES,
 } from '../../types';
-import { hexToU8a } from '@polkadot/util';
-import { encodeAddress } from '@polkadot/util-crypto';
-import { StagingXcmV4Location, StagingXcmV4Xcm, StagingXcmV4Asset } from '@polkadot/types/lookup';
 import { Event } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
+
+/**
+ * PAPI junction representation:
+ * - X1: value is a single XcmJunction object (not an array)
+ * - X2-X8: value is an array of XcmJunction objects
+ * - Here: no value property
+ */
+type XcmLocation = { parents: number; interior: XcmJunctions };
+type XcmJunctions = { type: string; value?: XcmJunction | XcmJunction[] };
+type XcmJunction = { type: string; value: any };
+type XcmInstruction = { type: string; value: any };
+type XcmAsset = { id: XcmLocation; fun: { type: string; value: any } };
 
 export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
   @Event(
     H.XcmTransferEgressEvent,
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
-    ['polkadotXcm.Sent', 'xcmPallet.Sent'],
+    ['polkadotxcm.Sent', 'xcmpallet.Sent'],
   )
   async xcmTransferEgress({
     payload,
     blockContext,
     handlerType,
   }: EventHandlerParams<H.XcmTransferEgressEvent>): Promise<void> {
-    // TODO: XCM monitor is disabled - needs PAPI migration in future PR
-    const [rawOrigin, rawDestination, rawMessage] = (payload as any).event?.data || [];
-    const transferInfo = this.extractXcmTransferInfo(rawOrigin, rawDestination, rawMessage, blockContext.blockNumber);
-    const { origin, destination, destinationChain, transfers } = transferInfo;
+    const { origin, destination, message } = payload;
+    const transferInfo = this.extractXcmTransferInfo(origin, destination, message, blockContext.blockNumber);
+    const { origin: originAddr, destination: destAddr, destinationChain, transfers } = transferInfo;
 
-    if (!origin) {
+    if (!originAddr) {
       return;
     }
 
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
+    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, originAddr)) {
       for (const [token, amount] of transfers) {
         const messageLines = [];
 
@@ -46,7 +54,7 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
           messageLines.push(`${this.fmt.accountLink(account.name, account.ss58)} sent XCM transfer`);
         }
 
-        messageLines.push(`To: ${destination ?? 'Unknown'}`, `Destination chain: ${destinationChain ?? 'Unknown'}`);
+        messageLines.push(`To: ${destAddr ?? 'Unknown'}`, `Destination chain: ${destinationChain ?? 'Unknown'}`);
 
         const message = this.fmt.message(messageLines, blockContext);
 
@@ -67,12 +75,12 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
     destinationChain?: string;
     transfers: [string | undefined, string | undefined][];
   } {
-    const originLoc = rawOrigin as unknown as StagingXcmV4Location;
-    const destinationLoc = rawDestination as unknown as StagingXcmV4Location;
-    const message = rawMessage as unknown as StagingXcmV4Xcm;
+    const originLoc = rawOrigin as XcmLocation;
+    const destinationLoc = rawDestination as XcmLocation;
+    const message = rawMessage as XcmInstruction[];
 
-    // 1. Get origin account from the MultiLocation
-    // Origin is not always X1.AccountId32, can be chain itself MultiLocation::Here, e.g. https://polkadot.subscan.io/block/26472907
+    // 1. Get origin account from the Location
+    // Origin is not always X1.AccountId32, can be chain itself Location::Here, e.g. https://polkadot.subscan.io/block/26472907
     const origin = this.parseLocation(originLoc, blockNumber);
 
     // 2. Determine beneficiary instruction (handles nested XCM cases)
@@ -107,24 +115,24 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
   }
 
   /**
-   * Extracts an account ID or parachain label from a MultiLocation X1 junction
+   * Extracts an account ID or parachain label from a Location's X1 junction
    */
-  private parseLocation(location: StagingXcmV4Location | undefined, blockNumber: number): string | undefined {
+  private parseLocation(location: XcmLocation | undefined, blockNumber: number): string | undefined {
     // Restricting to X1 junctions ignores composite paths like X2(Parachain, AccountId32) or deeper stacks
     // (e.g., teleporting via intermediate routers). So the destination will be Unknown, which is fine for now.
-    if (!location?.interior || !location.interior.isX1) {
+    if (!location?.interior || location.interior.type !== 'X1') {
       this.logger.debug(`XCM. Unsupported junction or missing: ${location?.interior?.type} at block ${blockNumber}`);
       return;
     }
 
-    const x1 = location.interior.asX1[0];
-    if (x1.isAccountId32) {
-      const hex = x1.asAccountId32.id.toString();
-      return encodeAddress(hexToU8a(hex), this.chainProps.ss58Format);
-    } else if (x1.isAccountKey20) {
-      return String(x1.asAccountKey20.key.toHuman());
-    } else if (x1.isParachain) {
-      const id = x1.asParachain.toString();
+    // X1 value is a single junction object, not an array (unlike X2-X8)
+    const x1 = location.interior.value as XcmJunction;
+    if (x1.type === 'AccountId32') {
+      return encodeAddress(x1.value.id, this.chainProps.ss58Format);
+    } else if (x1.type === 'AccountKey20') {
+      return String(x1.value.key);
+    } else if (x1.type === 'Parachain') {
+      const id = String(x1.value);
       const relayMap =
         this.chainProps.chainToken === 'DOT' ? PARACHAIN_NAMES[Chain.Polkadot] : PARACHAIN_NAMES[Chain.Kusama];
       return relayMap[id] ?? `Parachain ${id}`;
@@ -137,36 +145,37 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
   /**
    * Finds an instruction in an XCM message by type
    */
-  private findInstruction(xcm: StagingXcmV4Xcm, key: string) {
-    return xcm.find((instr: any) => instr.type === key)?.[`as${key}`];
+  private findInstruction(xcm: XcmInstruction[], key: string): any | undefined {
+    return xcm.find((instr: XcmInstruction) => instr.type === key)?.value;
   }
 
   /**
-   * Extracts token and amount information from a list of XCM MultiAsset items
+   * Extracts token and amount information from a list of XCM Asset items
    */
   private getTokenAmountFromAsset(
-    assets: StagingXcmV4Asset[],
+    assets: XcmAsset[],
     blockNumber: number,
   ): [string | undefined, string | undefined][] {
     const result: [string, string][] = [];
     const map = ID_TOKEN_MAP[this.chainProps.chain];
     for (const asset of assets) {
       // Skip non-fungible (e.g., NFT) assets
-      if (!asset.fun?.isFungible) continue;
-      const amount = asset.fun.asFungible.toString();
+      if (asset.fun?.type !== 'Fungible') continue;
+      const amount = String(asset.fun.value);
 
-      const loc = asset.id as StagingXcmV4Location;
+      const loc = asset.id as XcmLocation;
       let token: string | undefined;
 
-      if (loc.interior.isHere) {
+      if (loc.interior.type === 'Here') {
         token = this.chainProps.chainToken;
-      } else if (loc.interior.isX3) {
-        const idStr = loc.interior.asX3[2].asGeneralIndex.toString();
+      } else if (loc.interior.type === 'X3') {
+        const junctions = loc.interior.value as XcmJunction[];
+        const idStr = String(junctions[2].value);
         token = map[idStr] ?? idStr;
       }
 
       if (!token) {
-        this.logger.debug(`Unknown XCM asset ID ${asset.id.toString()} at block ${blockNumber}`);
+        this.logger.debug(`Unknown XCM asset ID at block ${blockNumber}`);
         continue;
       }
 

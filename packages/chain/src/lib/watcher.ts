@@ -20,7 +20,7 @@ import {
   BalancesMonitor,
   GovernanceMonitor,
   StakingMonitor,
-  // XcmMonitor,
+  XcmMonitor,
   AssetsMonitor,
 } from './monitors';
 
@@ -39,7 +39,7 @@ export class ChainWatcher {
     [MonitorType.Staking, StakingMonitor],
     [MonitorType.Balances, BalancesMonitor],
     [MonitorType.Identity, IdentityMonitor],
-    // [MonitorType.Xcm, XcmMonitor],
+    [MonitorType.Xcm, XcmMonitor],
     [MonitorType.Assets, AssetsMonitor],
   ] as [MonitorType, MonitorConstructor<MonitorType>][];
 

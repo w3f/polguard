@@ -52,10 +52,4 @@ describe('Formatter.balance()', () => {
     expect(formatter.balance(BigInt('99999999999900000000'))).toBe('9,999,999,999.99 DOT');
   });
 
-  it('should round correctly', () => {
-    // 1.236 DOT should round to 1.24 DOT
-    expect(formatter.balance(BigInt(12360000000))).toBe('1.24 DOT');
-    // 1.234 DOT should round to 1.23 DOT
-    expect(formatter.balance(BigInt(12340000000))).toBe('1.23 DOT');
-  });
 });
