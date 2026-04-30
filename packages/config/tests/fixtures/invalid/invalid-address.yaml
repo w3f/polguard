@@ -16,5 +16,5 @@ groups:
         commission: 10
         handlers:
           - CommissionChangedEvent
-          - SlashReportedEvent
+          - OffenceReportedEvent
     accountSet: invalid-addresses

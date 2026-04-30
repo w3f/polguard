@@ -46,7 +46,7 @@ export class GetIncidentsDto {
   groupId?: string;
 
   @ApiProperty({
-    description: 'Filter incidents by handler type, ex. SlashReported',
+    description: 'Filter incidents by handler type, ex. OffenceReportedEvent',
     required: false,
   })
   @IsOptional()

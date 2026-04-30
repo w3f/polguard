@@ -126,7 +126,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
   }
 
   async processCall({ call, origin, blockContext }: CallHandlerParams): Promise<void> {
-    const callName = `${call.section}.${call.method}`;
+    const callName = `${call.type}.${call.value.type}`;
     const handlers = this.handlers.call.get(callName);
 
     if (handlers && handlers.length > 0) {

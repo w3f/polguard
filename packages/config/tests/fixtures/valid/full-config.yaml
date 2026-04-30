@@ -36,7 +36,7 @@ defaults:
       commission: 10
       handlers:
         - CommissionChangedEvent
-        - SlashReportedEvent
+        - OffenceReportedEvent
 
 groups:
   - id: validators-default  # This group will be created for both Polkadot and Kusama

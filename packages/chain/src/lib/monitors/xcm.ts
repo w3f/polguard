@@ -1,4 +1,4 @@
-import { encodeAddress } from '@polkadot/util-crypto';
+import { encodeAddress } from '../utils';
 import {
   Chain,
   MonitorType,
@@ -152,10 +152,7 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
   /**
    * Extracts token and amount information from a list of XCM Asset items
    */
-  private getTokenAmountFromAsset(
-    assets: XcmAsset[],
-    blockNumber: number,
-  ): [string | undefined, string | undefined][] {
+  private getTokenAmountFromAsset(assets: XcmAsset[], blockNumber: number): [string | undefined, string | undefined][] {
     const result: [string, string][] = [];
     const map = ID_TOKEN_MAP[this.chainProps.chain];
     for (const asset of assets) {

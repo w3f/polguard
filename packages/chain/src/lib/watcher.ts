@@ -1,5 +1,4 @@
-import { CallBase } from '@polkadot/types/types/calls';
-import { AnyTuple } from '@polkadot/types/types';
+import type { Subscription } from 'rxjs';
 
 import {
   Logger,
@@ -10,10 +9,11 @@ import {
   MonitorConstructor,
   ChainDataProvider,
   Monitor,
-  ChainApiClient,
   ChainTelemetryClient,
   MonitoringConfigClient,
-  TypedApi,
+  BlockClient,
+  RuntimeClient,
+  DecodedCall,
 } from '../types';
 import {
   IdentityMonitor,
@@ -23,6 +23,8 @@ import {
   XcmMonitor,
   AssetsMonitor,
 } from './monitors';
+import { decodeExtrinsic } from './extrinsic-decoder';
+import { encodeAddress, resolveMultiAddress } from './utils';
 
 /**
  * ChainWatcher is responsible for monitoring blockchain activities and coordinating monitors.
@@ -33,6 +35,7 @@ export class ChainWatcher {
   private isRunning = false;
   private latestBlockNumber = 0;
   private latestProcessedBlock?: number;
+  private finalizedSub?: Subscription;
 
   private static readonly monitorConfigs = [
     [MonitorType.Governance, GovernanceMonitor],
@@ -47,11 +50,11 @@ export class ChainWatcher {
     private logger: Logger,
     private configClient: MonitoringConfigClient,
     private store: Store,
-    private api: ChainApiClient,
+    private blockClient: BlockClient,
+    private runtimeClient: RuntimeClient,
     private incidents: IncidentHandlerClient,
     private chainProps: ChainProperties,
     private chainProvider: ChainDataProvider,
-    private typedApi: TypedApi,
     private telemetry?: ChainTelemetryClient,
   ) {}
 
@@ -70,15 +73,13 @@ export class ChainWatcher {
     await this.initializeMonitors();
     this.isRunning = true;
 
-    const header = await this.api.rpc.chain.getHeader();
-    const blockNumber = header.number.toNumber();
-    this.latestBlockNumber = blockNumber;
-    this.telemetry?.recordLatestBlock(blockNumber);
+    const finalized = await this.blockClient.getFinalizedBlock();
+    this.latestBlockNumber = finalized.number;
+    this.telemetry?.recordLatestBlock(finalized.number);
 
-    this.api.rpc.chain.subscribeFinalizedHeads(async header => {
-      const blockNumber = header.number.toNumber();
-      this.latestBlockNumber = blockNumber;
-      this.telemetry?.recordLatestBlock(blockNumber);
+    this.finalizedSub = this.blockClient.finalizedBlock$.subscribe(block => {
+      this.latestBlockNumber = block.number;
+      this.telemetry?.recordLatestBlock(block.number);
     });
 
     this.startBlockProcessingLoop(startBlock);
@@ -86,10 +87,11 @@ export class ChainWatcher {
 
   /**
    * Stops the watcher if it's running.
-   * Sets running state to false and disconnects from the API.
+   * Unsubscribes from finalized block updates.
    */
   async stop(): Promise<void> {
     this.isRunning = false;
+    this.finalizedSub?.unsubscribe();
   }
 
   /**
@@ -176,80 +178,88 @@ export class ChainWatcher {
   async processBlock(blockNumber: number): Promise<void> {
     this.logger.log(`Processing block: #${blockNumber}`);
 
-    const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
-    const blockHashHex = blockHash.toString();
-    const block = await this.api.rpc.chain.getBlock(blockHash);
+    const blockHash = await this.blockClient._request<string, [number]>('chain_getBlockHash', [blockNumber]);
 
     // Apply state handlers: process custom logic, usually storage calls
     await Promise.all(this.monitors.map(m => m.processState({ blockContext: { blockNumber } })));
 
     // Apply event handlers: process event payload
-    const systemEvents = await this.typedApi.query.System.Events.getValue({ at: blockHashHex });
+    const systemEvents = await this.runtimeClient.query.System.Events.getValue({ at: blockHash });
     for (let eventIdx = 0; eventIdx < systemEvents.length; eventIdx++) {
       const systemEvent = systemEvents[eventIdx];
       await Promise.all(this.monitors.map(m => m.processEvent(systemEvent, { blockNumber, eventIdx })));
     }
 
-    // Apply call handlers: process call signature
-    for (let extrinsicIdx = 0; extrinsicIdx < block.block.extrinsics.length; extrinsicIdx++) {
-      const extrinsic = block.block.extrinsics[extrinsicIdx];
-      const origin = extrinsic.signer.toString();
-      const callSeq = { value: 0 };
-      await this.traverseCallTree(blockNumber, extrinsic.method, origin, extrinsicIdx, callSeq);
+    // Apply call handlers: decode extrinsics and process call tree
+    const body = await this.blockClient.getBlockBody(blockHash);
+    for (let extrinsicIdx = 0; extrinsicIdx < body.length; extrinsicIdx++) {
+      try {
+        const decoded = decodeExtrinsic(body[extrinsicIdx], this.chainProps.extrinsicExtraOffset);
+        if (!decoded.isSigned || !decoded.signer) continue;
+
+        const tx = await this.runtimeClient.txFromCallData(decoded.callData);
+        const origin = encodeAddress(decoded.signer, this.chainProps.ss58Format);
+        const callSeq = { value: 0 };
+        await this.traverseCallTree(blockNumber, tx.decodedCall, origin, extrinsicIdx, callSeq);
+      } catch (error) {
+        this.logger.warn(`Failed to process extrinsic ${blockNumber}-${extrinsicIdx}: ${(error as Error).message}`);
+      }
     }
+
+    await this.store.setLastBlock(this.chainProps.chain, blockNumber);
   }
 
   /**
-   * Recursively processes a call and its nested calls.
-   * Distributes each call to all monitors for processing.
+   * Recursively processes a PAPI decoded call and its nested calls.
+   * Distributes each leaf call to all monitors for processing.
+   *
+   * Handles:
+   * - Proxy.proxy: unwraps inner call and overrides origin with the proxied account
+   * - Utility.batch/batch_all/force_batch: iterates over inner calls
+   * - Sudo.sudo, Multisig.as_multi, etc.: unwraps single inner call
    *
    * @param blockNumber The block number containing the call
-   * @param call The call to process
-   * @param origin The origin address of the call
+   * @param call The PAPI decoded call structure
+   * @param origin The SS58 origin address of the call
    * @param extrinsicIdx The index of the extrinsic in the block
    * @param callSeq Mutable counter used to assign sequential callIdx values
    */
   private async traverseCallTree(
     blockNumber: number,
-    call: CallBase<AnyTuple>,
+    call: DecodedCall,
     origin: string,
     extrinsicIdx: number,
     callSeq: { value: number },
   ): Promise<void> {
-    const metaArgs = call.meta?.args;
-    if (!metaArgs) return;
-
-    const { section, method } = call;
-    // Find the index of a param by name
-    const idxOf = (name: string) => metaArgs.findIndex(a => a.name.toString() === name);
-
-    const argIdxCall = idxOf('call');
-    const argIdxCalls = idxOf('calls');
-
-    // 1. Proxy pallet: unwrap call & override origin
-    if (section === 'proxy' && method === 'proxy') {
-      const realIdx = idxOf('real');
-      const real = call.args[realIdx].toString();
-      const inner = call.args[argIdxCall] as unknown as CallBase<AnyTuple>;
+    const pallet = call.type;
+    const method = call.value.type;
+    const args = call.value.value;
+    const callKey = `${pallet}.${method}`;
+    // 1. Proxy.proxy: unwrap inner call and override origin with the real account
+    if (callKey === 'Proxy.proxy') {
+      const real = resolveMultiAddress(args.real);
+      const inner = args.call as DecodedCall;
       return this.traverseCallTree(blockNumber, inner, real, extrinsicIdx, callSeq);
     }
-
-    // 2. Generic Vec<RuntimeCall>: batch-style wrappers (e.g. utility.batch, etc.)
-    if (argIdxCalls >= 0) {
-      const innerCalls = call.args[argIdxCalls] as unknown as CallBase<AnyTuple>[];
-      for (const c of innerCalls) {
-        await this.traverseCallTree(blockNumber, c, origin, extrinsicIdx, callSeq);
+    // 2. Batch-style wrappers: iterate over Vec<RuntimeCall>
+    const BATCH_CALLS = new Set(['Utility.batch', 'Utility.batch_all', 'Utility.force_batch']);
+    if (BATCH_CALLS.has(callKey) && Array.isArray(args.calls)) {
+      for (const inner of args.calls) {
+        await this.traverseCallTree(blockNumber, inner as DecodedCall, origin, extrinsicIdx, callSeq);
       }
       return;
     }
-
-    // 3. Generic Box<RuntimeCall>: single-call wrappers (e.g. multisig.asMulti, sudo, scheduler.execute, etc.)
-    if (argIdxCall >= 0) {
-      const inner = call.args[argIdxCall] as unknown as CallBase<AnyTuple>;
-      return this.traverseCallTree(blockNumber, inner, origin, extrinsicIdx, callSeq);
+    // 3. Single-call wrappers: unwrap Box<RuntimeCall>
+    const SINGLE_WRAPPERS = new Set([
+      'Sudo.sudo',
+      'Sudo.sudo_unchecked_weight',
+      'Multisig.as_multi',
+      'Multisig.as_multi_threshold_1',
+    ]);
+    if (SINGLE_WRAPPERS.has(callKey) && args.call) {
+      return this.traverseCallTree(blockNumber, args.call as DecodedCall, origin, extrinsicIdx, callSeq);
     }
-
-    // 4. Base leaf: assign callIdx and dispatch
+    // 4. Leaf call: assign callIdx and dispatch to monitors
     const leafCallIdx = callSeq.value++;
     await Promise.all(
       this.monitors.map(m =>

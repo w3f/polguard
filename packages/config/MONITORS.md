@@ -17,29 +17,29 @@ Monitors validator staking activities.
 
 ### Handlers
 
-#### SlashReportedEvent
-- **Type**: Event (`staking.SlashReported`)
-- **Chains**: Polkadot, Kusama
-- **Description**: Detects when a validator is slashed
+#### OffenceReportedEvent
+- **Type**: Event (`staking.OffenceReported`)
+- **Chains**: AssetHubPolkadot, AssetHubKusama
+- **Description**: Detects when an offence has been reported for a validator
 
 #### CommissionChangedEvent
 - **Type**: Event (`staking.ValidatorPrefsSet`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Detects changes to validator commission
 
 #### UnbondedEvent
 - **Type**: Event (`staking.Unbonded`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Detects when tokens are unbonded
 
 #### DestinationChangedCall
 - **Type**: Call (`staking.setPayee`, `staking.bond`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Detects changes to reward destination
 
 #### CommissionUnexpectedState
 - **Type**: State (`staking.validators`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Alerts when commission doesn't match expected value
 - **Config Keys**:
   - `commission`: (number) Expected commission percentage (0-100)
@@ -48,7 +48,7 @@ Monitors validator staking activities.
 
 #### SelfStakeUnexpectedState
 - **Type**: State (`staking.bonded`, `staking.ledger`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Alerts when self-stake doesn't match expected value
 - **Config Keys**:
   - `selfStake`: (string) Expected self-stake amount as a decimal string (e.g., "1000.5")
@@ -57,7 +57,7 @@ Monitors validator staking activities.
 
 #### ValidatorIntentionMissingState
 - **Type**: State (`staking.bonded`, `staking.validators`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Alerts when validator intention is missing
 - **Config Keys**:
   - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
@@ -65,7 +65,7 @@ Monitors validator staking activities.
 
 #### DestinationUnexpectedState
 - **Type**: State (`staking.payee`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Alerts when reward destination doesn't match expected value
 - **Config Keys**:
   - `payee`: (string) Expected reward destination - one of: "Staked", "Stash", "Controller"
@@ -74,12 +74,12 @@ Monitors validator staking activities.
 
 #### DestinationChangedState
 - **Type**: State (`staking.payee`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Detects changes to reward destination between blocks
 
 #### ActiveSetPresenceState
 - **Type**: State (`session.validators`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Monitors validator presence in the active set
 - **Config Keys**:
   - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
@@ -104,7 +104,7 @@ accountSets:
 groups:
   # Monitor old cohort until era 1050 (exclusive)
   - name: validators-cohort-1
-    chains: [Polkadot]
+    chains: [AssetHubPolkadot]
     accountSet: old-validators
     monitors:
       - name: Staking
@@ -114,7 +114,7 @@ groups:
   
   # Monitor new cohort from era 1050 onwards
   - name: validators-cohort-2
-    chains: [Polkadot]
+    chains: [AssetHubPolkadot]
     accountSet: new-validators
     monitors:
       - name: Staking
@@ -144,7 +144,7 @@ monitors:
     commission: 10  # Default commission percentage
     handlers:
       - CommissionChangedEvent
-      - SlashReportedEvent
+      - OffenceReportedEvent
 
 accounts:
   - address: "..."
@@ -161,29 +161,29 @@ Monitors account balances and transfers.
 
 #### BalanceDecreaseState
 - **Type**: State (`system.account`)
-- **Chains**: Polkadot, AssetHub Kusama, Frequency
+- **Chains**: AssetHubPolkadot, AssetHubKusama, Frequency
 - **Description**: Detects any balance decreases between blocks
 
 #### BalanceThresholdState
 - **Type**: State (`system.account`)
-- **Chains**: Polkadot, AssetHub Kusama, Frequency
+- **Chains**: AssetHubPolkadot, AssetHubKusama, Frequency
 - **Description**: Alerts when balance falls below a threshold
 - **Config Keys**:
   - `threshold`: (string) Balance threshold value as a decimal string (e.g., "1000.0")
 
 #### TransferIngressEvent
 - **Type**: Event (`balances.Transfer`)
-- **Chains**: Polkadot, AssetHub Kusama, Frequency
+- **Chains**: AssetHubPolkadot, AssetHubKusama, Frequency
 - **Description**: Detects incoming transfers
 
 #### TransferEgressEvent
 - **Type**: Event (`balances.Transfer`)
-- **Chains**: Polkadot, AssetHub Kusama, Frequency
+- **Chains**: AssetHubPolkadot, AssetHubKusama, Frequency
 - **Description**: Detects outgoing transfers
 
 #### TransferCall
 - **Type**: Call (`balances.transfer`)
-- **Chains**: Polkadot, AssetHub Kusama, Frequency
+- **Chains**: AssetHubPolkadot, AssetHubKusama, Frequency
 - **Description**: Detects transfer calls (for testing purposes)
 
 ### Example Configuration
@@ -311,12 +311,12 @@ Monitors governance activities.
 
 #### ReferendaSubmittedEvent
 - **Type**: Event (`referenda.Submitted`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Detects when new referenda are submitted
 
 #### ConvictionVoteCall
 - **Type**: Call (`convictionVoting.vote`)
-- **Chains**: Polkadot, Kusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Detects conviction voting activities
 
 ### Example Configuration
@@ -337,7 +337,7 @@ Monitors cross-chain asset transfers.
 
 #### XcmTransferEgressEvent
 - **Type**: Event (`polkadotXcm.Sent`, `xcmPallet.Sent`)
-- **Chains**: Polkadot, Kusama, AssetHubPolkadot, AssetHubKusama
+- **Chains**: AssetHubPolkadot, AssetHubKusama
 - **Description**: Detects outgoing cross-chain asset transfers
 
 ### Example Configuration
@@ -364,7 +364,7 @@ You should configure which handlers are active for each monitor:
 ```yaml
 handlers:  # Required: explicitly list desired handlers
   - CommissionChangedEvent
-  - SlashReportedEvent
+  - OffenceReportedEvent
 ```
 
 ## Related Documentation

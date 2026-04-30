@@ -1,4 +1,3 @@
-import type { AccountVote } from '@polkadot/types/interfaces';
 import { MonitorType, Chain, GovernanceHandlerType as H, EventHandlerParams, CallHandlerParams } from '../../types';
 import { AbstractMonitor } from './abstract-monitor';
 import { Call, Event } from '../decorators';
@@ -32,10 +31,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     const proposer = (await this.chain.referendaInfoFor(index, blockNumber)) ?? 'unknown';
     const chainSlug = this.getGovernanceChainSlug();
     const subsquareLink = this.fmt.link('Subsquare', `https://${chainSlug}.subsquare.io/referenda/${index}`);
-    const polkassemblyLink = this.fmt.link(
-      'Polkassembly',
-      `https://${chainSlug}.polkassembly.io/referenda/${index}`,
-    );
+    const polkassemblyLink = this.fmt.link('Polkassembly', `https://${chainSlug}.polkassembly.io/referenda/${index}`);
     // Sanitize C-style string
     const trackName = (await this.chain.referendaTrack(track)).replace(/\0/g, '');
     const message = this.fmt.message(
@@ -56,7 +52,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
   @Call(
     H.ConvictionVoteCall,
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
-    'convictionVoting.vote',
+    'ConvictionVoting.vote',
   )
   async convictionVote({
     call,
@@ -64,17 +60,28 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     blockContext,
     handlerType,
   }: CallHandlerParams<H.ConvictionVoteCall>): Promise<void> {
-    const pollIndex = call.args[0].toString();
-    const voteArg = call.args[1] as AccountVote;
-
+    const args = call.value.value;
+    const pollIndex = String(args.poll_index);
+    const voteArg = args.vote;
     let voteLines: string[];
-    if (voteArg.isStandard) {
-      const { vote, balance } = voteArg.asStandard;
-      const direction = vote.isAye ? 'Aye' : 'Nay';
-      voteLines = [`Direction: ${direction}`, `Amount: ${this.fmt.balance(balance.toString())}`];
-    } else if (voteArg.isSplit) {
-      const { aye, nay } = voteArg.asSplit;
-      voteLines = [`Aye: ${this.fmt.balance(aye.toString())}`, `Nay: ${this.fmt.balance(nay.toString())}`];
+    // { type: "Standard", value: { vote: number, balance: bigint } }
+    if (voteArg?.type === 'Standard') {
+      const { vote, balance } = voteArg.value;
+      // vote is a compact vote byte: bit 7 = aye, bits 0-6 = conviction
+      const direction = typeof vote === 'number' ? (vote & 0x80 ? 'Aye' : 'Nay') : String(vote);
+      voteLines = [`Direction: ${direction}`, `Amount: ${this.fmt.balance(String(balance))}`];
+      // { type: "Split", value: { aye: bigint, nay: bigint } }
+    } else if (voteArg?.type === 'Split') {
+      const { aye, nay } = voteArg.value;
+      voteLines = [`Aye: ${this.fmt.balance(String(aye))}`, `Nay: ${this.fmt.balance(String(nay))}`];
+      //{ type: "SplitAbstain", value: { aye: bigint, nay: bigint, abstain: bigint } }
+    } else if (voteArg?.type === 'SplitAbstain') {
+      const { aye, nay, abstain } = voteArg.value;
+      voteLines = [
+        `Aye: ${this.fmt.balance(String(aye))}`,
+        `Nay: ${this.fmt.balance(String(nay))}`,
+        `Abstain: ${this.fmt.balance(String(abstain))}`,
+      ];
     } else {
       voteLines = ['(Unknown vote format)'];
     }

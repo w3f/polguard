@@ -51,5 +51,4 @@ describe('Formatter.balance()', () => {
     // 9,999,999,999.99 DOT = 9999999999.99 * 10^10 = 99999999999900000000
     expect(formatter.balance(BigInt('99999999999900000000'))).toBe('9,999,999,999.99 DOT');
   });
-
 });

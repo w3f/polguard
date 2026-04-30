@@ -18,7 +18,7 @@ describe('Incident API (integration)', () => {
   const TEST_GROUP_ID = 'validators-default';
   const TEST_CHANNEL_ID = '!testroom:matrix.org';
   const TEST_ESCALATION_CHANNEL_ID = '!escalation:matrix.org';
-  const TEST_HANDLER_TYPE = 'SlashReportedEvent';
+  const TEST_HANDLER_TYPE = 'OffenceReportedEvent';
   const TEST_ESCALATION_TIMEOUT = 500;
 
   const createIncidentDto = (overrides: Partial<CreateIncidentDto> = {}): CreateIncidentDto => ({

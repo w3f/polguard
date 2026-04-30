@@ -13,7 +13,7 @@ groups:
       - name: Staking
         handlers:
           - ActiveSetPresenceState
-          - SlashReportedEvent
+          - OffenceReportedEvent
     accountSet: example-accounts
 
 accountSets:

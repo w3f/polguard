@@ -6,6 +6,11 @@ export interface ChainProperties {
   chainDecimals: number;
   chainToken: string;
   ss58Format: number;
+  /**
+   * Number of extra bytes after the common signed extensions (Era, Nonce, Tip)
+   * that precede the call data in a signed extrinsic.
+   */
+  extrinsicExtraOffset: number;
 }
 
 export enum Chain {
@@ -33,7 +38,7 @@ export enum MonitorType {
 
 
 export enum StakingHandlerType {
-  SlashReportedEvent = 'SlashReportedEvent',
+  OffenceReportedEvent = 'OffenceReportedEvent',
   CommissionChangedEvent = 'CommissionChangedEvent',
   UnbondedEvent = 'UnbondedEvent',
   DestinationChangedCall = 'DestinationChangedCall',
@@ -83,6 +88,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 10,
     chainToken: 'DOT',
     ss58Format: 0,
+    extrinsicExtraOffset: 1,
   },
   [Chain.Kusama]: {
     chain: Chain.Kusama,
@@ -90,6 +96,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 12,
     chainToken: 'KSM',
     ss58Format: 2,
+    extrinsicExtraOffset: 1,
   },
   [Chain.Paseo]: {
     chain: Chain.Paseo,
@@ -97,6 +104,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 10,
     chainToken: 'PAS',
     ss58Format: 0,
+    extrinsicExtraOffset: 1,
   },
   [Chain.AssetHubPolkadot]: {
     chain: Chain.AssetHubPolkadot,
@@ -104,6 +112,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 10,
     chainToken: 'DOT',
     ss58Format: 0,
+    extrinsicExtraOffset: 2,
   },
   [Chain.AssetHubKusama]: {
     chain: Chain.AssetHubKusama,
@@ -111,6 +120,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 12,
     chainToken: 'KSM',
     ss58Format: 2,
+    extrinsicExtraOffset: 2,
   },
   [Chain.AssetHubPaseo]: {
     chain: Chain.AssetHubPaseo,
@@ -118,6 +128,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 10,
     chainToken: 'PAS',
     ss58Format: 0,
+    extrinsicExtraOffset: 2,
   },
   [Chain.PeoplePolkadot]: {
     chain: Chain.PeoplePolkadot,
@@ -125,6 +136,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 10,
     chainToken: 'DOT',
     ss58Format: 0,
+    extrinsicExtraOffset: 1,
   },
   [Chain.PeopleKusama]: {
     chain: Chain.PeopleKusama,
@@ -132,6 +144,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 12,
     chainToken: 'KSM',
     ss58Format: 2,
+    extrinsicExtraOffset: 1,
   },
   [Chain.PeoplePaseo]: {
     chain: Chain.PeoplePaseo,
@@ -139,6 +152,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 10,
     chainToken: 'PAS',
     ss58Format: 0,
+    extrinsicExtraOffset: 1,
   },
   [Chain.Centrifuge]: {
     chain: Chain.Centrifuge,
@@ -146,6 +160,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 18,
     chainToken: 'CFG',
     ss58Format: 36,
+    extrinsicExtraOffset: 1, // TODO: verify
   },
   [Chain.Frequency]: {
     chain: Chain.Frequency,
@@ -153,8 +168,9 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
     chainDecimals: 8,
     chainToken: 'FRQCY',
     ss58Format: 90,
+    extrinsicExtraOffset: 1, // TODO: verify
   },
-} as const;
+};
 
 export function getChainProperties(chain: Chain): ChainProperties {
   const props = CHAIN_CONFIGS[chain];

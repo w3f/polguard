@@ -7,6 +7,7 @@ import {
   CallHandlerParams,
 } from '../../types';
 import { Call, Event, State } from '../decorators';
+import { resolveMultiAddress } from '../utils';
 import { AbstractMonitor } from './abstract-monitor';
 
 export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
@@ -73,7 +74,7 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
   @Call(
     H.TransferCall,
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.Frequency, Chain.AssetHubPaseo],
-    ['balances.transfer', 'balances.transferKeepAlive'],
+    ['Balances.transfer_allow_death', 'Balances.transfer_keep_alive'],
   )
   async balancesTransfer({
     call,
@@ -81,7 +82,10 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     blockContext,
     handlerType,
   }: CallHandlerParams<H.TransferCall>): Promise<void> {
-    const [to, amount] = call.args.map(arg => arg.toString());
+    const args = call.value.value;
+    const to = resolveMultiAddress(args.dest);
+    const amount = String(args.value);
+
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
       const message = this.fmt.message(
         [

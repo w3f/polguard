@@ -54,7 +54,7 @@ defaults:
       commission: 10
       handlers:
         - CommissionChangedEvent
-        - SlashReportedEvent
+        - OffenceReportedEvent
 ```
 
 ## Account Sets
@@ -154,7 +154,7 @@ The platform processes configuration in the following order:
 # Handlers array is required and must contain at least one handler
 handlers:
   - CommissionChangedEvent
-  - SlashReportedEvent
+  - OffenceReportedEvent
 ```
 
 ## Monitor Settings Hierarchy
@@ -231,7 +231,7 @@ groups:
         commission: 5
         handlers:
           - CommissionChangedEvent
-          - SlashReportedEvent
+          - OffenceReportedEvent
       - name: Balances
         threshold: "1000.0"
         handlers:

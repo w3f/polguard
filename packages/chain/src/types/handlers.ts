@@ -6,8 +6,6 @@ import {
   StakingHandlerType,
   XcmHandlerType,
 } from '../types';
-import { CallBase } from '@polkadot/types/types/calls';
-import { AnyTuple } from '@polkadot/types/types';
 import { BlockContext } from './incident';
 
 export type EventPhase =
@@ -27,20 +25,27 @@ export type SystemEvent = {
   topics: string[];
 };
 
-export type TypedApi = {
-  query: any;
-  event: any;
-  tx: any;
-  constants: any;
-};
-
 export type HandlerFunction<T> = (params: T) => Promise<void>;
 export type EventHandlerFunction = HandlerFunction<EventHandlerParams>;
 export type CallHandlerFunction = HandlerFunction<CallHandlerParams>;
 export type StateHandlerFunction = HandlerFunction<StateHandlerParams>;
 
+/**
+ * PAPI decoded call structure.
+ * Represents the result of txFromCallData(...).decodedCall
+ *
+ * Example: { type: "Balances", value: { type: "transfer_keep_alive", value: { dest: ..., value: ... } } }
+ */
+export type DecodedCall = {
+  type: string; // PascalCase pallet name, e.g. "Balances", "Proxy", "Utility"
+  value: {
+    type: string; // snake_case method name, e.g. "transfer_keep_alive", "proxy", "batch"
+    value: Record<string, any>; // Named arguments
+  };
+};
+
 export interface CallHandlerParams<T extends HandlerType = HandlerType> {
-  call: CallBase<AnyTuple>;
+  call: DecodedCall;
   origin: string;
   blockContext: BlockContext;
   handlerType?: T;

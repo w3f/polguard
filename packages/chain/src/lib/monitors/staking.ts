@@ -1,6 +1,4 @@
-import '@polkadot/api-augment/polkadot';
 import { Event, State, Call } from '../decorators';
-import { PalletStakingRewardDestination } from '@polkadot/types/lookup';
 import {
   StakingHandlerType as H,
   MonitorType,
@@ -51,15 +49,19 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
   }
 
   @Event(
-    H.SlashReportedEvent,
+    H.OffenceReportedEvent,
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
-    'staking.SlashReported',
+    'staking.OffenceReported',
   )
-  async slashReported({ payload, blockContext, handlerType }: EventHandlerParams<H.SlashReportedEvent>): Promise<void> {
+  async offenceReported({
+    payload,
+    blockContext,
+    handlerType,
+  }: EventHandlerParams<H.OffenceReportedEvent>): Promise<void> {
     const validatorId = payload.validator;
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, validatorId)) {
-      const message = this.fmt.message([`Validator ${account.name} has been slashed`], blockContext);
+      const message = this.fmt.message([`Offence reported for validator ${account.name}`], blockContext);
       const key = { account: account.ss58, groupId, handlerType };
       await this.incidents.handle(message, notifications, key, blockContext);
     }
@@ -111,7 +113,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
   @Call(
     H.DestinationChangedCall,
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
-    ['staking.setPayee', 'staking.bond'],
+    ['Staking.set_payee', 'Staking.bond'],
   )
   async destinationChanged({
     call,
@@ -119,8 +121,10 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     blockContext,
     handlerType,
   }: CallHandlerParams<H.DestinationChangedCall>): Promise<void> {
-    const payee = (call.method === 'setPayee' ? call.args[0] : call.args[1]) as PalletStakingRewardDestination;
-    const destination = payee.isAccount ? payee.asAccount.toString() : payee.type;
+    const args = call.value.value;
+    const payee = call.value.type === 'set_payee' ? args.payee : args.payee;
+    // PAPI represents RewardDestination as an enum: { type: "Account", value: "SS58" } | { type: "Staked" } etc.
+    const destination = payee?.type === 'Account' ? String(payee.value) : String(payee?.type ?? payee);
 
     for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
       const message = this.fmt.message(

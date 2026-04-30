@@ -5,11 +5,10 @@ import { ChainWatcher } from '../../src/lib/watcher';
 import { Chain, MonitorType, MonitoringGroup, MessengerType, getChainProperties } from '@w3f/polguard-common';
 import { LoggerAdapter, TestIncidentHandler, colors } from './test-utils';
 import { InMemoryStore } from '../../src/service/store/in-memory.store';
-import { ApiPromise, WsProvider } from '@polkadot/api';
 import { createClient } from 'polkadot-api';
 import { getWsProvider } from 'polkadot-api/ws';
 import type { PolkadotClient } from 'polkadot-api';
-import { getTypedApi } from '../../src/lib/papi-descriptors';
+import { getTypedApi } from '../../src/service/papi-descriptors';
 
 export interface TestCase {
   chain: Chain;
@@ -114,22 +113,6 @@ export class TestRunner {
     return testCases;
   }
 
-  // WS connect with 10 s timeout and one retry
-  private async connectWs(rpc: string): Promise<ApiPromise> {
-    const attempt = () =>
-      Promise.race([
-        ApiPromise.create({ provider: new WsProvider(rpc), noInitWarn: true }),
-        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('WS connection timeout')), 10_000)),
-      ]);
-
-    try {
-      return await attempt();
-    } catch (err: any) {
-      console.warn(`First WS connect for rpc ${rpc} failed (${err.message}), retrying…`);
-      return await attempt();
-    }
-  }
-
   private async runChainTests(
     chain: Chain,
     testCases: TestCase[],
@@ -138,7 +121,6 @@ export class TestRunner {
   ): Promise<TestResult[]> {
     console.log(`\n${colors.cyan}Running ${testCases.length} tests for ${chain}...${colors.reset}`);
     console.log(`Connecting to ${chain} at ${rpcEndpoint}`);
-    const api = await this.connectWs(rpcEndpoint);
     const provider = getWsProvider(rpcEndpoint);
     const client = createClient(provider);
 
@@ -148,24 +130,18 @@ export class TestRunner {
 
       for (let i = 0; i < testCases.length; i += concurrencyLimit) {
         const batch = testCases.slice(i, i + concurrencyLimit);
-        const batchResults = await Promise.all(batch.map(testCase => this.runSingleTest(testCase, api, client, debug)));
+        const batchResults = await Promise.all(batch.map(testCase => this.runSingleTest(testCase, client, debug)));
         results.push(...batchResults);
       }
 
       return results;
     } finally {
       console.log(`Disconnecting from ${chain}`);
-      await api.disconnect();
       client.destroy();
     }
   }
 
-  private async runSingleTest(
-    testCase: TestCase,
-    api: ApiPromise,
-    client: PolkadotClient,
-    debug: boolean,
-  ): Promise<TestResult> {
+  private async runSingleTest(testCase: TestCase, client: PolkadotClient, debug: boolean): Promise<TestResult> {
     const testId = `${testCase.monitor}.${testCase.handlerType}`;
 
     try {
@@ -173,8 +149,8 @@ export class TestRunner {
       const store = new InMemoryStore();
       const incidentHandler = new TestIncidentHandler(testId);
 
-      const typedApi = getTypedApi(client, testCase.chain);
-      const chainProvider = createChainDataProvider(client, store, logger, testCase.chain, typedApi);
+      const runtimeClient = getTypedApi(client, testCase.chain);
+      const chainProvider = createChainDataProvider(client, runtimeClient, store, logger, testCase.chain);
       const group = this.createMonitoringGroup(
         testCase.chain,
         testCase.monitor,
@@ -186,11 +162,11 @@ export class TestRunner {
         logger,
         { getMonitoringGroups: async () => [group] },
         store,
-        api,
+        client,
+        runtimeClient,
         incidentHandler,
         getChainProperties(testCase.chain),
         chainProvider,
-        typedApi,
       );
 
       await watcher.initializeMonitors();

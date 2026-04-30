@@ -1,16 +1,25 @@
-import { PolkadotClient } from 'polkadot-api';
-import { Logger, Chain, ChainDataProvider, Store, IdentityInfo, TokenBalances, CHAIN_TOKENS, TypedApi } from '../types';
+import {
+  Logger,
+  Chain,
+  ChainDataProvider,
+  Store,
+  BlockClient,
+  RuntimeClient,
+  IdentityInfo,
+  TokenBalances,
+  CHAIN_TOKENS,
+} from '../types';
 import { createCachedQueryDecorator } from './decorators';
 
 /**
  * Creates a chain data provider that implements chain queries with caching layer.
  */
 export function createChainDataProvider(
-  client: PolkadotClient,
+  blockClient: BlockClient,
+  runtimeClient: RuntimeClient,
   store: Store,
   logger: Logger,
   chain: Chain,
-  typedApi: TypedApi,
 ) {
   const Cached = createCachedQueryDecorator(store);
 
@@ -18,7 +27,7 @@ export function createChainDataProvider(
     private blockHashCache: Map<number, string> = new Map();
 
     constructor(
-      private client: PolkadotClient,
+      private blockClient: BlockClient,
       public logger: Logger,
       public chain: Chain,
     ) {}
@@ -27,7 +36,7 @@ export function createChainDataProvider(
       const cached = this.blockHashCache.get(blockNumber);
       if (cached) return cached;
 
-      const hash = await this.client._request<string, [number]>('chain_getBlockHash', [blockNumber]);
+      const hash = await this.blockClient._request<string, [number]>('chain_getBlockHash', [blockNumber]);
       this.blockHashCache.set(blockNumber, hash);
 
       if (this.blockHashCache.size > 100) {
@@ -48,7 +57,7 @@ export function createChainDataProvider(
     @Cached()
     async stakingValidators(blockNumber: number): Promise<string[]> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const entries = await typedApi.query.Staking.Validators.getEntries({ at: blockHash });
+      const entries = await runtimeClient.query.Staking.Validators.getEntries({ at: blockHash });
       return entries.map(e => e.keyArgs[0] as string);
     }
 
@@ -59,7 +68,7 @@ export function createChainDataProvider(
     ): Promise<Record<string, number | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
       const validatorAddresses = new Set(await this.stakingValidators(blockNumber));
-      const prefs = await typedApi.query.Staking.Validators.getValues(
+      const prefs = await runtimeClient.query.Staking.Validators.getValues(
         addresses.map(addr => [addr]),
         { at: blockHash },
       );
@@ -79,7 +88,7 @@ export function createChainDataProvider(
     @Cached()
     async stakingBonded(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const bondedInfo = await typedApi.query.Staking.Bonded.getValues(
+      const bondedInfo = await runtimeClient.query.Staking.Bonded.getValues(
         addresses.map(addr => [addr]),
         { at: blockHash },
       );
@@ -96,7 +105,7 @@ export function createChainDataProvider(
     @Cached()
     async stakingLedgerActive(addresses: string[], blockNumber: number): Promise<Record<string, bigint | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const ledgers = await typedApi.query.Staking.Ledger.getValues(
+      const ledgers = await runtimeClient.query.Staking.Ledger.getValues(
         addresses.map(addr => [addr]),
         { at: blockHash },
       );
@@ -113,7 +122,7 @@ export function createChainDataProvider(
     @Cached()
     async stakingPayee(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const payees = await typedApi.query.Staking.Payee.getValues(
+      const payees = await runtimeClient.query.Staking.Payee.getValues(
         addresses.map(addr => [addr]),
         { at: blockHash },
       );
@@ -138,14 +147,14 @@ export function createChainDataProvider(
     @Cached()
     async stakingActiveEra(blockNumber: number): Promise<number> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const activeEra = await typedApi.query.Staking.ActiveEra.getValue({ at: blockHash });
+      const activeEra = await runtimeClient.query.Staking.ActiveEra.getValue({ at: blockHash });
       return (activeEra as any)?.index ?? 0;
     }
 
     @Cached()
     async stakingEraValidators(era: number, blockNumber: number): Promise<Record<string, boolean>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const entries = await typedApi.query.Staking.ErasStakersOverview.getEntries(era, { at: blockHash });
+      const entries = await runtimeClient.query.Staking.ErasStakersOverview.getEntries(era, { at: blockHash });
       const result: Record<string, boolean> = {};
 
       entries.forEach(entry => {
@@ -159,7 +168,7 @@ export function createChainDataProvider(
     @Cached()
     async sessionValidators(blockNumber: number): Promise<Record<string, boolean>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const validators = await typedApi.query.Session.Validators.getValue({ at: blockHash });
+      const validators = await runtimeClient.query.Session.Validators.getValue({ at: blockHash });
       const result: Record<string, boolean> = {};
 
       (validators as any).forEach((validator: string) => {
@@ -172,7 +181,7 @@ export function createChainDataProvider(
     @Cached()
     async systemAccountBalance(addresses: string[], blockNumber: number): Promise<Record<string, bigint>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const accounts = await typedApi.query.System.Account.getValues(
+      const accounts = await runtimeClient.query.System.Account.getValues(
         addresses.map(addr => [addr]),
         { at: blockHash },
       );
@@ -188,7 +197,7 @@ export function createChainDataProvider(
     @Cached()
     async identityOf(addresses: string[], blockNumber: number): Promise<Record<string, IdentityInfo | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const identities = await typedApi.query.Identity.IdentityOf.getValues(
+      const identities = await runtimeClient.query.Identity.IdentityOf.getValues(
         addresses.map(addr => [addr]),
         { at: blockHash },
       );
@@ -211,7 +220,7 @@ export function createChainDataProvider(
     @Cached()
     async identitySuperOf(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const superIds = await typedApi.query.Identity.SuperOf.getValues(
+      const superIds = await runtimeClient.query.Identity.SuperOf.getValues(
         addresses.map(addr => [addr]),
         { at: blockHash },
       );
@@ -251,7 +260,7 @@ export function createChainDataProvider(
         result[tokenName] = {};
         const assetId = CHAIN_TOKENS[this.chain][tokenName].id;
         const keys = addresses.map(address => [assetId, address]);
-        const assetAccounts = await typedApi.query.Assets.Account.getValues(keys, { at: blockHash });
+        const assetAccounts = await runtimeClient.query.Assets.Account.getValues(keys, { at: blockHash });
 
         addresses.forEach((address, index) => {
           const assetAccount = assetAccounts[index];
@@ -278,7 +287,7 @@ export function createChainDataProvider(
         result[tokenName] = {};
         const currencyId = CHAIN_TOKENS[this.chain][tokenName].id;
         const keys = addresses.map(address => [address, JSON.parse(currencyId)]);
-        const tokenAccounts = await typedApi.query.OrmlTokens.Accounts.getValues(keys, { at: blockHash });
+        const tokenAccounts = await runtimeClient.query.OrmlTokens.Accounts.getValues(keys, { at: blockHash });
 
         addresses.forEach((address, idx) => {
           const acct = tokenAccounts[idx];
@@ -292,7 +301,7 @@ export function createChainDataProvider(
     @Cached()
     async referendaInfoFor(referendumIndex: string | number, blockNumber: number): Promise<string | null> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const info = await typedApi.query.Referenda.ReferendumInfoFor.getValue(referendumIndex, { at: blockHash });
+      const info = await runtimeClient.query.Referenda.ReferendumInfoFor.getValue(referendumIndex, { at: blockHash });
 
       if (info === undefined) {
         return null;
@@ -308,7 +317,7 @@ export function createChainDataProvider(
 
     @Cached()
     async referendaTrack(trackId: number | string): Promise<string> {
-      const tracks = await typedApi.constants.Referenda.Tracks();
+      const tracks = await runtimeClient.constants.Referenda.Tracks();
       const idToFind = typeof trackId === 'string' ? parseInt(trackId, 10) : trackId;
 
       for (const [id, info] of tracks as any) {
@@ -321,5 +330,5 @@ export function createChainDataProvider(
     }
   }
 
-  return new DataProvider(client, logger, chain);
+  return new DataProvider(blockClient, logger, chain);
 }

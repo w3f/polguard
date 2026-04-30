@@ -1,5 +1,4 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Inject } from '@nestjs/common';
-import { ApiPromise, WsProvider } from '@polkadot/api';
 import { getWsProvider } from 'polkadot-api/ws';
 import { createClient } from 'polkadot-api';
 import type { PolkadotClient } from 'polkadot-api';
@@ -10,12 +9,11 @@ import { ChainWatcher } from '../../lib/watcher';
 import { IncidentHandler } from '../../lib/incident-handler';
 import { createChainDataProvider } from '../../lib/data-provider';
 import { getMonitoringGroups } from '@w3f/polguard-config';
-import { getTypedApi } from '../../lib/papi-descriptors';
+import { getTypedApi } from '../papi-descriptors';
 
 @Injectable()
 export class WatcherService implements OnApplicationBootstrap, OnApplicationShutdown {
-  private api: ApiPromise;
-  private papiClient: PolkadotClient;
+  private client: PolkadotClient;
   private watcher: ChainWatcher;
   private persistenceInterval: NodeJS.Timeout;
 
@@ -48,8 +46,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
       this.logger.error(`Failed to flush last processed block: ${(error as Error).message}`);
     } finally {
       await this.watcher?.stop();
-      await this.api?.disconnect();
-      this.papiClient?.destroy();
+      this.client?.destroy();
     }
   }
 
@@ -60,17 +57,15 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     const startBlock = this.config.getStartBlock();
     const configsDir = this.config.getMonitoringConfigsDir();
 
-    // Initialize both PJS and PAPI clients
-    this.api = await this.createApi(rpc, chainProps.specName);
-    this.papiClient = await this.createPapiClient(rpc, chainProps.specName);
+    this.client = await this.createClient(rpc, chainProps.specName);
 
-    const typedApi = getTypedApi(this.papiClient, chain);
+    const runtimeClient = getTypedApi(this.client, chain);
     const chainDataProvider = createChainDataProvider(
-      this.papiClient,
+      this.client,
+      runtimeClient,
       this.store,
       this.logger,
       chainProps.chain,
-      typedApi,
     );
     const incidentHandler = new IncidentHandler(this.logger, this.store, this.reporter, chainProps.chain);
     const configLogger = new Logger('MonitoringConfig');
@@ -81,11 +76,11 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
         getMonitoringGroups: () => getMonitoringGroups(chain, configsDir, configLogger),
       },
       this.store,
-      this.api,
+      this.client,
+      runtimeClient,
       incidentHandler,
       chainProps,
       chainDataProvider,
-      typedApi,
       this.telemetry,
     );
 
@@ -106,40 +101,20 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     }, persistenceIntervalMs);
   }
 
-  private async createApi(endpoint: string, expectedSpecName: string): Promise<ApiPromise> {
-    const provider = new WsProvider(endpoint);
-    const api = await ApiPromise.create({ provider, noInitWarn: true });
-    await api.isReady;
-
-    // Validate chain
-    const specName = api.runtimeVersion.specName.toString();
-    if (specName !== expectedSpecName) {
-      throw new Error(
-        `Chain mismatch: Config chain is "${expectedSpecName}" but RPC endpoint returns "${specName}". Please check your configuration.`,
-      );
-    }
-
-    this.logger.log(`Connected to RPC: ${endpoint}`);
-    return api;
-  }
-
-  private async createPapiClient(endpoint: string, expectedSpecName: string): Promise<PolkadotClient> {
+  private async createClient(endpoint: string, expectedSpecName: string): Promise<PolkadotClient> {
     const provider = getWsProvider(endpoint);
     const client = createClient(provider);
 
     // Validate chain by checking runtime spec
     const { name: specName } = await client.getChainSpecData();
-    this.logger.debug(
-      `Chain mismatch: Config chain is "${expectedSpecName}" but RPC endpoint returns "${specName}". Please check your configuration.`,
-    );
-    // if (specName !== expectedSpecName) {
-    //   client.destroy();
-    //   throw new Error(
-    //     `Chain mismatch: Config chain is "${expectedSpecName}" but RPC endpoint returns "${specName}". Please check your configuration.`,
-    //   );
-    // }
+    if (specName !== expectedSpecName) {
+      this.logger.warn(
+        `Chain spec mismatch: expected "${expectedSpecName}" but RPC returns "${specName}". ` +
+          `This may indicate a misconfigured RPC endpoint.`,
+      );
+    }
 
-    this.logger.log(`PAPI client connected to RPC: ${endpoint}`);
+    this.logger.log(`Connected to RPC: ${endpoint}`);
     return client;
   }
 }

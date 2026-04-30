@@ -1,6 +1,29 @@
+import { Observable } from 'rxjs';
 import { MonitoringGroup, Chain } from '../types';
-import { Hash, Header, SignedBlock } from '@polkadot/types/interfaces';
-import { ApiDecoration } from '@polkadot/api/types';
+import { DecodedCall } from './handlers';
+
+/**
+ * Block-level chain operations.
+ * Provides access to block data, finalization tracking, and raw RPC requests.
+ */
+export interface BlockClient {
+  getBlockBody(blockHash: string): Promise<Uint8Array[]>;
+  getFinalizedBlock(): Promise<{ number: number; hash: string }>;
+  finalizedBlock$: Observable<{ number: number; hash: string }>;
+  _request<T, P extends any[]>(method: string, params: P): Promise<T>;
+  destroy(): void;
+}
+
+/**
+ * Runtime-level typed operations (state queries, event queries, call decoding, constants).
+ */
+export interface RuntimeClient {
+  query: any;
+  event: any;
+  tx: any;
+  constants: any;
+  txFromCallData: (callData: Uint8Array) => Promise<{ decodedCall: DecodedCall }>;
+}
 
 /** Base interface for key-value storage operations */
 export interface KeyValueStorageClient {
@@ -23,23 +46,6 @@ export interface Store extends KeyValueStorageClient {
   // Last processed block operations
   getLastBlock(chain: Chain): Promise<number | null>;
   setLastBlock(chain: Chain, blockNumber: number): Promise<void>;
-}
-
-/**
- * Interface for chain API operations required by the ChainWatcher.
- * This decouples the watcher from the specific ApiPromise implementation.
- */
-export interface ChainApiClient {
-  rpc: {
-    chain: {
-      getHeader(): Promise<Header>;
-      getBlockHash(blockNumber: number): Promise<Hash>;
-      getBlock(blockHash: Hash): Promise<SignedBlock>;
-      subscribeFinalizedHeads(callback: (header: Header) => void): void;
-    };
-  };
-
-  at(blockHash: Hash): Promise<ApiDecoration<'promise'>>;
 }
 
 export interface ChainTelemetryClient {
