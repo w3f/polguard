@@ -258,7 +258,7 @@ export function createChainDataProvider(
 
       for (const tokenName of tokenNames) {
         result[tokenName] = {};
-        const assetId = CHAIN_TOKENS[this.chain][tokenName].id;
+        const assetId = Number(CHAIN_TOKENS[this.chain][tokenName].id);
         const keys = addresses.map(address => [assetId, address]);
         const assetAccounts = await runtimeClient.query.Assets.Account.getValues(keys, { at: blockHash });
 
@@ -311,8 +311,7 @@ export function createChainDataProvider(
       if (infoData.type !== 'Ongoing') {
         return null;
       }
-
-      return infoData.value.submissionDeposit.who;
+      return infoData.value.submission_deposit.who;
     }
 
     @Cached()

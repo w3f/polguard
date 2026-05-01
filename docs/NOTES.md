@@ -36,10 +36,6 @@ This design decision prioritizes a simple interface for defining handlers over s
 
 Currently, notification handling logic exists in both the chain and Incident services. Ideally, only the Incident service should be responsible for the styling and formatting of notifications. This would simplify the chain service and maintain a consistent format across different notification consumers.
 
-### Polkadot Chain Libraries Support
-
-The `lib/` layer is currently coupled with Polkadot.js throughout (API calls, types, event processing). Future work could abstract blockchain interactions to support multiple Polkadot chain libraries (dedot, papi, etc.) by introducing an adapter layer between `lib/` and blockchain SDKs.
-
 ### NestJS and Module System
 
 We are not using all the features from NestJS; instead, we mostly use our own abstractions. Something simpler should work better, especially considering CommonJS limitations that restrict our ability to use modern ES modules and create compatibility issues with some dependencies.

@@ -246,26 +246,26 @@ tests:
         account:
           address: 12NpELGHzDaMspRH3E5zThqNpW24KeZ3TMjXdYVxmEH4caCS
   Assets:
-    # AssetBalanceDecreaseState:
-    #   - description: "State (assets.account). Balance decreased"
-    #     chain: AssetHubPolkadot
-    #     block: 8855547
-    #     account:
-    #       tokens: [USDT]
-    #       address: 13vg3Mrxm3GL9eXxLsGgLYRueiwFCiMbkdHBL4ZN5aob5D4N
+    AssetBalanceDecreaseState:
+      - description: "State (assets.account). Balance decreased"
+        chain: AssetHubPolkadot
+        block: 8855547
+        account:
+          tokens: [USDT]
+          address: 13vg3Mrxm3GL9eXxLsGgLYRueiwFCiMbkdHBL4ZN5aob5D4N
       # - description: "State (ormlTokens.account). Balance decreased"
       #   chain: Centrifuge
       #   block: 7903251
       #   account:
       #     tokens: [localUSDC]
       #     address: 4dtAmm2K7vs75h3AfyjEtsbseR9dmN3PPzVsxAsCiEgHCeKZ
-    # AssetBalanceThresholdState:
-    #   - description: "State (assets.account)"
-    #     chain: AssetHubPolkadot
-    #     block: 8855547
-    #     account:
-    #       address: 13vg3Mrxm3GL9eXxLsGgLYRueiwFCiMbkdHBL4ZN5aob5D4N
-    #       tokenThresholds: [[USDT, 4190000000000]]
+    AssetBalanceThresholdState:
+      - description: "State (assets.account)"
+        chain: AssetHubPolkadot
+        block: 8855547
+        account:
+          address: 13vg3Mrxm3GL9eXxLsGgLYRueiwFCiMbkdHBL4ZN5aob5D4N
+          tokenThresholds: [[USDT, 4190000000000]]
       # - description: "State (ormlTokens.account)"
       #   chain: Centrifuge
       #   block: 7903251
@@ -299,12 +299,12 @@ tests:
       #     tokens: [localUSDC]
       #     address: 4dtAmm2K7vs75h3AfyjEtsbseR9dmN3PPzVsxAsCiEgHCeKZ
   Governance:
-    # ReferendaSubmittedEvent:
-    #   - description: "Event (referenda.Submitted) - AssetHubPaseo (test AssetHubKusama migration)"
-    #     chain: AssetHubPaseo
-    #     block: 7611584
-    #     account:
-    #       address: 'None'
+    ReferendaSubmittedEvent:
+      - description: "Event (referenda.Submitted) - AssetHubPaseo (test AssetHubKusama migration)"
+        chain: AssetHubPaseo
+        block: 7611584
+        account:
+          address: 'None'
       # - description: "Event (referenda.Submitted), part of utility.batch_all"
       #   chain: Polkadot
       #   block: 26344616

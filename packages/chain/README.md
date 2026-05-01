@@ -67,7 +67,7 @@ graph TB
 
 The codebase is organized into two loosely coupled directories:
 
-- **`src/lib/`** - Core monitoring logic that is framework-agnostic. Contains the Watcher, Monitors, Data Provider, and Incident Handler. This code defines the monitoring business logic and can be integrated into any framework. Currently it is still coupled to some extent with Polkadot.js; future work includes abstracting all blockchain interactions and potentially support multiple Polkadot chain libraries (dedot, papi, etc.).
+- **`src/lib/`** - Core monitoring logic that is framework-agnostic. Contains the Watcher, Monitors, Data Provider, and Incident Handler. This code defines the monitoring business logic and can be integrated into any framework. Uses [Polkadot API (PAPI)](https://papi.how/) for all blockchain interactions.
 
 - **`src/service/`** - NestJS service layer that provides concrete implementations of interfaces defined in `lib/`. Includes configuration management, health endpoints, and implementations of Store and Reporter abstractions.
 
@@ -101,6 +101,16 @@ Exposes Prometheus metrics on `localhost:9464/metrics`:
 - `total-monitors`
 
 ## Development
+
+The chain service uses [PAPI](https://papi.how/) for blockchain interactions. Chain descriptors are generated from metadata stored in `.papi/` and are automatically built via the `postinstall` script. To add a new chain:
+
+```bash
+# Add a new chain descriptor (e.g., polkadot relay chain)
+npx papi add polkadot -n polkadot
+
+# Regenerate descriptors after metadata changes
+npx papi
+```
 
 ```bash
 # Run in development mode

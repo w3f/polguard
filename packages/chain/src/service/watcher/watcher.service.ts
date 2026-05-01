@@ -101,6 +101,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     }, persistenceIntervalMs);
   }
 
+  // TODO: Support multiple RPC endpoints for automatic failover: getWsProvider(["wss://primary", "wss://fallback"])
   private async createClient(endpoint: string, expectedSpecName: string): Promise<PolkadotClient> {
     const provider = getWsProvider(endpoint);
     const client = createClient(provider);

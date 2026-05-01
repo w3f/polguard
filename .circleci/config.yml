@@ -16,7 +16,7 @@ orbs:
 executors:
   node:
     docker:
-      - image: cimg/node:lts
+      - image: cimg/node:22.22
     working_directory: ~/project
 
 commands:
@@ -36,15 +36,11 @@ jobs:
       - run: yarn lint
       - run: yarn test
       - run: yarn test:integration
-      - persist_to_workspace:
-          root: .
-          paths: .
 
   docker_build:
     executor: node
     steps:
-      - attach_workspace:
-          at: ~/project
+      - checkout
       - docker_login
       - setup_remote_docker:
           docker_layer_caching: true
@@ -69,8 +65,7 @@ jobs:
   end_to_end_tests:
     machine: true
     steps:
-      - attach_workspace:
-          at: ~/project
+      - checkout
       - docker_login
 
       - run:
@@ -222,12 +217,11 @@ workflows:
       - code_quality
       - docker_build:
           context: dockerhub-bot
-          requires: [code_quality]
       - end_to_end_tests:
           context:
             - ci-matrixbot
             - dockerhub-bot
-          requires: [docker_build]
+          requires: [code_quality, docker_build]
       - release_tag:
           context: dockerhub-bot
           filters:
