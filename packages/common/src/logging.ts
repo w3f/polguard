@@ -16,9 +16,9 @@ const LOG_LEVEL_MAP: Record<string, ('error' | 'warn' | 'log' | 'debug' | 'verbo
 };
 
 /**
- * Get NestJS log levels array from configuration log level string
+ * Get log levels array from configuration log level string
  * @param configLogLevel - The log level from configuration ('error', 'warn', 'info', 'debug', 'verbose')
- * @returns Array of NestJS log levels
+ * @returns Array of log levels
  */
 export function getLogLevels(configLogLevel: string): ('error' | 'warn' | 'log' | 'debug' | 'verbose')[] {
   return LOG_LEVEL_MAP[configLogLevel] || LOG_LEVEL_MAP['info'];

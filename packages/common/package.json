@@ -4,12 +4,20 @@
   "description": "Common types, interfaces, constants and utilities for W3F monitoring services including chain watcher, matrix notifications and configuration",
   "author": "W3F SecOps Team <devops@web3.foundation>",
   "license": "MIT",
-  "main": "./dist/index.js",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "publishConfig": {
@@ -19,8 +27,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
+    "build": "tsup",
+    "build:watch": "tsup --watch",
     "clean": "yarn dlx rimraf ./dist ./node_modules",
     "test": "echo \"No tests required for common package\" && exit 0"
   },
@@ -36,6 +44,7 @@
     "@opentelemetry/semantic-conventions": "^1.40.0"
   },
   "devDependencies": {
+    "tsup": "^8",
     "typescript": "~5.7.3"
   }
 }

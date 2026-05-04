@@ -4,12 +4,20 @@
   "description": "Configuration processor for W3F monitoring polkadot. Handles YAML configuration loading, validation and transformation for blockchain monitoring setup",
   "author": "W3F SecOps Team <devops@web3.foundation>",
   "license": "MIT",
-  "main": "./dist/commonjs/index.js",
-  "types": "./dist/types/index.d.ts",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
-      "default": "./dist/commonjs/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "files": [
@@ -22,7 +30,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "clean": "yarn dlx rimraf ./dist ./node_modules",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "lint": "eslint \"{src,tests}/**/*.ts\" --fix",
@@ -52,6 +60,7 @@
     "eslint-plugin-prettier": "^5.0.0",
     "jest": "^29.5.0",
     "prettier": "^3.0.0",
+    "tsup": "^8",
     "typescript": "~5.7.3"
   }
 }
