@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import type { AppLogger } from '@w3f/polguard-common';
 import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '../../types';
 
 /**
@@ -9,10 +9,9 @@ import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '
  * - Standalone chain service operation without API backend
  * - Easy integration with log aggregation tools
  */
-@Injectable()
 export class StdoutIncidentReporter implements IncidentReporter {
   constructor(
-    private readonly logger: Logger,
+    private readonly logger: AppLogger,
     private readonly format: 'json' | 'pretty' = 'pretty',
   ) {}
 

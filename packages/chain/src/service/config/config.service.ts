@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import * as yaml from 'js-yaml';
+import type { AppLogger } from '@w3f/polguard-common';
+import yaml from 'js-yaml';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as Joi from 'joi';
+import Joi from 'joi';
 import { Chain } from '../../types';
 
 type StoreType = 'inMemory' | 'service' | 'file';
@@ -31,11 +31,10 @@ interface IncidentReporterConfig {
   };
 }
 
-@Injectable()
 export class ConfigService {
   private readonly config: Config;
 
-  constructor(private readonly logger: Logger) {
+  constructor(private readonly logger: AppLogger) {
     const configPath = this.getConfigPath();
     const rawConfig = this.loadConfig(configPath);
     this.config = this.validateConfig(rawConfig);

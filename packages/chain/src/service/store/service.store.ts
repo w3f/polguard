@@ -1,9 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
+import type { AppLogger } from '@w3f/polguard-common';
 import { Store, Chain } from '../../types';
 import { InMemoryStore } from './in-memory.store';
 import { ConfigService } from '../config/config.service';
-import { lastValueFrom } from 'rxjs';
 
 /**
  * ServiceStore: Hybrid storage for managed service mode
@@ -22,17 +20,16 @@ import { lastValueFrom } from 'rxjs';
  * while the KV cache is just a performance optimization for tracking
  * incident IDs locally.
  */
-@Injectable()
 export class ServiceStore implements Store {
   private readonly lastBlockUrl: string;
   private readonly kv: InMemoryStore;
 
   constructor(
-    private readonly http: HttpService,
     private readonly config: ConfigService,
+    private readonly logger: AppLogger,
   ) {
     // KV operations use in-memory store (ephemeral cache)
-    this.kv = new InMemoryStore();
+    this.kv = new InMemoryStore(logger);
 
     // Last block operations use HTTP (persistent via Incident service)
     const storeConfig = this.config.getStoreConfig();
@@ -64,23 +61,42 @@ export class ServiceStore implements Store {
   async getLastBlock(chain: Chain): Promise<number | null> {
     try {
       const url = this.lastBlockUrl.replace(':chain', chain);
-      const response = await lastValueFrom(this.http.get(url));
-      return response.data?.blockNumber ?? null;
+      const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const text = await response.text();
+      if (!text) return null;
+      const data = JSON.parse(text);
+      return data?.blockNumber ?? null;
     } catch (error) {
-      throw new Error(`Failed to get last block for chain ${chain}: ${error.message}`);
+      throw new Error(`Failed to get last block for chain ${chain}: ${(error as Error).message}`);
     }
   }
 
   async setLastBlock(chain: Chain, blockNumber: number): Promise<void> {
     try {
       const url = this.lastBlockUrl.replace(':chain', chain);
-      await lastValueFrom(this.http.put(url, { blockNumber }));
-    } catch (error) {
-      if (error.response?.status === 409) {
-        // Block already processed, this is fine
-        return;
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blockNumber }),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) {
+        if (response.status === 409) {
+          // Block already processed, this is fine
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      throw new Error(`Failed to set last block for chain ${chain}: ${error.message}`);
+    } catch (error) {
+      if ((error as any).status === 409) return;
+      throw new Error(`Failed to set last block for chain ${chain}: ${(error as Error).message}`);
     }
+  }
+
+  destroy(): void {
+    this.kv.destroy();
   }
 }

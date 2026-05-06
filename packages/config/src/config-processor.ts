@@ -1,5 +1,5 @@
 import * as fs from 'node:fs';
-import * as yaml from 'js-yaml';
+import yaml from 'js-yaml';
 import {
   MonitoringGroup,
   MonitorConfig,

@@ -1,7 +1,7 @@
 import { ChainDataProvider } from './data-provider';
 import { CallHandlerParams, StateHandlerParams, SystemEvent } from './handlers';
 import { BlockContext, IncidentHandlerClient } from './incident';
-import { Logger, ChainProperties, MonitorType, MonitoringGroup, MonitorTypeSettings, AccountId } from '../types';
+import { AppLogger, ChainProperties, MonitorType, MonitoringGroup, MonitorTypeSettings, AccountId } from '../types';
 
 export interface Monitor {
   processState(params: StateHandlerParams): Promise<void>;
@@ -10,7 +10,7 @@ export interface Monitor {
 }
 
 export type MonitorConstructor<T extends MonitorType> = new (
-  logger: Logger,
+  logger: AppLogger,
   groups: MonitoringGroup[],
   incidents: IncidentHandlerClient,
   chainProps: ChainProperties,

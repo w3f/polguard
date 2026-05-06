@@ -1,5 +1,5 @@
 import * as fs from 'node:fs';
-import * as yaml from 'js-yaml';
+import yaml from 'js-yaml';
 import { createChainDataProvider } from '../../src/lib/data-provider';
 import { ChainWatcher } from '../../src/lib/watcher';
 import { Chain, MonitorType, MonitoringGroup, MessengerType, getChainProperties } from '@w3f/polguard-common';
@@ -146,7 +146,7 @@ export class TestRunner {
 
     try {
       const logger = new LoggerAdapter(console, debug);
-      const store = new InMemoryStore();
+      const store = new InMemoryStore(logger);
       const incidentHandler = new TestIncidentHandler(testId);
 
       const runtimeClient = getTypedApi(client, testCase.chain);

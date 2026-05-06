@@ -1,12 +1,12 @@
-import { IncidentHandlerClient, BlockContext, Logger, NotificationSettings, IncidentKey } from '../../src/types';
+import { IncidentHandlerClient, BlockContext, AppLogger, NotificationSettings, IncidentKey } from '../../src/types';
 
-export class LoggerAdapter implements Logger {
+export class LoggerAdapter implements AppLogger {
   constructor(
     private console: Console = global.console,
     private debugMode: boolean = false,
   ) {}
 
-  log(message: string, ...args: any[]): void {
+  info(message: string, ...args: any[]): void {
     if (this.debugMode || message.includes('Error') || message.includes('error')) {
       this.console.log(message, ...args);
     }
@@ -24,8 +24,8 @@ export class LoggerAdapter implements Logger {
     if (this.debugMode) this.console.debug(message, ...args);
   }
 
-  verbose(message: string, ...args: any[]): void {
-    if (this.debugMode) this.console.debug(`[VERBOSE] ${message}`, ...args);
+  trace(message: string, ...args: any[]): void {
+    if (this.debugMode) this.console.debug(`[TRACE] ${message}`, ...args);
   }
 
   fatal(message: string, ...args: any[]): void {

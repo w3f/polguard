@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Inject } from '@nestjs/common';
+import type { AppLogger } from '@w3f/polguard-common';
 import { getWsProvider } from 'polkadot-api/ws';
 import { createClient } from 'polkadot-api';
 import type { PolkadotClient } from 'polkadot-api';
@@ -11,46 +11,20 @@ import { createChainDataProvider } from '../../lib/data-provider';
 import { getMonitoringGroups } from '@w3f/polguard-config';
 import { getTypedApi } from '../papi-descriptors';
 
-@Injectable()
-export class WatcherService implements OnApplicationBootstrap, OnApplicationShutdown {
+export class WatcherService {
   private client: PolkadotClient;
   private watcher: ChainWatcher;
   private persistenceInterval: NodeJS.Timeout;
 
   constructor(
-    private readonly logger: Logger,
+    private readonly logger: AppLogger,
     private readonly config: ConfigService,
     private readonly telemetry: ChainTelemetryService,
-    @Inject('Store') private readonly store: Store,
-    @Inject('IncidentReporter') private readonly reporter: IncidentReporter,
+    private readonly store: Store,
+    private readonly reporter: IncidentReporter,
   ) {}
 
-  async onApplicationBootstrap(): Promise<void> {
-    await this.start();
-  }
-
-  async onApplicationShutdown(): Promise<void> {
-    try {
-      if (this.persistenceInterval) {
-        clearInterval(this.persistenceInterval);
-      }
-
-      // Flush last processed block to Store on shutdown
-      const lastProcessed = this.watcher?.getLastProcessedBlock();
-      if (lastProcessed !== undefined) {
-        const chain = this.config.getChain();
-        this.logger.log(`Flushing last processed block ${lastProcessed} for chain ${chain}`);
-        await this.store.setLastBlock(chain, lastProcessed);
-      }
-    } catch (error) {
-      this.logger.error(`Failed to flush last processed block: ${(error as Error).message}`);
-    } finally {
-      await this.watcher?.stop();
-      this.client?.destroy();
-    }
-  }
-
-  private async start(): Promise<void> {
+  async start(): Promise<void> {
     const chain = this.config.getChain();
     const chainProps = getChainProperties(chain);
     const rpc = this.config.getRpcUrl();
@@ -68,12 +42,11 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
       chainProps.chain,
     );
     const incidentHandler = new IncidentHandler(this.logger, this.store, this.reporter, chainProps.chain);
-    const configLogger = new Logger('MonitoringConfig');
 
     this.watcher = new ChainWatcher(
-      new Logger('ChainWatcher'),
+      this.logger,
       {
-        getMonitoringGroups: () => getMonitoringGroups(chain, configsDir, configLogger),
+        getMonitoringGroups: () => getMonitoringGroups(chain, configsDir, this.logger),
       },
       this.store,
       this.client,
@@ -101,6 +74,27 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
     }, persistenceIntervalMs);
   }
 
+  async stop(): Promise<void> {
+    try {
+      if (this.persistenceInterval) {
+        clearInterval(this.persistenceInterval);
+      }
+
+      // Flush last processed block to Store on shutdown
+      const lastProcessed = this.watcher?.getLastProcessedBlock();
+      if (lastProcessed !== undefined) {
+        const chain = this.config.getChain();
+        this.logger.info(`Flushing last processed block ${lastProcessed} for chain ${chain}`);
+        await this.store.setLastBlock(chain, lastProcessed);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to flush last processed block: ${(error as Error).message}`);
+    } finally {
+      await this.watcher?.stop();
+      this.client?.destroy();
+    }
+  }
+
   // TODO: Support multiple RPC endpoints for automatic failover: getWsProvider(["wss://primary", "wss://fallback"])
   private async createClient(endpoint: string, expectedSpecName: string): Promise<PolkadotClient> {
     const provider = getWsProvider(endpoint);
@@ -115,7 +109,7 @@ export class WatcherService implements OnApplicationBootstrap, OnApplicationShut
       );
     }
 
-    this.logger.log(`Connected to RPC: ${endpoint}`);
+    this.logger.info(`Connected to RPC: ${endpoint}`);
     return client;
   }
 }

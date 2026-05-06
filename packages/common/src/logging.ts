@@ -7,6 +7,16 @@ export interface Logger {
   fatal(message: string, ...args: any[]): void;
 }
 
+// TODO: migrate all the service to use AppLogger instead of Logger
+export interface AppLogger {
+  fatal(msg: string, ...args: any[]): void;
+  error(msg: string, ...args: any[]): void;
+  warn(msg: string, ...args: any[]): void;
+  info(msg: string, ...args: any[]): void;
+  debug(msg: string, ...args: any[]): void;
+  trace(msg: string, ...args: any[]): void;
+}
+
 const LOG_LEVEL_MAP: Record<string, ('error' | 'warn' | 'log' | 'debug' | 'verbose')[]> = {
   'error': ['error'],
   'warn': ['error', 'warn'],

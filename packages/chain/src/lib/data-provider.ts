@@ -1,5 +1,5 @@
 import {
-  Logger,
+  AppLogger,
   Chain,
   ChainDataProvider,
   Store,
@@ -18,7 +18,7 @@ export function createChainDataProvider(
   blockClient: BlockClient,
   runtimeClient: RuntimeClient,
   store: Store,
-  logger: Logger,
+  logger: AppLogger,
   chain: Chain,
 ) {
   const Cached = createCachedQueryDecorator(store);
@@ -28,7 +28,7 @@ export function createChainDataProvider(
 
     constructor(
       private blockClient: BlockClient,
-      public logger: Logger,
+      public logger: AppLogger,
       public chain: Chain,
     ) {}
 

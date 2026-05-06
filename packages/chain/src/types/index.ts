@@ -17,7 +17,7 @@ export type {
   IdentitySettings,
   XcmSettings,
   IdentityField,
-  Logger,
+  AppLogger,
   NotificationSettings,
   IncidentKey,
   ChainProperties,
@@ -25,6 +25,7 @@ export type {
   CreateIncidentDto,
   ResolveIncidentByChainDto,
   TokenBalances,
+  MonitorHandlerType,
 } from '@w3f/polguard-common';
 
 export {
@@ -36,7 +37,6 @@ export {
   XcmHandlerType,
   StakingHandlerType,
   AssetsHandlerType,
-  MonitorHandlerType,
   MonitorType,
   getChainProperties,
   TELEMETRY_PREFIX,

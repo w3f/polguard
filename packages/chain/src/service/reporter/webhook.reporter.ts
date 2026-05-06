@@ -1,8 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
+import type { AppLogger } from '@w3f/polguard-common';
 import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '../../types';
 import { ConfigService } from '../config/config.service';
-import { lastValueFrom, timeout } from 'rxjs';
 
 /**
  * WebhookIncidentReporter: Sends incidents to a generic HTTP webhook endpoint
@@ -12,15 +10,13 @@ import { lastValueFrom, timeout } from 'rxjs';
  * - Custom incident processing pipelines
  * - Development/testing with local webhook receivers
  */
-@Injectable()
 export class WebhookIncidentReporter implements IncidentReporter {
   private readonly url: string;
   private readonly headers: Record<string, string>;
   private readonly timeoutMs = 5000;
 
   constructor(
-    private readonly logger: Logger,
-    private readonly httpService: HttpService,
+    private readonly logger: AppLogger,
     private readonly configService: ConfigService,
   ) {
     const config = this.configService.getIncidentReporterConfig();
@@ -36,14 +32,17 @@ export class WebhookIncidentReporter implements IncidentReporter {
         ...incident,
       };
 
-      await lastValueFrom(
-        this.httpService.post(this.url, payload, { headers: this.headers }).pipe(timeout(this.timeoutMs)),
-      );
+      await fetch(this.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...this.headers },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
 
       this.logger.debug(`Webhook incident created for block ${incident.blockNumber}`);
     } catch (error) {
       // Log as warning, don't throw - webhook failures shouldn't break monitoring
-      this.logger.warn(`Failed to send incident to webhook: ${error.message}`);
+      this.logger.warn(`Failed to send incident to webhook: ${(error as Error).message}`);
     }
 
     return incident.idempotencyKey; // Return idempotency key for incident lifecycle tracking
@@ -58,13 +57,16 @@ export class WebhookIncidentReporter implements IncidentReporter {
         ...resolveData,
       };
 
-      await lastValueFrom(
-        this.httpService.post(this.url, payload, { headers: this.headers }).pipe(timeout(this.timeoutMs)),
-      );
+      await fetch(this.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...this.headers },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
 
       this.logger.debug(`Webhook incident resolved: ${id}`);
     } catch (error) {
-      this.logger.warn(`Failed to send resolution to webhook: ${error.message}`);
+      this.logger.warn(`Failed to send resolution to webhook: ${(error as Error).message}`);
     }
   }
 }

@@ -1,6 +1,6 @@
 import { MatrixClient } from './matrix-client';
 import { MatrixConfig, IncidentServiceInterface, QueryFilters } from './interfaces';
-import { Logger, MessengerType, NotificationType, Chain } from '@w3f/polguard-common';
+import { Logger, AppLogger, MessengerType, NotificationType, Chain } from '@w3f/polguard-common';
 import { MatrixEvent } from 'matrix-js-sdk';
 import { getGroupsForChannel } from '@w3f/polguard-config';
 
@@ -467,13 +467,18 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
         return;
       }
 
+      const configLogger: AppLogger = {
+        ...this.logger,
+        info: this.logger.log.bind(this.logger),
+        trace: this.logger.verbose.bind(this.logger),
+      };
       // TODO: Ideally matrix should not have access to the monitoring configs. This command may be removed soon.
       const groups = await getGroupsForChannel(
         chain,
         MessengerType.Matrix,
         roomId,
         this.monitoringConfigsDir,
-        this.logger,
+        configLogger,
       );
 
       const matchingGroups: string[] = [];

@@ -1,6 +1,5 @@
 import { TestRunner, TestResult } from './test-runner';
 import { colors } from './test-utils';
-import * as path from 'node:path';
 
 async function main() {
   try {
@@ -24,7 +23,7 @@ async function main() {
       if (chainFilter) console.log(`Chain filter: "${chainFilter}"`);
     }
 
-    const configPath = path.resolve(__dirname, 'test-config.yaml');
+    const configPath = new URL('test-config.yaml', import.meta.url).pathname;
     const results = await new TestRunner(configPath).run(filterPattern, debug, chainFilter);
 
     printResults(results);
@@ -81,4 +80,4 @@ function summarizeByHandler(results: TestResult[]): Record<string, { passed: num
   return stats;
 }
 
-if (require.main === module) main();
+main();

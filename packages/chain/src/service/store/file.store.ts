@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import type { AppLogger } from '@w3f/polguard-common';
 import { Store, Chain } from '../../types';
 import * as JSONbig from 'json-bigint';
 import * as fs from 'node:fs';
@@ -26,16 +26,17 @@ interface CacheEntry {
  * - Save on shutdown
  * - Cleanup of expired entries on load and periodically
  */
-@Injectable()
-export class FileStore implements Store, OnModuleDestroy {
+export class FileStore implements Store {
   private readonly kv = new Map<string, CacheEntry>();
-  private readonly logger = new Logger(FileStore.name);
   private readonly filePath: string;
   private cleanupInterval: NodeJS.Timeout;
   private saveInterval: NodeJS.Timeout;
   private isDirty = false;
 
-  constructor(dataPath: string = 'data/chain-store.json') {
+  constructor(
+    dataPath: string = 'data/chain-store.json',
+    private readonly logger: AppLogger,
+  ) {
     this.filePath = path.resolve(process.cwd(), dataPath);
 
     // Ensure directory exists
@@ -82,7 +83,7 @@ export class FileStore implements Store, OnModuleDestroy {
           loadedCount++;
         }
 
-        this.logger.log(`Loaded ${loadedCount} entries from ${this.filePath}`);
+        this.logger.info(`Loaded ${loadedCount} entries from ${this.filePath}`);
       }
     } catch (error) {
       this.logger.error(`Failed to load store data: ${error.message}`);
@@ -186,14 +187,14 @@ export class FileStore implements Store, OnModuleDestroy {
     return this.set(this.getLastBlockKey(chain), blockNumber);
   }
 
-  onModuleDestroy(): void {
+  destroy(): void {
     clearInterval(this.cleanupInterval);
     clearInterval(this.saveInterval);
 
     // Final save on shutdown
     if (this.isDirty) {
       this.save();
-      this.logger.log('Saved store data on shutdown');
+      this.logger.info('Saved store data on shutdown');
     }
   }
 }

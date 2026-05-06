@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import {
-  Logger,
+  AppLogger,
   NotificationSettings,
   Chain,
   CreateIncidentDto,
@@ -57,7 +57,7 @@ function buildIdempotencyKey(chain: Chain, ik: IncidentKey, ctx: BlockContext): 
  */
 export class IncidentHandler implements IncidentHandlerClient {
   constructor(
-    private logger: Logger,
+    private logger: AppLogger,
     private store: Store,
     private reporter: IncidentReporter,
     private chain: Chain,

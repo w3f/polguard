@@ -1,6 +1,6 @@
 import {
   ChainProperties,
-  Logger,
+  AppLogger,
   MonitorType,
   CallHandlerFunction,
   ChainDataProvider,
@@ -39,7 +39,7 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
   protected reg: ConfigRegistry<T>;
 
   constructor(
-    protected logger: Logger,
+    protected logger: AppLogger,
     protected groups: MonitoringGroup[],
     protected incidents: IncidentHandlerClient,
     protected chainProps: ChainProperties,

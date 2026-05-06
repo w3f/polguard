@@ -1,8 +1,6 @@
-import { Injectable } from '@nestjs/common';
 import { metrics, Meter, Gauge } from '@opentelemetry/api';
 import { ChainTelemetryClient, MonitoringGroup, TELEMETRY_PREFIX } from '../../types';
 
-@Injectable()
 export class ChainTelemetryService implements ChainTelemetryClient {
   private readonly meter: Meter;
   private readonly latestBlockOnChain: Gauge;

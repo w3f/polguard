@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import type { AppLogger } from '@w3f/polguard-common';
 import { Store, Chain } from '../../types';
 import { parse, stringify } from 'json-bigint';
 
@@ -21,13 +21,11 @@ interface CacheEntry {
  *
  * NOT suitable for production use without understanding data loss implications.
  */
-@Injectable()
-export class InMemoryStore implements Store, OnModuleDestroy {
+export class InMemoryStore implements Store {
   private readonly kv = new Map<string, CacheEntry>();
-  private readonly logger = new Logger(InMemoryStore.name);
   private cleanupInterval: NodeJS.Timeout;
 
-  constructor() {
+  constructor(private readonly logger: AppLogger) {
     const sweepMs = 60_000;
     this.cleanupInterval = setInterval(() => this.cleanup(), sweepMs);
     (this.cleanupInterval as any).unref?.();
@@ -91,7 +89,7 @@ export class InMemoryStore implements Store, OnModuleDestroy {
     return this.set(this.getLastBlockKey(chain), blockNumber);
   }
 
-  onModuleDestroy(): void {
+  destroy(): void {
     clearInterval(this.cleanupInterval);
   }
 }

@@ -1,7 +1,7 @@
 import type { Subscription } from 'rxjs';
 
 import {
-  Logger,
+  AppLogger,
   ChainProperties,
   MonitorType,
   IncidentHandlerClient,
@@ -47,7 +47,7 @@ export class ChainWatcher {
   ] as [MonitorType, MonitorConstructor<MonitorType>][];
 
   constructor(
-    private logger: Logger,
+    private logger: AppLogger,
     private configClient: MonitoringConfigClient,
     private store: Store,
     private blockClient: BlockClient,
@@ -66,7 +66,7 @@ export class ChainWatcher {
    */
   async start(startBlock?: number): Promise<void> {
     if (this.isRunning) {
-      this.logger.debug(`ChainWatcher has already been started.`);
+      this.logger.debug('ChainWatcher has already been started.');
       return;
     }
 
@@ -176,7 +176,7 @@ export class ChainWatcher {
    * @param blockNumber The block number to process
    */
   async processBlock(blockNumber: number): Promise<void> {
-    this.logger.log(`Processing block: #${blockNumber}`);
+    this.logger.info(`Processing block: #${blockNumber}`);
 
     const blockHash = await this.blockClient._request<string, [number]>('chain_getBlockHash', [blockNumber]);
 

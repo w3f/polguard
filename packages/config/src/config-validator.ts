@@ -11,7 +11,7 @@
  * The module also exports the monitor schemas to be used by other modules,
  * such as the AccountSettingsBuilder, to extract field names.
  */
-import * as Joi from 'joi';
+import Joi from 'joi';
 import {
   Chain,
   MessengerType,

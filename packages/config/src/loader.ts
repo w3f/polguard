@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
-import { Chain, Logger, MessengerType, MonitoringGroup } from '@w3f/polguard-common';
+import { Chain, AppLogger, MessengerType, MonitoringGroup } from '@w3f/polguard-common';
 import { ConfigProcessor } from './config-processor';
 
 type MonitoringSnapshot = {
@@ -20,7 +20,7 @@ const CHECKSUM_FILE = '.checksum';
 
 // ============================================================================
 // PUBLIC API
-export async function getMonitoringGroups(chain: Chain, dir: string, logger: Logger): Promise<MonitoringGroup[]> {
+export async function getMonitoringGroups(chain: Chain, dir: string, logger: AppLogger): Promise<MonitoringGroup[]> {
   const snapshot = await loadSnapshot(chain, dir, logger);
   return snapshot.byChain.get(chain) || [];
 }
@@ -30,7 +30,7 @@ export async function getGroupsForChannel(
   messengerType: MessengerType,
   channelId: string,
   dir: string,
-  logger: Logger,
+  logger: AppLogger,
 ): Promise<MonitoringGroup[]> {
   const snapshot = await loadSnapshot(chain, dir, logger);
   const key = `${messengerType}:${channelId}`;
@@ -43,7 +43,7 @@ export async function getGroupsForChannel(
 
 // ============================================================================
 // SNAPSHOT LOADING & CACHING
-async function loadSnapshot(chain: Chain, dir: string, logger: Logger): Promise<MonitoringSnapshot> {
+async function loadSnapshot(chain: Chain, dir: string, logger: AppLogger): Promise<MonitoringSnapshot> {
   // Coalesce concurrent loads
   if (loadPromise) {
     return loadPromise;
@@ -74,7 +74,7 @@ async function loadSnapshot(chain: Chain, dir: string, logger: Logger): Promise<
   }
 }
 
-async function doLoad(chain: Chain, dir: string, logger: Logger): Promise<MonitoringSnapshot> {
+async function doLoad(chain: Chain, dir: string, logger: AppLogger): Promise<MonitoringSnapshot> {
   try {
     // Validate directory is provided
     if (!dir) {
@@ -196,13 +196,13 @@ function buildSnapshot(groups: MonitoringGroup[], fingerprint: string): Monitori
 
 // ============================================================================
 // LOGGING
-function logConfigLoad(snapshot: MonitoringSnapshot, chain: Chain, logger: Logger): void {
+function logConfigLoad(snapshot: MonitoringSnapshot, chain: Chain, logger: AppLogger): void {
   const groups = snapshot.byChain.get(chain);
   if (!groups || groups.length === 0) return;
 
   const totalAccounts = new Set(groups.flatMap(g => g.accounts.map(a => a.ss58))).size;
 
-  logger.log(
+  logger.info(
     `Loaded monitoring config for ${chain}: fingerprint=${snapshot.fingerprint.substring(0, 8)}, groups=${groups.length}, accounts=${totalAccounts}`,
   );
 
@@ -216,7 +216,7 @@ function logConfigLoad(snapshot: MonitoringSnapshot, chain: Chain, logger: Logge
   }
 }
 
-function logInitialLoad(snapshot: MonitoringSnapshot, chain: Chain, logger: Logger): void {
+function logInitialLoad(snapshot: MonitoringSnapshot, chain: Chain, logger: AppLogger): void {
   logConfigLoad(snapshot, chain, logger);
 }
 
@@ -224,9 +224,9 @@ function logConfigUpdate(
   oldSnapshot: MonitoringSnapshot,
   newSnapshot: MonitoringSnapshot,
   chain: Chain,
-  logger: Logger,
+  logger: AppLogger,
 ): void {
-  logger.log(
+  logger.info(
     `Config updated for ${chain}: fingerprint changed ${oldSnapshot.fingerprint.substring(0, 8)} -> ${newSnapshot.fingerprint.substring(0, 8)}`,
   );
 
