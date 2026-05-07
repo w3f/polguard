@@ -6,6 +6,6 @@ export default defineConfig({
   outDir: 'dist',
   clean: true,
   sourcemap: true,
-  target: 'node22',
+  target: 'node20',
   splitting: false,
 });

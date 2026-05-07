@@ -101,6 +101,7 @@ export class WatcherService {
     const client = createClient(provider);
 
     // Validate chain by checking runtime spec
+    // TODO: fix expectedSpecName, raise if mismatch
     const { name: specName } = await client.getChainSpecData();
     if (specName !== expectedSpecName) {
       this.logger.warn(

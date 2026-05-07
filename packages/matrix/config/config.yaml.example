@@ -37,7 +37,7 @@ server:
   host: 0.0.0.0
 
 # Logging (optional, default: debug)
-# Values: error, warn, info, debug, verbose
+# Values: error, warn, info, debug, trace
 logging:
   level: debug
 

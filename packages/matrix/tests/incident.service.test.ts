@@ -1,48 +1,22 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { IncidentService } from '../src/service/incident/incident.service';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '../src/service/config/config.service';
-import { Logger } from '@nestjs/common';
-import { of, throwError } from 'rxjs';
-import { AxiosResponse } from 'axios';
-import { MessengerType } from '@w3f/polguard-common';
+import { IncidentService } from '../src/service/incident.service';
+import { MessengerType, HttpError } from '@w3f/polguard-common';
+
+const mockLogger = {
+  fatal: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  trace: jest.fn(),
+};
 
 describe('IncidentService', () => {
   let service: IncidentService;
-  let httpServiceMock: Partial<HttpService>;
-  let configServiceMock: Partial<ConfigService>;
+  const baseUrl = 'http://api:3000/incidents';
 
-  beforeEach(async () => {
-    // Create mocks
-    httpServiceMock = {
-      get: jest.fn(),
-      post: jest.fn(),
-    };
-
-    configServiceMock = {
-      getIncidentsUrl: jest.fn().mockReturnValue('http://api:3000/incidents'),
-    };
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        IncidentService,
-        {
-          provide: HttpService,
-          useValue: httpServiceMock,
-        },
-        {
-          provide: ConfigService,
-          useValue: configServiceMock,
-        },
-        Logger,
-      ],
-    }).compile();
-
-    service = module.get<IncidentService>(IncidentService);
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  beforeEach(() => {
+    service = new IncidentService(baseUrl, mockLogger);
+    jest.resetAllMocks();
   });
 
   describe('getNonResolved', () => {
@@ -52,33 +26,27 @@ describe('IncidentService', () => {
         { id: 2, resolved: false },
       ];
 
-      const mockResponse: AxiosResponse = {
-        data: mockIncidents,
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: { url: 'http://api:3000/incidents' } as any,
-      };
-
-      (httpServiceMock.get as jest.Mock).mockReturnValue(of(mockResponse));
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockIncidents),
+      });
 
       const result = await service.getNonResolved('test-room');
 
       expect(result).toEqual(mockIncidents);
-      expect(httpServiceMock.get).toHaveBeenCalledWith('http://api:3000/incidents', {
-        params: {
-          channelId: 'test-room',
-          messengerType: MessengerType.Matrix,
-          isResolved: false,
-        },
-      });
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining(baseUrl));
+      // Verify query params
+      const calledUrl = (fetch as jest.Mock).mock.calls[0][0] as string;
+      const params = new URLSearchParams(calledUrl.split('?')[1]);
+      expect(params.get('channelId')).toBe('test-room');
+      expect(params.get('messengerType')).toBe(MessengerType.Matrix);
+      expect(params.get('isResolved')).toBe('false');
     });
 
     it('should throw an error when the API call fails', async () => {
-      const errorMessage = 'Network error';
-      (httpServiceMock.get as jest.Mock).mockReturnValue(throwError(() => new Error(errorMessage)));
+      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
 
-      await expect(service.getNonResolved('test-room')).rejects.toThrow(errorMessage);
+      await expect(service.getNonResolved('test-room')).rejects.toThrow('Network error');
     });
   });
 
@@ -89,27 +57,20 @@ describe('IncidentService', () => {
         { id: 2, ackRequired: true, acked: false },
       ];
 
-      const mockResponse: AxiosResponse = {
-        data: mockIncidents,
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: { url: 'http://api:3000/incidents' } as any,
-      };
-
-      (httpServiceMock.get as jest.Mock).mockReturnValue(of(mockResponse));
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockIncidents),
+      });
 
       const result = await service.getNonAcked('test-room');
 
       expect(result).toEqual(mockIncidents);
-      expect(httpServiceMock.get).toHaveBeenCalledWith('http://api:3000/incidents', {
-        params: {
-          channelId: 'test-room',
-          messengerType: MessengerType.Matrix,
-          needsAck: true,
-          isAcked: false,
-        },
-      });
+      const calledUrl = (fetch as jest.Mock).mock.calls[0][0] as string;
+      const params = new URLSearchParams(calledUrl.split('?')[1]);
+      expect(params.get('channelId')).toBe('test-room');
+      expect(params.get('messengerType')).toBe(MessengerType.Matrix);
+      expect(params.get('needsAck')).toBe('true');
+      expect(params.get('isAcked')).toBe('false');
     });
   });
 
@@ -117,40 +78,45 @@ describe('IncidentService', () => {
     it('should return an incident by ID', async () => {
       const mockIncident = { id: 'test-incident-1', message: 'Test incident' };
 
-      const mockResponse: AxiosResponse = {
-        data: mockIncident,
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: { url: 'http://api:3000/incidents/test-incident-1' } as any,
-      };
-
-      (httpServiceMock.get as jest.Mock).mockReturnValue(of(mockResponse));
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockIncident),
+      });
 
       const result = await service.getIncidentById('test-incident-1');
 
       expect(result).toEqual(mockIncident);
-      expect(httpServiceMock.get).toHaveBeenCalledWith('http://api:3000/incidents/test-incident-1');
+      expect(fetch).toHaveBeenCalledWith(`${baseUrl}/test-incident-1`, undefined);
+    });
+
+    it('should throw HttpError on HTTP error', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+      });
+
+      try {
+        await service.getIncidentById('nonexistent');
+        fail('Expected an error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        expect((error as HttpError).status).toBe(404);
+      }
     });
   });
 
   describe('acknowledgeIncident', () => {
     it('should acknowledge an incident', async () => {
-      const mockResponse: AxiosResponse = {
-        data: { success: true },
-        status: 201,
-        statusText: 'Created',
-        headers: {},
-        config: { url: 'http://api:3000/incidents/test-incident-1/acknowledge' } as any,
-      };
-
-      (httpServiceMock.post as jest.Mock).mockReturnValue(of(mockResponse));
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+      });
 
       await service.acknowledgeIncident('test-incident-1', 'test-user', 'test-room');
 
-      expect(httpServiceMock.post).toHaveBeenCalledWith('http://api:3000/incidents/test-incident-1/acknowledge', {
-        username: 'test-user',
-        channelId: 'test-room',
+      expect(fetch).toHaveBeenCalledWith(`${baseUrl}/test-incident-1/acknowledge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'test-user', channelId: 'test-room' }),
       });
     });
   });

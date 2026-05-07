@@ -68,7 +68,7 @@ export class ConfigService {
       }),
       environment: Joi.string().valid('development', 'production', 'test', 'staging').default('development'),
       logging: Joi.object({
-        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('debug'),
+        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'trace').default('debug'),
       }).default({ level: 'debug' }),
       server: Joi.object({
         port: Joi.number().default(3000),

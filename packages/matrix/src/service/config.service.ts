@@ -1,15 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
-import * as yaml from 'js-yaml';
+import type { AppLogger } from '@w3f/polguard-common';
+import yaml from 'js-yaml';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as Joi from 'joi';
-import { MatrixConfig } from '../../lib/interfaces';
+import Joi from 'joi';
+import { MatrixConfig } from '../lib/interfaces';
 
-@Injectable()
 export class ConfigService {
   private readonly config: AppConfig;
 
-  constructor(private readonly logger: Logger) {
+  constructor(private readonly logger: AppLogger) {
     const configPath = this.getConfigPath();
     const rawConfig: any = this.loadConfig(configPath);
 
@@ -95,7 +94,7 @@ export class ConfigService {
         host: Joi.string().default('0.0.0.0'),
       }).default({ port: 3000, host: '0.0.0.0' }),
       logging: Joi.object({
-        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('debug'),
+        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'trace').default('debug'),
       }).default({ level: 'debug' }),
       monitoringConfigsDir: Joi.string().default('../config/examples'),
     });

@@ -1,4 +1,5 @@
 export * from './constants';
+export * from './http';
 export * from './incident';
 export * from './notification';
 export * from './account';

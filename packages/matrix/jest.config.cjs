@@ -7,14 +7,9 @@ module.exports = {
       jsc: {
         parser: {
           syntax: "typescript",
-          decorators: true,
           tsx: false
         },
-        target: "es2021",
-        transform: {
-          legacyDecorator: true,
-          decoratorMetadata: true
-        }
+        target: "es2022"
       }
     }]
   },

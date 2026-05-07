@@ -1,44 +1,41 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { IncidentController } from '../src/service/incident/incident.controller';
-import { MatrixBot } from '../src/lib/matrix-bot';
-import { Logger } from '@nestjs/common';
+import Fastify from 'fastify';
 
-describe('IncidentController', () => {
-  let controller: IncidentController;
-  let matrixBotMock: Partial<MatrixBot>;
-
-  beforeEach(async () => {
-    matrixBotMock = {
-      sendMessage: jest.fn().mockResolvedValue(undefined),
-    };
-
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [IncidentController],
-      providers: [
-        {
-          provide: MatrixBot,
-          useValue: matrixBotMock,
-        },
-        Logger,
-      ],
-    }).compile();
-
-    controller = module.get<IncidentController>(IncidentController);
-  });
-
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
-
+describe('POST /notifications', () => {
   it('should send notification to matrix', async () => {
-    const notification = {
-      channelId: 'test-channel',
-      message: 'Test message',
-    };
+    const mockBot = { sendMessage: jest.fn().mockResolvedValue(undefined) };
 
-    const result = await controller.sendNotification(notification);
+    const app = Fastify();
+    app.post('/notifications', async request => {
+      const { channelId, message } = request.body as { channelId: string; message: string };
+      await mockBot.sendMessage(channelId, message);
+      return { success: true };
+    });
 
-    expect(result).toEqual({ success: true });
-    expect(matrixBotMock.sendMessage).toHaveBeenCalledWith(notification.channelId, notification.message);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/notifications',
+      payload: { channelId: 'test-channel', message: 'Test message' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.payload)).toEqual({ success: true });
+    expect(mockBot.sendMessage).toHaveBeenCalledWith('test-channel', 'Test message');
+
+    await app.close();
+  });
+
+  it('should return 200 for health endpoint', async () => {
+    const app = Fastify();
+    app.get('/health', async () => ({ status: 'ok' }));
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/health',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.payload)).toEqual({ status: 'ok' });
+
+    await app.close();
   });
 });

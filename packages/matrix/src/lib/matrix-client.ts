@@ -1,4 +1,3 @@
-import * as olm from '@matrix-org/olm';
 import {
   MatrixClient as SDKMatrixClient,
   createClient,
@@ -7,49 +6,58 @@ import {
   Room,
   RoomEvent,
   MsgType,
-  CryptoEvent,
   ICreateClientOpts,
 } from 'matrix-js-sdk';
-import { VerificationRequestEvent, VerifierEvent } from 'matrix-js-sdk/lib/crypto-api/verification';
+import { CryptoEvent } from 'matrix-js-sdk/lib/crypto-api/CryptoEvent.js';
+import { VerificationRequestEvent, VerifierEvent } from 'matrix-js-sdk/lib/crypto-api/verification.js';
 import { KnownMembership } from 'matrix-js-sdk/lib/@types/membership.js';
-import { logger as matrixLogger } from 'matrix-js-sdk/lib/logger';
-import { LocalStorageCryptoStore } from 'matrix-js-sdk/lib/crypto/store/localStorage-crypto-store';
+import type { Logger as MatrixLogger } from 'matrix-js-sdk/lib/logger.js';
 import { LocalStorage } from 'node-localstorage';
 import { MatrixConfig } from './interfaces';
-import { Logger } from '@w3f/polguard-common';
+import { AppLogger } from '@w3f/polguard-common';
+
+/** Adapts a pino-style AppLogger to the matrix-js-sdk Logger interface */
+function createMatrixLogger(pinoLogger: AppLogger): MatrixLogger {
+  const adapter: MatrixLogger = {
+    trace: (...msg: any[]) => pinoLogger.trace(msg.join(' ')),
+    debug: (...msg: any[]) => pinoLogger.debug(msg.join(' ')),
+    info: (...msg: any[]) => pinoLogger.info(msg.join(' ')),
+    warn: (...msg: any[]) => pinoLogger.warn(msg.join(' ')),
+    error: (...msg: any[]) => pinoLogger.error(msg.join(' ')),
+    getChild(_namespace: string): MatrixLogger {
+      return createMatrixLogger(pinoLogger);
+    },
+  };
+  return adapter;
+}
 
 export class MatrixClient {
   protected client: SDKMatrixClient;
   protected config: MatrixConfig;
-  protected logger: Logger;
+  protected logger: AppLogger;
   protected localStorage: LocalStorage;
 
-  constructor(config: MatrixConfig, logger: Logger, dataPath: string = 'data/local-storage') {
+  constructor(config: MatrixConfig, logger: AppLogger, dataPath: string = 'data/local-storage') {
     this.config = config;
     this.logger = logger;
     this.localStorage = new LocalStorage(dataPath);
   }
 
   async init() {
-    if (this.config.enableEncryption) {
-      global.Olm = olm;
-    }
-
     this.client = await this.createClient();
     await this.setupClientAndSync();
     this.setupEventHandlers();
 
     const rooms = this.client.getRooms();
-    this.logger.log(`Matrix client initialized successfully. Bot is in ${rooms.length} rooms:`);
+    this.logger.info(`Matrix client initialized successfully. Bot is in ${rooms.length} rooms:`);
     rooms.forEach(room => {
-      this.logger.log(`  - Room: ${room.roomId} (${room.name || 'No name'})`);
+      this.logger.info(`  - Room: ${room.roomId} (${room.name || 'No name'})`);
     });
   }
 
   private async setupClientAndSync(): Promise<void> {
     if (this.config.enableEncryption) {
-      await this.client.initCrypto();
-      this.client.setGlobalErrorOnUnknownDevices(false);
+      await this.client.initRustCrypto();
     }
 
     await this.client.startClient({ initialSyncLimit: 10 });
@@ -114,20 +122,13 @@ export class MatrixClient {
   }
 
   private createClientWithToken(userId: string, deviceId: string, accessToken: string): SDKMatrixClient {
-    matrixLogger.setDefaultLevel(this.config.logging.level);
-
     const options: ICreateClientOpts = {
       baseUrl: this.config.url,
       accessToken,
       userId,
       deviceId,
-      logger: matrixLogger,
+      logger: createMatrixLogger(this.logger),
     };
-
-    if (this.config.enableEncryption) {
-      const cryptoStore = new LocalStorageCryptoStore(this.localStorage);
-      options.cryptoStore = cryptoStore;
-    }
 
     return createClient(options);
   }
@@ -137,7 +138,7 @@ export class MatrixClient {
       this.client.once(ClientEvent.Sync, (state: string) => {
         this.logger.debug(`Matrix client sync state: ${state}`);
         if (state === 'PREPARED') {
-          this.logger.log('Matrix client sync completed - ready to receive messages');
+          this.logger.info('Matrix client sync completed - ready to receive messages');
           resolve();
         }
       });
@@ -239,7 +240,7 @@ export class MatrixClient {
         request.on(VerificationRequestEvent.Change, async () => {
           const verifier = await request.startVerification('m.sas.v1');
           verifier.on(VerifierEvent.ShowSas, e => {
-            this.logger.log(`Verification SAS: ${e.sas.emoji.join(', ')}`);
+            this.logger.info(`Verification SAS: ${e.sas.emoji.join(', ')}`);
             e.confirm();
           });
           verifier.on(VerifierEvent.Cancel, error => {
@@ -257,7 +258,7 @@ export class MatrixClient {
       if (membership === KnownMembership.Invite) {
         this.client
           .joinRoom(room.roomId)
-          .then(() => this.logger.log(`Auto-joined ${room.roomId}`))
+          .then(() => this.logger.info(`Auto-joined ${room.roomId}`))
           .catch(err => this.logger.error(`Auto-join failed for ${room.roomId}:`, err));
       }
     });
@@ -278,7 +279,7 @@ export class MatrixClient {
   public async stop() {
     if (this.client) {
       this.client.stopClient();
-      this.logger.log('Matrix client stopped');
+      this.logger.info('Matrix client stopped');
     }
   }
 }

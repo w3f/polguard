@@ -1,6 +1,6 @@
 import { MatrixClient } from './matrix-client';
 import { MatrixConfig, IncidentServiceInterface, QueryFilters } from './interfaces';
-import { Logger, AppLogger, MessengerType, NotificationType, Chain } from '@w3f/polguard-common';
+import { AppLogger, MessengerType, NotificationType, Chain, HttpError } from '@w3f/polguard-common';
 import { MatrixEvent } from 'matrix-js-sdk';
 import { getGroupsForChannel } from '@w3f/polguard-config';
 
@@ -12,7 +12,7 @@ export class MatrixBot extends MatrixClient {
 
   constructor(
     config: MatrixConfig,
-    logger: Logger,
+    logger: AppLogger,
     incidentService: IncidentServiceInterface,
     monitoringConfigsDir: string,
     dataPath?: string,
@@ -24,7 +24,7 @@ export class MatrixBot extends MatrixClient {
 
   async init() {
     await super.init();
-    this.logger.log('MatrixBot initialized and listening for commands in rooms');
+    this.logger.info('MatrixBot initialized and listening for commands in rooms');
   }
 
   protected handleCommand(roomId: string, command: string, event: MatrixEvent) {
@@ -199,7 +199,7 @@ export class MatrixBot extends MatrixClient {
     } catch (error) {
       this.logger.error(`Error fetching incident message: ${error.message}`);
 
-      if (error.response?.status === 404) {
+      if (error instanceof HttpError && error.status === 404) {
         await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
       } else {
         await this.sendErrorMessage(
@@ -224,7 +224,7 @@ export class MatrixBot extends MatrixClient {
     } catch (error) {
       this.logger.error(`Error fetching incident details: ${error.message}`);
 
-      if (error.response?.status === 404) {
+      if (error instanceof HttpError && error.status === 404) {
         await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
       } else {
         await this.sendErrorMessage(
@@ -284,11 +284,11 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
 
       await this.sendMessage(roomId, message);
     } catch (error) {
-      this.logger.error(`Error acknowledging incident: ${error.message}`);
+      this.logger.error(`Error acknowledging incident: ${(error as Error).message}`);
 
-      if (error.response?.status === 404) {
+      if (error instanceof HttpError && error.status === 404) {
         await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
-      } else if (error.response?.status === 403) {
+      } else if (error instanceof HttpError && error.status === 403) {
         await this.sendErrorMessage(roomId, 'You do not have permission to acknowledge this incident');
       } else {
         await this.sendErrorMessage(roomId, 'An error occurred while acknowledging incident. Please try again later');
@@ -330,11 +330,11 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
         await this.sendMessage(roomId, `<p>Incident <strong>${incidentId}</strong> has been resolved manually</p>`);
       }
     } catch (error) {
-      this.logger.error(`Error resolving incident: ${error.message}`);
+      this.logger.error(`Error resolving incident: ${(error as Error).message}`);
 
-      if (error.response?.status === 404) {
+      if (error instanceof HttpError && error.status === 404) {
         await this.sendErrorMessage(roomId, `Incident with ID ${incidentId} not found`);
-      } else if (error.response?.status === 403) {
+      } else if (error instanceof HttpError && error.status === 403) {
         await this.sendErrorMessage(roomId, 'You do not have permission to resolve this incident');
       } else {
         await this.sendErrorMessage(roomId, 'An error occurred while resolving incident. Please try again later');
@@ -467,18 +467,13 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
         return;
       }
 
-      const configLogger: AppLogger = {
-        ...this.logger,
-        info: this.logger.log.bind(this.logger),
-        trace: this.logger.verbose.bind(this.logger),
-      };
       // TODO: Ideally matrix should not have access to the monitoring configs. This command may be removed soon.
       const groups = await getGroupsForChannel(
         chain,
         MessengerType.Matrix,
         roomId,
         this.monitoringConfigsDir,
-        configLogger,
+        this.logger,
       );
 
       const matchingGroups: string[] = [];
