@@ -1,70 +1,128 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { createRequire } from 'node:module';
+import Fastify from 'fastify';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
+import pino from 'pino';
+import { buildOtelSdk, HttpError } from '@w3f/polguard-common';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { ConfigService } from './config/config.service';
-import * as JSONbig from 'json-bigint';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { getLogLevels, buildOtelSdk } from '@w3f/polguard-common';
-import * as pkg from '../package.json'; // "* as" import needed whilst we use commonJS
+import { createDatabase } from './database/db';
+import { LastBlockService } from './last-block/last-block.service';
+import { NotificationService } from './notification/notification.service';
+import { IncidentService } from './incident/incident.service';
+import { SchedulerService } from './scheduler/scheduler.service';
+import { incidentRoutes } from './routes/incident.routes';
+import { lastBlockRoutes } from './routes/last-block.routes';
+
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json') as { name: string; version: string };
+
+function createRootLogger(level: string, isDev: boolean): pino.Logger {
+  return pino({
+    level,
+    ...(isDev
+      ? { transport: { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:HH:MM:ss.l' } } }
+      : {}),
+  });
+}
 
 async function bootstrap() {
+  // Telemetry
   const otelSdk = buildOtelSdk(pkg.name, pkg.version, false, true);
   otelSdk.start();
 
-  const app = await NestFactory.create(AppModule);
+  // Config (uses a temporary debug-level logger for initial load)
+  const bootLogger = createRootLogger('debug', true);
+  const config = new ConfigService(bootLogger.child({ context: 'Config' }));
 
-  const configService = app.get(ConfigService);
-  const logLevel = configService.getLoggingLevel();
-  Logger.overrideLogger(getLogLevels(logLevel));
+  // Create the root logger at the configured level
+  const isDev = config.getEnvironment() !== 'production';
+  const rootLogger = createRootLogger(config.getLoggingLevel(), isDev);
+  const logger = rootLogger.child({ context: 'Main' });
 
-  const logger = new Logger('Main');
+  // Database
+  const dbConfig = config.getDatabaseConfig();
+  const db = createDatabase({
+    host: dbConfig.host,
+    port: dbConfig.port,
+    user: dbConfig.username,
+    password: dbConfig.password,
+    database: dbConfig.database,
+  });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }),
+  // Run migrations
+  await migrate(db, { migrationsFolder: './drizzle' });
+  logger.info('Database migrations applied');
+
+  // Wire services
+  const lastBlockService = new LastBlockService(db);
+  const notificationService = new NotificationService(db, config, rootLogger.child({ context: 'Notification' }));
+  const incidentService = new IncidentService(
+    db,
+    notificationService,
+    lastBlockService,
+    rootLogger.child({ context: 'Incident' }),
   );
 
-  // Override Express JSON serializer to handle BigInt
-  app.use((req, res, next) => {
-    res.json = function (body) {
-      const jsonBody = JSONbig.stringify(body);
-      res.setHeader('Content-Type', 'application/json');
-      return res.send(jsonBody);
-    };
+  // Scheduler (cron jobs)
+  const schedulerService = new SchedulerService(
+    config,
+    notificationService,
+    incidentService,
+    rootLogger.child({ context: 'Scheduler' }),
+  );
+  schedulerService.start();
 
-    next();
+  // Fastify server
+  const serverConfig = config.getServerConfig();
+  const app = Fastify({ logger: false });
+
+  // Swagger
+  await app.register(swagger, {
+    openapi: {
+      info: {
+        title: 'Incident Service',
+        description: 'REST API for incident lifecycle management',
+        version: pkg.version,
+      },
+    },
+  });
+  await app.register(swaggerUi, { routePrefix: '/docs' });
+
+  // Error handler: map HttpError subclasses to proper HTTP responses
+  app.setErrorHandler((error: Error & { validation?: unknown; statusCode?: number }, _request, reply) => {
+    if (error instanceof HttpError) {
+      reply.status(error.status).send({ statusCode: error.status, message: error.message });
+    } else if (error.validation) {
+      reply.status(400).send({ statusCode: 400, message: error.message });
+    } else {
+      logger.error(error, 'Unhandled error');
+      reply.status(500).send({ statusCode: 500, message: 'Internal Server Error' });
+    }
   });
 
-  // Setup Swagger
-  const config = new DocumentBuilder()
-    .setTitle('Monitoring API')
-    .setDescription('The PolGuard API documentation')
-    .setVersion('1.0')
-    .addTag('incidents')
-    .addTag('health')
-    .addTag('metrics')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document);
+  // Health
+  app.get('/health', async () => ({ status: 'ok' }));
 
-  // Get server configuration
-  const serverConfig = configService.getServerConfig();
+  // Routes
+  await app.register(incidentRoutes(incidentService));
+  await app.register(lastBlockRoutes(lastBlockService));
 
-  // Handle graceful shutdown
-  process.on('SIGTERM', async () => {
-    logger.log('SIGTERM signal received. Starting graceful shutdown...');
+  await app.listen({ port: serverConfig.port, host: serverConfig.host });
+  logger.info(`HTTP server listening on ${serverConfig.host}:${serverConfig.port}`);
+  logger.info('Application initialized successfully');
+
+  // Graceful shutdown
+  const shutdown = async (signal: string) => {
+    logger.info(`${signal} received. Starting graceful shutdown...`);
+    schedulerService.stop();
     await app.close();
     await otelSdk.shutdown();
-    logger.log('Application closed');
-  });
+    logger.info('Application closed');
+  };
 
-  logger.debug('Application created, starting initialization...');
-  await app.init();
-  await app.listen(serverConfig.port, serverConfig.host);
-  logger.log(`HTTP server is listening on ${serverConfig.host}:${serverConfig.port}`);
-  logger.log(`Swagger documentation available at http://${serverConfig.host}:${serverConfig.port}/api-docs`);
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 bootstrap().catch(error => {

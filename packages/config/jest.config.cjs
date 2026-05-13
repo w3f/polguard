@@ -3,7 +3,7 @@ module.exports = {
   rootDir: ".",
   testRegex: ".*\\.test\\.ts$",
   transform: {
-    "^.+\\.ts$": ["@swc/jest", {
+    "^.+\\.(t|j)s$": ["@swc/jest", {
       jsc: {
         parser: {
           syntax: "typescript",
@@ -40,7 +40,6 @@ module.exports = {
     "<rootDir>/dist/"
   ],
   transformIgnorePatterns: [
-    "/node_modules/",
-    "/dist/"
+    "/node_modules/(?!@w3f/polguard-)"
   ]
 }

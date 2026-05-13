@@ -1,19 +1,18 @@
 # Development Notes
 
-This document contains important development decisions and future considerations for PolGuard.
+This document contains important development decisions and non-obvious architectural patterns in PolGuard.
 
 ## Architectural Decisions
 
 ### Code Organization
 
-For most services, we've intentionally split the NestJS implementation from the core business logic to avoid tight coupling. This separation allows for:
+For most services, we've intentionally split the core business logic from the framework layer to avoid tight coupling. This separation allows for:
 
-- Easier testing of business logic without NestJS dependencies
+- Easier testing of business logic without framework dependencies
 - Potential reuse of business logic in different contexts
 - Clearer separation of concerns
-- Possibility to migrate from NestJS to other backend frameworks in the future
 
-The Chain service follows this pattern with `src/lib/` (core monitoring logic) and `src/service/` (NestJS implementations of Store/Reporter abstractions). The layers are loosely coupled through interfaces.
+The Chain service follows this pattern with `src/lib/` (core monitoring logic) and `src/service/` (framework-level implementations of Store/Reporter abstractions). The layers are loosely coupled through interfaces.
 
 ### Handler Registration System
 
@@ -36,32 +35,6 @@ This design decision prioritizes a simple interface for defining handlers over s
 
 Currently, notification handling logic exists in both the chain and Incident services. Ideally, only the Incident service should be responsible for the styling and formatting of notifications. This would simplify the chain service and maintain a consistent format across different notification consumers.
 
-### NestJS and Module System
-
-We are not using all the features from NestJS; instead, we mostly use our own abstractions. Something simpler should work better, especially considering CommonJS limitations that restrict our ability to use modern ES modules and create compatibility issues with some dependencies.
-
-### Runtime Environment (Deno)
-
-Deno is only a consideration at this point, not a plan. If we were to explore it in the future, potential benefits could include:
-
-- Better security model
-- Native TypeScript support
-- Modern JavaScript features
-- Improved dependency management
-
-However, this would require significant changes to the codebase and would need to address framework compatibility.
-
-### Matrix SDK Limitations
-
-We are currently stuck with matrix-js-sdk version 32 due to compatibility issues with newer versions that appear incompatible with CommonJS. After some attempts to resolve this, we decided to handle it later. This issue might be fixable but requires further investigation.
-
-### API Authorization
-
-As the platform evolves, we may need to implement proper API authorization for external clients that need to access the Incident service, such as:
-
-- Dashboards for incident visualization
-- Third-party services interested in monitoring configurations
-
 ### Database Migrations
 
-We use `start:with-migrations` script in production with a single pod deployment. This approach runs migrations before starting the Incident service, which is simple but would have limitations if we scaled to multiple pods (race conditions, schema conflicts during updates). For now, this approach is sufficient for our needs.
+The Incident service runs Drizzle migrations on application startup (`migrate(db, { migrationsFolder: './drizzle' })`). This is simple and works well for a single-pod deployment. If the service were scaled to multiple replicas, a separate migration job or an advisory-lock strategy would be needed to avoid race conditions during schema changes.

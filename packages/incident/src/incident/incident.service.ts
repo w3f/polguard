@@ -1,236 +1,295 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Incident } from '../database/incident.entity';
-import { Notification } from '../database/notification.entity';
-import { CreateIncidentDto, GetIncidentsDto, ResolveIncidentByChainDto, ResolveIncidentManuallyDto } from './dto';
+import { eq, and, lte, desc, inArray, sql, type SQL } from 'drizzle-orm';
+import {
+  AppLogger,
+  NotificationType,
+  MessengerType,
+  ResolutionType,
+  NotFoundError,
+  ForbiddenError,
+} from '@w3f/polguard-common';
+import type { Database } from '../database/db';
+import { incidents, notifications } from '../database/schema';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType, MessengerType, ResolutionType } from '@w3f/polguard-common';
 import { LastBlockService } from '../last-block/last-block.service';
+import { generateIncidentId } from '../database/id-generator';
+import type {
+  CreateIncidentBody,
+  GetIncidentsQuery,
+  ResolveByChainBody,
+  ResolveManuallyBody,
+} from '../schemas/incident.schemas';
 
-@Injectable()
 export class IncidentService {
-  private readonly logger = new Logger(IncidentService.name);
   private static readonly AUTO_RESOLVE_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000;
 
   constructor(
-    @InjectRepository(Incident)
-    private incidentRepository: Repository<Incident>,
-    @InjectRepository(Notification)
-    private notificationRepository: Repository<Notification>,
-    private notificationService: NotificationService,
-    private lastBlockService: LastBlockService,
+    private readonly db: Database,
+    private readonly notificationService: NotificationService,
+    private readonly lastBlockService: LastBlockService,
+    private readonly logger: AppLogger,
   ) {}
 
-  async findIncidentById(id: string): Promise<Incident> {
-    const incident = await this.incidentRepository.findOne({
-      where: { id },
-      relations: ['notifications'],
+  async findIncidentById(id: string) {
+    const incident = await this.db.query.incidents.findFirst({
+      where: eq(incidents.id, id),
+      with: { notifications: true },
     });
 
     if (!incident) {
-      throw new NotFoundException(`Incident with ID ${id} not found`);
+      throw new NotFoundError(`Incident with ID ${id} not found`);
     }
 
     return incident;
   }
 
-  async findIncidents(filters: GetIncidentsDto): Promise<Incident[]> {
-    const queryBuilder = this.incidentRepository.createQueryBuilder('incident');
+  async findIncidents(filters: GetIncidentsQuery) {
+    const conditions: SQL[] = [];
 
     if (filters.needsAck !== undefined) {
-      queryBuilder.andWhere('incident.needsAck = :needsAck', { needsAck: filters.needsAck });
+      conditions.push(eq(incidents.needsAck, filters.needsAck));
     }
     if (filters.isAcked !== undefined) {
-      queryBuilder.andWhere('incident.isAcked = :isAcked', { isAcked: filters.isAcked });
+      conditions.push(eq(incidents.isAcked, filters.isAcked));
     }
     if (filters.isResolved !== undefined) {
-      queryBuilder.andWhere('incident.isResolved = :isResolved', { isResolved: filters.isResolved });
+      conditions.push(eq(incidents.isResolved, filters.isResolved));
     }
     if (filters.createdAfter) {
-      queryBuilder.andWhere('incident.createdAt >= :createdAfter', { createdAfter: filters.createdAfter });
+      conditions.push(sql`${incidents.createdAt} >= ${filters.createdAfter}`);
     }
     if (filters.createdBefore) {
-      queryBuilder.andWhere('incident.createdAt <= :createdBefore', { createdBefore: filters.createdBefore });
+      conditions.push(sql`${incidents.createdAt} <= ${filters.createdBefore}`);
     }
     if (filters.chain) {
-      queryBuilder.andWhere('incident.chain = :chain', { chain: filters.chain });
+      conditions.push(eq(incidents.chain, filters.chain));
     }
     if (filters.account) {
-      queryBuilder.andWhere('incident.account = :account', { account: filters.account });
+      conditions.push(eq(incidents.account, filters.account));
     }
     if (filters.groupId) {
-      queryBuilder.andWhere('incident.groupId = :groupId', { groupId: filters.groupId });
+      conditions.push(eq(incidents.groupId, filters.groupId));
     }
     if (filters.handlerType) {
-      queryBuilder.andWhere('incident.handlerType = :handlerType', { handlerType: filters.handlerType });
+      conditions.push(eq(incidents.handlerType, filters.handlerType));
     }
+
+    // Channel + messengerType filter requires a join
     if (filters.channelId && filters.messengerType) {
-      queryBuilder
-        .innerJoin('incident.notifications', 'notification')
-        .andWhere('notification.channelId = :channelId', { channelId: filters.channelId })
-        .andWhere('notification.messengerType = :messengerType', { messengerType: filters.messengerType });
+      const matchingIncidentIds = await this.db
+        .select({ incidentId: notifications.incidentId })
+        .from(notifications)
+        .where(
+          and(eq(notifications.channelId, filters.channelId), eq(notifications.messengerType, filters.messengerType)),
+        );
+
+      const ids = matchingIncidentIds.map(r => r.incidentId);
+      if (ids.length === 0) return [];
+      conditions.push(inArray(incidents.id, ids));
     }
 
-    queryBuilder.orderBy('incident.createdAt', 'DESC');
-    queryBuilder.limit(1000); // Hard limit for now
-    queryBuilder.leftJoinAndSelect('incident.notifications', 'notifications');
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    return queryBuilder.getMany();
+    return this.db.query.incidents.findMany({
+      where,
+      with: { notifications: true },
+      orderBy: desc(incidents.createdAt),
+      limit: 1000,
+    });
   }
 
-  async createIncident(dto: CreateIncidentDto): Promise<Incident> {
+  async createIncident(dto: CreateIncidentBody) {
     await this.lastBlockService.setLastBlock(dto.chain, dto.blockNumber);
 
-    const existingIncident = await this.incidentRepository.findOne({
-      where: {
-        idempotencyKey: dto.idempotencyKey,
-        isResolved: dto.isResolved,
-      },
+    const isResolved = dto.isResolved ?? false;
+
+    // Idempotency check
+    const existing = await this.db.query.incidents.findFirst({
+      where: and(eq(incidents.idempotencyKey, dto.idempotencyKey), eq(incidents.isResolved, isResolved)),
     });
 
-    if (existingIncident) {
-      return existingIncident;
+    if (existing) {
+      return existing;
     }
 
-    const { notificationChannels, ...incidentData } = dto;
-    const incident = this.incidentRepository.create({
-      ...incidentData,
-      notificationChannels,
-    });
-    if (incident.isResolved) {
-      incident.resolvedAt = new Date();
-      incident.resolutionType = ResolutionType.ChainService;
-    }
+    const now = new Date();
 
-    const savedIncident = await this.incidentRepository.save(incident);
+    const [savedIncident] = await this.db
+      .insert(incidents)
+      .values({
+        ...dto,
+        id: generateIncidentId(),
+        resolutionType: isResolved ? ResolutionType.ChainService : null,
+        resolvedAt: isResolved ? now : null,
+      })
+      .returning();
+
     this.logger.debug(`Incident created: ${savedIncident.id}.`);
+
     await this.notificationService.createNotifications(
       savedIncident,
-      notificationChannels,
+      dto.notificationChannels,
       NotificationType.Alert,
-      incident.message,
+      dto.message,
     );
+
     return savedIncident;
   }
 
-  async acknowledgeIncident(id: string, username: string, channelId: string): Promise<Incident> {
-    const incident = await this.incidentRepository.findOne({ where: { id } });
+  async acknowledgeIncident(id: string, username: string, channelId: string) {
+    const incident = await this.db.query.incidents.findFirst({
+      where: eq(incidents.id, id),
+    });
 
     if (!incident) {
-      throw new NotFoundException(`Incident with ID ${id} not found`);
+      throw new NotFoundError(`Incident with ID ${id} not found`);
     }
 
-    // Validate channel ID by checking if there's a notification for this channel
-    const hasNotificationForChannel = await this.notificationRepository.findOne({
-      where: {
-        incident: { id },
-        channelId,
-      },
+    // Validate channel ID
+    const hasNotification = await this.db.query.notifications.findFirst({
+      where: and(eq(notifications.incidentId, id), eq(notifications.channelId, channelId)),
     });
-    if (!hasNotificationForChannel) {
-      throw new ForbiddenException('User does not have permission to acknowledge this incident');
+    if (!hasNotification) {
+      throw new ForbiddenError('User does not have permission to acknowledge this incident');
     }
 
     if (!incident.ackedAt) {
-      incident.isAcked = true;
-      incident.ackedAt = new Date();
-      incident.ackedBy = username;
+      const now = new Date();
+      const [updated] = await this.db
+        .update(incidents)
+        .set({
+          isAcked: true,
+          ackedAt: now,
+          ackedBy: username,
+          updatedAt: now,
+        })
+        .where(eq(incidents.id, id))
+        .returning();
+
+      this.logger.debug(`Incident ${id} acknowledged by: ${username}.`);
+      return updated;
     }
+
     this.logger.debug(`Incident ${id} acknowledged by: ${username}.`);
-    return this.incidentRepository.save(incident);
+    return incident;
   }
 
-  async resolveIncidentByChain(id: string, dto: ResolveIncidentByChainDto): Promise<Incident> {
+  async resolveIncidentByChain(id: string, dto: ResolveByChainBody) {
     await this.lastBlockService.setLastBlock(dto.chain, dto.blockNumber);
 
-    const incident = await this.incidentRepository.findOne({ where: { id } });
+    const incident = await this.db.query.incidents.findFirst({
+      where: eq(incidents.id, id),
+    });
 
     if (!incident) {
-      throw new NotFoundException(`Incident with ID ${id} not found`);
+      throw new NotFoundError(`Incident with ID ${id} not found`);
     }
     if (incident.resolvedAt) {
       return incident;
     }
 
-    incident.resolutionType = ResolutionType.ChainService;
-    incident.resolutionMessage = dto.resolutionMessage;
-    incident.isResolved = true;
-    incident.resolvedAt = new Date();
+    const now = new Date();
+    const [savedIncident] = await this.db
+      .update(incidents)
+      .set({
+        resolutionType: ResolutionType.ChainService,
+        resolutionMessage: dto.resolutionMessage,
+        isResolved: true,
+        resolvedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(incidents.id, id))
+      .returning();
 
-    const savedIncident = await this.incidentRepository.save(incident);
     this.logger.debug(`Incident ${id} resolved by chain service.`);
 
-    await this.notificationService.createResolutionNotifications(savedIncident);
+    await this.notificationService.createResolutionNotifications({
+      id: savedIncident.id,
+      needsAck: savedIncident.needsAck,
+      isResolved: savedIncident.isResolved,
+      resolutionMessage: savedIncident.resolutionMessage,
+    });
+
     return savedIncident;
   }
 
-  async resolveIncidentManually(id: string, dto: ResolveIncidentManuallyDto): Promise<Incident> {
-    const incident = await this.incidentRepository.findOne({ where: { id } });
+  async resolveIncidentManually(id: string, dto: ResolveManuallyBody) {
+    const incident = await this.db.query.incidents.findFirst({
+      where: eq(incidents.id, id),
+    });
 
     if (!incident) {
-      throw new NotFoundException(`Incident with ID ${id} not found`);
+      throw new NotFoundError(`Incident with ID ${id} not found`);
     }
     if (incident.resolvedAt) {
       return incident;
     }
 
-    // Validate channel ID by checking if there's a notification for this channel
-    const hasNotificationForChannel = await this.notificationRepository.findOne({
-      where: {
-        incident: { id },
-        channelId: dto.channelId,
-      },
+    // Validate channel ID
+    const hasNotification = await this.db.query.notifications.findFirst({
+      where: and(eq(notifications.incidentId, id), eq(notifications.channelId, dto.channelId)),
     });
-    if (!hasNotificationForChannel) {
-      throw new ForbiddenException('User does not have permission to resolve this incident');
+    if (!hasNotification) {
+      throw new ForbiddenError('User does not have permission to resolve this incident');
     }
 
-    incident.resolutionType = ResolutionType.Manual;
-    incident.resolutionMessage = `Incident manually resolved by ${dto.username}`;
-    incident.resolvedBy = dto.username;
-    incident.isResolved = true;
-    incident.resolvedAt = new Date();
+    const now = new Date();
+    const resolutionMessage = `Incident manually resolved by ${dto.username}`;
+    const [savedIncident] = await this.db
+      .update(incidents)
+      .set({
+        resolutionType: ResolutionType.Manual,
+        resolutionMessage,
+        resolvedBy: dto.username,
+        isResolved: true,
+        resolvedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(incidents.id, id))
+      .returning();
 
-    const savedIncident = await this.incidentRepository.save(incident);
     this.logger.debug(`Incident ${id} manually resolved by: ${dto.username}.`);
 
-    await this.notificationService.createResolutionNotifications(savedIncident);
+    await this.notificationService.createResolutionNotifications({
+      id: savedIncident.id,
+      needsAck: savedIncident.needsAck,
+      isResolved: savedIncident.isResolved,
+      resolutionMessage: savedIncident.resolutionMessage,
+    });
+
     return savedIncident;
   }
 
   async escalateIncidents(): Promise<void> {
-    const incidents = await this.incidentRepository.find({
-      where: {
-        needsAck: true,
-        isAcked: false,
-        isEscalated: false,
-      },
+    const unescalatedIncidents = await this.db.query.incidents.findMany({
+      where: and(eq(incidents.needsAck, true), eq(incidents.isAcked, false), eq(incidents.isEscalated, false)),
     });
 
-    // Time check in Node for Postgres + SQLite compatibility (SQLite is used in integration tests).
-    // The syntax is different between Postgres and SQLite.
     const now = Date.now();
-    for (const i of incidents) {
-      if (!i.escalationTimeoutMs || !i.escalationChannels) continue;
+    for (const i of unescalatedIncidents) {
+      const escalationChannels = i.escalationChannels ?? [];
+      const notificationChannels = i.notificationChannels;
+
+      if (!i.escalationTimeoutMs || escalationChannels.length === 0) continue;
       if (now < i.createdAt.getTime() + i.escalationTimeoutMs) continue;
 
-      const timeoutInMinutes = Math.floor((i.escalationTimeoutMs ?? 0) / 60000);
-      const destinations = i.notificationChannels
+      const timeoutInMinutes = Math.floor(i.escalationTimeoutMs / 60000);
+      const destinations = notificationChannels
         .map(c => (c.messengerType === MessengerType.Matrix ? `https://matrix.to/#/${c.channelId}` : c.channelId))
         .join(', ');
 
-      i.isEscalated = true;
-      i.escalatedAt = new Date();
-      await this.incidentRepository.save(i);
+      const escalatedAt = new Date();
+      await this.db
+        .update(incidents)
+        .set({ isEscalated: true, escalatedAt, updatedAt: escalatedAt })
+        .where(eq(incidents.id, i.id));
 
-      // Escalation channels: escalation message with destinations plus original alert
+      // Escalation channels: escalation message with original alert
       const escalationMessageWithOriginal =
         `Escalation. The incident was not acknowledged within ${timeoutInMinutes} minutes in any of the following rooms: ${destinations} ` +
         `(the original message is repeated below)\n\n${i.message}`;
       await this.notificationService.createNotifications(
         i,
-        i.escalationChannels,
+        escalationChannels,
         NotificationType.Escalation,
         escalationMessageWithOriginal,
       );
@@ -239,7 +298,7 @@ export class IncidentService {
       const shortEscalationMessage = `The incident was not acknowledged within ${timeoutInMinutes} minutes and has therefore been escalated`;
       await this.notificationService.createNotifications(
         i,
-        i.notificationChannels,
+        notificationChannels,
         NotificationType.Escalation,
         shortEscalationMessage,
       );
@@ -247,36 +306,41 @@ export class IncidentService {
   }
 
   async autoResolveStaleIncidents(): Promise<void> {
-    const now = Date.now();
-    const cutoff = new Date(now - IncidentService.AUTO_RESOLVE_TIMEOUT_MS);
+    const cutoff = new Date(Date.now() - IncidentService.AUTO_RESOLVE_TIMEOUT_MS);
 
-    const staleIncidents = await this.incidentRepository
-      .createQueryBuilder('incident')
-      .where('incident.isResolved = :isResolved', { isResolved: false })
-      .andWhere('incident.createdAt <= :cutoff', { cutoff })
-      .getMany();
+    const staleIncidents = await this.db.query.incidents.findMany({
+      where: and(eq(incidents.isResolved, false), lte(incidents.createdAt, cutoff)),
+    });
 
     if (staleIncidents.length === 0) {
       this.logger.debug('No stale incidents to auto-resolve.');
       return;
     }
 
-    this.logger.log(`Auto-resolving ${staleIncidents.length} stale incidents (createdAt <= ${cutoff.toISOString()}).`);
+    this.logger.info(`Auto-resolving ${staleIncidents.length} stale incidents (createdAt <= ${cutoff.toISOString()}).`);
 
     for (const incident of staleIncidents) {
-      incident.isResolved = true;
-      incident.resolutionType = ResolutionType.AutoTimeout;
-      incident.resolutionMessage = 'Incident auto-resolved by timeout policy (30 days).';
-      incident.resolvedAt = new Date();
+      const now = new Date();
+      const resolutionMessage = 'Incident auto-resolved by timeout policy (30 days).';
 
-      const savedIncident = await this.incidentRepository.save(incident);
-      this.logger.log(`Incident ${incident.id} auto-resolved due to timeout.`);
+      await this.db
+        .update(incidents)
+        .set({
+          isResolved: true,
+          resolutionType: ResolutionType.AutoTimeout,
+          resolutionMessage,
+          resolvedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(incidents.id, incident.id));
+
+      this.logger.info(`Incident ${incident.id} auto-resolved due to timeout.`);
 
       await this.notificationService.createNotifications(
-        savedIncident,
+        { ...incident, isResolved: true },
         incident.notificationChannels,
         NotificationType.Resolution,
-        incident.resolutionMessage,
+        resolutionMessage,
       );
     }
   }

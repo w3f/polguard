@@ -1,18 +1,15 @@
-import { Injectable, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { LastBlock } from '../database/last-block.entity';
+import { eq } from 'drizzle-orm';
+import { ConflictError } from '@w3f/polguard-common';
+import type { Database } from '../database/db';
+import { lastBlocks } from '../database/schema';
 import { Chain } from '@w3f/polguard-common';
 
-@Injectable()
 export class LastBlockService {
-  constructor(
-    @InjectRepository(LastBlock)
-    private lastBlockRepository: Repository<LastBlock>,
-  ) {}
+  constructor(private readonly db: Database) {}
 
-  async getLastBlock(chain: Chain): Promise<LastBlock | null> {
-    return this.lastBlockRepository.findOne({ where: { chain } });
+  async getLastBlock(chain: Chain) {
+    const result = await this.db.select().from(lastBlocks).where(eq(lastBlocks.chain, chain)).limit(1);
+    return result[0] ?? null;
   }
 
   async setLastBlock(chain: Chain, blockNumber: number): Promise<void> {
@@ -20,14 +17,14 @@ export class LastBlockService {
 
     if (lastBlock) {
       if (blockNumber < lastBlock.blockNumber) {
-        throw new ConflictException(`Block ${blockNumber} has already been processed for chain ${chain}.`);
+        throw new ConflictError(`Block ${blockNumber} has already been processed for chain ${chain}.`);
       }
       if (blockNumber > lastBlock.blockNumber) {
-        await this.lastBlockRepository.update({ chain }, { blockNumber });
+        await this.db.update(lastBlocks).set({ blockNumber, updatedAt: new Date() }).where(eq(lastBlocks.chain, chain));
       }
       return;
     }
 
-    await this.lastBlockRepository.save({ chain, blockNumber });
+    await this.db.insert(lastBlocks).values({ chain, blockNumber });
   }
 }

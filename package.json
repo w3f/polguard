@@ -22,7 +22,7 @@
     "start:matrix:dev": "yarn workspace @w3f/polguard-matrix start:dev",
     "start:matrix": "yarn workspace @w3f/polguard-matrix start",
     "start:incident:dev": "yarn workspace @w3f/polguard-incident start:dev",
-    "start:incident": "yarn workspace @w3f/polguard-incident start:with-migrations"
+    "start:incident": "yarn workspace @w3f/polguard-incident start"
   },
   "engines": {
     "node": ">=22.0.0"

@@ -1,50 +1,47 @@
 import { CronJob } from 'cron';
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { SchedulerRegistry, CronExpression } from '@nestjs/schedule';
-
+import type { AppLogger } from '@w3f/polguard-common';
 import { ConfigService } from '../config/config.service';
 import { NotificationService } from '../notification/notification.service';
 import { IncidentService } from '../incident/incident.service';
 
-@Injectable()
-export class SchedulerService implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(SchedulerService.name);
+const DEFAULT_CRON_5_MINUTES = '*/5 * * * *';
+const DEFAULT_CRON_6_HOURS = '0 */6 * * *';
+
+export class SchedulerService {
+  private readonly jobs = new Map<string, CronJob>();
 
   constructor(
-    private readonly schedulerRegistry: SchedulerRegistry,
     private readonly configService: ConfigService,
     private readonly notificationService: NotificationService,
     private readonly incidentService: IncidentService,
+    private readonly logger: AppLogger,
   ) {}
 
-  onModuleInit() {
-    const sched = this.configService.getCronsConfig?.() ?? {};
+  start() {
+    const sched = this.configService.getCronsConfig();
 
-    const exprEscalations = sched.escalations ?? CronExpression.EVERY_5_MINUTES;
-    const exprRetries = sched.retries ?? CronExpression.EVERY_5_MINUTES;
-    const exprAutoResolve = sched.autoResolve ?? CronExpression.EVERY_6_HOURS;
-
-    this.addCronJob('notifications-escalations', exprEscalations, async () => {
+    this.addCronJob('notifications-escalations', sched.escalations ?? DEFAULT_CRON_5_MINUTES, async () => {
       this.logger.debug('Running escalation check');
       await this.incidentService.escalateIncidents();
     });
 
-    this.addCronJob('notifications-retries', exprRetries, async () => {
+    this.addCronJob('notifications-retries', sched.retries ?? DEFAULT_CRON_5_MINUTES, async () => {
       this.logger.debug('Running notification retry job');
       await this.notificationService.retryNotifications();
     });
 
-    this.addCronJob('auto-resolve-stale', exprAutoResolve, async () => {
+    this.addCronJob('auto-resolve-stale', sched.autoResolve ?? DEFAULT_CRON_6_HOURS, async () => {
       this.logger.debug('Running auto-resolution for stale incidents');
       await this.incidentService.autoResolveStaleIncidents();
     });
   }
 
-  onModuleDestroy() {
-    for (const [name, job] of this.schedulerRegistry.getCronJobs()) {
+  stop() {
+    for (const [name, job] of this.jobs) {
       job.stop();
-      this.logger.log(`Cron job "${name}" stopped`);
+      this.logger.info(`Cron job "${name}" stopped`);
     }
+    this.jobs.clear();
   }
 
   private addCronJob(name: string, cronTime: string, task: () => Promise<void>) {
@@ -58,7 +55,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
       },
     });
 
-    this.schedulerRegistry.addCronJob(name, job);
-    this.logger.log(`Cron job "${name}" scheduled: ${cronTime}`);
+    this.jobs.set(name, job);
+    this.logger.info(`Cron job "${name}" scheduled: ${cronTime}`);
   }
 }

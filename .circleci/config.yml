@@ -18,6 +18,10 @@ executors:
     docker:
       - image: cimg/node:22.22
     working_directory: ~/project
+  node-machine:
+    machine:
+      image: ubuntu-2204:current
+    working_directory: ~/project
 
 commands:
   docker_login:
@@ -28,9 +32,20 @@ commands:
 
 jobs:
   code_quality:
-    executor: node
+    executor: node-machine
     steps:
       - checkout
+      - run:
+          name: Install Node.js 22
+          command: |
+            source /opt/circleci/.nvm/nvm.sh
+            nvm install 22
+            nvm alias default 22
+            echo 'source /opt/circleci/.nvm/nvm.sh' >> $BASH_ENV
+            echo 'nvm use 22' >> $BASH_ENV
+      - run:
+          name: Enable Corepack (Yarn 4)
+          command: corepack enable
       - run: yarn install --immutable
       - run: yarn build
       - run: yarn lint

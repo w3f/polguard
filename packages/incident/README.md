@@ -12,23 +12,20 @@ The Incident service manages incident lifecycle, state persistence, and notifica
 ## API Endpoints
 
 **Incidents:**
-- `POST /incidents` - Create new incident
-- `GET /incidents` - List incidents with filters
-- `GET /incidents/:id` - Get incident details
-- `POST /incidents/:id/acknowledge` - Acknowledge incident
-- `POST /incidents/:id/resolve` - Resolve incident (auto)
-- `POST /incidents/:id/resolve-manual` - Resolve incident (manual via bot)
+- `POST /incidents` — Create new incident
+- `GET /incidents` — List incidents with filters
+- `GET /incidents/:id` — Get incident details
+- `POST /incidents/:id/acknowledge` — Acknowledge incident
+- `POST /incidents/:id/resolve` — Resolve incident (chain service)
+- `POST /incidents/:id/resolve-manual` — Resolve incident (manual via bot)
 
 **Last Block Management:**
-- `GET /last-block/:chainId` - Get last processed block for chain
-- `POST /last-block` - Update last processed block
+- `GET /last-block/:chainId` — Get last processed block for chain
+- `POST /last-block` — Update last processed block
 
-**Health & Metrics:**
-- `GET /health` - Health check
-- `GET /metrics` - Prometheus metrics
-
-**API Documentation:**
-- Swagger documentation available at `/api-docs` when service is running
+**Other:**
+- `GET /health` — Health check
+- `GET /docs` — Swagger UI
 
 ## Configuration
 
@@ -40,17 +37,25 @@ The service is configured via `config/config.yaml`. Key configuration areas:
 
 See [config.yaml.example](./config/config.yaml.example) for complete configuration options.
 
-## Telemetry
-
-Exposes Prometheus metrics on `localhost:9464/metrics` including default Node.js metrics.
-
 ## Development
 
 ```bash
-# Run in development mode
-yarn start:dev
+# Start local Postgres (for manual development)
+bash scripts/reset-test-db.sh
 
-# Run tests
+# Build and run
+yarn build
+yarn start
+
+# Run tests (unit)
 yarn test
+
+# Run integration tests (requires Docker — uses Testcontainers to spin up PostgreSQL automatically)
 yarn test:integration
 ```
+
+**Schema changes:** edit `src/database/schema.ts`, then run `yarn drizzle:generate` to create a migration file. Migrations are applied automatically on service startup.
+
+## Telemetry
+
+Exposes Prometheus metrics on `localhost:9464/metrics` including default Node.js metrics.

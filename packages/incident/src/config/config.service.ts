@@ -1,14 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
-import * as yaml from 'js-yaml';
+import type { AppLogger } from '@w3f/polguard-common';
+import yaml from 'js-yaml';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as Joi from 'joi';
+import Joi from 'joi';
 
-@Injectable()
 export class ConfigService {
   private readonly config: AppConfig;
 
-  constructor(private readonly logger: Logger) {
+  constructor(private readonly logger: AppLogger) {
     const configPath = this.getConfigPath();
     const rawConfig: any = this.loadConfig(configPath);
 
@@ -17,7 +16,6 @@ export class ConfigService {
       if (!rawConfig.database.password && !process.env.POSTGRES_PASSWORD) {
         throw new Error('Missing PostgreSQL password: set POSTGRES_PASSWORD env var or provide it in config.');
       }
-
       rawConfig.database.password = process.env.POSTGRES_PASSWORD ?? rawConfig.database.password;
     }
 
@@ -70,7 +68,7 @@ export class ConfigService {
         }).required(),
       }).required(),
       logging: Joi.object({
-        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'verbose').default('debug'),
+        level: Joi.string().valid('error', 'warn', 'info', 'debug', 'trace').default('debug'),
       }).default({ level: 'debug' }),
       crons: Joi.object({
         escalations: Joi.string().optional(),

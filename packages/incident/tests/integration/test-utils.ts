@@ -1,100 +1,105 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
-import { AppModule } from '../../src/app.module';
+import Fastify, { FastifyInstance } from 'fastify';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import pg from 'pg';
+import pino from 'pino';
+import { HttpError } from '@w3f/polguard-common';
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import * as schema from '../../src/database/schema';
+import { notifications, incidents, lastBlocks } from '../../src/database/schema';
+import type { Database } from '../../src/database/db';
 import { ConfigService } from '../../src/config/config.service';
-import { HttpService } from '@nestjs/axios';
-import { of } from 'rxjs';
-import * as path from 'node:path';
-import * as fs from 'node:fs';
-import * as JSONbig from 'json-bigint';
-import { Incident } from '../../src/database/incident.entity';
-import { Notification } from '../../src/database/notification.entity';
-import { LastBlock } from '../../src/database/last-block.entity';
+import { LastBlockService } from '../../src/last-block/last-block.service';
+import { NotificationService } from '../../src/notification/notification.service';
+import { IncidentService } from '../../src/incident/incident.service';
+import { incidentRoutes } from '../../src/routes/incident.routes';
+import { lastBlockRoutes } from '../../src/routes/last-block.routes';
+import * as path from 'path';
 
-const workerId = process.env.JEST_WORKER_ID ?? '0'; // "0" when runInBand
-export const dbFile = path.join(process.cwd(), `test-${workerId}.sqlite`);
+const silentLogger = pino({ level: 'silent' });
 
-/**
- * Cleanup function to remove the SQLite database file for the current worker
- */
-export function cleanupTestDatabase(): void {
-  if (fs.existsSync(dbFile)) {
-    fs.unlinkSync(dbFile);
-  }
+function createMockConfigService(): ConfigService {
+  return {
+    getDatabaseConfig: () => ({}),
+    getNotificationConfig: () => ({
+      matrix: { url: 'http://mock-matrix-server/api/notify' },
+    }),
+    getLoggingLevel: () => 'silent',
+    getEnvironment: () => 'test',
+    getServerConfig: () => ({ port: 0, host: '127.0.0.1' }),
+    getCronsConfig: () => ({}),
+  } as unknown as ConfigService;
 }
 
-const SQLITE_TEST_CONFIG = {
-  type: 'better-sqlite3' as const,
-  database: dbFile,
-  dropSchema: true,
-  synchronize: true,
-  keepConnectionAlive: true,
-  entities: [Incident, Notification, LastBlock],
-  namingStrategy: new SnakeNamingStrategy(),
-  extra: { pragmas: ['foreign_keys=ON'] },
-};
+export interface TestContext {
+  app: FastifyInstance;
+  db: Database;
+  pool: pg.Pool;
+  container: StartedPostgreSqlContainer;
+  incidentService: IncidentService;
+  lastBlockService: LastBlockService;
+}
 
-export async function createTestApp(): Promise<{
-  app: INestApplication;
-  moduleFixture: TestingModule;
-}> {
-  // Create the test module
-  const moduleFixture = await Test.createTestingModule({
-    imports: [
-      TypeOrmModule.forRootAsync({
-        useFactory: () => SQLITE_TEST_CONFIG,
-      }),
-      AppModule,
-    ],
-  })
-    .overrideProvider(ConfigService)
-    .useValue({
-      getMonitoringConfigSources: jest.fn().mockReturnValue([]),
-      getDatabaseConfig: jest.fn().mockReturnValue(SQLITE_TEST_CONFIG),
-      getNotificationConfig: jest.fn().mockReturnValue({
-        matrix: {
-          url: 'http://mock-matrix-server/api/notify',
-        },
-      }),
-      getLoggingLevel: jest.fn().mockReturnValue('info'),
-      getEnvironment: jest.fn().mockReturnValue('test'),
-    })
-    .overrideProvider(HttpService)
-    .useValue({
-      post: jest.fn().mockImplementation(() => {
-        return of({
-          status: 200,
-          statusText: 'OK',
-          data: { success: true },
-        });
-      }),
-    })
-    .compile();
+export async function createTestApp(): Promise<TestContext> {
+  // Start a real PostgreSQL container
+  const container = await new PostgreSqlContainer('postgres:16-alpine')
+    .withDatabase('test_incidents')
+    .withUsername('test')
+    .withPassword('test')
+    .start();
 
-  const app = moduleFixture.createNestApplication();
-
-  // Apply global pipes
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }),
-  );
-
-  // Override Express JSON serializer to handle BigInt (same as in main.ts)
-  app.use((req, res, next) => {
-    res.json = function (body) {
-      const jsonBody = JSONbig.stringify(body);
-      res.setHeader('Content-Type', 'application/json');
-      return res.send(jsonBody);
-    };
-
-    next();
+  // Connect using node-postgres
+  const pool = new pg.Pool({
+    connectionString: container.getConnectionUri(),
   });
 
-  await app.init();
+  const db = drizzle(pool, { schema }) as unknown as Database;
 
-  return { app, moduleFixture };
+  // Apply Drizzle migrations (uses the existing drizzle/ migration files)
+  const migrationsFolder = path.join(__dirname, '..', '..', 'drizzle');
+  await migrate(db, { migrationsFolder });
+
+  // Wire services
+  const config = createMockConfigService();
+  const lastBlockService = new LastBlockService(db);
+
+  // Mock the notification sending (we don't want real HTTP calls in tests)
+  const notificationService = new NotificationService(db, config, silentLogger);
+  (notificationService as any).send = jest.fn().mockResolvedValue(true);
+
+  const incidentService = new IncidentService(db, notificationService, lastBlockService, silentLogger);
+
+  // Build Fastify app
+  const app = Fastify({ logger: false });
+
+  app.setErrorHandler((error: Error & { validation?: unknown; statusCode?: number }, _request, reply) => {
+    if (error instanceof HttpError) {
+      reply.status(error.status).send({ statusCode: error.status, message: error.message });
+    } else if (error.validation) {
+      reply.status(400).send({ statusCode: 400, message: error.message });
+    } else {
+      reply.status(500).send({ statusCode: 500, message: 'Internal Server Error' });
+    }
+  });
+
+  await app.register(incidentRoutes(incidentService));
+  await app.register(lastBlockRoutes(lastBlockService));
+
+  await app.ready();
+
+  return { app, db, pool, container, incidentService, lastBlockService };
+}
+
+export async function clearTables(ctx: TestContext): Promise<void> {
+  // Clear in correct order due to foreign key constraints
+  await ctx.db.delete(notifications);
+  await ctx.db.delete(incidents);
+  await ctx.db.delete(lastBlocks);
+}
+
+export async function destroyTestApp(ctx: TestContext): Promise<void> {
+  if (!ctx) return;
+  await ctx.app?.close();
+  await ctx.pool?.end();
+  await ctx.container?.stop();
 }

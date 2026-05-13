@@ -3,18 +3,13 @@ module.exports = {
   rootDir: ".",
   testRegex: ".*\\.test\\.ts$",
   transform: {
-    "^.+\\.ts$": ["@swc/jest", {
+    "^.+\\.(t|j)s$": ["@swc/jest", {
       jsc: {
         parser: {
           syntax: "typescript",
-          decorators: true,
           tsx: false
         },
-        target: "es2021",
-        transform: {
-          legacyDecorator: true,
-          decoratorMetadata: true
-        }
+        target: "es2021"
       }
     }]
   },
@@ -23,6 +18,7 @@ module.exports = {
   ],
   coverageDirectory: "./coverage",
   testEnvironment: "node",
+  testTimeout: 60000,
   moduleNameMapper: {},
   roots: [
     "<rootDir>/tests/integration"
@@ -35,7 +31,6 @@ module.exports = {
     "<rootDir>/dist/"
   ],
   transformIgnorePatterns: [
-    "/node_modules/",
-    "/dist/"
+    "/node_modules/(?!@w3f/polguard-)"
   ]
 }

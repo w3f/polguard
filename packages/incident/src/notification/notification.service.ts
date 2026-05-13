@@ -1,25 +1,15 @@
-import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, Not, IsNull } from 'typeorm';
-import { MessengerType, NotificationType, MESSENGER_STYLE_MAP, MessagePayload } from '@w3f/polguard-common';
-import { Incident } from '../database/incident.entity';
-import { Notification } from '../database/notification.entity';
+import { eq, and, lt, isNotNull, or } from 'drizzle-orm';
+import { AppLogger, MessengerType, NotificationType, MESSENGER_STYLE_MAP, MessagePayload } from '@w3f/polguard-common';
+import type { Database } from '../database/db';
+import { incidents, notifications } from '../database/schema';
 import { MessageRenderer } from './message-renderer';
 import { ConfigService } from '../config/config.service';
-import { firstValueFrom } from 'rxjs';
 
-@Injectable()
 export class NotificationService {
-  private readonly logger = new Logger(NotificationService.name);
-
   constructor(
-    private readonly httpService: HttpService,
-    @InjectRepository(Incident)
-    private incidentRepository: Repository<Incident>,
-    @InjectRepository(Notification)
-    private notificationRepository: Repository<Notification>,
+    private readonly db: Database,
     private readonly configService: ConfigService,
+    private readonly logger: AppLogger,
   ) {}
 
   parseIncidentMessage(message: string): { title: string; details: string[] } {
@@ -32,10 +22,9 @@ export class NotificationService {
 
   /**
    * Create notifications for an incident.
-   * @param message - Optional message to use instead of incident.message
    */
   async createNotifications(
-    incident: Incident,
+    incident: { id: string; needsAck: boolean; isResolved: boolean },
     channels: { channelId: string; messengerType: MessengerType; repeatFiringMs?: number }[],
     type: NotificationType,
     message: string,
@@ -50,16 +39,15 @@ export class NotificationService {
       isResolved: incident.isResolved,
     };
 
-    const notifications = channels.map(channel => {
+    const notificationRows = channels.map(channel => {
       const styleType = MESSENGER_STYLE_MAP[channel.messengerType];
-
       const styledMessage = MessageRenderer.format(styleType, {
         ...basePayload,
         kind: type,
       });
 
       return {
-        incident,
+        incidentId: incident.id,
         channelId: channel.channelId,
         messengerType: channel.messengerType,
         repeatFiringMs: channel.repeatFiringMs,
@@ -68,81 +56,86 @@ export class NotificationService {
       };
     });
 
-    const savedNotifications = await this.notificationRepository.save(notifications);
+    const savedNotifications = await this.db.insert(notifications).values(notificationRows).returning();
 
     // Send notifications immediately
-    await Promise.all(savedNotifications.map(notification => this.deliverNotification(notification)));
+    await Promise.all(savedNotifications.map(n => this.deliverNotification(n)));
   }
 
   /**
-   * Create resolution notifications for an incident
+   * Create resolution notifications for an incident.
    */
-  async createResolutionNotifications(incident: Incident): Promise<void> {
+  async createResolutionNotifications(incident: {
+    id: string;
+    needsAck: boolean;
+    isResolved: boolean;
+    resolutionMessage: string | null;
+  }): Promise<void> {
     // Find all channels that received alert notifications for this incident
-    const alertNotifications = await this.notificationRepository.find({
-      where: {
-        incident: { id: incident.id },
-        type: NotificationType.Alert,
-      },
-    });
+    const alertNotifications = await this.db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.incidentId, incident.id), eq(notifications.type, NotificationType.Alert)));
 
     const channels = alertNotifications.map(alert => ({
       channelId: alert.channelId,
-      messengerType: alert.messengerType,
-      repeatFiringMs: alert.repeatFiringMs,
+      messengerType: alert.messengerType as MessengerType,
+      repeatFiringMs: alert.repeatFiringMs ?? undefined,
     }));
 
-    await this.createNotifications(incident, channels, NotificationType.Resolution, incident.resolutionMessage);
+    await this.createNotifications(incident, channels, NotificationType.Resolution, incident.resolutionMessage ?? '');
   }
 
   /**
-   * Deliver a notification by sending it and updating its status
+   * Deliver a notification by sending it and updating its status.
    */
-  private async deliverNotification(notification: Notification): Promise<void> {
-    const isDelivered = await this.send(notification.channelId, notification.messengerType, notification.message);
+  private async deliverNotification(notification: typeof notifications.$inferSelect): Promise<void> {
+    const isDelivered = await this.send(
+      notification.channelId,
+      notification.messengerType as MessengerType,
+      notification.message,
+    );
 
-    notification.lastSentAt = new Date();
-    notification.isDelivered = isDelivered;
-    await this.notificationRepository.save(notification);
+    await this.db
+      .update(notifications)
+      .set({ lastSentAt: new Date(), isDelivered, updatedAt: new Date() })
+      .where(eq(notifications.id, notification.id));
 
     if (isDelivered) {
-      this.logger.log(
-        `Successfully delivered notification ${notification.id} for incident ${notification.incident.id}`,
+      this.logger.info(
+        `Successfully delivered notification ${notification.id} for incident ${notification.incidentId}`,
       );
     } else {
-      this.logger.error(`Failed to deliver notification ${notification.id} for incident ${notification.incident.id}`);
+      this.logger.error(`Failed to deliver notification ${notification.id} for incident ${notification.incidentId}`);
     }
   }
 
   /**
-   * Send a message to the external messenger service
-   * @returns boolean indicating whether the message was sent successfully
+   * Send a message to the external messenger service.
    */
   private async send(channelId: string, messengerType: MessengerType, message: string): Promise<boolean> {
     const notificationConfig = this.configService.getNotificationConfig();
 
     try {
       switch (messengerType) {
-        case MessengerType.Matrix:
+        case MessengerType.Matrix: {
           const matrixUrl = notificationConfig.matrix.url;
-          const response = await firstValueFrom(
-            this.httpService.post(matrixUrl, {
-              channelId: channelId,
-              message: message,
-            }),
-          );
-          if (response.status >= 200 && response.status < 300) {
+          const response = await fetch(matrixUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channelId, message }),
+          });
+          if (response.ok) {
             return true;
           } else {
             this.logger.error(`Failed to send notification: Received status code ${response.status}`);
             return false;
           }
-
-        case MessengerType.Slack:
-          throw new NotImplementedException('Slack messenger is not implemented yet');
+        }
 
         default:
-          throw new NotImplementedException(`Messenger type ${messengerType} is not implemented`);
+          this.logger.error(`Messenger type ${messengerType} is not implemented`);
+          return false;
       }
     } catch (error) {
       this.logger.error(`Failed to send notification to ${messengerType} channel ${channelId}`, error);
@@ -151,36 +144,34 @@ export class NotificationService {
   }
 
   /**
-   * Retry failed notifications and handle repeating notifications
+   * Retry failed notifications and handle repeating notifications.
    */
   async retryNotifications(): Promise<void> {
     const now = new Date();
-    const pendingNotifications = await this.notificationRepository.find({
-      where: [
-        // Never delivered successfully
-        { isDelivered: false },
+    const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
 
-        // Firing unresolved incidents which need to be repeated based on interval
-        {
-          isDelivered: true,
-          lastSentAt: LessThan(
-            new Date(now.getTime() - 60 * 1000), // At least 1 minute ago (safety buffer)
+    const rows = await this.db
+      .select({ notification: notifications })
+      .from(notifications)
+      .leftJoin(incidents, eq(notifications.incidentId, incidents.id))
+      .where(
+        or(
+          // Never delivered successfully
+          eq(notifications.isDelivered, false),
+          // Delivered but need repeating: unresolved incidents with repeat interval
+          and(
+            eq(notifications.isDelivered, true),
+            lt(notifications.lastSentAt, oneMinuteAgo),
+            isNotNull(notifications.repeatFiringMs),
+            eq(incidents.isResolved, false),
           ),
-          repeatFiringMs: Not(IsNull()),
-          // Only repeat for unresolved incidents
-          incident: {
-            isResolved: false,
-          },
-        },
-      ],
-      relations: ['incident'],
-    });
+        ),
+      );
 
-    for (const notification of pendingNotifications) {
+    for (const { notification } of rows) {
       // For repeating notifications, check if the full interval has passed
-      if (notification.isDelivered && notification.lastSentAt) {
+      if (notification.isDelivered && notification.lastSentAt && notification.repeatFiringMs) {
         const nextSendTime = new Date(notification.lastSentAt.getTime() + notification.repeatFiringMs);
-
         if (nextSendTime > now) {
           continue;
         }
