@@ -1,5 +1,6 @@
 {
   "name": "polguard",
+  "type": "module",
   "packageManager": "yarn@4.11.0",
   "private": true,
   "repository": {
@@ -16,7 +17,10 @@
     "clean:root": "yarn dlx rimraf ./node_modules",
     "test": "yarn workspaces foreach -W run test",
     "test:integration": "yarn workspaces foreach -W run test:integration",
-    "lint": "yarn workspaces foreach -W run lint",
+    "lint": "eslint 'packages/*/src/**/*.ts' 'packages/*/tests/**/*.ts'",
+    "lint:fix": "eslint 'packages/*/src/**/*.ts' 'packages/*/tests/**/*.ts' --fix",
+    "format": "prettier --write 'packages/*/src/**/*.ts' 'packages/*/tests/**/*.ts'",
+    "format:check": "prettier --check 'packages/*/src/**/*.ts' 'packages/*/tests/**/*.ts'",
     "start:chain:dev": "yarn workspace @w3f/polguard-chain start:dev",
     "start:chain": "yarn workspace @w3f/polguard-chain start",
     "start:matrix:dev": "yarn workspace @w3f/polguard-matrix start:dev",
@@ -26,5 +30,12 @@
   },
   "engines": {
     "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "prettier": "^3",
+    "typescript-eslint": "^8"
   }
 }

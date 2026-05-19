@@ -58,7 +58,7 @@ export class MessageRenderer {
     escape?: (s: string) => string,
   ): string {
     const safe = escape ? escape(text) : text;
-    const linkRegex = /\[((?:[^\[\]]|\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\])*)\]\(([^)]+)\)/g;
+    const linkRegex = /\[((?:[^[\]]|\[(?:[^[\]]|\[(?:[^[\]]|\[[^[\]]*\])*\])*\])*)\]\(([^)]+)\)/g;
     return safe.replace(linkRegex, (_, title, url) => link(url, title));
   }
 }

@@ -39,6 +39,10 @@ export const buildOtelSdk = (
 ): NodeSDK => {
   const hostname = os.hostname();
 
+  if (enableTraces) {
+    console.debug(`Trace exporter requested for ${serviceName} but not yet implemented — ignoring`);
+  }
+
   let metricReader;
   if (enableMetrics) {
     try {

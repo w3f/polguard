@@ -33,7 +33,7 @@ const decimalStringSchema = Joi.string().pattern(decimalStringPattern).messages(
 
 const channelsSchema = Joi.array()
   // Pattern supports only Matrix rooms at the moment.
-  .items(Joi.string().pattern(/^![A-Za-z0-9\._\-]+:[A-Za-z0-9\.\-]+$/))
+  .items(Joi.string().pattern(/^![A-Za-z0-9._-]+:[A-Za-z0-9.-]+$/))
   .min(1)
   .messages({
     'array.min': 'At least one channel is required',
