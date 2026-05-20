@@ -27,8 +27,6 @@ The Matrix service delivers incident notifications to Matrix rooms and provides 
 - `!unresolved` - List unresolved incidents (ongoing onchain conditions) for this room
 - `!resolve <id|ALL>` - Resolve incident manually by ID or resolve all unresolved incidents
 - `!manual` - Show comprehensive user manual with workflow processes
-- `!check <chain> <account>` - Check if account is monitored on specific chain for this channel
-- `!monitor <chain> <account>` - Alias for check command
 - `!help` - Show help message with all available commands
 
 **Debug Commands:**

@@ -96,7 +96,6 @@ export class ConfigService {
       logging: Joi.object({
         level: Joi.string().valid('error', 'warn', 'info', 'debug', 'trace').default('debug'),
       }).default({ level: 'debug' }),
-      monitoringConfigsDir: Joi.string().default('../config/examples'),
     });
 
     const { error, value } = schema.validate(config, { abortEarly: false });
@@ -126,10 +125,6 @@ export class ConfigService {
   getMatrixStorageDir(): string {
     return this.config.matrix.storageDir;
   }
-
-  getMonitoringConfigsDir(): string {
-    return this.config.monitoringConfigsDir;
-  }
 }
 
 interface AppConfig {
@@ -145,5 +140,4 @@ interface AppConfig {
   logging: {
     level: string;
   };
-  monitoringConfigsDir: string;
 }

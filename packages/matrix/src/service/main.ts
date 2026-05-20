@@ -44,7 +44,6 @@ async function bootstrap() {
     matrixConfig,
     rootLogger.child({ context: 'MatrixBot' }),
     incidentService,
-    config.getMonitoringConfigsDir(),
     config.getMatrixStorageDir(),
   );
   await bot.init();

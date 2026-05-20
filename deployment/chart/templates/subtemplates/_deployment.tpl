@@ -88,9 +88,11 @@ spec:
             - name: data
               mountPath: /app/packages/matrix/data
             {{- end }}
+            {{- if eq .kind "chain" }}
             - name: monitoring-configs
               mountPath: /app/monitoring-configs
               readOnly: true
+            {{- end }}
 
       volumes:
         - name: config
@@ -101,7 +103,9 @@ spec:
           persistentVolumeClaim:
             claimName: {{ include "common.names.fullname" .global }}-{{ .name }}
         {{- end }}
+        {{- if eq .kind "chain" }}
         - name: monitoring-configs
           persistentVolumeClaim:
             claimName: {{ include "common.names.fullname" .global }}-monitoring-configs
+        {{- end }}
 {{- end }}

@@ -1,25 +1,21 @@
 import { MatrixClient } from './matrix-client';
 import { MatrixConfig, IncidentServiceInterface, QueryFilters } from './interfaces';
-import { AppLogger, MessengerType, NotificationType, Chain, HttpError } from '@w3f/polguard-common';
+import { AppLogger, MessengerType, NotificationType, HttpError } from '@w3f/polguard-common';
 import { MatrixEvent } from 'matrix-js-sdk';
-import { getGroupsForChannel } from '@w3f/polguard-config';
 
 export class MatrixBot extends MatrixClient {
   // This property handles "Message too long (112988 bytes)"
   private static readonly MAX_INCIDENTS_PER_LIST = 50;
   private incidentService: IncidentServiceInterface;
-  private readonly monitoringConfigsDir: string;
 
   constructor(
     config: MatrixConfig,
     logger: AppLogger,
     incidentService: IncidentServiceInterface,
-    monitoringConfigsDir: string,
     dataPath?: string,
   ) {
     super(config, logger, dataPath);
     this.incidentService = incidentService;
-    this.monitoringConfigsDir = monitoringConfigsDir;
   }
 
   async init() {
@@ -99,20 +95,6 @@ export class MatrixBot extends MatrixClient {
       case 'query':
         this.handleQueryCommand(roomId, parts.slice(1));
         break;
-      case 'check':
-        if (parts.length < 3) {
-          this.sendMessage(roomId, 'Usage: !check &ltchain&gt &ltaccount&gt');
-        } else {
-          this.handleCheckCommand(roomId, parts[1], parts[2]);
-        }
-        break;
-      case 'monitor':
-        if (parts.length < 3) {
-          this.sendMessage(roomId, 'Usage: !monitor &ltchain&gt &ltaccount&gt');
-        } else {
-          this.handleCheckCommand(roomId, parts[1], parts[2]);
-        }
-        break;
       default:
         this.sendErrorMessage(roomId, `Unknown command: ${cmd}`);
     }
@@ -136,10 +118,6 @@ export class MatrixBot extends MatrixClient {
   <li>
     <strong>!unresolved</strong><br/>
     <em>List unresolved incidents (ongoing onchain conditions)</em>
-  </li>
-  <li>
-    <strong>!check &lt;chain&gt; &lt;account&gt;</strong><br/>
-    <em>Check if an account is being monitored on a specific chain</em>
   </li>
   <li>
     <strong>!manual</strong><br/>
@@ -455,54 +433,6 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
 
   private async sendErrorMessage(roomId: string, message: string): Promise<void> {
     await this.sendMessage(roomId, `<p><strong>Error:</strong> ${message}</p>`);
-  }
-
-  private async handleCheckCommand(roomId: string, chainArg: string, account: string) {
-    try {
-      const validChains = Object.values(Chain);
-      const chain = validChains.find(c => c.toLowerCase() === chainArg.toLowerCase());
-
-      if (!chain) {
-        await this.sendErrorMessage(roomId, `Invalid chain: ${chainArg}. Valid chains: ${validChains.join(', ')}`);
-        return;
-      }
-
-      // TODO: Ideally matrix should not have access to the monitoring configs. This command may be removed soon.
-      const groups = await getGroupsForChannel(
-        chain,
-        MessengerType.Matrix,
-        roomId,
-        this.monitoringConfigsDir,
-        this.logger,
-      );
-
-      const matchingGroups: string[] = [];
-      for (const group of groups) {
-        const hasAccount = group.accounts.some(acc => acc.ss58 === account);
-        if (hasAccount) {
-          matchingGroups.push(group.id);
-        }
-      }
-
-      if (matchingGroups.length === 0) {
-        await this.sendMessage(
-          roomId,
-          `<p>Account <strong>${account}</strong> is not being monitored on chain ${chain} for this channel</p>`,
-        );
-      } else {
-        const groupsList = matchingGroups.join(', ');
-        await this.sendMessage(
-          roomId,
-          `<p>Account <strong>${account}</strong> is being monitored on chain ${chain}, as a member of the following monitoring groups: ${groupsList}</p>`,
-        );
-      }
-    } catch (error) {
-      this.logger.error(`Error checking account monitoring status: ${error.message}`);
-      await this.sendErrorMessage(
-        roomId,
-        'An error occurred while checking account monitoring status. Please try again later',
-      );
-    }
   }
 
   private formatIncidentList(incidents: any[]): string {

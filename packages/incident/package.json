@@ -25,10 +25,8 @@
   "dependencies": {
     "@fastify/swagger": "^9",
     "@fastify/swagger-ui": "^5",
-    "@fastify/type-provider-typebox": "^5",
     "@sinclair/typebox": "^0.34",
     "@w3f/polguard-common": "workspace:*",
-    "@w3f/polguard-config": "workspace:*",
     "cron": "^3.3.1",
     "drizzle-orm": "^0.44",
     "fastify": "^5.3.3",

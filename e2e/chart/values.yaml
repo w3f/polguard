@@ -79,7 +79,6 @@ polguard:
           level: "warn"
       incidents:
         url: http://e2e-incident:80/incidents
-      monitoringConfigsDir: "/app/monitoring-configs/current"
       environment: "test"
       logging:
         level: "debug"

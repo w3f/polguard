@@ -40,7 +40,3 @@ server:
 # Values: error, warn, info, debug, trace
 logging:
   level: debug
-
-# Monitoring configuration (optional)
-# Used for !check command to verify monitored accounts
-monitoringConfigsDir: ../config/examples    # default: ../config/examples
