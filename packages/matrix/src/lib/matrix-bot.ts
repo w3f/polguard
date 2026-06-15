@@ -1,6 +1,6 @@
 import { MatrixClient } from './matrix-client';
 import { MatrixConfig, IncidentServiceInterface, QueryFilters } from './interfaces';
-import { AppLogger, MessengerType, NotificationType, HttpError } from '@w3f/polguard-common';
+import { AppLogger, MessengerType, NotificationType, HttpError, Chain, buildExplorerUrl } from '@w3f/polguard-common';
 import { MatrixEvent } from 'matrix-js-sdk';
 
 export class MatrixBot extends MatrixClient {
@@ -439,8 +439,8 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
     const limitedIncidents = incidents.slice(0, MatrixBot.MAX_INCIDENTS_PER_LIST);
     const items = limitedIncidents
       .map(inc => {
-        const subscanLink = this.generateSubscanLink(inc);
-        return `<li><strong>${inc.id}</strong> &ndash; <i>${this.formatDate(inc.createdAt)}</i> &ndash; ${inc.handlerType} &ndash; ${subscanLink}</li>`;
+        const explorerLink = this.generateExplorerLink(inc);
+        return `<li><strong>${inc.id}</strong> &ndash; <i>${this.formatDate(inc.createdAt)}</i> &ndash; ${inc.handlerType} &ndash; ${explorerLink}</li>`;
       })
       .join('');
 
@@ -451,20 +451,20 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
     return html + '<br>';
   }
 
-  private generateSubscanLink(incident: any): string {
-    const chain = incident.chain.toLowerCase();
+  private generateExplorerLink(incident: any): string {
+    const chain = incident.chain as Chain;
     const block = incident.blockNumber;
 
-    if (incident.eventIdx) {
-      const url = `https://${chain}.subscan.io/event/${block}-${incident.eventIdx}`;
-      return `<a href="${url}">Subscan (event)</a>`;
-    } else if (incident.extrinsicIdx) {
-      const url = `https://${chain}.subscan.io/extrinsic/${block}-${incident.extrinsicIdx}`;
-      return `<a href="${url}">Subscan (extrinsic)</a>`;
+    let url: string;
+    if (incident.eventIdx !== undefined) {
+      url = buildExplorerUrl(chain, 'event', `${block}-${incident.eventIdx}`);
+    } else if (incident.extrinsicIdx !== undefined) {
+      url = buildExplorerUrl(chain, 'extrinsic', `${block}-${incident.extrinsicIdx}`);
     } else {
-      const url = `https://${chain}.subscan.io/block/${block}`;
-      return `<a href="${url}">Subscan (block)</a>`;
+      url = buildExplorerUrl(chain, 'block', block);
     }
+
+    return `<a href="${url}">Explorer</a>`;
   }
 
   private formatDate(date: Date): string {

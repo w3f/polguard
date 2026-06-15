@@ -26,6 +26,7 @@ export type {
   ResolveIncidentByChainDto,
   TokenBalances,
   MonitorHandlerType,
+  ExplorerResource,
 } from '@w3f/polguard-common';
 
 export {
@@ -39,6 +40,7 @@ export {
   AssetsHandlerType,
   MonitorType,
   getChainProperties,
+  buildExplorerUrl,
   TELEMETRY_PREFIX,
   getLogLevels,
   buildOtelSdk,

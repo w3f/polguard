@@ -23,7 +23,9 @@
     "build": "tsup",
     "build:watch": "tsup --watch",
     "clean": "yarn dlx rimraf ./dist ./node_modules",
-    "test": "echo \"No tests required for common package\" && exit 0"
+    "test": "jest --config jest.config.cjs",
+    "test:watch": "jest --config jest.config.cjs --watch",
+    "test:cov": "jest --config jest.config.cjs --coverage"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
@@ -35,6 +37,10 @@
     "@opentelemetry/semantic-conventions": "^1.40.0"
   },
   "devDependencies": {
+    "@swc/core": "^1.11.18",
+    "@swc/jest": "^0.2.29",
+    "@types/jest": "^29.5.2",
+    "jest": "^29.5.0",
     "tsup": "^8",
     "typescript": "~5.7.3"
   }

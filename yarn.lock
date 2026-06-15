@@ -4748,6 +4748,10 @@ __metadata:
     "@opentelemetry/resources": "npm:^2.0.1"
     "@opentelemetry/sdk-node": "npm:^0.203.0"
     "@opentelemetry/semantic-conventions": "npm:^1.40.0"
+    "@swc/core": "npm:^1.11.18"
+    "@swc/jest": "npm:^0.2.29"
+    "@types/jest": "npm:^29.5.2"
+    jest: "npm:^29.5.0"
     tsup: "npm:^8"
     typescript: "npm:~5.7.3"
   languageName: unknown

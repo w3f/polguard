@@ -1,6 +1,4 @@
-import { ChainProperties, Chain, CHAIN_TOKENS, BlockContext } from '../types';
-
-const STATESCAN_CHAINS: Chain[] = [Chain.Frequency];
+import { ChainProperties, CHAIN_TOKENS, BlockContext, buildExplorerUrl, ExplorerResource } from '../types';
 
 /**
  * Custom balance formatter that converts raw blockchain amounts to human-readable format.
@@ -39,17 +37,8 @@ function formatBalance(amount: number | string | bigint, decimals: number, unit:
 export class Formatter {
   constructor(private chainProps: ChainProperties) {}
 
-  private useStatescan(): boolean {
-    return STATESCAN_CHAINS.includes(this.chainProps.chain);
-  }
-
-  private buildExplorerURL(resource: string, identifier: string | number): string {
-    const isStatescan = this.useStatescan();
-    const domain = isStatescan ? 'statescan.io' : 'subscan.io';
-    const pathPrefix = isStatescan ? '/#/' : '/';
-    const resourceName = isStatescan ? `${resource}s` : resource;
-
-    return `https://${this.chainProps.specName}.${domain}${pathPrefix}${resourceName}/${identifier}`;
+  private buildExplorerURL(resource: ExplorerResource, identifier: string | number): string {
+    return buildExplorerUrl(this.chainProps.chain, resource, identifier);
   }
 
   private getEventURL(blockNumber: number, eventIdx: number): string {
