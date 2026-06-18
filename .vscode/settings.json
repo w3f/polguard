@@ -1,8 +1,0 @@
-{
-  "jest.runMode": {
-    "type": "on-demand",
-    "runAllTestsOnStartup": false
-  },
-  "jest.enable": true,
-  "jest.jestCommandLine": "yarn test:all"
-}

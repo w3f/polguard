@@ -2,12 +2,12 @@ import { IncidentService } from '../src/service/incident.service';
 import { MessengerType, HttpError } from '@w3f/polguard-common';
 
 const mockLogger = {
-  fatal: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-  info: jest.fn(),
-  debug: jest.fn(),
-  trace: jest.fn(),
+  fatal: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+  info: vi.fn(),
+  debug: vi.fn(),
+  trace: vi.fn(),
 };
 
 describe('IncidentService', () => {
@@ -16,7 +16,7 @@ describe('IncidentService', () => {
 
   beforeEach(() => {
     service = new IncidentService(baseUrl, mockLogger);
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('getNonResolved', () => {
@@ -26,7 +26,7 @@ describe('IncidentService', () => {
         { id: 2, resolved: false },
       ];
 
-      global.fetch = jest.fn().mockResolvedValue({
+      global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockIncidents),
       });
@@ -36,7 +36,7 @@ describe('IncidentService', () => {
       expect(result).toEqual(mockIncidents);
       expect(fetch).toHaveBeenCalledWith(expect.stringContaining(baseUrl));
       // Verify query params
-      const calledUrl = (fetch as jest.Mock).mock.calls[0][0] as string;
+      const calledUrl = (fetch as any).mock.calls[0][0] as string;
       const params = new URLSearchParams(calledUrl.split('?')[1]);
       expect(params.get('channelId')).toBe('test-room');
       expect(params.get('messengerType')).toBe(MessengerType.Matrix);
@@ -44,7 +44,7 @@ describe('IncidentService', () => {
     });
 
     it('should throw an error when the API call fails', async () => {
-      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
       await expect(service.getNonResolved('test-room')).rejects.toThrow('Network error');
     });
@@ -57,7 +57,7 @@ describe('IncidentService', () => {
         { id: 2, ackRequired: true, acked: false },
       ];
 
-      global.fetch = jest.fn().mockResolvedValue({
+      global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockIncidents),
       });
@@ -65,7 +65,7 @@ describe('IncidentService', () => {
       const result = await service.getNonAcked('test-room');
 
       expect(result).toEqual(mockIncidents);
-      const calledUrl = (fetch as jest.Mock).mock.calls[0][0] as string;
+      const calledUrl = (fetch as any).mock.calls[0][0] as string;
       const params = new URLSearchParams(calledUrl.split('?')[1]);
       expect(params.get('channelId')).toBe('test-room');
       expect(params.get('messengerType')).toBe(MessengerType.Matrix);
@@ -78,7 +78,7 @@ describe('IncidentService', () => {
     it('should return an incident by ID', async () => {
       const mockIncident = { id: 'test-incident-1', message: 'Test incident' };
 
-      global.fetch = jest.fn().mockResolvedValue({
+      global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockIncident),
       });
@@ -90,7 +90,7 @@ describe('IncidentService', () => {
     });
 
     it('should throw HttpError on HTTP error', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
+      global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 404,
       });
@@ -107,7 +107,7 @@ describe('IncidentService', () => {
 
   describe('acknowledgeIncident', () => {
     it('should acknowledge an incident', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
+      global.fetch = vi.fn().mockResolvedValue({
         ok: true,
       });
 

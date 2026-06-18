@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 
 describe('POST /notifications', () => {
   it('should send notification to matrix', async () => {
-    const mockBot = { sendMessage: jest.fn().mockResolvedValue(undefined) };
+    const mockBot = { sendMessage: vi.fn().mockResolvedValue(undefined) };
 
     const app = Fastify();
     app.post('/notifications', async request => {

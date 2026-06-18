@@ -65,7 +65,7 @@ export async function createTestApp(): Promise<TestContext> {
 
   // Mock the notification sending (we don't want real HTTP calls in tests)
   const notificationService = new NotificationService(db, config, silentLogger);
-  (notificationService as any).send = jest.fn().mockResolvedValue(true);
+  (notificationService as any).send = vi.fn().mockResolvedValue(true);
 
   const incidentService = new IncidentService(db, notificationService, lastBlockService, silentLogger);
 
