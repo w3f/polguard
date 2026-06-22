@@ -1,6 +1,7 @@
 import { Chain, MonitorType, MonitorHandlerType } from './constants';
 import { NotificationSettings } from './incident';
 import { AccountId } from './account';
+import { Operations } from './operations';
 
 export interface BaseMonitorSettings {
   annotations?: Record<string, any>;
@@ -75,8 +76,10 @@ export interface MonitoringGroup {
   accounts: ConfigAccountSettings[];
   notifications: NotificationSettings;
   annotations?: Record<string, any>;
+  operations?: Operations;
 }
 
 export interface ConfigAccountSettings extends AccountId {
+  operations?: Operations;
   [monitorType: string]: any;
 }

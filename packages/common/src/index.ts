@@ -4,6 +4,7 @@ export * from './http';
 export * from './incident';
 export * from './notification';
 export * from './account';
+export * from './operations';
 export * from './monitor';
 export * from './logging';
 export * from './telemetry';

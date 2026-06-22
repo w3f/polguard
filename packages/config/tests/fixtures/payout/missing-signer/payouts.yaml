@@ -1,0 +1,16 @@
+defaults:
+  chains: [AssetHubKusama]
+
+groups:
+  - id: missing-signer-group-xx
+    operations:
+      payout:
+        notifications:
+          messengerType: Matrix
+          channels: ["!payouts:web3.foundation"]
+    accountSet: validators
+
+accountSets:
+  validators:
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+      name: NO-SIGNER-VALIDATOR

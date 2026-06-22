@@ -1,4 +1,4 @@
-import { Chain, MonitorType, NotificationSettings } from '@w3f/polguard-common';
+import { Chain, MonitorType, NotificationSettings, Operations } from '@w3f/polguard-common';
 
 export interface RawMonitoringGroup {
   id: string;
@@ -7,6 +7,7 @@ export interface RawMonitoringGroup {
   notifications?: NotificationSettings;
   accounts: RawAccountSettings[];
   annotations?: Record<string, any>;
+  operations?: Operations;
 }
 
 export interface RawMonitorSettings {
@@ -19,5 +20,6 @@ export interface RawAccountSettings {
   name?: string;
   address: string;
   annotations?: Record<string, any>;
+  operations?: Operations;
   [key: string]: any;
 }

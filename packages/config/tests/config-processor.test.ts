@@ -142,10 +142,10 @@ describe('ConfigProcessor', () => {
       }).toThrow(/Invalid decimal format/);
     });
 
-    it('should throw when required defaults are missing', () => {
+    it('should throw when a monitored group is missing notifications', () => {
       expect(() => {
         ConfigProcessor.processConfigs([path.join(FIXTURES_DIR, 'invalid/invalid-defaults.yaml')]);
-      }).toThrow(/must have (monitors|notifications) defined/);
+      }).toThrow(/must have notifications defined/);
     });
 
     describe('Invalid Configurations', () => {

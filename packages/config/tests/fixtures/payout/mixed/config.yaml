@@ -1,0 +1,49 @@
+defaults:
+  notifications:
+    messengerType: Matrix
+    channels: ["!alerts:web3.foundation"]
+  monitors:
+    - name: Staking
+      commission: 10
+      handlers: [CommissionChangedEvent, OffenceReportedEvent]
+
+groups:
+  # Per-group payout enrollment with its own payout room.
+  - id: companies-validators-group
+    chains: [AssetHubKusama]
+    operations:
+      payout:
+        signer: companies-ksm
+        notifications:
+          messengerType: Matrix
+          channels: ["!payouts-ksm:web3.foundation"]
+    accountSet: companies
+
+  # Payout group without a payout room: notifications fall back to the monitoring channel.
+  - id: fallback-payout-group-x
+    chains: [AssetHubKusama]
+    operations:
+      payout:
+        signer: fallback-ksm
+    accountSet: fallback
+
+  # No operations: monitored, never claimed.
+  - id: partners-monitoring-only-grp
+    chains: [AssetHubKusama]
+    accountSet: partners
+
+accountSets:
+  companies:
+    - address: "GaK38GT7LmgCpRSTRdDC2LeiMaV9TJmx8NmQcb9L3cJ3fyX"
+      name: VALIDATOR-DEFAULT
+    - address: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
+      name: VALIDATOR-SPECIAL
+      operations:
+        payout:
+          signer: special-ksm
+  fallback:
+    - address: "16cdSZUq7kxq6mtoVMWmYXo62FnNGT9jzWjVRUg87CpL9pxP"
+      name: VALIDATOR-FALLBACK
+  partners:
+    - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+      name: PARTNER-A

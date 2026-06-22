@@ -1,0 +1,17 @@
+defaults:
+  chains: [AssetHubKusama, AssetHubPolkadot]
+  operations:
+    payout:
+      signer: shared-signer
+      notifications:
+        messengerType: Matrix
+        channels: ["!payouts:web3.foundation"]
+
+groups:
+  - id: standalone-payout-group
+    accountSet: validators
+
+accountSets:
+  validators:
+    - address: "16cdSZUq7kxq6mtoVMWmYXo62FnNGT9jzWjVRUg87CpL9pxP"
+      name: VALIDATOR-A

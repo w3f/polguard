@@ -1,4 +1,4 @@
-# Missing required fields in both defaults and group
+# Monitors defined but notifications missing in both defaults and group
 accountSets:
   missing-required-accounts:
     - address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
@@ -6,6 +6,11 @@ accountSets:
 defaults:
   chains:
     - Polkadot
+  monitors:
+    - name: Staking
+      commission: 10
+      handlers:
+        - CommissionChangedEvent
 
 groups:
   - id: missing-required-fields-group

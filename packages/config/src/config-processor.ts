@@ -92,6 +92,7 @@ export class ConfigProcessor {
           chains: group.chains || config.defaults?.chains,
           monitors: group.monitors || config.defaults?.monitors,
           notifications: group.notifications || config.defaults?.notifications,
+          operations: group.operations || config.defaults?.operations,
         };
       }),
     );
@@ -107,6 +108,7 @@ export class ConfigProcessor {
         accounts: group.accounts.map(account => this.transformAccount(account, chain, transformedMonitors)),
         notifications: group.notifications,
         annotations: group.annotations,
+        operations: group.operations,
       }));
     });
   }
@@ -131,6 +133,7 @@ export class ConfigProcessor {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { address, name, ...accountSettings } = account;
     const mergedSettings = AccountSettingsBuilder.buildSettings(monitors, accountSettings, chainProps);
-    return { ...accountId, ...mergedSettings };
+    // AccountSettingsBuilder keeps only monitor-claimed keys, so operations must be carried explicitly.
+    return { ...accountId, ...mergedSettings, ...(account.operations && { operations: account.operations }) };
   }
 }

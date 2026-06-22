@@ -21,8 +21,8 @@ const CHECKSUM_FILE = '.checksum';
 // ============================================================================
 // PUBLIC API
 export async function getMonitoringGroups(chain: Chain, dir: string, logger: AppLogger): Promise<MonitoringGroup[]> {
-  const snapshot = await loadSnapshot(chain, dir, logger);
-  return snapshot.byChain.get(chain) || [];
+  const snapshot = await loadSnapshot(dir, logger);
+  return (snapshot.byChain.get(chain) || []).filter(group => group.monitors.length > 0);
 }
 
 export async function getGroupsForChannel(
@@ -32,7 +32,7 @@ export async function getGroupsForChannel(
   dir: string,
   logger: AppLogger,
 ): Promise<MonitoringGroup[]> {
-  const snapshot = await loadSnapshot(chain, dir, logger);
+  const snapshot = await loadSnapshot(dir, logger);
   const key = `${messengerType}:${channelId}`;
   const chainGroups = snapshot.channelIndex.get(key) || [];
 
@@ -43,7 +43,7 @@ export async function getGroupsForChannel(
 
 // ============================================================================
 // SNAPSHOT LOADING & CACHING
-async function loadSnapshot(chain: Chain, dir: string, logger: AppLogger): Promise<MonitoringSnapshot> {
+export async function loadSnapshot(dir: string, logger: AppLogger): Promise<MonitoringSnapshot> {
   // Coalesce concurrent loads
   if (loadPromise) {
     return loadPromise;
@@ -64,7 +64,7 @@ async function loadSnapshot(chain: Chain, dir: string, logger: AppLogger): Promi
     }
   }
 
-  loadPromise = doLoad(chain, dir, logger);
+  loadPromise = doLoad(dir, logger);
   try {
     const snapshot = await loadPromise;
     cachedSnapshot = snapshot;
@@ -74,7 +74,7 @@ async function loadSnapshot(chain: Chain, dir: string, logger: AppLogger): Promi
   }
 }
 
-async function doLoad(chain: Chain, dir: string, logger: AppLogger): Promise<MonitoringSnapshot> {
+async function doLoad(dir: string, logger: AppLogger): Promise<MonitoringSnapshot> {
   try {
     // Validate directory is provided
     if (!dir) {
@@ -101,9 +101,9 @@ async function doLoad(chain: Chain, dir: string, logger: AppLogger): Promise<Mon
     const snapshot = buildSnapshot(groups, fingerprint);
 
     if (!cachedSnapshot) {
-      logInitialLoad(snapshot, chain, logger);
+      logConfigLoad(snapshot, logger);
     } else if (cachedSnapshot.fingerprint !== fingerprint) {
-      logConfigUpdate(cachedSnapshot, snapshot, chain, logger);
+      logConfigUpdate(cachedSnapshot, snapshot, logger);
     }
 
     return snapshot;
@@ -176,6 +176,11 @@ function buildSnapshot(groups: MonitoringGroup[], fingerprint: string): Monitori
     }
     byChain.get(group.chain)!.push(group);
 
+    // Payout-only groups have no notifications, so they are not channel-indexed.
+    if (!group.notifications) {
+      continue;
+    }
+
     // Index by channel (without chain in key)
     for (const channelId of group.notifications.channels) {
       const key = `${group.notifications.messengerType}:${channelId}`;
@@ -196,39 +201,34 @@ function buildSnapshot(groups: MonitoringGroup[], fingerprint: string): Monitori
 
 // ============================================================================
 // LOGGING
-function logConfigLoad(snapshot: MonitoringSnapshot, chain: Chain, logger: AppLogger): void {
-  const groups = snapshot.byChain.get(chain);
-  if (!groups || groups.length === 0) return;
+function logConfigLoad(snapshot: MonitoringSnapshot, logger: AppLogger): void {
+  const monitoringGroups = snapshot.groups.filter(g => g.monitors.length > 0);
+  if (monitoringGroups.length === 0) return;
 
-  const totalAccounts = new Set(groups.flatMap(g => g.accounts.map(a => a.ss58))).size;
+  const totalAccounts = new Set(monitoringGroups.flatMap(g => g.accounts.map(a => a.ss58))).size;
 
   logger.info(
-    `Loaded monitoring config for ${chain}: fingerprint=${snapshot.fingerprint.substring(0, 8)}, groups=${groups.length}, accounts=${totalAccounts}`,
+    `Loaded monitoring config: fingerprint=${snapshot.fingerprint.substring(0, 8)}, groups=${monitoringGroups.length}, accounts=${totalAccounts}`,
   );
 
-  for (const group of groups) {
+  for (const group of monitoringGroups) {
     const monitors = group.monitors.map(m => m.name).join(', ');
     const handlers = group.monitors.flatMap(m => (m.settings as any)?.handlers || []).join(', ');
 
     logger.debug(
-      `Group details: ${group.id}: ${group.accounts.length} account(s), monitors=[${monitors}], handlers=[${handlers}]`,
+      `Group details: ${group.id} (${group.chain}): ${group.accounts.length} account(s), monitors=[${monitors}], handlers=[${handlers}]`,
     );
   }
-}
-
-function logInitialLoad(snapshot: MonitoringSnapshot, chain: Chain, logger: AppLogger): void {
-  logConfigLoad(snapshot, chain, logger);
 }
 
 function logConfigUpdate(
   oldSnapshot: MonitoringSnapshot,
   newSnapshot: MonitoringSnapshot,
-  chain: Chain,
   logger: AppLogger,
 ): void {
   logger.info(
-    `Config updated for ${chain}: fingerprint changed ${oldSnapshot.fingerprint.substring(0, 8)} -> ${newSnapshot.fingerprint.substring(0, 8)}`,
+    `Config updated: fingerprint changed ${oldSnapshot.fingerprint.substring(0, 8)} -> ${newSnapshot.fingerprint.substring(0, 8)}`,
   );
 
-  logConfigLoad(newSnapshot, chain, logger);
+  logConfigLoad(newSnapshot, logger);
 }

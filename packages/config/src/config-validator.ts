@@ -14,7 +14,6 @@
 import Joi from 'joi';
 import {
   Chain,
-  MessengerType,
   MonitorType,
   StakingHandlerType,
   IdentityHandlerType,
@@ -25,28 +24,12 @@ import {
   IDENTITY_FIELDS,
   CHAIN_TOKENS,
 } from '@w3f/polguard-common';
+import { notificationSchema } from './notification-schema';
+import { operationsSchema } from './payout/payout-schema';
 
 const decimalStringPattern = /^-?\d*\.?\d*$/;
 const decimalStringSchema = Joi.string().pattern(decimalStringPattern).messages({
   'string.pattern.base': 'Invalid decimal format. Expected format: "123.456"',
-});
-
-const channelsSchema = Joi.array()
-  // Pattern supports only Matrix rooms at the moment.
-  .items(Joi.string().pattern(/^![A-Za-z0-9._-]+:[A-Za-z0-9.-]+$/))
-  .min(1)
-  .messages({
-    'array.min': 'At least one channel is required',
-    'string.pattern.base': 'Invalid channel format',
-  });
-
-const notificationSchema = Joi.object({
-  messengerType: Joi.string().valid(...Object.values(MessengerType)),
-  channels: channelsSchema.required(),
-  escalationChannels: channelsSchema.optional(),
-  escalationTimeoutMs: Joi.number().integer().min(1),
-  needsAck: Joi.boolean(),
-  repeatFiringMs: Joi.number().integer().min(1),
 });
 
 /**
@@ -209,6 +192,7 @@ const accountSchema = Joi.object({
   name: Joi.string().optional(),
   // Annotations field bypasses validation
   annotations: Joi.object().optional(),
+  operations: operationsSchema.optional(),
 })
   .concat(stakingMonitorSchema)
   .concat(identityMonitorSchema)
@@ -223,6 +207,7 @@ const defaultsSchema = Joi.object({
     .optional(),
   monitors: Joi.array().items(monitorSchema).optional(),
   notifications: notificationSchema.optional(),
+  operations: operationsSchema.optional(),
 });
 
 const groupSchema = Joi.object({
@@ -245,6 +230,7 @@ const groupSchema = Joi.object({
   }),
   // Annotations field bypasses validation
   annotations: Joi.object().optional(),
+  operations: operationsSchema.optional(),
 });
 
 const configSchema = Joi.object({
@@ -299,20 +285,21 @@ export function validateConfig(config: any): void {
 }
 
 function validateGroup(group: any, defaults: any): void {
-  const requiredProps = [
-    { name: 'chains', check: (val: any) => val && val.length > 0 },
-    { name: 'monitors', check: (val: any) => val && val.length > 0 },
-    { name: 'notifications', check: (val: any) => val !== undefined },
-  ];
+  const chains = group.chains || defaults.chains;
+  if (!chains || chains.length === 0) {
+    throw new Error(`Group "${group.id}" must have chains defined either in the group or in defaults`);
+  }
 
-  requiredProps.forEach(prop => {
-    const value = group[prop.name] || defaults[prop.name];
-    if (!prop.check(value)) {
-      throw new Error(`Group "${group.id}" must have ${prop.name} defined either in the group or in defaults`);
+  // Monitoring rules apply only to groups that monitor; a payout-only group needs neither
+  // monitors nor notifications.
+  const monitors = group.monitors || defaults.monitors;
+  if (monitors && monitors.length > 0) {
+    const notifications = group.notifications || defaults.notifications;
+    if (notifications === undefined) {
+      throw new Error(`Group "${group.id}" must have notifications defined either in the group or in defaults`);
     }
-  });
-
-  validateMonitors(group, defaults);
+    validateMonitors(group, defaults);
+  }
 }
 
 function validateMonitors(group: any, defaults: any): void {
