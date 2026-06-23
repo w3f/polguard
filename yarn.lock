@@ -4224,6 +4224,25 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@w3f/polguard-payouts@workspace:packages/payouts":
+  version: 0.0.0-use.local
+  resolution: "@w3f/polguard-payouts@workspace:packages/payouts"
+  dependencies:
+    "@types/js-yaml": "npm:^4.0.9"
+    "@types/node": "npm:^20.3.1"
+    "@vitest/coverage-v8": "npm:^4.1.9"
+    "@w3f/polguard-common": "workspace:*"
+    "@w3f/polguard-config": "workspace:*"
+    joi: "npm:^17.13.3"
+    js-yaml: "npm:^4.1.0"
+    pino: "npm:^9.6.0"
+    pino-pretty: "npm:^13.0.0"
+    tsup: "npm:^8"
+    typescript: "npm:~5.7.3"
+    vitest: "npm:^4.1.9"
+  languageName: unknown
+  linkType: soft
+
 "abbrev@npm:^4.0.0":
   version: 4.0.0
   resolution: "abbrev@npm:4.0.0"

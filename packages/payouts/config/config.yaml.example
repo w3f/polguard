@@ -1,0 +1,31 @@
+# Environment (optional, default: development)
+# Values: development, production, test, staging
+environment: development
+
+# Logging (optional, default: info)
+# Values: error, warn, info, debug, trace
+logging:
+  level: info
+
+# Shared monitoring/payouts configs directory (the same files the chain service reads)
+payoutConfigsDir: ../config/examples
+
+# Connectivity per chain. A chain is claimable only if listed here.
+chains:
+  AssetHubKusama:
+    rpcUrl: wss://kusama-asset-hub-rpc.polkadot.io
+  AssetHubPolkadot:
+    rpcUrl: wss://polkadot-asset-hub-rpc.polkadot.io
+
+# Signer name -> sr25519 mnemonic
+signers:
+  cohort-x: "bottom drive obey lake curtain smoke basket hold race lonely fit walk"
+
+claim:
+  batchSize: 2          # payout calls per Utility.batch_all
+  gracePeriodEras: 16   # optional; omit -> claim up to activeEra-1
+
+# Notifications (optional). Omit -> stdout only.
+notifications:
+  matrix:
+    url: http://matrix-service/notifications

@@ -26,7 +26,9 @@
     "start:matrix:dev": "yarn workspace @w3f/polguard-matrix start:dev",
     "start:matrix": "yarn workspace @w3f/polguard-matrix start",
     "start:incident:dev": "yarn workspace @w3f/polguard-incident start:dev",
-    "start:incident": "yarn workspace @w3f/polguard-incident start"
+    "start:incident": "yarn workspace @w3f/polguard-incident start",
+    "start:payouts:dev": "yarn workspace @w3f/polguard-payouts start:dev",
+    "start:payouts": "yarn workspace @w3f/polguard-payouts start"
   },
   "engines": {
     "node": ">=22.0.0"
