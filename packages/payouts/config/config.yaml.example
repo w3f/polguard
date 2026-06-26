@@ -7,7 +7,7 @@ environment: development
 logging:
   level: info
 
-# Shared monitoring/payouts configs directory (the same files the chain service reads)
+# Shared payouts configs directory (the same files the chain service reads)
 payoutConfigsDir: ../config/examples
 
 # Connectivity per chain. A chain is claimable only if listed here.
@@ -19,11 +19,10 @@ chains:
 
 # Signer name -> sr25519 mnemonic
 signers:
-  cohort-x: "bottom drive obey lake curtain smoke basket hold race lonely fit walk"
+  signer-x: "bottom drive obey ..."
 
 claim:
-  batchSize: 2          # payout calls per Utility.batch_all
-  gracePeriodEras: 16   # optional; omit -> claim up to activeEra-1
+  gracePeriodEras: 16   # claim eras older than activeEra-1-gracePeriodEras (default: 16)
 
 # Notifications (optional). Omit -> stdout only.
 notifications:

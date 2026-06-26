@@ -1,10 +1,15 @@
-import { Chain, PayoutAccount } from '@w3f/polguard-common';
-import type { ChainConnection } from './config.service';
+import { Chain, type AppLogger, type PayoutAccount } from '@w3f/polguard-common';
+import type { ChainConnection } from './config';
 
 export interface Cohort {
-  chain: Chain;
   signer: string;
   accounts: PayoutAccount[];
+}
+
+export interface ChainPlan {
+  chain: Chain;
+  rpcUrl: string;
+  cohorts: Cohort[];
 }
 
 export interface PlanInputs {
@@ -23,21 +28,27 @@ function groupBy<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
   return map;
 }
 
-export function buildPlan(accounts: PayoutAccount[], { chains, signers }: PlanInputs): Cohort[] {
-  const cohorts: Cohort[] = [];
+export function buildPlan(accounts: PayoutAccount[], { chains, signers }: PlanInputs, logger: AppLogger): ChainPlan[] {
+  const plan: ChainPlan[] = [];
 
   for (const [chain, chainAccounts] of groupBy(accounts, a => a.chain)) {
-    if (!chains[chain]) {
-      throw new Error(`Chain ${chain} has ${chainAccounts.length} payout account(s) but no rpcUrl configured`);
+    const conn = chains[chain];
+    if (!conn) {
+      logger.warn(`Chain ${chain} has ${chainAccounts.length} payout account(s) but it's not configured; skipping`);
+      continue;
     }
 
+    const cohorts: Cohort[] = [];
     for (const [signer, signerAccounts] of groupBy(chainAccounts, a => a.signer)) {
       if (!signers[signer]) {
-        throw new Error(`Signer "${signer}" is referenced on ${chain} but has no secret configured`);
+        logger.warn(`Signer "${signer}" on ${chain} has ${signerAccounts.length} account(s) but it's not configured; skipping `);
+        continue;
       }
-      cohorts.push({ chain, signer, accounts: signerAccounts });
+      cohorts.push({ signer, accounts: signerAccounts });
     }
+
+    if (cohorts.length > 0) plan.push({ chain, rpcUrl: conn.rpcUrl, cohorts });
   }
 
-  return cohorts;
+  return plan;
 }

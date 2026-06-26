@@ -1290,6 +1290,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@noble/curves@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "@noble/curves@npm:2.2.0"
+  dependencies:
+    "@noble/hashes": "npm:2.2.0"
+  checksum: 10c0/e545d3bb03ebedd5c04c2cab81342d64f5ce8a4c1019cfe207f3dc69174bc0ad7cfb50effc31bfa8616b8340900f445dd053da7454190428857c4eedd3b51413
+  languageName: node
+  linkType: hard
+
+"@noble/curves@npm:~2.0.0":
+  version: 2.0.1
+  resolution: "@noble/curves@npm:2.0.1"
+  dependencies:
+    "@noble/hashes": "npm:2.0.1"
+  checksum: 10c0/e0b329eb9229e862d3b7203e0444bd479e9ecf2d5990181908dad416aab69106717ca696fc7b12ad0eb19d710f58c454646b27ce517a4298ab9abc89a9bdb6ee
+  languageName: node
+  linkType: hard
+
 "@noble/hashes@npm:1.8.0, @noble/hashes@npm:^1.3.3":
   version: 1.8.0
   resolution: "@noble/hashes@npm:1.8.0"
@@ -1297,7 +1315,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@noble/hashes@npm:^2.2.0":
+"@noble/hashes@npm:2.0.1, @noble/hashes@npm:~2.0.0":
+  version: 2.0.1
+  resolution: "@noble/hashes@npm:2.0.1"
+  checksum: 10c0/e81769ce21c3b1c80141a3b99bd001f17edea09879aa936692ae39525477386d696101cd573928a304806efb2b9fa751e1dd83241c67d0c84d30091e85c79bdb
+  languageName: node
+  linkType: hard
+
+"@noble/hashes@npm:2.2.0, @noble/hashes@npm:^2.2.0":
   version: 2.2.0
   resolution: "@noble/hashes@npm:2.2.0"
   checksum: 10c0/cad8630c504d6b9271984f685cd0af9101b40988fc2dfbe17ccdf068a9941f95cc5c9957d89e9ca4b7ca94c15cb35f93510c5d53a09fbcc83ee503b93d0a1034
@@ -2475,6 +2500,14 @@ __metadata:
   languageName: node
   linkType: soft
 
+"@polkadot-api/descriptors@portal:.papi/descriptors::locator=%40w3f%2Fpolguard-payouts%40workspace%3Apackages%2Fpayouts":
+  version: 0.0.0-use.local
+  resolution: "@polkadot-api/descriptors@portal:.papi/descriptors::locator=%40w3f%2Fpolguard-payouts%40workspace%3Apackages%2Fpayouts"
+  peerDependencies:
+    polkadot-api: ">=2.0.0"
+  languageName: node
+  linkType: soft
+
 "@polkadot-api/ink-contracts@npm:0.6.1":
   version: 0.6.1
   resolution: "@polkadot-api/ink-contracts@npm:0.6.1"
@@ -2710,6 +2743,28 @@ __metadata:
   peerDependencies:
     rxjs: ">=7.8.0"
   checksum: 10c0/cb636fb29c0fe612bfec9c076c99a9fefed495f2c8ab825f46fc7c91afb0c120bf7eb4b35cee7a3eea0864d46a6743a93b1e969b19808cbb1f3716aae6608a75
+  languageName: node
+  linkType: hard
+
+"@polkadot-labs/hdkd-helpers@npm:^0.0.30, @polkadot-labs/hdkd-helpers@npm:~0.0.29":
+  version: 0.0.30
+  resolution: "@polkadot-labs/hdkd-helpers@npm:0.0.30"
+  dependencies:
+    "@noble/curves": "npm:^2.2.0"
+    "@noble/hashes": "npm:^2.2.0"
+    "@scure/base": "npm:^2.2.0"
+    "@scure/sr25519": "npm:^1.0.0"
+    scale-ts: "npm:^1.6.1"
+  checksum: 10c0/f70f69a16073cead3996a3be4b9e5fd851311aae1e4b918270827b63e917912496274d0e5f8f41b0211e05e3d5f386c1593e234d369d4643c0855e3b03cbb4b9
+  languageName: node
+  linkType: hard
+
+"@polkadot-labs/hdkd@npm:^0.0.28":
+  version: 0.0.28
+  resolution: "@polkadot-labs/hdkd@npm:0.0.28"
+  dependencies:
+    "@polkadot-labs/hdkd-helpers": "npm:~0.0.29"
+  checksum: 10c0/7e40b86842ffdb71c8c73bc330f556e77171bdc3341b2bf7df7e92d00909b0015a584f9280d0b8b34c8c21efaa6a9b0f140c9d75ea6f3d3ff31638434ae72aa2
   languageName: node
   linkType: hard
 
@@ -3474,6 +3529,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@scure/base@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "@scure/base@npm:2.2.0"
+  checksum: 10c0/30158ccf5da86b0f06928f1cfe24a29fbea22824adf6f8895222910cade1ad4fe7593958aacf563287e6b4c55746f47395178e7a4763b059c22d6ee8e6f76387
+  languageName: node
+  linkType: hard
+
+"@scure/sr25519@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@scure/sr25519@npm:1.0.0"
+  dependencies:
+    "@noble/curves": "npm:~2.0.0"
+    "@noble/hashes": "npm:~2.0.0"
+  checksum: 10c0/2292b5197aa0566b6ce21e4db6fec185291b0899c0c7f561ee794bfd0bd84c6ecb54c990e139a187244d61159714dba59e80d07fb1d26e124d63d10ce6aabfe1
+  languageName: node
+  linkType: hard
+
 "@sec-ant/readable-stream@npm:^0.4.1":
   version: 0.4.1
   resolution: "@sec-ant/readable-stream@npm:0.4.1"
@@ -4228,6 +4300,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@w3f/polguard-payouts@workspace:packages/payouts"
   dependencies:
+    "@polkadot-api/descriptors": "portal:.papi/descriptors"
+    "@polkadot-labs/hdkd": "npm:^0.0.28"
+    "@polkadot-labs/hdkd-helpers": "npm:^0.0.30"
     "@types/js-yaml": "npm:^4.0.9"
     "@types/node": "npm:^20.3.1"
     "@vitest/coverage-v8": "npm:^4.1.9"
@@ -4237,7 +4312,10 @@ __metadata:
     js-yaml: "npm:^4.1.0"
     pino: "npm:^9.6.0"
     pino-pretty: "npm:^13.0.0"
+    polkadot-api: "npm:^2.0.1"
+    rxjs: "npm:^7.8.0"
     tsup: "npm:^8"
+    tsx: "npm:^4.21.0"
     typescript: "npm:~5.7.3"
     vitest: "npm:^4.1.9"
   languageName: unknown
