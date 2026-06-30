@@ -3,7 +3,8 @@ import { getPayoutAccounts } from '@w3f/polguard-config';
 import { loadConfig } from './config';
 import { buildPlan } from './planner';
 import { createChainClient, getPayoutApi, signerFromMnemonic } from './papi';
-import { claimCohort } from './claim-engine';
+import { claimGroup } from './claim-engine';
+import { reportClaims } from './reporter';
 
 function createRootLogger(level: string): pino.Logger {
   return pino({
@@ -26,19 +27,21 @@ async function run(): Promise<number> {
   const plan = buildPlan(accounts, { chains: config.chains, signers: config.signers }, logger);
 
   let anyFailure = false;
-  for (const { chain, rpcUrl, cohorts } of plan) {
+  for (const { chain, rpcUrl, groups } of plan) {
     const client = createChainClient(rpcUrl);
     try {
       const api = getPayoutApi(client, chain);
-      for (const cohort of cohorts) {
-        const cohortLogger = logger.child({ chain, signer: cohort.signer });
+      for (const group of groups) {
+        const groupLogger = logger.child({ chain, signer: group.signer });
         try {
-          const signer = signerFromMnemonic(config.signers[cohort.signer]);
-          const submitted = await claimCohort(api, cohort.accounts, signer, config.claim, cohortLogger);
-          cohortLogger.info({ submitted: submitted.length }, 'Cohort complete');
+          const signer = signerFromMnemonic(config.signers[group.signer]);
+          const submitted = await claimGroup(api, group.accounts, signer, config.claim, groupLogger);
+          groupLogger.info({ submitted: submitted.length }, 'Signer group complete');
+          await reportClaims(config.notifications, chain, group.accounts, { ok: true, claims: submitted }, groupLogger);
         } catch (error) {
           anyFailure = true;
-          cohortLogger.error({ err: error }, 'Cohort failed');
+          groupLogger.error({ err: error }, 'Signer group failed');
+          await reportClaims(config.notifications, chain, group.accounts, { ok: false, error }, groupLogger);
         }
       }
     } finally {
@@ -46,8 +49,8 @@ async function run(): Promise<number> {
     }
   }
 
-  const cohortCount = plan.reduce((n, p) => n + p.cohorts.length, 0);
-  logger.info(`Run complete: ${cohortCount} cohort(s), failures: ${anyFailure}`);
+  const groupCount = plan.reduce((n, p) => n + p.groups.length, 0);
+  logger.info(`Run complete: ${groupCount} signer group(s), failures: ${anyFailure}`);
   return anyFailure ? 1 : 0;
 }
 

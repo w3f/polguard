@@ -1,8 +1,7 @@
 import { eq, and, lt, isNotNull, or } from 'drizzle-orm';
-import { AppLogger, MessengerType, NotificationType, MESSENGER_STYLE_MAP, MessagePayload } from '@w3f/polguard-common';
+import { AppLogger, MessengerType, NotificationType, MESSENGER_STYLE_MAP, MessagePayload, MessageRenderer, sendNotification } from '@w3f/polguard-common';
 import type { Database } from '../database/db';
 import { incidents, notifications } from '../database/schema';
-import { MessageRenderer } from './message-renderer';
 import { ConfigService } from '../config/config.service';
 
 export class NotificationService {
@@ -114,33 +113,8 @@ export class NotificationService {
    * Send a message to the external messenger service.
    */
   private async send(channelId: string, messengerType: MessengerType, message: string): Promise<boolean> {
-    const notificationConfig = this.configService.getNotificationConfig();
-
-    try {
-      switch (messengerType) {
-        case MessengerType.Matrix: {
-          const matrixUrl = notificationConfig.matrix.url;
-          const response = await fetch(matrixUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ channelId, message }),
-          });
-          if (response.ok) {
-            return true;
-          } else {
-            this.logger.error(`Failed to send notification: Received status code ${response.status}`);
-            return false;
-          }
-        }
-
-        default:
-          this.logger.error(`Messenger type ${messengerType} is not implemented`);
-          return false;
-      }
-    } catch (error) {
-      this.logger.error(`Failed to send notification to ${messengerType} channel ${channelId}`, error);
-      return false;
-    }
+    const url = this.configService.getNotificationConfig().matrix.url;
+    return sendNotification(messengerType, url, channelId, message, this.logger);
   }
 
   /**

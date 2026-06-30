@@ -26,3 +26,9 @@ export interface MessagePayload {
   needsAck?: boolean;
   isResolved?: boolean;
 }
+
+export interface MessageContent {
+  icon: string;
+  title: string;
+  details?: string[];
+}

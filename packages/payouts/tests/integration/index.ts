@@ -9,7 +9,7 @@ import { Chain } from '@w3f/polguard-common';
 import { loadConfig } from '../../src/config';
 import { buildPlan } from '../../src/planner';
 import { createChainClient, getPayoutApi, signerFromMnemonic, type PayoutApi } from '../../src/papi';
-import { claimCohort, claimableEraRange, unclaimedPages } from '../../src/claim-engine';
+import { claimGroup, claimableEraRange, unclaimedPages } from '../../src/claim-engine';
 
 const RPC_URL = 'wss://rpc-asset-hub-polkadot.luckyfriday.io';
 const CHAIN = Chain.AssetHubPolkadot;
@@ -100,19 +100,19 @@ async function main(): Promise<void> {
 
     const plan = buildPlan(accounts, { chains: config.chains, signers: config.signers }, logger);
     assert.strictEqual(plan.length, 1, 'expected one chain in the plan');
-    assert.strictEqual(plan[0].cohorts.length, 1, 'expected one cohort');
+    assert.strictEqual(plan[0].groups.length, 1, 'expected one signer group');
 
-    const { chain, rpcUrl, cohorts } = plan[0];
+    const { chain, rpcUrl, groups } = plan[0];
     const client = createChainClient(rpcUrl);
     try {
       const api = getPayoutApi(client, chain);
-      const signer = signerFromMnemonic(config.signers[cohorts[0].signer]);
+      const signer = signerFromMnemonic(config.signers[groups[0].signer]);
 
-      const first = await claimCohort(api, cohorts[0].accounts, signer, config.claim, logger);
+      const first = await claimGroup(api, groups[0].accounts, signer, config.claim, logger);
       assert(first.length > 0, 'expected at least one claim to be submitted');
       logger.info({ submitted: first }, 'First run submitted claims');
 
-      const second = await claimCohort(api, cohorts[0].accounts, signer, config.claim, logger);
+      const second = await claimGroup(api, groups[0].accounts, signer, config.claim, logger);
       assert.strictEqual(second.length, 0, 'second run should be idempotent (nothing to claim)');
       logger.info('Idempotent re-run found nothing to claim');
     } finally {

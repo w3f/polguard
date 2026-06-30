@@ -51,9 +51,7 @@ const schema = Joi.object({
     gracePeriodEras: Joi.number().integer().min(0).default(16),
   }).default({ gracePeriodEras: 16 }),
   notifications: Joi.object({
-    matrix: Joi.object({
-      url: Joi.string().uri().required(),
-    }).optional(),
+    matrix: Joi.object({ url: Joi.string().uri().required() }).optional(),
   }).default({}),
 });
 

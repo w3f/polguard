@@ -3,6 +3,8 @@ export * from './explorer';
 export * from './http';
 export * from './incident';
 export * from './notification';
+export * from './message-renderer';
+export * from './notifier';
 export * from './account';
 export * from './operations';
 export * from './monitor';

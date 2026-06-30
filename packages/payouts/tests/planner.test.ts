@@ -14,32 +14,32 @@ const chains = {
   [Chain.AssetHubKusama]: { rpcUrl: 'wss://ksm' },
   [Chain.AssetHubPolkadot]: { rpcUrl: 'wss://dot' },
 };
-const signers = { 'cohort-x': 'seed-x', 'cohort-y': 'seed-y' };
+const signers = { 'signer-x': 'seed-x', 'signer-y': 'seed-y' };
 
 describe('buildPlan', () => {
-  it('groups accounts into per-chain plans, then cohorts by signer', () => {
+  it('groups accounts into per-chain plans, then signer groups by signer', () => {
     const accounts = [
-      account(Chain.AssetHubKusama, 'cohort-x', 'A'),
-      account(Chain.AssetHubKusama, 'cohort-x', 'B'),
-      account(Chain.AssetHubKusama, 'cohort-y', 'C'),
-      account(Chain.AssetHubPolkadot, 'cohort-x', 'D'),
+      account(Chain.AssetHubKusama, 'signer-x', 'A'),
+      account(Chain.AssetHubKusama, 'signer-x', 'B'),
+      account(Chain.AssetHubKusama, 'signer-y', 'C'),
+      account(Chain.AssetHubPolkadot, 'signer-x', 'D'),
     ];
 
     const plan = buildPlan(accounts, { chains, signers }, fakeLogger());
 
     expect(plan).toHaveLength(2);
     expect(plan[0]).toMatchObject({ chain: Chain.AssetHubKusama, rpcUrl: 'wss://ksm' });
-    expect(plan[0].cohorts).toHaveLength(2);
-    expect(plan[0].cohorts[0]).toMatchObject({ signer: 'cohort-x' });
-    expect(plan[0].cohorts[0].accounts.map(a => a.ss58)).toEqual(['A', 'B']);
-    expect(plan[0].cohorts[1]).toMatchObject({ signer: 'cohort-y' });
+    expect(plan[0].groups).toHaveLength(2);
+    expect(plan[0].groups[0]).toMatchObject({ signer: 'signer-x' });
+    expect(plan[0].groups[0].accounts.map(a => a.ss58)).toEqual(['A', 'B']);
+    expect(plan[0].groups[1]).toMatchObject({ signer: 'signer-y' });
     expect(plan[1]).toMatchObject({ chain: Chain.AssetHubPolkadot, rpcUrl: 'wss://dot' });
-    expect(plan[1].cohorts).toHaveLength(1);
+    expect(plan[1].groups).toHaveLength(1);
   });
 
   it('skips (with a warning) a chain that has payout accounts but no rpcUrl', () => {
     const logger = fakeLogger();
-    const plan = buildPlan([account(Chain.Polkadot, 'cohort-x', 'A')], { chains, signers }, logger);
+    const plan = buildPlan([account(Chain.Polkadot, 'signer-x', 'A')], { chains, signers }, logger);
     expect(plan).toEqual([]);
     expect(logger.warn).toHaveBeenCalledWith(expect.stringMatching(/Polkadot.*no rpcUrl/));
   });

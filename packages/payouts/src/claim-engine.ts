@@ -31,7 +31,7 @@ export function unclaimedPages(pageCount: number, claimedPages: number[]): numbe
   return pages;
 }
 
-export async function claimCohort(
+export async function claimGroup(
   api: PayoutApi,
   accounts: PayoutAccount[],
   signer: PolkadotSigner,

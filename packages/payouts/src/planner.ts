@@ -1,7 +1,7 @@
 import { Chain, type AppLogger, type PayoutAccount } from '@w3f/polguard-common';
 import type { ChainConnection } from './config';
 
-export interface Cohort {
+export interface SignerGroup {
   signer: string;
   accounts: PayoutAccount[];
 }
@@ -9,7 +9,7 @@ export interface Cohort {
 export interface ChainPlan {
   chain: Chain;
   rpcUrl: string;
-  cohorts: Cohort[];
+  groups: SignerGroup[];
 }
 
 export interface PlanInputs {
@@ -34,20 +34,20 @@ export function buildPlan(accounts: PayoutAccount[], { chains, signers }: PlanIn
   for (const [chain, chainAccounts] of groupBy(accounts, a => a.chain)) {
     const conn = chains[chain];
     if (!conn) {
-      logger.warn(`Chain ${chain} has ${chainAccounts.length} payout account(s) but it's not configured; skipping`);
+      logger.warn(`Chain ${chain} has ${chainAccounts.length} payout account(s) but no rpcUrl configured; skipping`);
       continue;
     }
 
-    const cohorts: Cohort[] = [];
+    const groups: SignerGroup[] = [];
     for (const [signer, signerAccounts] of groupBy(chainAccounts, a => a.signer)) {
       if (!signers[signer]) {
-        logger.warn(`Signer "${signer}" on ${chain} has ${signerAccounts.length} account(s) but it's not configured; skipping `);
+        logger.warn(`Signer "${signer}" on ${chain} has ${signerAccounts.length} account(s) but no secret configured; skipping`);
         continue;
       }
-      cohorts.push({ signer, accounts: signerAccounts });
+      groups.push({ signer, accounts: signerAccounts });
     }
 
-    if (cohorts.length > 0) plan.push({ chain, rpcUrl: conn.rpcUrl, cohorts });
+    if (groups.length > 0) plan.push({ chain, rpcUrl: conn.rpcUrl, groups });
   }
 
   return plan;
