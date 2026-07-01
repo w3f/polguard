@@ -1,0 +1,11 @@
+{{- if .Values.payouts.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" . }}-payouts
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: payouts
+data:
+  config.yaml: |-
+    {{- toYaml .Values.payouts.config | nindent 4 }}
+{{- end }}

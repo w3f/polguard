@@ -2,7 +2,9 @@
 
 # PolGuard
 
-PolGuard provides real-time monitoring of Polkadot, Kusama, and parachains, tracking blockchain activities such as balance changes, governance events, identity updates, and more. Built with a modular architecture, it can run as a lightweight standalone service or as a complete platform with incident management and notifications.
+PolGuard is a **modular Polkadot monitoring & operations platform** for Polkadot, Kusama, and parachains. It tracks blockchain activity (balance changes, governance, identity, and more) and runs operations such as automated validator reward payouts. Monitoring and operations are peers — run either or both, from a lightweight standalone service up to a full platform with incident management and notifications.
+
+**One config, many capabilities** — monitoring rules and operations are described in the same YAML config family, a single source of truth shared across services.
 
 ## Quick Start
 
@@ -160,6 +162,7 @@ For detailed configuration options, see individual service documentation below.
 - [**Chain Service**](packages/chain/README.md) - Blockchain monitoring service
 - [**Incident Service**](packages/incident/README.md) - REST API for incident & last block management
 - [**Matrix Service**](packages/matrix/README.md) - Notifications & bot service
+- [**Payouts Service**](packages/payouts/README.md) - Optional operations component: automated validator reward claims
 
 ### Supporting Packages
 - [**Common Package**](packages/common/README.md) - Shared types, constants, utilities and telemetry

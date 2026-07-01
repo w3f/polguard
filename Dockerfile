@@ -16,6 +16,8 @@ COPY packages/incident/package.json packages/incident/
 COPY packages/chain/package.json packages/chain/
 COPY packages/chain/.papi packages/chain/.papi
 COPY packages/matrix/package.json packages/matrix/
+COPY packages/payouts/package.json packages/payouts/
+COPY packages/payouts/.papi packages/payouts/.papi
 
 # Install dependencies (uses bundled Yarn from .yarn/releases via .yarnrc.yml)
 RUN yarn install
@@ -26,6 +28,7 @@ COPY packages/config packages/config
 COPY packages/incident packages/incident
 COPY packages/chain packages/chain
 COPY packages/matrix packages/matrix
+COPY packages/payouts packages/payouts
 
 # Build all packages in dependency order (uses bundled Yarn from .yarn/releases via .yarnrc.yml)
 RUN yarn build
@@ -44,6 +47,7 @@ COPY packages/config/package.json packages/config/
 COPY packages/incident/package.json packages/incident/
 COPY packages/chain/package.json packages/chain/
 COPY packages/matrix/package.json packages/matrix/
+COPY packages/payouts/package.json packages/payouts/
 
 # Copy node_modules from builder stage
 COPY --from=builder /app/node_modules /app/node_modules
@@ -56,11 +60,14 @@ COPY --from=builder /app/packages/incident/drizzle packages/incident/drizzle
 COPY --from=builder /app/packages/chain/dist packages/chain/dist
 COPY --from=builder /app/packages/chain/.papi packages/chain/.papi
 COPY --from=builder /app/packages/matrix/dist packages/matrix/dist
+COPY --from=builder /app/packages/payouts/dist packages/payouts/dist
+# Payouts has no .papi here: it relies on chain's hoisted @polkadot-api/descriptors (a superset).
 
 # Create config directories
 RUN mkdir -p packages/incident/config \
     packages/chain/config \
-    packages/matrix/config
+    packages/matrix/config \
+    packages/payouts/config
 
 EXPOSE 3000
 EXPOSE 9464
@@ -72,3 +79,4 @@ ENTRYPOINT ["yarn"]
 # Example: docker run image_name start:incident
 # Example: docker run image_name start:chain
 # Example: docker run image_name start:matrix
+# Example: docker run image_name start:payouts

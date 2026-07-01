@@ -1,0 +1,55 @@
+{{- if .Values.payouts.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "common.names.fullname" . }}-payouts
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: payouts
+spec:
+  schedule: {{ .Values.payouts.schedule | quote }}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "common.names.name" . }}
+            app.kubernetes.io/instance: {{ .Release.Name }}
+            app.kubernetes.io/component: payouts
+          annotations:
+            checksum/config: {{ toYaml .Values.payouts.config | sha256sum }}
+        spec:
+          restartPolicy: OnFailure
+          initContainers:
+            - name: wait-for-monitoring-configs
+              image: "busybox:1.28"
+              command: ['sh', '-c', 'until [ -f /app/monitoring-configs/current/.checksum ]; do echo waiting for monitoring configs; sleep 2; done;']
+              volumeMounts:
+                - name: monitoring-configs
+                  mountPath: /app/monitoring-configs
+                  readOnly: true
+          containers:
+            - name: {{ include "common.names.fullname" . }}-payouts
+              image: {{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}
+              imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+              args: ["start:payouts"]
+              resources:
+{{ toYaml .Values.payouts.resources | indent 16 }}
+              volumeMounts:
+                - name: config
+                  mountPath: /app/packages/payouts/config
+                  readOnly: true
+                - name: monitoring-configs
+                  mountPath: /app/monitoring-configs
+                  readOnly: true
+          volumes:
+            - name: config
+              configMap:
+                name: {{ include "common.names.fullname" . }}-payouts
+            - name: monitoring-configs
+              persistentVolumeClaim:
+                claimName: {{ include "common.names.fullname" . }}-monitoring-configs
+{{- end }}

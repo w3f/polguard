@@ -46,7 +46,7 @@ export const buildOtelSdk = (
   let metricReader;
   if (enableMetrics) {
     try {
-      metricReader = new PrometheusExporter({ port: metricsPort });
+      metricReader = new PrometheusExporter({ port: metricsPort, withoutScopeInfo: true });
     } catch (error) {
       console.error(`Failed to initialize Prometheus exporter on port ${metricsPort}:`, error);
       throw error;

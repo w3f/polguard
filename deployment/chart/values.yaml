@@ -91,6 +91,13 @@ configFetcher:
       - "ReadWriteMany"  # Required for multiple pods to read
     # storageClass: ""
 
+# -------------------------------------------------- Payouts -----------------------------------------------------------
+
+# opt-in CronJob that claims validator staking rewards. Disabled by default
+payouts:
+  enabled: false
+  schedule: "0 9 * * *"  # Daily at 09:00 UTC
+
 # ----- the following variables are not part of the schema but are still supported. they come from bitnami/common ------
 
 #fullnameOverride: "monitoring-prod"

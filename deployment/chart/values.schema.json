@@ -78,6 +78,26 @@
         "persistence": { "$ref": "#/definitions/persistence" }
       },
       "required": ["persistence"]
+    },
+    "payouts": {
+      "type": "object",
+      "description": "Optional opt-in CronJob that claims validator staking rewards.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Render the payouts CronJob + ConfigMap? Default false."
+        },
+        "schedule": {
+          "type": "string",
+          "description": "Cron schedule for the payouts job"
+        },
+        "resources": { "$ref": "#/definitions/resources" },
+        "config": {
+          "type": "object",
+          "description": "Rendered verbatim into the payouts config.yaml. See packages/payouts/config/config.yaml.example for the shape."
+        }
+      },
+      "required": ["enabled"]
     }
   },
   "required": [],
