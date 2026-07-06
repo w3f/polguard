@@ -150,26 +150,19 @@ jobs:
           command: |
             echo "Now installing polguard with helm. This command will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state. If this command times out, check the status of esp. the Deployments and Pods."
             kubectl create ns e2e
+            echo "$CONFIG_REPO_DEPLOY_KEY_BASE64" | tr -d '\n' > /tmp/deploy_key
             helm upgrade --install $RELEASE ./e2e/chart \
               -n e2e --create-namespace \
               --set tests.image.repository=web3f/polguard-e2e \
               --set tests.image.tag=${CIRCLE_SHA1} \
               --set tests.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set polguard.image.tag=${CIRCLE_SHA1} \
-              --set polguard.configFetcher.defaultToken=${GITLAB_TOKEN} \
+              --set-file polguard.configFetcher.sshPrivateKeyBase64=/tmp/deploy_key \
               --set polguard.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set polguard.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --set secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
               --wait
           no_output_timeout: 10m
-
-      - run:
-          name: Manually trigger config fetcher
-          command: |
-            echo "Triggering config-fetcher CronJob to bootstrap monitoring configs..."
-            kubectl create job --from=cronjob/e2e-config-fetcher e2e-config-fetcher-initial -n e2e
-            kubectl wait --for=condition=complete --timeout=60s job/e2e-config-fetcher-initial -n e2e
-            echo "Config fetcher completed successfully"
 
       - run:
           name: Execute E2E tests

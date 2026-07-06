@@ -1,18 +1,23 @@
+{{- if .Values.configFetcher.knownHosts }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "common.names.fullname" . }}-config-fetcher
+  name: {{ include "common.names.fullname" . }}-config-fetcher-known-hosts
   labels: {{ include "common.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: config-fetcher
 data:
-  sources.json: {{ toJson .Values.configFetcher.sources | quote }}
+  known_hosts: |
+{{ .Values.configFetcher.knownHosts | indent 4 }}
+{{- end }}
+{{- if .Values.configFetcher.sparseCheckout }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "common.names.fullname" . }}-config-fetcher-scripts
+  name: {{ include "common.names.fullname" . }}-config-fetcher-sparse
   labels: {{ include "common.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: config-fetcher
 data:
-  fetch-monitoring-configs.js: |
-{{ .Files.Get "scripts/fetch-monitoring-configs.js" | indent 4 }}
+  sparse-checkout: |
+{{ .Values.configFetcher.sparseCheckout | indent 4 }}
+{{- end }}

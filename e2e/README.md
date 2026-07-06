@@ -2,16 +2,6 @@
 
 This directory contains end-to-end tests for PolGuard. These tests verify the complete flow from chain events to API incidents to Matrix notifications.
 
-## Directory Structure
-
-```
-e2e/
-├── Dockerfile            # Docker image for running e2e tests
-├── chart/                # Helm chart for deploying e2e tests in Kubernetes
-├── scripts/              # Utility scripts for running tests locally
-└── src/                  # Source code for e2e tests
-```
-
 ## Overview
 
 The e2e tests follow this scenario:
@@ -40,8 +30,8 @@ The e2e tests are configured using the `e2e/configs/e2e.yaml` file. This file co
 For CI and local testing, the following environment variables are required:
 
 ```bash
-export MATRIX_TOKEN="your-matrix-token"  # Required for Matrix authentication
-export GITLAB_TOKEN="your-gitlab-token"  # Required for Incident service
+export MATRIX_TOKEN=""  # Required for Matrix authentication
+export CONFIG_REPO_DEPLOY_KEY_BASE64=""  # Required for Config Fetcher
 ```
 
 ## Running Tests Locally

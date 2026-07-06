@@ -26,7 +26,7 @@ spec:
           initContainers:
             - name: wait-for-monitoring-configs
               image: "busybox:1.28"
-              command: ['sh', '-c', 'until [ -f /app/monitoring-configs/current/.checksum ]; do echo waiting for monitoring configs; sleep 2; done;']
+              command: ['sh', '-c', 'until [ -e /app/monitoring-configs/current ]; do echo waiting for monitoring configs; sleep 2; done;']
               volumeMounts:
                 - name: monitoring-configs
                   mountPath: /app/monitoring-configs

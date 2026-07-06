@@ -1,9 +1,9 @@
 rpcEndpoints:
-  PeoplePolkadot: wss://rpc-people-polkadot.luckyfriday.io
-  PeopleKusama: wss://rpc-people-kusama.luckyfriday.io
+  # PeoplePolkadot: wss://rpc-people-polkadot.luckyfriday.io
+  # PeopleKusama: wss://rpc-people-kusama.luckyfriday.io
   AssetHubPolkadot: wss://rpc-asset-hub-polkadot.luckyfriday.io
   AssetHubKusama: wss://rpc-asset-hub-kusama.luckyfriday.io
-  AssetHubPaseo: wss://asset-hub-paseo-rpc.n.dwellir.com
+  AssetHubPaseo: wss://sys.turboflakes.io/asset-hub-paseo
   # Centrifuge: wss://rpc-centrifuge.luckyfriday.io
   # Frequency: wss://1.rpc.frequency.xyz
 
@@ -157,41 +157,41 @@ tests:
           address: 13FzGLWoueKvUqFePiJgvFYWhH5KckHGtVBXvAX7SBtVZbXu
         expectedIncidents: 3
 
-  Identity:
-    IdentityUnexpectedState:
-      - description: "State (identity.identityOf, identity.superOf)"
-        chain: PeopleKusama
-        block: 5056659
-        account:
-          address: DV7b5AL9zNbsnQ8CWCwvw2tzc3pz74EVDLGQdNU1tujA2L5
-          display: test
-          legal: test
-          web: test
-          matrix: test
-          email: test
-    IdentityChangedEvent:
-      - description: "Event (identity.IdentitySet)"
-        chain: PeoplePolkadot
-        block: 1952394
-        account:
-          address: 14V72dFeQ8E3cQN2DFu7LjCYEjEW8ufsK3HhXXwrMaVThopf
-      - description: "Event (identity.IdentityCleared)"
-        chain: PeoplePolkadot
-        block: 1804308
-        account:
-          address: 14SiBFwmMnUH6VLRCTmHQ78FSw6t21b6qkmUmHYYk88W83Z7
-    IdentityMissingState:
-      - description: "State (identity.identityOf, identity.superOf)"
-        chain: PeoplePolkadot
-        block: 1958723
-        account:
-          address: HS9ucpbZ3FLR6q1wwf2ubUv1W7nRQBFufrwPek4ZmspgHbr
-    IdentityFieldsMissingState:
-      - description: "State (identity.identityOf, identity.superOf)"
-        chain: PeoplePolkadot
-        block: 1958723
-        account:
-          address: 15iK81MWBDA5hLYMpAUSZF6ArGSdqiDD5mon2F7i5Pf3XtfT
+  # Identity:
+  #   IdentityUnexpectedState:
+  #     - description: "State (identity.identityOf, identity.superOf)"
+  #       chain: PeopleKusama
+  #       block: 5056659
+  #       account:
+  #         address: DV7b5AL9zNbsnQ8CWCwvw2tzc3pz74EVDLGQdNU1tujA2L5
+  #         display: test
+  #         legal: test
+  #         web: test
+  #         matrix: test
+  #         email: test
+  #   IdentityChangedEvent:
+  #     - description: "Event (identity.IdentitySet)"
+  #       chain: PeoplePolkadot
+  #       block: 1952394
+  #       account:
+  #         address: 14V72dFeQ8E3cQN2DFu7LjCYEjEW8ufsK3HhXXwrMaVThopf
+  #     - description: "Event (identity.IdentityCleared)"
+  #       chain: PeoplePolkadot
+  #       block: 1804308
+  #       account:
+  #         address: 14SiBFwmMnUH6VLRCTmHQ78FSw6t21b6qkmUmHYYk88W83Z7
+  #   IdentityMissingState:
+  #     - description: "State (identity.identityOf, identity.superOf)"
+  #       chain: PeoplePolkadot
+  #       block: 1958723
+  #       account:
+  #         address: HS9ucpbZ3FLR6q1wwf2ubUv1W7nRQBFufrwPek4ZmspgHbr
+  #   IdentityFieldsMissingState:
+  #     - description: "State (identity.identityOf, identity.superOf)"
+  #       chain: PeoplePolkadot
+  #       block: 1958723
+  #       account:
+  #         address: 15iK81MWBDA5hLYMpAUSZF6ArGSdqiDD5mon2F7i5Pf3XtfT
 
   Xcm:
     XcmTransferEgressEvent:

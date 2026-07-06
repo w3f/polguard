@@ -39,14 +39,6 @@ polguard:
           level: "debug"
       secrets: {}
       containerArgs: [ "start:chain" ]
-  # Override chainInitContainers to remove the wait-for-monitoring-configs step.
-  # In e2e, the config-fetcher CronJob is triggered manually after helm install completes.
-  # If chain pods waited for configs during helm install, it would create a deadlock:
-  # helm --wait can't complete until pods are ready, but pods can't be ready without configs.
-  chainInitContainers:
-    - name: "wait-for-incident"
-      image: "busybox:1.28"
-      command: [ 'sh', '-c', 'until nc -z e2e-incident 80; do echo waiting for incident; sleep 2; done;' ]
 
   incidentService:
     config:
@@ -87,11 +79,12 @@ polguard:
     containerArgs: ["start:matrix"] # not explicitly required but added for consistency
 
   configFetcher:
-    schedule: "*/15 * * * *"  # Every 15 minutes (for e2e will be triggered manually)
-    defaultToken: ""  # Will be set via GITLAB_TOKEN
-    sources:
-      - name: "e2e-accounts"
-        url: "https://gitlab.w3f.tech/api/v4/projects/101/repository/files/accounts.yaml/raw?ref=main"
+    syncPeriod: "15m"
+    repoUrl: "git@github.com:w3f/monitoring-configs-stage.git"
+    ref: "main"
+    sshPrivateKeyBase64: ""
+    sparseCheckout: |
+      /e2e/
     persistence:
       size: "100Mi"
       accessModes:

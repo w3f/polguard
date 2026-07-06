@@ -28,7 +28,7 @@ prometheusRulesEnabled: true
 chainInitContainers:
   - name: "wait-for-monitoring-configs"
     image: "busybox:1.28"
-    command: [ 'sh', '-c', 'until [ -f /app/monitoring-configs/current/.checksum ]; do echo waiting for monitoring configs; sleep 2; done;' ]
+    command: [ 'sh', '-c', 'until [ -e /app/monitoring-configs/current ]; do echo waiting for monitoring configs; sleep 2; done;' ]
     volumeMounts: [
       { name: "monitoring-configs", mountPath: "/app/monitoring-configs", readOnly: true }
     ]
@@ -78,13 +78,28 @@ matrixService:
 # ------------------------------------------------ Config fetcher ------------------------------------------------------
 
 configFetcher:
-  schedule: "*/15 * * * *"  # Every 15 minutes
-  defaultToken: ""  # Optional: default auth token for all sources
-  sources: []
+  # git-sync (kubernetes/git-sync) clones the config repo over SSH and keeps
+  # /app/monitoring-configs/current pointed at the latest checkout on the shared PVC.
+  image:
+    repository: "registry.k8s.io/git-sync/git-sync"
+    tag: "v4.4.0"
+    pullPolicy: "IfNotPresent"
+  syncPeriod: "15m"
+  repoUrl: ""  # e.g. git@github.com:org/repo.git
+  ref: "main"
+  sshPrivateKeyBase64: ""  # base64-encoded deploy key; goes straight into the Secret data
+  knownHosts: |
+    github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+    github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+    github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
+  # Optional git sparse-checkout patterns: when set, only these repo paths are
+  # synced into `current` (the app loads every .yaml/.yml under it recursively).
+  # Leave empty to sync the whole repo.
+  sparseCheckout: ""
     # Example:
-    # - name: "polkadot"
-    #   url: "https://gitlab.com/path/to/polkadot.yaml"
-    #   token: ""  # Optional: override default token for this source
+    # sparseCheckout: |
+    #   /polkadot/
+    #   /kusama/
   persistence:
     size: "100Mi"
     accessModes:
@@ -97,8 +112,3 @@ configFetcher:
 payouts:
   enabled: false
   schedule: "0 9 * * *"  # Daily at 09:00 UTC
-
-# ----- the following variables are not part of the schema but are still supported. they come from bitnami/common ------
-
-#fullnameOverride: "monitoring-prod"
-# (other variables may be supported)

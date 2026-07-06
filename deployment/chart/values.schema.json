@@ -45,35 +45,38 @@
     "configFetcher": {
       "type": "object",
       "properties": {
-        "schedule": {
-          "type": "string",
-          "description": "Cron schedule for fetching configs"
-        },
-        "defaultToken": {
-          "type": "string",
-          "description": "Default auth token for all sources"
-        },
-        "sources": {
-          "type": "array",
-          "description": "List of config sources to fetch",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string",
-                "description": "Name of the config source"
-              },
-              "url": {
-                "type": "string",
-                "description": "URL to fetch the config from"
-              },
-              "token": {
-                "type": "string",
-                "description": "Optional per-source auth token"
-              }
-            },
-            "required": ["name", "url"]
+        "image": {
+          "type": "object",
+          "description": "git-sync image",
+          "properties": {
+            "repository": { "type": "string" },
+            "tag": { "type": "string" },
+            "pullPolicy": { "type": "string" }
           }
+        },
+        "syncPeriod": {
+          "type": "string",
+          "description": "How often git-sync re-checks the repo (e.g. 15m)"
+        },
+        "repoUrl": {
+          "type": "string",
+          "description": "SSH URL of the git config repo, e.g. git@github.com:org/repo.git"
+        },
+        "ref": {
+          "type": "string",
+          "description": "Branch or tag to sync (default: main)"
+        },
+        "sshPrivateKeyBase64": {
+          "type": "string",
+          "description": "Base64-encoded deploy key for cloning the repo; passed straight into the Secret data"
+        },
+        "knownHosts": {
+          "type": "string",
+          "description": "SSH known_hosts entries for the git host, pinned for StrictHostKeyChecking"
+        },
+        "sparseCheckout": {
+          "type": "string",
+          "description": "Optional git sparse-checkout patterns; when set, only these repo paths are synced"
         },
         "persistence": { "$ref": "#/definitions/persistence" }
       },
