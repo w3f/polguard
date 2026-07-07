@@ -1,5 +1,6 @@
 export interface PasswordAuth {
   password: string;
+  recoveryKey?: string;
 }
 
 export interface TokenAuth {
@@ -11,7 +12,7 @@ export interface MatrixConfig {
   url: string;
   userId: string;
   logging: { level: 'trace' | 'debug' | 'info' | 'warn' | 'error' };
-  // passwordAuth => encrypted, tokenAuth => plaintext
+  pruneOtherDevices?: boolean;
   passwordAuth?: PasswordAuth;
   tokenAuth?: TokenAuth;
 }

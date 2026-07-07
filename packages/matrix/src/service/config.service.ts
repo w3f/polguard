@@ -16,6 +16,9 @@ export class ConfigService {
     if (rawConfig?.matrix?.passwordAuth && !rawConfig.matrix.passwordAuth.password) {
       rawConfig.matrix.passwordAuth.password = process.env.MATRIX_PASSWORD;
     }
+    if (rawConfig?.matrix?.passwordAuth && !rawConfig.matrix.passwordAuth.recoveryKey && process.env.MATRIX_RECOVERY_KEY) {
+      rawConfig.matrix.passwordAuth.recoveryKey = process.env.MATRIX_RECOVERY_KEY;
+    }
     if (rawConfig?.matrix?.tokenAuth && !rawConfig.matrix.tokenAuth.accessToken && process.env.MATRIX_TOKEN) {
       rawConfig.matrix.tokenAuth.accessToken = process.env.MATRIX_TOKEN;
     }
@@ -26,6 +29,9 @@ export class ConfigService {
     const maskedConfig = JSON.parse(JSON.stringify(this.config));
     if (maskedConfig.matrix.passwordAuth) {
       maskedConfig.matrix.passwordAuth.password = '***';
+      if (maskedConfig.matrix.passwordAuth.recoveryKey) {
+        maskedConfig.matrix.passwordAuth.recoveryKey = '***';
+      }
     }
     if (maskedConfig.matrix.tokenAuth) {
       maskedConfig.matrix.tokenAuth.accessToken = '***';
@@ -53,11 +59,13 @@ export class ConfigService {
         logging: Joi.object({
           level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error').default('warn'),
         }).default({ level: 'warn' }),
+        pruneOtherDevices: Joi.boolean().optional(),
         passwordAuth: Joi.object({
           password: Joi.string().required().messages({
             'any.required':
               'Matrix password is required. Provide it in the config file or set the MATRIX_PASSWORD environment variable.',
           }),
+          recoveryKey: Joi.string().optional(),
         }).optional(),
         tokenAuth: Joi.object({
           accessToken: Joi.string().required(),

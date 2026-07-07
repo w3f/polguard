@@ -10,14 +10,12 @@ import {
   MatrixError,
   AuthDict,
 } from 'matrix-js-sdk';
-import { CryptoEvent } from 'matrix-js-sdk/lib/crypto-api/CryptoEvent.js';
-import { VerificationRequestEvent, VerifierEvent } from 'matrix-js-sdk/lib/crypto-api/verification.js';
+import { decodeRecoveryKey } from 'matrix-js-sdk/lib/crypto-api/recovery-key.js';
 import { KnownMembership } from 'matrix-js-sdk/lib/@types/membership.js';
 import type { Logger as MatrixLogger } from 'matrix-js-sdk/lib/logger.js';
 import { MatrixConfig } from './interfaces';
 import { AppLogger } from '@w3f/polguard-common';
 
-/** Adapts a pino-style AppLogger to the matrix-js-sdk Logger interface */
 function createMatrixLogger(pinoLogger: AppLogger): MatrixLogger {
   const adapter: MatrixLogger = {
     trace: (...msg: any[]) => pinoLogger.trace(msg.join(' ')),
@@ -52,7 +50,7 @@ export class MatrixClient {
 
   async init() {
     this.client = await this.createClient();
-    if (this.encryptionEnabled) {
+    if (this.encryptionEnabled && this.config.pruneOtherDevices) {
       await this.pruneOtherDevices();
     }
     await this.setupClientAndSync();
@@ -72,19 +70,55 @@ export class MatrixClient {
 
     await this.client.startClient({ initialSyncLimit: 10 });
     await this.waitForSync();
+
+    if (this.encryptionEnabled && this.config.passwordAuth?.recoveryKey) {
+      await this.ensureCrossSigning();
+    }
+  }
+
+  /**
+   * Cross-signs the current device using the cross-signing keys held in the
+   * account's Secret Storage (unlocked via the configured recovery key).
+   */
+  private async ensureCrossSigning(): Promise<void> {
+    try {
+      const crypto = this.client.getCrypto();
+      if (!crypto) {
+        return;
+      }
+
+      const hasIdentity = await crypto.userHasCrossSigningKeys(this.config.userId, true);
+      if (!hasIdentity) {
+        this.logger.warn('Account has no cross-signing identity; device stays unverified');
+        return;
+      }
+
+      await crypto.bootstrapCrossSigning({
+        authUploadDeviceSigningKeys: async makeRequest => {
+          await makeRequest({
+            type: 'm.login.password',
+            identifier: { type: 'm.id.user', user: this.config.userId },
+            password: this.config.passwordAuth.password,
+          });
+        },
+      });
+
+      // The device's verification status settles asynchronously, so we don't
+      // read it back here (it would still report unsigned right after signing).
+      const deviceId = this.client.getDeviceId();
+      await crypto.crossSignDevice(deviceId);
+      this.logger.info(`Cross-signed Matrix device ${deviceId}`);
+    } catch (err) {
+      this.logger.warn(`Failed to cross-sign Matrix device: ${err}`);
+    }
   }
 
   private setupEventHandlers(): void {
     this.setupMessageHandler();
-    if (this.encryptionEnabled) {
-      this.setupVerificationHandler();
-    }
-
     this.setupAutoJoinHandler();
   }
 
   private async createClient(): Promise<SDKMatrixClient> {
-    // Token auth (CI/e2e): use the supplied credentials as-is, no login, no crypto.
     if (this.config.tokenAuth) {
       return this.createClientWithToken(
         this.config.userId,
@@ -114,12 +148,22 @@ export class MatrixClient {
   }
 
   private createClientWithToken(userId: string, deviceId: string, accessToken: string): SDKMatrixClient {
+    const recoveryKey = this.config.passwordAuth?.recoveryKey;
     const options: ICreateClientOpts = {
       baseUrl: this.config.url,
       accessToken,
       userId,
       deviceId,
       logger: createMatrixLogger(this.logger),
+      cryptoCallbacks: recoveryKey
+        ? {
+            getSecretStorageKey: async ({ keys }) => {
+              const defaultKeyId = await this.client.secretStorage.getDefaultKeyId();
+              const keyId = defaultKeyId && keys[defaultKeyId] ? defaultKeyId : Object.keys(keys)[0];
+              return keyId ? [keyId, decodeRecoveryKey(recoveryKey)] : null;
+            },
+          }
+        : undefined,
     };
 
     return createClient(options);
@@ -127,11 +171,6 @@ export class MatrixClient {
 
   /**
    * Deletes the bot's other devices, keeping only the current session.
-   *
-   * Because the in-memory crypto store forces a fresh login (and a new device) on
-   * every restart, old devices would otherwise pile up on the account and each show as an
-   * unverified device. Pruning them keeps a single active device. Best-effort: a failure
-   * here must never block startup.
    */
   private async pruneOtherDevices(): Promise<void> {
     try {
@@ -241,47 +280,6 @@ export class MatrixClient {
   protected handleCommand(roomId: string, command: string, event?: MatrixEvent) {
     // Default implementation does nothing
     // Subclasses should override this method to provide command handling
-  }
-
-  /**
-   * Sets up a listener for incoming verification requests.
-   *
-   * This method implements a session verification (cross-signing) process using
-   * the Short Authentication String (SAS) method. It's currently the most
-   * straightforward way to verify a session, but it requires interaction from
-   * another verified session.
-   *
-   * Limitations:
-   * - Requires another verified session to initiate the verification process.
-   * - In its current form, it auto-accepts and auto-confirms, which isn't
-   *   secure for real-world applications.
-   *
-   * Alternative approach:
-   * An alternative method could involve using a private key to verify the session.
-   * This would allow for automatic verification without requiring interaction
-   * from another session. However, this approach:
-   * - Requires secure management of private keys.
-   * - May not be directly supported by all Matrix client SDKs.
-   * - Could have different security implications that need to be considered.
-   */
-  private setupVerificationHandler() {
-    this.client.on(CryptoEvent.VerificationRequestReceived, async request => {
-      try {
-        await request.accept();
-        request.on(VerificationRequestEvent.Change, async () => {
-          const verifier = await request.startVerification('m.sas.v1');
-          verifier.on(VerifierEvent.ShowSas, e => {
-            this.logger.info(`Verification SAS: ${e.sas.emoji.join(', ')}`);
-            e.confirm();
-          });
-          verifier.on(VerifierEvent.Cancel, error => {
-            this.logger.error(`Verification cancelled: ${error}`);
-          });
-        });
-      } catch (error) {
-        this.logger.error(`Error handling verification request: ${error}`);
-      }
-    });
   }
 
   private setupAutoJoinHandler() {

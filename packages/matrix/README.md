@@ -47,6 +47,15 @@ The service is configured via `config/config.yaml`. Key configuration areas:
 
 See [config.yaml.example](./config/config.yaml.example) for complete configuration options.
 
+### Authentication & encryption
+
+The bot supports two mutually exclusive auth modes:
+
+- **`passwordAuth`**: logs in fresh on each start and communicates over end-to-end encryption. Provide the password via `MATRIX_PASSWORD`. To avoid clients flagging the bot's messages as *"Encrypted by a device not verified by its owner"*, also set `MATRIX_RECOVERY_KEY` — the account's Secure Backup (4S) recovery key, created once in a client such as Element.
+- **`tokenAuth`** (dev/CI flow): reuses a fixed session (`accessToken` + `deviceId`) and runs in plaintext — no encryption, no device pruning, and no recovery key needed.
+
+Set the top-level `matrix.pruneOtherDevices: true` to delete the account's other devices on startup (opt-in, default off
+
 ## Telemetry
 
 Exposes Prometheus metrics on `localhost:9464/metrics` including default Node.js metrics.
