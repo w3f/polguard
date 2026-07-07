@@ -15,34 +15,21 @@ import {
  * Build a unified idempotency key for both ongoing & one-time incidents.
  * Rule:
  * - Base = chain + (groupId, handlerType, account?, token?)
- * - Ongoing (no indexes): key = hash(Base)
- * - One-time (event):     key = hash(Base + block + eventIdx)
- * - One-time (call):      key = hash(Base + block + extrinsicIdx + callIdx)
- *
- * This same key is also used as the KV store key for ongoing lifecycle.
+ * - Ongoing:  key = hash(Base)                    — stable across blocks
+ * - One-time: key = hash(Base + block + position) — unique per occurrence
  */
 function md5_16(parts: unknown[]): string {
   return createHash('md5').update(JSON.stringify(parts)).digest('hex').slice(0, 16);
 }
 
-function buildIdempotencyKey(chain: Chain, ik: IncidentKey, ctx: BlockContext): string {
+function buildIdempotencyKey(chain: Chain, ik: IncidentKey, ctx: BlockContext, isOneTime: boolean): string {
   const base: unknown[] = [chain, ik.groupId, ik.handlerType, ik.account ?? null, ik.token ?? null];
 
-  const isEvent = ctx.eventIdx !== undefined;
-  const isCall = ctx.extrinsicIdx !== undefined && ctx.callIdx !== undefined;
-
-  // Ongoing/state: stable across blocks (no blockNumber in key)
-  if (!isEvent && !isCall) {
+  if (!isOneTime) {
     return `inc:${md5_16(base)}`;
   }
 
-  // One-time (event)
-  if (isEvent) {
-    return `inc:${md5_16([...base, ctx.blockNumber, 'ev', ctx.eventIdx])}`;
-  }
-
-  // One-time (call leaf)
-  return `inc:${md5_16([...base, ctx.blockNumber, 'ex', ctx.extrinsicIdx, 'call', ctx.callIdx])}`;
+  return `inc:${md5_16([...base, ctx.blockNumber, ctx.eventIdx ?? null, ctx.extrinsicIdx ?? null, ctx.callIdx ?? null])}`;
 }
 
 /**
@@ -71,10 +58,11 @@ export class IncidentHandler implements IncidentHandlerClient {
     isFiring?: boolean,
   ): Promise<void> {
     // Compute the unified key once; use it for both API idempotency and KV store (ongoing).
-    const idempotencyKey = buildIdempotencyKey(this.chain, incidentKey, blockContext);
+    const isOneTime = isFiring === undefined;
+    const idempotencyKey = buildIdempotencyKey(this.chain, incidentKey, blockContext, isOneTime);
 
     // One-time incident (created as immediately resolved)
-    if (isFiring === undefined) {
+    if (isOneTime) {
       await this.createIncident(message, notifications, incidentKey, blockContext, true, idempotencyKey);
       return;
     }
