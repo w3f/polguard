@@ -56,27 +56,41 @@
         },
         "syncPeriod": {
           "type": "string",
-          "description": "How often git-sync re-checks the repo (e.g. 15m)"
-        },
-        "repoUrl": {
-          "type": "string",
-          "description": "SSH URL of the git config repo, e.g. git@github.com:org/repo.git"
-        },
-        "ref": {
-          "type": "string",
-          "description": "Branch or tag to sync (default: main)"
-        },
-        "sshPrivateKeyBase64": {
-          "type": "string",
-          "description": "Base64-encoded deploy key for cloning the repo; passed straight into the Secret data"
+          "description": "How often git-sync re-checks each repo (e.g. 15m)"
         },
         "knownHosts": {
           "type": "string",
-          "description": "SSH known_hosts entries for the git host, pinned for StrictHostKeyChecking"
+          "description": "SSH known_hosts entries for the git host(s), pinned for StrictHostKeyChecking"
         },
-        "sparseCheckout": {
-          "type": "string",
-          "description": "Optional git sparse-checkout patterns; when set, only these repo paths are synced"
+        "repos": {
+          "type": "array",
+          "description": "Config repos to clone; one git-sync container is rendered per entry",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Unique name; used as the on-disk subdirectory under current/ and .git-sync/"
+              },
+              "url": {
+                "type": "string",
+                "description": "SSH URL of the git config repo, e.g. git@github.com:org/repo.git"
+              },
+              "ref": {
+                "type": "string",
+                "description": "Branch or tag to sync (default: main)"
+              },
+              "sshPrivateKeyBase64": {
+                "type": "string",
+                "description": "Base64-encoded deploy key for cloning this repo; passed straight into the Secret data"
+              },
+              "sparseCheckout": {
+                "type": "string",
+                "description": "Optional git sparse-checkout patterns; when set, only these repo paths are synced"
+              }
+            },
+            "required": ["name", "url"]
+          }
         },
         "persistence": { "$ref": "#/definitions/persistence" }
       },

@@ -1,13 +1,12 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
-import { Chain, AppLogger, MessengerType, MonitoringGroup } from '@w3f/polguard-common';
+import { Chain, AppLogger, MonitoringGroup } from '@w3f/polguard-common';
 import { ConfigProcessor } from './config-processor';
 
 type MonitoringSnapshot = {
   groups: MonitoringGroup[];
   byChain: Map<Chain, MonitoringGroup[]>;
-  channelIndex: Map<string, Array<{ chain: Chain; groupId: string }>>;
   fingerprint: string;
 };
 
@@ -16,29 +15,11 @@ type MonitoringSnapshot = {
 let cachedSnapshot: MonitoringSnapshot | null = null;
 let loadPromise: Promise<MonitoringSnapshot> | null = null;
 
-const CHECKSUM_FILE = '.checksum';
-
 // ============================================================================
 // PUBLIC API
 export async function getMonitoringGroups(chain: Chain, dir: string, logger: AppLogger): Promise<MonitoringGroup[]> {
   const snapshot = await loadSnapshot(dir, logger);
   return (snapshot.byChain.get(chain) || []).filter(group => group.monitors.length > 0);
-}
-
-export async function getGroupsForChannel(
-  chain: Chain,
-  messengerType: MessengerType,
-  channelId: string,
-  dir: string,
-  logger: AppLogger,
-): Promise<MonitoringGroup[]> {
-  const snapshot = await loadSnapshot(dir, logger);
-  const key = `${messengerType}:${channelId}`;
-  const chainGroups = snapshot.channelIndex.get(key) || [];
-
-  const groupIds = chainGroups.filter(cg => cg.chain === chain).map(cg => cg.groupId);
-
-  return snapshot.groups.filter(g => g.chain === chain && groupIds.includes(g.id));
 }
 
 // ============================================================================
@@ -121,14 +102,6 @@ async function doLoad(dir: string, logger: AppLogger): Promise<MonitoringSnapsho
 // ============================================================================
 // FINGERPRINT COMPUTATION
 async function computeFingerprint(dir: string): Promise<string> {
-  const checksumPath = path.join(dir, CHECKSUM_FILE);
-
-  // Try to read pre-computed checksum first (from CronJob)
-  if (fs.existsSync(checksumPath)) {
-    return fs.readFileSync(checksumPath, 'utf8').trim();
-  }
-
-  // Fall back to computing it ourselves
   const configFiles = findConfigFiles(dir);
   const hashes = configFiles
     .sort()
@@ -150,6 +123,10 @@ function findConfigFiles(dir: string): string[] {
   const files = fs.readdirSync(dir);
 
   for (const file of files) {
+    if (file.startsWith('.')) {
+      continue;
+    }
+
     const filePath = path.join(dir, file);
     const stat = fs.statSync(filePath);
 
@@ -167,34 +144,17 @@ function findConfigFiles(dir: string): string[] {
 // SNAPSHOT BUILDING
 function buildSnapshot(groups: MonitoringGroup[], fingerprint: string): MonitoringSnapshot {
   const byChain = new Map<Chain, MonitoringGroup[]>();
-  const channelIndex = new Map<string, Array<{ chain: Chain; groupId: string }>>();
 
   for (const group of groups) {
-    // Index by chain
     if (!byChain.has(group.chain)) {
       byChain.set(group.chain, []);
     }
     byChain.get(group.chain)!.push(group);
-
-    // Payout-only groups have no notifications, so they are not channel-indexed.
-    if (!group.notifications) {
-      continue;
-    }
-
-    // Index by channel (without chain in key)
-    for (const channelId of group.notifications.channels) {
-      const key = `${group.notifications.messengerType}:${channelId}`;
-      if (!channelIndex.has(key)) {
-        channelIndex.set(key, []);
-      }
-      channelIndex.get(key)!.push({ chain: group.chain, groupId: group.id });
-    }
   }
 
   return {
     groups,
     byChain,
-    channelIndex,
     fingerprint,
   };
 }

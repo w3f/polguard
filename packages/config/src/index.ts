@@ -1,3 +1,3 @@
-export { getMonitoringGroups, getGroupsForChannel } from './loader';
+export { getMonitoringGroups } from './loader';
 export { getPayoutAccounts } from './payout/payout-resolver';
 export { validateConfig } from './config-validator';

@@ -9,15 +9,17 @@ data:
   known_hosts: |
 {{ .Values.configFetcher.knownHosts | indent 4 }}
 {{- end }}
-{{- if .Values.configFetcher.sparseCheckout }}
+{{- range $repo := .Values.configFetcher.repos }}
+{{- if $repo.sparseCheckout }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "common.names.fullname" . }}-config-fetcher-sparse
-  labels: {{ include "common.labels.standard" . | nindent 4 }}
+  name: {{ include "common.names.fullname" $ }}-config-fetcher-sparse-{{ $repo.name }}
+  labels: {{ include "common.labels.standard" $ | nindent 4 }}
     app.kubernetes.io/component: config-fetcher
 data:
   sparse-checkout: |
-{{ .Values.configFetcher.sparseCheckout | indent 4 }}
+{{ $repo.sparseCheckout | indent 4 }}
+{{- end }}
 {{- end }}

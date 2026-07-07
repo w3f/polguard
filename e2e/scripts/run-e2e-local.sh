@@ -73,7 +73,11 @@ helm upgrade --install "$RELEASE_NAME" ./e2e/chart \
               --set tests.image.repository=web3f/polguard-e2e \
               --set tests.image.tag=${IMAGE_TAG} \
               --set polguard.image.tag=${IMAGE_TAG} \
-              --set-file polguard.configFetcher.sshPrivateKeyBase64=/tmp/deploy_key \
+              --set polguard.configFetcher.repos[0].name=stage \
+              --set polguard.configFetcher.repos[0].url=git@github.com:w3f/monitoring-configs-stage.git \
+              --set polguard.configFetcher.repos[0].ref=main \
+              --set polguard.configFetcher.repos[0].sparseCheckout=/e2e/ \
+              --set-file polguard.configFetcher.repos[0].sshPrivateKeyBase64=/tmp/deploy_key \
               --set polguard.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set tests.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
               --set polguard.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \

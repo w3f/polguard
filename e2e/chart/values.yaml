@@ -25,7 +25,7 @@ polguard:
           name: "AssetHubPolkadot"
           rpcUrl: "wss://rpc-asset-hub-polkadot.luckyfriday.io"
           startBlock: "10351963"
-        monitoringConfigsDir: "/app/monitoring-configs/current"
+        monitoringConfigsDir: "/app/monitoring-configs"
         store:
           type: service
           service:
@@ -80,11 +80,13 @@ polguard:
 
   configFetcher:
     syncPeriod: "15m"
-    repoUrl: "git@github.com:w3f/monitoring-configs-stage.git"
-    ref: "main"
-    sshPrivateKeyBase64: ""
-    sparseCheckout: |
-      /e2e/
+    repos:
+      - name: "stage"
+        url: "git@github.com:w3f/monitoring-configs-stage.git"
+        ref: "main"
+        sshPrivateKeyBase64: ""
+        sparseCheckout: |
+          /e2e/
     persistence:
       size: "100Mi"
       accessModes:
