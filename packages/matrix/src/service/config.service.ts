@@ -20,13 +20,6 @@ export class ConfigService {
       rawConfig.matrix.tokenAuth.accessToken = process.env.MATRIX_TOKEN;
     }
 
-    // Set default enableEncryption depending on the auth
-    if (rawConfig?.matrix?.tokenAuth) {
-      rawConfig.matrix.enableEncryption = false;
-    } else if (rawConfig?.matrix?.passwordAuth) {
-      rawConfig.matrix.enableEncryption = true;
-    }
-
     this.config = this.validateConfig(rawConfig);
 
     // Log masked config
@@ -57,11 +50,9 @@ export class ConfigService {
       matrix: Joi.object({
         url: Joi.string().uri().required(),
         userId: Joi.string().required(),
-        storageDir: Joi.string().default('data/local-storage'),
         logging: Joi.object({
           level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error').default('warn'),
         }).default({ level: 'warn' }),
-        enableEncryption: Joi.boolean().optional(),
         passwordAuth: Joi.object({
           password: Joi.string().required().messages({
             'any.required':
@@ -77,14 +68,6 @@ export class ConfigService {
         .xor('passwordAuth', 'tokenAuth')
         .messages({
           'object.xor': 'Either passwordAuth or tokenAuth must be provided, but not both.',
-        })
-        .custom((value, helpers) => {
-          if (value.tokenAuth && value.enableEncryption !== false) {
-            return helpers.error('any.invalid', {
-              message: 'When using tokenAuth, enableEncryption must be set to false',
-            });
-          }
-          return value;
         }),
       incidents: Joi.object({
         url: Joi.string().uri().required(),
@@ -120,10 +103,6 @@ export class ConfigService {
 
   getServerConfig() {
     return this.config.server;
-  }
-
-  getMatrixStorageDir(): string {
-    return this.config.matrix.storageDir;
   }
 }
 

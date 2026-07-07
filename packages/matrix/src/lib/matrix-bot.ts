@@ -8,13 +8,8 @@ export class MatrixBot extends MatrixClient {
   private static readonly MAX_INCIDENTS_PER_LIST = 50;
   private incidentService: IncidentServiceInterface;
 
-  constructor(
-    config: MatrixConfig,
-    logger: AppLogger,
-    incidentService: IncidentServiceInterface,
-    dataPath?: string,
-  ) {
-    super(config, logger, dataPath);
+  constructor(config: MatrixConfig, logger: AppLogger, incidentService: IncidentServiceInterface) {
+    super(config, logger);
     this.incidentService = incidentService;
   }
 

@@ -7,12 +7,13 @@ import {
   RoomEvent,
   MsgType,
   ICreateClientOpts,
+  MatrixError,
+  AuthDict,
 } from 'matrix-js-sdk';
 import { CryptoEvent } from 'matrix-js-sdk/lib/crypto-api/CryptoEvent.js';
 import { VerificationRequestEvent, VerifierEvent } from 'matrix-js-sdk/lib/crypto-api/verification.js';
 import { KnownMembership } from 'matrix-js-sdk/lib/@types/membership.js';
 import type { Logger as MatrixLogger } from 'matrix-js-sdk/lib/logger.js';
-import { LocalStorage } from 'node-localstorage';
 import { MatrixConfig } from './interfaces';
 import { AppLogger } from '@w3f/polguard-common';
 
@@ -35,16 +36,25 @@ export class MatrixClient {
   protected client: SDKMatrixClient;
   protected config: MatrixConfig;
   protected logger: AppLogger;
-  protected localStorage: LocalStorage;
 
-  constructor(config: MatrixConfig, logger: AppLogger, dataPath: string = 'data/local-storage') {
+  constructor(config: MatrixConfig, logger: AppLogger) {
     this.config = config;
     this.logger = logger;
-    this.localStorage = new LocalStorage(dataPath);
+  }
+
+  /**
+   * The auth type is the encryption switch: password auth always runs encrypted;
+   * token auth runs plaintext for simple client-server API reads.
+   */
+  private get encryptionEnabled(): boolean {
+    return !!this.config.passwordAuth;
   }
 
   async init() {
     this.client = await this.createClient();
+    if (this.encryptionEnabled) {
+      await this.pruneOtherDevices();
+    }
     await this.setupClientAndSync();
     this.setupEventHandlers();
 
@@ -56,8 +66,8 @@ export class MatrixClient {
   }
 
   private async setupClientAndSync(): Promise<void> {
-    if (this.config.enableEncryption) {
-      await this.client.initRustCrypto();
+    if (this.encryptionEnabled) {
+      await this.client.initRustCrypto({ useIndexedDB: false });
     }
 
     await this.client.startClient({ initialSyncLimit: 10 });
@@ -66,7 +76,7 @@ export class MatrixClient {
 
   private setupEventHandlers(): void {
     this.setupMessageHandler();
-    if (this.config.enableEncryption) {
+    if (this.encryptionEnabled) {
       this.setupVerificationHandler();
     }
 
@@ -74,6 +84,7 @@ export class MatrixClient {
   }
 
   private async createClient(): Promise<SDKMatrixClient> {
+    // Token auth (CI/e2e): use the supplied credentials as-is, no login, no crypto.
     if (this.config.tokenAuth) {
       return this.createClientWithToken(
         this.config.userId,
@@ -82,15 +93,8 @@ export class MatrixClient {
       );
     }
 
-    const userId = this.config.userId;
-    const { accessToken, deviceId } = this.getCredentials(userId);
-    if (accessToken && deviceId) {
-      return this.createClientWithToken(userId, deviceId, accessToken);
-    }
-
     const { newAccessToken, newDeviceId } = await this.performLogin();
-    await this.storeCredentials(userId, newDeviceId, newAccessToken);
-    return this.createClientWithToken(userId, newDeviceId, newAccessToken);
+    return this.createClientWithToken(this.config.userId, newDeviceId, newAccessToken);
   }
 
   private async performLogin(): Promise<{ newAccessToken: string; newDeviceId: string }> {
@@ -109,18 +113,6 @@ export class MatrixClient {
     }
   }
 
-  private getCredentials(userId: string): { accessToken: string | null; deviceId: string | null } {
-    return {
-      accessToken: this.localStorage.getItem(`token-${userId}`),
-      deviceId: this.localStorage.getItem(`device-${userId}`),
-    };
-  }
-
-  private async storeCredentials(userId: string, deviceId: string, accessToken: string): Promise<void> {
-    this.localStorage.setItem(`token-${userId}`, accessToken);
-    this.localStorage.setItem(`device-${userId}`, deviceId);
-  }
-
   private createClientWithToken(userId: string, deviceId: string, accessToken: string): SDKMatrixClient {
     const options: ICreateClientOpts = {
       baseUrl: this.config.url,
@@ -131,6 +123,45 @@ export class MatrixClient {
     };
 
     return createClient(options);
+  }
+
+  /**
+   * Deletes the bot's other devices, keeping only the current session.
+   *
+   * Because the in-memory crypto store forces a fresh login (and a new device) on
+   * every restart, old devices would otherwise pile up on the account and each show as an
+   * unverified device. Pruning them keeps a single active device. Best-effort: a failure
+   * here must never block startup.
+   */
+  private async pruneOtherDevices(): Promise<void> {
+    try {
+      const currentDeviceId = this.client.getDeviceId();
+      const { devices } = await this.client.getDevices();
+      const staleIds = devices.map(d => d.device_id).filter(id => id && id !== currentDeviceId);
+      if (staleIds.length === 0) {
+        return;
+      }
+
+      const auth: AuthDict = {
+        type: 'm.login.password',
+        identifier: { type: 'm.id.user', user: this.config.userId },
+        password: this.config.passwordAuth.password,
+      };
+
+      try {
+        await this.client.deleteMultipleDevices(staleIds, auth);
+      } catch (err) {
+        const session = err instanceof MatrixError ? (err.data?.session as string | undefined) : undefined;
+        if (!session) {
+          throw err;
+        }
+        await this.client.deleteMultipleDevices(staleIds, { ...auth, session });
+      }
+
+      this.logger.info(`Pruned ${staleIds.length} stale Matrix device(s)`);
+    } catch (err) {
+      this.logger.warn(`Failed to prune old Matrix devices: ${err}`);
+    }
   }
 
   private async waitForSync(): Promise<void> {

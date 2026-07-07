@@ -69,11 +69,6 @@ matrixService:
   serviceHttpPort: 80
   containerMetricsPort: 9464
   serviceMetricsPort: 9464
-  persistence:
-    # Matrix requires persistent storage for session data and encryption keys
-    size: "200Mi"
-    accessModes:
-      - "ReadWriteOnce"
 
 # ------------------------------------------------ Config fetcher ------------------------------------------------------
 

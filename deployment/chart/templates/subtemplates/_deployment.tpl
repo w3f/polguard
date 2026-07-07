@@ -84,10 +84,6 @@ spec:
             - name: config
               mountPath: {{ if eq .kind "chain" }}/app/packages/chain/config{{ else if eq .kind "incident" }}/app/packages/incident/config{{ else if eq .kind "matrix" }}/app/packages/matrix/config{{ end }}
               readOnly: true
-            {{- if eq .kind "matrix" }}
-            - name: data
-              mountPath: /app/packages/matrix/data
-            {{- end }}
             {{- if eq .kind "chain" }}
             - name: monitoring-configs
               mountPath: /app/monitoring-configs
@@ -98,11 +94,6 @@ spec:
         - name: config
           configMap:
             name: {{ include "common.names.fullname" .global }}-{{ .name }}
-        {{- if eq .kind "matrix" }}
-        - name: data
-          persistentVolumeClaim:
-            claimName: {{ include "common.names.fullname" .global }}-{{ .name }}
-        {{- end }}
         {{- if eq .kind "chain" }}
         - name: monitoring-configs
           persistentVolumeClaim:

@@ -40,12 +40,7 @@ async function bootstrap() {
 
   const matrixConfig = config.getMatrixConfig();
 
-  const bot = new MatrixBot(
-    matrixConfig,
-    rootLogger.child({ context: 'MatrixBot' }),
-    incidentService,
-    config.getMatrixStorageDir(),
-  );
+  const bot = new MatrixBot(matrixConfig, rootLogger.child({ context: 'MatrixBot' }), incidentService);
   await bot.init();
 
   // Fastify server

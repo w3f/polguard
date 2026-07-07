@@ -37,7 +37,7 @@
     "matrixService": {
       "allOf": [
         { "$ref": "#/definitions/svc" },
-        { "required": ["config", "containerArgs", "persistence"] }
+        { "required": ["config", "containerArgs"] }
       ]
     },
     "matrixInitContainers": { "$ref": "#/definitions/initContainers" },

@@ -10,11 +10,8 @@ export interface TokenAuth {
 export interface MatrixConfig {
   url: string;
   userId: string;
-  storageDir: string;
   logging: { level: 'trace' | 'debug' | 'info' | 'warn' | 'error' };
-  enableEncryption?: boolean;
-
-  // One of these must be provided
+  // passwordAuth => encrypted, tokenAuth => plaintext
   passwordAuth?: PasswordAuth;
   tokenAuth?: TokenAuth;
 }
