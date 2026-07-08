@@ -1,0 +1,165 @@
+# ──────────────────────────────────────────────────────────────────────────────
+#  Reusable KinD end-to-end test workflow.
+#
+#  The only difference between the PR and master paths is how the app image is
+#  obtained, controlled by `app-image-mode`:
+#    • local-build ⇒ build it here with BuildKit (PRs: nothing is pushed)
+#    • pull        ⇒ pull the already-pushed :<sha> (master: test the exact
+#                     artifact that will be promoted & deployed)
+#  Everything downstream (E2E runner image, KinD, Helm install, tests) is shared.
+# ──────────────────────────────────────────────────────────────────────────────
+name: e2e
+
+on:
+  workflow_call:
+    inputs:
+      app-image-mode:
+        description: 'local-build (build & load) or pull (pull pushed image)'
+        required: true
+        type: string
+      app-image:
+        required: true
+        type: string
+      app-tag:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      APP_IMAGE: ${{ inputs.app-image }}
+      APP_TAG: ${{ inputs.app-tag }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v3
+
+      # E2E only runs in trusted contexts (same-repo PRs / master), so secrets are
+      # always available. Login avoids anonymous Docker Hub pull rate limits and is
+      # required for the `pull` mode below.
+      - name: Docker login
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build app image locally
+        if: ${{ inputs.app-image-mode == 'local-build' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ${{ inputs.app-image }}:${{ inputs.app-tag }}
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,scope=app,mode=max
+
+      - name: Pull app image from registry
+        if: ${{ inputs.app-image-mode == 'pull' }}
+        run: docker pull "${APP_IMAGE}:${APP_TAG}"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+        with:
+          version: v3.17.3
+
+      - name: Add Helm chart repos
+        run: |
+          helm repo add w3f https://w3f.github.io/helm-charts
+          helm repo update
+          helm repo list
+
+      - name: Build E2E runner image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: e2e/Dockerfile
+          push: false
+          load: true
+          tags: ${{ inputs.app-image }}-e2e:${{ inputs.app-tag }}
+          cache-from: type=gha,scope=e2e-runner
+          cache-to: type=gha,scope=e2e-runner,mode=max
+
+      - name: Create KinD cluster
+        uses: helm/kind-action@v1
+        with:
+          version: v0.23.0
+          node_image: kindest/node:v1.30.0
+          cluster_name: ci
+          kubectl_version: v1.30.0
+          wait: 120s
+
+      - name: Load images into KinD
+        run: |
+          RELEASE="e2e-${GITHUB_SHA::6}"
+          echo "RELEASE=$RELEASE" >> "$GITHUB_ENV"
+          kind load docker-image "${APP_IMAGE}:${APP_TAG}" --name=ci
+          kind load docker-image "${APP_IMAGE}-e2e:${APP_TAG}" --name=ci
+
+      - name: Build Helm chart dependencies
+        run: |
+          helm dependency update e2e/chart
+          helm dependency build e2e/chart
+
+      - name: Lint e2e chart
+        run: helm lint e2e/chart
+
+      - name: Install e2e chart
+        env:
+          MATRIX_DEVICE_ID: ${{ secrets.MATRIX_DEVICE_ID }}
+          MATRIX_TOKEN: ${{ secrets.MATRIX_TOKEN }}
+          CONFIG_REPO_DEPLOY_KEY_BASE64: ${{ secrets.CONFIG_REPO_DEPLOY_KEY_BASE64 }}
+        run: |
+          echo "Now installing polguard with helm. This command will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state. If this command times out, check the status of esp. the Deployments and Pods."
+          kubectl create ns e2e
+          echo "$CONFIG_REPO_DEPLOY_KEY_BASE64" | tr -d '\n' > /tmp/deploy_key
+          helm upgrade --install "$RELEASE" ./e2e/chart \
+            -n e2e --create-namespace \
+            --set tests.image.repository=${APP_IMAGE}-e2e \
+            --set tests.image.tag=${APP_TAG} \
+            --set tests.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
+            --set polguard.image.tag=${APP_TAG} \
+            --set polguard.configFetcher.repos[0].name=stage \
+            --set polguard.configFetcher.repos[0].url=git@github.com:w3f/monitoring-configs-stage.git \
+            --set polguard.configFetcher.repos[0].ref=main \
+            --set polguard.configFetcher.repos[0].sparseCheckout=/e2e/ \
+            --set-file polguard.configFetcher.repos[0].sshPrivateKeyBase64=/tmp/deploy_key \
+            --set polguard.matrixService.config.matrix.tokenAuth.deviceId=${MATRIX_DEVICE_ID} \
+            --set polguard.matrixService.secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
+            --set secrets.MATRIX_TOKEN=${MATRIX_TOKEN} \
+            --wait \
+            --timeout 10m
+        timeout-minutes: 10
+
+      - name: Execute E2E tests
+        run: helm test "$RELEASE" -n e2e
+        timeout-minutes: 10
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          NS=e2e
+          for comp in incident chain matrix postgresql; do
+            echo "=== Logs for component=$comp ==="
+            kubectl -n $NS logs \
+              --selector app.kubernetes.io/component=$comp \
+              --all-containers --tail=-1 || true
+          done
+
+          echo "=== Logs for test pod(s) ==="
+          kubectl -n $NS logs \
+            --selector app.kubernetes.io/component=test \
+            --all-containers --tail=-1 || true
+
+          echo "=== Pod status ==="
+          kubectl -n $NS get pods -o wide
+
+          echo "=== Describe pods ==="
+          kubectl -n $NS describe pods || true
+
+          echo "=== Events ==="
+          kubectl -n $NS get events --sort-by=.lastTimestamp || true

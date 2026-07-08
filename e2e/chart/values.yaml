@@ -18,6 +18,14 @@ polguard:
   serviceMonitorsEnabled: false
   prometheusRulesEnabled: false
 
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
   chainServices:
     chain: # this will create a single chain service called "e2e-chain"
       config:

@@ -1,0 +1,174 @@
+# ──────────────────────────────────────────────────────────────────────────────
+#  GitHub Actions pipeline for "polguard"
+#
+#  Trust-separated:
+#   • PRs (untrusted)   ⇒ code-quality + hermetic e2e (build → kind load → test,
+#                          nothing is pushed). e2e is same-repo only (needs secrets).
+#   • master (trusted)  ⇒ push :sha → e2e against that exact image → only then
+#                          promote master/latest and publish Helm charts.
+#   • Release tags vX.Y.Z ⇒ retag the tested :sha → :vX.Y.Z + GitHub Release.
+#
+#  Shared e2e steps live in the reusable .github/workflows/e2e.yml.
+# ──────────────────────────────────────────────────────────────────────────────
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: web3f/polguard
+
+jobs:
+  code-quality:
+    name: Code quality
+    if: ${{ !startsWith(github.ref, 'refs/tags/') && github.event.pull_request.draft != true }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: yarn
+      - name: Enable Corepack (Yarn 4)
+        run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn build
+      - run: yarn lint
+      - run: yarn test
+      - run: yarn test:integration
+        timeout-minutes: 5
+
+  # Untrusted PR path: build the app image locally and test it in KinD.
+  # Skipped for fork PRs (no access to secrets that the e2e chart needs).
+  e2e-pr:
+    name: E2E (PR)
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.draft != true
+      && github.event.pull_request.head.repo.full_name == github.repository
+    needs: [code-quality]
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+    with:
+      app-image-mode: local-build
+      app-image: web3f/polguard
+      app-tag: ${{ github.sha }}
+
+  # Trusted master path: build & push the :sha artifact only. The moving tags
+  # (master/latest) are pushed later by promote-master-image, after e2e passes.
+  docker-build:
+    name: Docker build & push
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [code-quality]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Compute tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,scope=app,mode=max
+
+  e2e-master:
+    name: E2E (master)
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [docker-build]
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+    with:
+      app-image-mode: pull
+      app-image: web3f/polguard
+      app-tag: ${{ github.sha }}
+
+  promote-master-image:
+    name: Promote master image
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [e2e-master]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Promote SHA image to master and latest
+        run: |
+          docker buildx imagetools create \
+            -t "${IMAGE}:master" \
+            -t "${IMAGE}:latest" \
+            "${IMAGE}:${GITHUB_SHA}"
+
+  publish-charts:
+    name: Publish Helm charts
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [e2e-master]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+        with:
+          version: v3.17.3
+      - name: Publish Helm chart
+        env:
+          HELM_CHARTS_TOKEN: ${{ secrets.HELM_CHARTS_TOKEN }}
+        run: |
+          chmod +x deployment/publish-chart.sh
+          ./deployment/publish-chart.sh w3f/helm-charts
+
+  release-tag:
+    name: Release tag
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Verify master SHA image exists
+        run: docker manifest inspect "${IMAGE}:${GITHUB_SHA}"
+      - name: Promote SHA image to release tag
+        run: |
+          docker buildx imagetools create \
+            -t "${IMAGE}:${GITHUB_REF_NAME}" \
+            "${IMAGE}:${GITHUB_SHA}"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --verify-tag \
+            --generate-notes

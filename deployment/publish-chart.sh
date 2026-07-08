@@ -20,8 +20,7 @@ if [[ -f "$pkg" ]]; then
   exit 0
 fi
 
-# ─── DEPENDENCIES & LINT ──────────────────────────────────────────────────────
-helm dependency update "$CHART_DIR"
+# ─── LINT ─────────────────────────────────────────────────────────────────────
 helm lint "$CHART_DIR"
 
 # ─── PACKAGE ──────────────────────────────────────────────────────────────────
@@ -37,18 +36,17 @@ popd >/dev/null
 
 # ─── PUSH ────────────────────────────────────────────────────────────────────
 pushd "$PAGES" >/dev/null
-git config user.name "CircleCI"
-git config user.email "$CIRCLE_USERNAME@users.noreply.github.com"
+git config user.name "github-actions[bot]"
+git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-# Commit with original CI URL style
 git add .
 if ! git diff --cached --quiet; then
-  git commit -m "Published by CircleCI $CIRCLE_BUILD_URL"
+  git commit -m "Published by GitHub Actions ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 else
   echo "No changes detected; skipping commit."
 fi
 
-git push "https://${GITHUB_BOT_TOKEN}@github.com/$REPO.git" "$BRANCH"
+git push "https://${HELM_CHARTS_TOKEN}@github.com/$REPO.git" "$BRANCH"
 popd >/dev/null
 
 echo "✅ Published $CHART_DIR to $REPO#$BRANCH"

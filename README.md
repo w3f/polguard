@@ -1,4 +1,4 @@
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/w3f/polguard/tree/master.svg?style=svg&circle-token=CCIPRJ_SUB1G4oHMH8XwxjXskW3sc_0c9d235912138f0bba11f4c38895c0a0b30aba97)](https://dl.circleci.com/status-badge/redirect/gh/w3f/polguard/tree/master)
+[![CI](https://github.com/w3f/polguard/actions/workflows/ci.yml/badge.svg)](https://github.com/w3f/polguard/actions/workflows/ci.yml)
 
 # PolGuard
 
@@ -21,8 +21,8 @@ yarn start:chain
 
 ## Key Features
 
-- **One-Time Incidents**: Generated from blockchain events and extrinsic calls when specific conditions are detected (e.g., transfer occurs)
-- **Ongoing Incidents**: Continuously monitor conditions and can transition between firing and resolved states (e.g., balance drops below threshold and later recovers)
+- **One-Time Incidents**: Generated from blockchain events, extrinsic calls or state transitions when specific conditions are detected (e.g., transfer occurs)
+- **Ongoing Incidents**: Continuously monitor chain state for conditions and can transition between firing and resolved states (e.g., balance drops below threshold and later recovers)
 - **Acknowledgement**: Team members can acknowledge incidents via bot interface
 - **Escalation**: Automatically escalate unacknowledged incidents to additional notification channels after a configurable timeout
 

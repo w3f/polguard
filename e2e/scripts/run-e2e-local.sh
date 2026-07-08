@@ -62,7 +62,6 @@ kind load docker-image web3f/polguard-e2e:"$IMAGE_TAG" --name dev
 
 kubectl create ns "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-helm dependency update ./deployment/chart
 helm dependency update ./e2e/chart
 helm lint ./e2e/chart
 
