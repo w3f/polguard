@@ -17,4 +17,4 @@ groups:
         handlers:
           - CommissionChangedEvent
           - OffenceReportedEvent
-    accountSet: invalid-addresses
+    accountSetNames: [invalid-addresses]

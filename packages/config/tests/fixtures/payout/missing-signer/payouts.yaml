@@ -8,7 +8,7 @@ groups:
         notifications:
           messengerType: Matrix
           channels: ["!payouts:web3.foundation"]
-    accountSet: validators
+    accountSetNames: [validators]
 
 accountSets:
   validators:

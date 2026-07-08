@@ -14,4 +14,4 @@ groups:
         commission: 10
         handlers:
           - InvalidHandlerType  # Invalid handler type
-    accountSet: invalid-handler-type
+    accountSetNames: [invalid-handler-type]

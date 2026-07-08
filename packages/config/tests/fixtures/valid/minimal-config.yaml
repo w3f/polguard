@@ -17,4 +17,4 @@ groups:
       - name: Xcm
         handlers:
           - XcmTransferEgressEvent
-    accountSet: minimal-validators
+    accountSetNames: [minimal-validators]

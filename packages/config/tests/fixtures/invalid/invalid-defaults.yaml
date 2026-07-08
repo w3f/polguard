@@ -14,4 +14,4 @@ defaults:
 
 groups:
   - id: missing-required-fields-group
-    accountSet: missing-required-accounts
+    accountSetNames: [missing-required-accounts]

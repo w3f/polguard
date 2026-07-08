@@ -13,7 +13,7 @@ groups:
         # Start from block 11588659 to test
         handlers:
           - TransferEgressEvent
-    accountSet: kusama-accounts
+    accountSetNames: [kusama-accounts]
 
   - id: balances-polkadot-example
     chains:
@@ -23,7 +23,7 @@ groups:
         # Start from block 10338234 to test
         handlers:
           - TransferEgressEvent
-    accountSet: polkadot-accounts
+    accountSetNames: [polkadot-accounts]
 
 accountSets:
   kusama-accounts:

@@ -14,7 +14,7 @@ groups:
         handlers:
           - ActiveSetPresenceState
           - OffenceReportedEvent
-    accountSet: example-accounts
+    accountSetNames: [example-accounts]
 
 accountSets:
   example-accounts:

@@ -34,7 +34,7 @@ groups:
       - name: Xcm
         handlers:
           - XcmTransferEgressEvent
-    accountSet: polkadot-validators
+    accountSetNames: [polkadot-validators]
         
   - id: kusama-validators
     chains:
@@ -51,4 +51,4 @@ groups:
       - name: Xcm
         handlers:
           - XcmTransferEgressEvent
-    accountSet: kusama-validators
+    accountSetNames: [kusama-validators]

@@ -53,7 +53,12 @@ function writeConfigFixtures(stashes: string[]): { dir: string; configPath: stri
 
   const accounts = {
     groups: [
-      { id: 'integration-group', chains: [CHAIN], operations: { payout: { signer: SIGNER } }, accountSet: 'integration-accounts' },
+      {
+        id: 'integration-group',
+        chains: [CHAIN],
+        operations: { payout: { signer: SIGNER } },
+        accountSetNames: ['integration-accounts'],
+      },
     ],
     accountSets: {
       'integration-accounts': stashes.map((address, i) => ({ address, name: `IT-${i}` })),

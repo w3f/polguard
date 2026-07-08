@@ -14,4 +14,4 @@ groups:
         commission: 10
         handlers:
           - CommissionChangedEvent
-    accountSet: invalid-notifications
+    accountSetNames: [invalid-notifications]

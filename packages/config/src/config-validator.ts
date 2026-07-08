@@ -225,8 +225,9 @@ const groupSchema = Joi.object({
     .optional(),
   monitors: Joi.array().items(monitorSchema).optional(),
   notifications: notificationSchema.optional(),
-  accountSet: Joi.string().required().messages({
-    'any.required': 'accountSet field is required and must reference an account set name',
+  accountSetNames: Joi.array().items(Joi.string()).min(1).required().messages({
+    'array.min': 'accountSetNames field must reference at least one account set name',
+    'any.required': 'accountSetNames field is required and must reference at least one account set name',
   }),
   // Annotations field bypasses validation
   annotations: Joi.object().optional(),
@@ -272,11 +273,13 @@ export function validateConfig(config: any): void {
     }
     groupIds.add(group.id);
 
-    // Validate that account set reference exists
-    const accountSetName = group.accountSet;
-    if (!validatedConfig.accountSets[accountSetName]) {
+    // Validate that all account set references exist
+    const missingAccountSets = group.accountSetNames.filter(
+      (accountSetName: string) => !validatedConfig.accountSets[accountSetName],
+    );
+    if (missingAccountSets.length > 0) {
       throw new Error(
-        `Group "${group.id}" references account set "${accountSetName}" which does not exist in accountSets section`,
+        `Group "${group.id}" references account set(s) "${missingAccountSets.join(', ')}" which do not exist in accountSets section`,
       );
     }
 

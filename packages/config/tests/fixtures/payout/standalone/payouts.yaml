@@ -9,7 +9,7 @@ defaults:
 
 groups:
   - id: standalone-payout-group
-    accountSet: validators
+    accountSetNames: [validators]
 
 accountSets:
   validators:

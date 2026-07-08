@@ -15,4 +15,4 @@ groups:
         threshold: "invalid.number"  # Invalid decimal format
         handlers:
           - BalanceThreshold
-    accountSet: invalid-balances
+    accountSetNames: [invalid-balances]

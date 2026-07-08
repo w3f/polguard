@@ -88,7 +88,7 @@ export class ConfigProcessor {
       config.groups.map((group: any) => {
         return {
           ...group,
-          accounts: config.accountSets[group.accountSet],
+          accounts: group.accountSetNames.flatMap((name: string) => config.accountSets[name]),
           chains: group.chains || config.defaults?.chains,
           monitors: group.monitors || config.defaults?.monitors,
           notifications: group.notifications || config.defaults?.notifications,

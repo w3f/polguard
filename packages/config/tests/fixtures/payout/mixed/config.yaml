@@ -17,7 +17,7 @@ groups:
         notifications:
           messengerType: Matrix
           channels: ["!payouts-ksm:web3.foundation"]
-    accountSet: companies
+    accountSetNames: [companies]
 
   # Payout group without a payout room: notifications fall back to the monitoring channel.
   - id: fallback-payout-group-x
@@ -25,12 +25,12 @@ groups:
     operations:
       payout:
         signer: fallback-ksm
-    accountSet: fallback
+    accountSetNames: [fallback]
 
   # No operations: monitored, never claimed.
   - id: partners-monitoring-only-grp
     chains: [AssetHubKusama]
-    accountSet: partners
+    accountSetNames: [partners, fallback]
 
 accountSets:
   companies:

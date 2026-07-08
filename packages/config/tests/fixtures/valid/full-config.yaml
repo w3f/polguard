@@ -42,7 +42,7 @@ groups:
   - id: validators-default  # This group will be created for both Polkadot and Kusama
     annotations:
       enablePayout: true
-    accountSet: validators-default
+    accountSetNames: [validators-default]
 
   - id: validators-custom
     chains:
@@ -67,4 +67,4 @@ groups:
       - name: Identity
         handlers:
           - IdentityChangedEvent
-    accountSet: validators-custom
+    accountSetNames: [validators-custom]
