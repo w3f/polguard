@@ -60,7 +60,9 @@ export class ConfigService {
         name: Joi.string()
           .valid(...Object.values(Chain))
           .default(Chain.AssetHubPolkadot),
-        rpcUrl: Joi.string().uri().default('wss://polkadot-asset-hub-rpc.polkadot.io'),
+        rpcUrl: Joi.alternatives()
+          .try(Joi.string().uri(), Joi.array().items(Joi.string().uri()).min(1))
+          .default('wss://polkadot-asset-hub-rpc.polkadot.io'),
         startBlock: Joi.number().integer().min(0).optional(),
       }).default({
         name: Chain.AssetHubPolkadot,
@@ -133,7 +135,7 @@ export class ConfigService {
     return this.config.chain.name;
   }
 
-  getRpcUrl(): string {
+  getRpcUrl(): string | string[] {
     return this.config.chain.rpcUrl;
   }
 
@@ -169,7 +171,7 @@ export class ConfigService {
 interface Config {
   chain: {
     name: Chain;
-    rpcUrl: string;
+    rpcUrl: string | string[];
     startBlock?: number;
   };
   server: {

@@ -4,6 +4,10 @@
 chain:
   name: AssetHubPolkadot    # default: AssetHubPolkadot
   rpcUrl: wss://polkadot-asset-hub-rpc.polkadot.io
+  # rpcUrl can also be a list of endpoints (different providers) for automatic failover:
+  # rpcUrl:
+  #   - wss://polkadot-asset-hub-rpc.polkadot.io
+  #   - wss://rpc-asset-hub-polkadot.luckyfriday.io
   # startBlock: 9430730     # optional, starts from latest if not specified
 
 # Environment (optional, default: development)

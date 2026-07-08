@@ -1,6 +1,4 @@
 import type { AppLogger } from '@w3f/polguard-common';
-import { getWsProvider } from 'polkadot-api/ws';
-import { createClient } from 'polkadot-api';
 import type { PolkadotClient } from 'polkadot-api';
 import { ConfigService } from '../config/config.service';
 import { ChainTelemetryService } from '../telemetry/chain-telemetry.service';
@@ -10,18 +8,13 @@ import { IncidentHandler } from '../../lib/incident-handler';
 import { createChainDataProvider } from '../../lib/data-provider';
 import { getMonitoringGroups } from '@w3f/polguard-config';
 import { getTypedApi } from '../papi-descriptors';
+import { ChainConnection } from '../chain-connection';
 
 export class WatcherService {
-  private static readonly HEALTH_CHECK_INTERVAL_MS = 30_000;
-  private static readonly STUCK_THRESHOLD_MS = 2 * 60_000;
-
-  private provider: ReturnType<typeof getWsProvider>;
+  private conn: ChainConnection;
   private client: PolkadotClient;
   private watcher: ChainWatcher;
   private persistenceInterval: NodeJS.Timeout;
-  private healthInterval: NodeJS.Timeout;
-  private lastProgressBlock?: number;
-  private lastProgressAt = 0;
 
   constructor(
     private readonly logger: AppLogger,
@@ -38,7 +31,8 @@ export class WatcherService {
     const startBlock = this.config.getStartBlock();
     const configsDir = this.config.getMonitoringConfigsDir();
 
-    this.client = await this.createClient(rpc, chainProps.specName);
+    this.conn = await ChainConnection.connect(rpc, this.logger, { expectedSpecName: chainProps.specName });
+    this.client = this.conn.client;
 
     const runtimeClient = getTypedApi(this.client, chain);
     const chainDataProvider = createChainDataProvider(
@@ -81,31 +75,13 @@ export class WatcherService {
     }, persistenceIntervalMs);
 
     // Guards against a stuck RPC connection
-    this.lastProgressAt = Date.now();
-    this.healthInterval = setInterval(() => {
-      const current = this.watcher?.getLastProcessedBlock();
-      if (current !== this.lastProgressBlock) {
-        this.lastProgressBlock = current;
-        this.lastProgressAt = Date.now();
-        return;
-      }
-      if (Date.now() - this.lastProgressAt > WatcherService.STUCK_THRESHOLD_MS) {
-        this.logger.error(
-          `No block progress in over ${WatcherService.STUCK_THRESHOLD_MS}ms (stuck at ${current}). Forcing RPC reconnect...`,
-        );
-        this.provider.switch();
-        this.lastProgressAt = Date.now();
-      }
-    }, WatcherService.HEALTH_CHECK_INTERVAL_MS);
+    this.conn.startStuckGuard(() => this.watcher?.getLastProcessedBlock());
   }
 
   async stop(): Promise<void> {
     try {
       if (this.persistenceInterval) {
         clearInterval(this.persistenceInterval);
-      }
-      if (this.healthInterval) {
-        clearInterval(this.healthInterval);
       }
 
       // Flush last processed block to Store on shutdown
@@ -119,26 +95,7 @@ export class WatcherService {
       this.logger.error(`Failed to flush last processed block: ${(error as Error).message}`);
     } finally {
       await this.watcher?.stop();
-      this.client?.destroy();
+      this.conn?.destroy();
     }
-  }
-
-  // TODO: Support multiple RPC endpoints for automatic failover: getWsProvider(["wss://primary", "wss://fallback"])
-  private async createClient(endpoint: string, expectedSpecName: string): Promise<PolkadotClient> {
-    this.provider = getWsProvider(endpoint);
-    const client = createClient(this.provider);
-
-    // Validate chain by checking runtime spec
-    // TODO: fix expectedSpecName, raise if mismatch
-    const { name: specName } = await client.getChainSpecData();
-    if (specName !== expectedSpecName) {
-      this.logger.warn(
-        `Chain spec mismatch: expected "${expectedSpecName}" but RPC returns "${specName}". ` +
-          `This may indicate a misconfigured RPC endpoint.`,
-      );
-    }
-
-    this.logger.info(`Connected to RPC: ${endpoint}`);
-    return client;
   }
 }

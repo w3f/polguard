@@ -5,10 +5,9 @@ import { ChainWatcher } from '../../src/lib/watcher';
 import { Chain, MonitorType, MonitoringGroup, MessengerType, getChainProperties } from '@w3f/polguard-common';
 import { LoggerAdapter, TestIncidentHandler, colors } from './test-utils';
 import { InMemoryStore } from '../../src/service/store/in-memory.store';
-import { createClient } from 'polkadot-api';
-import { getWsProvider } from 'polkadot-api/ws';
 import type { PolkadotClient } from 'polkadot-api';
 import { getTypedApi } from '../../src/service/papi-descriptors';
+import { ChainConnection } from '../../src/service/chain-connection';
 
 export interface TestCase {
   chain: Chain;
@@ -116,13 +115,13 @@ export class TestRunner {
   private async runChainTests(
     chain: Chain,
     testCases: TestCase[],
-    rpcEndpoint: string,
+    rpcEndpoints: string | string[],
     debug: boolean,
   ): Promise<TestResult[]> {
     console.log(`\n${colors.cyan}Running ${testCases.length} tests for ${chain}...${colors.reset}`);
-    console.log(`Connecting to ${chain} at ${rpcEndpoint}`);
-    const provider = getWsProvider(rpcEndpoint);
-    const client = createClient(provider);
+    console.log(`Connecting to ${chain} at ${[rpcEndpoints].flat().join(', ')}`);
+    const conn = await ChainConnection.connect(rpcEndpoints, new LoggerAdapter(console, debug));
+    const client = conn.client;
 
     try {
       const concurrencyLimit = 5;
@@ -137,7 +136,7 @@ export class TestRunner {
       return results;
     } finally {
       console.log(`Disconnecting from ${chain}`);
-      client.destroy();
+      conn.destroy();
     }
   }
 

@@ -1,11 +1,22 @@
+# Each chain lists multiple endpoints from DIFFERENT providers so the ws provider can
+# fail over automatically when one rate-limits or blocks the connection.
 rpcEndpoints:
-  # PeoplePolkadot: wss://rpc-people-polkadot.luckyfriday.io
-  # PeopleKusama: wss://rpc-people-kusama.luckyfriday.io
-  AssetHubPolkadot: wss://rpc-asset-hub-polkadot.luckyfriday.io
-  AssetHubKusama: wss://rpc-asset-hub-kusama.luckyfriday.io
-  AssetHubPaseo: wss://sys.turboflakes.io/asset-hub-paseo
-  # Centrifuge: wss://rpc-centrifuge.luckyfriday.io
-  # Frequency: wss://1.rpc.frequency.xyz
+  # PeoplePolkadot: [wss://rpc-people-polkadot.luckyfriday.io]
+  # PeopleKusama: [wss://rpc-people-kusama.luckyfriday.io]
+  AssetHubPolkadot:
+    - wss://rpc-asset-hub-polkadot.luckyfriday.io
+    - wss://polkadot-asset-hub-rpc.polkadot.io
+    - wss://sys.ibp.network/asset-hub-polkadot
+  AssetHubKusama:
+    - wss://rpc-asset-hub-kusama.luckyfriday.io
+    - wss://kusama-asset-hub-rpc.polkadot.io
+    - wss://sys.ibp.network/asset-hub-kusama
+  AssetHubPaseo:
+    - wss://asset-hub-paseo-rpc.n.dwellir.com
+    - wss://sys.turboflakes.io/asset-hub-paseo
+    - wss://api2.zondax.ch/pas/assethub/node/rpc
+  # Centrifuge: [wss://rpc-centrifuge.luckyfriday.io]
+  # Frequency: [wss://1.rpc.frequency.xyz]
 
 tests:
   Staking:
