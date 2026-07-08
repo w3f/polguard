@@ -35,7 +35,7 @@ export function createRootLogger(level: string, pretty = true): pino.Logger {
             options: {
               colorize: true,
               translateTime: 'SYS:HH:MM:ss.l',
-              ignore: 'context',
+              ignore: 'context,pid,hostname',
               messageFormat: '{if context}[{context}] {end}{msg}',
             },
           },

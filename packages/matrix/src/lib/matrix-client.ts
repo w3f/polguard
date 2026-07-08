@@ -13,6 +13,7 @@ import {
 import { decodeRecoveryKey } from 'matrix-js-sdk/lib/crypto-api/recovery-key.js';
 import { KnownMembership } from 'matrix-js-sdk/lib/@types/membership.js';
 import type { Logger as MatrixLogger } from 'matrix-js-sdk/lib/logger.js';
+import { logger as matrixGlobalLogger } from 'matrix-js-sdk/lib/logger.js';
 import { Tracing, LoggerLevel } from '@matrix-org/matrix-sdk-crypto-wasm';
 import { MatrixConfig } from './interfaces';
 import { AppLogger } from '@w3f/polguard-common';
@@ -31,14 +32,44 @@ function createMatrixLogger(pinoLogger: AppLogger): MatrixLogger {
   return adapter;
 }
 
+type LoglevelMethod = 'trace' | 'debug' | 'info' | 'warn' | 'error';
+
+/**
+ * The public matrix-js-sdk `Logger` type doesn't expose `methodFactory`/`rebuild`, but the
+ * exported global `logger` is really a `loglevel` instance underneath, and overriding its
+ * `methodFactory` (then rebuilding) is the SDK's own supported way to redirect its output -
+ * the same mechanism `Logger.getChild` uses internally to propagate custom factories.
+ */
+interface LoglevelLogger {
+  methodFactory: (methodName: LoglevelMethod, logLevel: number, loggerName: string) => (...args: unknown[]) => void;
+  rebuild(): void;
+}
+
 export class MatrixClient {
   protected client: SDKMatrixClient;
   protected config: MatrixConfig;
   protected logger: AppLogger;
+  private sdkLogger: AppLogger;
 
   constructor(config: MatrixConfig, logger: AppLogger) {
     this.config = config;
     this.logger = logger;
+    this.sdkLogger = this.logger.child?.({ context: 'MatrixSDK' }, { level: this.config.logging.level }) ?? logger;
+    this.installGlobalLoggerOverride();
+  }
+
+  /**
+   * matrix-js-sdk falls back to its own global default logger (writing straight to console)
+   * whenever a client isn't given an explicit `logger` option (e.g. the internal login client),
+   * and some internal modules (decrypt-error logging, MatrixRTCSession) use that global logger
+   * directly regardless. Redirecting it here is the only way to gate those under `matrix.logging.level`.
+   */
+  private installGlobalLoggerOverride(): void {
+    const loglevelLogger = matrixGlobalLogger as unknown as LoglevelLogger;
+    loglevelLogger.methodFactory = (methodName: LoglevelMethod) => {
+      return (...args: unknown[]) => this.sdkLogger[methodName](args.map(String).join(' '));
+    };
+    loglevelLogger.rebuild();
   }
 
   /**
@@ -161,14 +192,12 @@ export class MatrixClient {
 
   private createClientWithToken(userId: string, deviceId: string, accessToken: string): SDKMatrixClient {
     const recoveryKey = this.config.passwordAuth?.recoveryKey;
-    const sdkLogger =
-      this.logger.child?.({ context: 'MatrixSDK' }, { level: this.config.logging.level }) ?? this.logger;
     const options: ICreateClientOpts = {
       baseUrl: this.config.url,
       accessToken,
       userId,
       deviceId,
-      logger: createMatrixLogger(sdkLogger),
+      logger: createMatrixLogger(this.sdkLogger),
       cryptoCallbacks: recoveryKey
         ? {
             getSecretStorageKey: async ({ keys }) => {
