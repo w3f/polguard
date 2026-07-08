@@ -21,7 +21,7 @@
   "dependencies": {
     "@w3f/polguard-common": "workspace:*",
     "fastify": "^5.3.3",
-    "joi": "^17.13.3",
+    "joi": "^17.13.4",
     "js-yaml": "^4.1.0",
     "matrix-js-sdk": "^41.4.0",
     "pino": "^9.6.0",

@@ -33,7 +33,7 @@
     "@polkadot/util": "^13.5.6",
     "@polkadot/util-crypto": "^13.5.6",
     "@w3f/polguard-common": "workspace:*",
-    "joi": "^17.13.3",
+    "joi": "^17.13.4",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
