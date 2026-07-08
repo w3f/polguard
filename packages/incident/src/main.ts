@@ -2,8 +2,7 @@ import { createRequire } from 'node:module';
 import Fastify from 'fastify';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import pino from 'pino';
-import { buildOtelSdk, HttpError } from '@w3f/polguard-common';
+import { buildOtelSdk, createRootLogger, HttpError } from '@w3f/polguard-common';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { ConfigService } from './config/config.service';
 import { createDatabase } from './database/db';
@@ -16,15 +15,6 @@ import { lastBlockRoutes } from './routes/last-block.routes';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { name: string; version: string };
-
-function createRootLogger(level: string, isDev: boolean): pino.Logger {
-  return pino({
-    level,
-    ...(isDev
-      ? { transport: { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:HH:MM:ss.l' } } }
-      : {}),
-  });
-}
 
 async function bootstrap() {
   // Telemetry

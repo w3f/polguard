@@ -1,3 +1,5 @@
+import pino from 'pino';
+
 export interface Logger {
   error(message: string, ...args: any[]): void;
   warn(message: string, ...args: any[]): void;
@@ -15,6 +17,31 @@ export interface AppLogger {
   info(msg: string, ...args: any[]): void;
   debug(msg: string, ...args: any[]): void;
   trace(msg: string, ...args: any[]): void;
+  child?(bindings: Record<string, unknown>, options?: { level?: string }): AppLogger;
+}
+
+/**
+ * Shared root pino logger for all services. Folds `.child({ context })` bindings
+ * into the message line (e.g. `[Watcher] message`) instead of pino-pretty's default
+ * of a separate indented `context: "..."` row.
+ */
+export function createRootLogger(level: string, pretty = true): pino.Logger {
+  return pino({
+    level,
+    ...(pretty
+      ? {
+          transport: {
+            target: 'pino-pretty',
+            options: {
+              colorize: true,
+              translateTime: 'SYS:HH:MM:ss.l',
+              ignore: 'context',
+              messageFormat: '{if context}[{context}] {end}{msg}',
+            },
+          },
+        }
+      : {}),
+  });
 }
 
 const LOG_LEVEL_MAP: Record<string, ('error' | 'warn' | 'log' | 'debug' | 'verbose')[]> = {

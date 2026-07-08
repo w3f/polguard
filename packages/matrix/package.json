@@ -19,13 +19,12 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "@matrix-org/matrix-sdk-crypto-wasm": "^18.1.0",
     "@w3f/polguard-common": "workspace:*",
     "fastify": "^5.3.3",
     "joi": "^17.13.3",
     "js-yaml": "^4.1.0",
-    "matrix-js-sdk": "^41.4.0",
-    "pino": "^9.6.0",
-    "pino-pretty": "^13.0.0"
+    "matrix-js-sdk": "^41.4.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",

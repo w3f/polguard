@@ -57,8 +57,8 @@ export class ConfigService {
         url: Joi.string().uri().required(),
         userId: Joi.string().required(),
         logging: Joi.object({
-          level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error').default('warn'),
-        }).default({ level: 'warn' }),
+          level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error').default('error'),
+        }).default({ level: 'error' }),
         pruneOtherDevices: Joi.boolean().optional(),
         passwordAuth: Joi.object({
           password: Joi.string().required().messages({

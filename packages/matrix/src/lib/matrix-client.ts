@@ -13,6 +13,7 @@ import {
 import { decodeRecoveryKey } from 'matrix-js-sdk/lib/crypto-api/recovery-key.js';
 import { KnownMembership } from 'matrix-js-sdk/lib/@types/membership.js';
 import type { Logger as MatrixLogger } from 'matrix-js-sdk/lib/logger.js';
+import { Tracing, LoggerLevel } from '@matrix-org/matrix-sdk-crypto-wasm';
 import { MatrixConfig } from './interfaces';
 import { AppLogger } from '@w3f/polguard-common';
 
@@ -65,6 +66,7 @@ export class MatrixClient {
 
   private async setupClientAndSync(): Promise<void> {
     if (this.encryptionEnabled) {
+      this.installCryptoTracing();
       await this.client.initRustCrypto({ useIndexedDB: false });
     }
 
@@ -147,14 +149,26 @@ export class MatrixClient {
     }
   }
 
+  /**
+   * The Rust crypto layer writes straight to console.* (no pino hook available),
+   * so this only bounds its volume/severity, not its formatting.
+   */
+  private installCryptoTracing(): void {
+    const level = this.config.logging.level;
+    const loggerLevel = LoggerLevel[(level.charAt(0).toUpperCase() + level.slice(1)) as keyof typeof LoggerLevel];
+    new Tracing(loggerLevel);
+  }
+
   private createClientWithToken(userId: string, deviceId: string, accessToken: string): SDKMatrixClient {
     const recoveryKey = this.config.passwordAuth?.recoveryKey;
+    const sdkLogger =
+      this.logger.child?.({ context: 'MatrixSDK' }, { level: this.config.logging.level }) ?? this.logger;
     const options: ICreateClientOpts = {
       baseUrl: this.config.url,
       accessToken,
       userId,
       deviceId,
-      logger: createMatrixLogger(this.logger),
+      logger: createMatrixLogger(sdkLogger),
       cryptoCallbacks: recoveryKey
         ? {
             getSecretStorageKey: async ({ keys }) => {

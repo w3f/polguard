@@ -1,23 +1,12 @@
 import { createRequire } from 'node:module';
 import Fastify from 'fastify';
-import pino from 'pino';
-import { buildOtelSdk } from '@w3f/polguard-common';
+import { buildOtelSdk, createRootLogger } from '@w3f/polguard-common';
 import { ConfigService } from './config.service';
 import { IncidentService } from './incident.service';
 import { MatrixBot } from '../lib/matrix-bot';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { name: string; version: string };
-
-function createRootLogger(level: string): pino.Logger {
-  return pino({
-    level,
-    transport: {
-      target: 'pino-pretty',
-      options: { colorize: true, translateTime: 'SYS:HH:MM:ss.l' },
-    },
-  });
-}
 
 async function bootstrap() {
   // Telemetry

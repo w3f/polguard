@@ -1,20 +1,10 @@
-import pino from 'pino';
+import { createRootLogger } from '@w3f/polguard-common';
 import { getPayoutAccounts } from '@w3f/polguard-config';
 import { loadConfig } from './config';
 import { buildPlan } from './planner';
 import { createChainClient, getPayoutApi, signerFromMnemonic } from './papi';
 import { claimGroup } from './claim-engine';
 import { reportClaims } from './reporter';
-
-function createRootLogger(level: string): pino.Logger {
-  return pino({
-    level,
-    transport: {
-      target: 'pino-pretty',
-      options: { colorize: true, translateTime: 'SYS:HH:MM:ss.l' },
-    },
-  });
-}
 
 async function run(): Promise<number> {
   const config = loadConfig(createRootLogger('debug').child({ context: 'Config' }));
