@@ -12,9 +12,16 @@ import { getMonitoringGroups } from '@w3f/polguard-config';
 import { getTypedApi } from '../papi-descriptors';
 
 export class WatcherService {
+  private static readonly HEALTH_CHECK_INTERVAL_MS = 30_000;
+  private static readonly STUCK_THRESHOLD_MS = 2 * 60_000;
+
+  private provider: ReturnType<typeof getWsProvider>;
   private client: PolkadotClient;
   private watcher: ChainWatcher;
   private persistenceInterval: NodeJS.Timeout;
+  private healthInterval: NodeJS.Timeout;
+  private lastProgressBlock?: number;
+  private lastProgressAt = 0;
 
   constructor(
     private readonly logger: AppLogger,
@@ -72,12 +79,33 @@ export class WatcherService {
         this.logger.error(`Failed to persist last processed block: ${(error as Error).message}`);
       }
     }, persistenceIntervalMs);
+
+    // Guards against a stuck RPC connection
+    this.lastProgressAt = Date.now();
+    this.healthInterval = setInterval(() => {
+      const current = this.watcher?.getLastProcessedBlock();
+      if (current !== this.lastProgressBlock) {
+        this.lastProgressBlock = current;
+        this.lastProgressAt = Date.now();
+        return;
+      }
+      if (Date.now() - this.lastProgressAt > WatcherService.STUCK_THRESHOLD_MS) {
+        this.logger.error(
+          `No block progress in over ${WatcherService.STUCK_THRESHOLD_MS}ms (stuck at ${current}). Forcing RPC reconnect...`,
+        );
+        this.provider.switch();
+        this.lastProgressAt = Date.now();
+      }
+    }, WatcherService.HEALTH_CHECK_INTERVAL_MS);
   }
 
   async stop(): Promise<void> {
     try {
       if (this.persistenceInterval) {
         clearInterval(this.persistenceInterval);
+      }
+      if (this.healthInterval) {
+        clearInterval(this.healthInterval);
       }
 
       // Flush last processed block to Store on shutdown
@@ -97,8 +125,8 @@ export class WatcherService {
 
   // TODO: Support multiple RPC endpoints for automatic failover: getWsProvider(["wss://primary", "wss://fallback"])
   private async createClient(endpoint: string, expectedSpecName: string): Promise<PolkadotClient> {
-    const provider = getWsProvider(endpoint);
-    const client = createClient(provider);
+    this.provider = getWsProvider(endpoint);
+    const client = createClient(this.provider);
 
     // Validate chain by checking runtime spec
     // TODO: fix expectedSpecName, raise if mismatch
