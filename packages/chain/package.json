@@ -25,7 +25,7 @@
     "@w3f/polguard-common": "workspace:*",
     "@w3f/polguard-config": "workspace:*",
     "fastify": "^5.3.3",
-    "joi": "^17.13.4",
+    "joi": "^17.13.3",
     "js-yaml": "^4.1.0",
     "json-bigint": "^1.0.0",
     "pino": "^9.6.0",
