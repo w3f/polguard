@@ -2,8 +2,9 @@
 #  GitHub Actions pipeline for "polguard"
 #
 #  Trust-separated:
-#   • PRs (untrusted)   ⇒ code-quality + hermetic e2e (build → kind load → test,
-#                          nothing is pushed). e2e is same-repo only (needs secrets).
+#   • PRs                ⇒ code-quality only. E2E can be run manually via
+#                          workflow_dispatch (hermetic: build → kind load →
+#                          test, nothing is pushed) for pre-merge coverage.
 #   • master (trusted)  ⇒ push :sha → e2e against that exact image → only then
 #                          promote master/latest and publish Helm charts.
 #   • Release tags vX.Y.Z ⇒ retag the tested :sha → :vX.Y.Z + GitHub Release.
@@ -19,6 +20,7 @@ on:
   pull_request:
     branches: [master]
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -43,6 +45,14 @@ jobs:
           cache: yarn
       - name: Enable Corepack (Yarn 4)
         run: corepack enable
+      - name: Cache node_modules
+        uses: actions/cache@v6
+        with:
+          path: |
+            node_modules
+            e2e/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
       - run: yarn install --immutable
       - run: yarn build
       - run: yarn lint
@@ -50,14 +60,9 @@ jobs:
       - run: yarn test:integration
         timeout-minutes: 5
 
-  # Untrusted PR path: build the app image locally and test it in KinD.
-  # Skipped for fork PRs (no access to secrets that the e2e chart needs).
   e2e-pr:
-    name: E2E (PR)
-    if: >-
-      github.event_name == 'pull_request'
-      && github.event.pull_request.draft != true
-      && github.event.pull_request.head.repo.full_name == github.repository
+    name: E2E (manual)
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     needs: [code-quality]
     uses: ./.github/workflows/e2e.yml
     secrets: inherit

@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM node:22-alpine AS builder
 
 # Fixes CI fingerprint issue
@@ -20,7 +22,8 @@ COPY packages/payouts/package.json packages/payouts/
 COPY packages/payouts/.papi packages/payouts/.papi
 
 # Install dependencies (uses bundled Yarn from .yarn/releases via .yarnrc.yml)
-RUN yarn install
+RUN --mount=type=cache,target=/root/.yarn/berry/cache,sharing=locked \
+    yarn install
 
 # Copy source files for all packages
 COPY packages/common packages/common
@@ -32,6 +35,11 @@ COPY packages/payouts packages/payouts
 
 # Build all packages in dependency order (uses bundled Yarn from .yarn/releases via .yarnrc.yml)
 RUN yarn build
+
+# Drop devDependencies (typescript, vitest, tsup, testcontainers, ...) before
+# node_modules gets copied into the runtime image below.
+RUN --mount=type=cache,target=/root/.yarn/berry/cache,sharing=locked \
+    yarn workspaces focus --all --production
 
 FROM node:22-alpine AS production
 
