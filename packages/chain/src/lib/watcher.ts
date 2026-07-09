@@ -82,7 +82,9 @@ export class ChainWatcher {
       this.telemetry?.recordLatestBlock(block.number);
     });
 
-    this.startBlockProcessingLoop(startBlock);
+    this.startBlockProcessingLoop(startBlock).catch(err =>
+      this.logger.error(`Block processing loop exited: ${(err as Error).message}`),
+    );
   }
 
   /**

@@ -67,9 +67,9 @@ export class ChainConnection {
 
   /**
    * Guards against a stuck RPC connection: if `getProgress` stops advancing for longer than
-   * the threshold, force a reconnect.
+   * the threshold, invoke `onStuck` to heal it. Detection only — recovery is the caller's concern.
    */
-  startStuckGuard(getProgress: () => number | undefined, opts: StuckGuardOptions = {}): void {
+  startStuckGuard(getProgress: () => number | undefined, onStuck: () => void, opts: StuckGuardOptions = {}): void {
     const intervalMs = opts.intervalMs ?? ChainConnection.DEFAULT_HEALTH_CHECK_INTERVAL_MS;
     const thresholdMs = opts.thresholdMs ?? ChainConnection.DEFAULT_STUCK_THRESHOLD_MS;
 
@@ -85,9 +85,9 @@ export class ChainConnection {
       }
       if (Date.now() - lastProgressAt > thresholdMs) {
         this.logger.error(
-          `No block progress in over ${thresholdMs}ms (stuck at ${current}). Forcing RPC reconnect...`,
+          `No block progress in over ${thresholdMs}ms (stuck at ${current}). Rebuilding connection...`,
         );
-        this.provider.switch();
+        onStuck();
         lastProgressAt = Date.now();
       }
     }, intervalMs);

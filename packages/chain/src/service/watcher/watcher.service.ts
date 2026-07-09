@@ -15,6 +15,7 @@ export class WatcherService {
   private client: PolkadotClient;
   private watcher: ChainWatcher;
   private persistenceInterval: NodeJS.Timeout;
+  private restarting = false;
 
   constructor(
     private readonly logger: AppLogger,
@@ -26,9 +27,30 @@ export class WatcherService {
 
   async start(): Promise<void> {
     const chain = this.config.getChain();
+
+    // Config `startBlock` is a one-time bootstrap override; rebuilds resume from the Store watermark.
+    await this.buildAndStart(this.config.getStartBlock());
+
+    // This ensures progress is saved even if the process crashes (OOM, SIGKILL, etc.)
+    const persistenceIntervalMs = 5 * 60 * 1000; // 5 minutes
+    this.persistenceInterval = setInterval(async () => {
+      try {
+        const lastProcessed = this.watcher?.getLastProcessedBlock();
+        if (lastProcessed !== undefined) {
+          await this.store.setLastBlock(chain, lastProcessed);
+          this.logger.debug(`Persisted last processed block: ${lastProcessed}`);
+        }
+      } catch (error) {
+        this.logger.error(`Failed to persist last processed block: ${(error as Error).message}`);
+      }
+    }, persistenceIntervalMs);
+  }
+
+  /** Builds the connection + watcher and starts processing. Re-run on rebuild. */
+  private async buildAndStart(startBlock?: number): Promise<void> {
+    const chain = this.config.getChain();
     const chainProps = getChainProperties(chain);
     const rpc = this.config.getRpcUrl();
-    const startBlock = this.config.getStartBlock();
     const configsDir = this.config.getMonitoringConfigsDir();
 
     this.conn = await ChainConnection.connect(rpc, this.logger, { expectedSpecName: chainProps.specName });
@@ -61,22 +83,34 @@ export class WatcherService {
 
     await this.watcher.start(startBlock);
 
-    // This ensures progress is saved even if the process crashes (OOM, SIGKILL, etc.)
-    const persistenceIntervalMs = 5 * 60 * 1000; // 5 minutes
-    this.persistenceInterval = setInterval(async () => {
-      try {
-        const lastProcessed = this.watcher?.getLastProcessedBlock();
-        if (lastProcessed !== undefined) {
-          await this.store.setLastBlock(chain, lastProcessed);
-          this.logger.debug(`Persisted last processed block: ${lastProcessed}`);
-        }
-      } catch (error) {
-        this.logger.error(`Failed to persist last processed block: ${(error as Error).message}`);
-      }
-    }, persistenceIntervalMs);
+    // Guards against a stuck RPC connection: on stall, rebuild the whole connection.
+    this.conn.startStuckGuard(
+      () => this.watcher?.getLastProcessedBlock(),
+      () => {
+        void this.restart();
+      },
+    );
+  }
 
-    // Guards against a stuck RPC connection
-    this.conn.startStuckGuard(() => this.watcher?.getLastProcessedBlock());
+  /**
+   * Tears down the current connection + watcher and rebuilds them (fresh client + chainHead follow).
+   * A socket-level reconnect cannot clear a request hung on an invalidated follow, so we rebuild.
+   * On rebuild the watcher resumes from the Store watermark (persisted every block), not the config
+   * `startBlock`. If the rebuild itself fails, the rejection surfaces to the process-level handler in
+   * `main.ts`, which exits cleanly for the orchestrator to restart.
+   */
+  private async restart(): Promise<void> {
+    if (this.restarting) return;
+    this.restarting = true;
+    try {
+      this.logger.warn('Rebuilding chain connection after stall...');
+      await this.watcher.stop();
+      this.conn.destroy();
+      await this.buildAndStart();
+      this.logger.info('Chain connection rebuilt.');
+    } finally {
+      this.restarting = false;
+    }
   }
 
   async stop(): Promise<void> {

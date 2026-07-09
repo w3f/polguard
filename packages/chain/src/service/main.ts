@@ -38,12 +38,11 @@ async function bootstrap() {
   await app.listen({ port: serverConfig.port, host: serverConfig.host });
   logger.info(`HTTP server listening on ${serverConfig.host}:${serverConfig.port}`);
 
-  // Start watcher
-  await watcher.start();
-  logger.info('Application initialized successfully');
-
-  // Graceful shutdown
+  // Graceful shutdown (declared before the fatal handlers so they can reuse it)
+  let shuttingDown = false;
   const shutdown = async (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     logger.info(`${signal} received. Starting graceful shutdown...`);
     await watcher.stop();
     (store as any).destroy?.();
@@ -54,6 +53,20 @@ async function bootstrap() {
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
+
+  // Safety net: an unhandled rejection / uncaught exception (e.g. a connection rebuild that fails
+  // because every RPC is down) should exit cleanly for the orchestrator to restart, not hang.
+  const fatal = (kind: string) => (error: unknown) => {
+    logger.error(`Fatal ${kind}: ${(error as Error)?.stack ?? String(error)}. Exiting...`);
+    const timeout = new Promise(resolve => setTimeout(resolve, 5000));
+    Promise.race([shutdown(kind), timeout]).finally(() => process.exit(1));
+  };
+  process.on('unhandledRejection', fatal('unhandledRejection'));
+  process.on('uncaughtException', fatal('uncaughtException'));
+
+  // Start watcher
+  await watcher.start();
+  logger.info('Application initialized successfully');
 }
 
 bootstrap().catch(error => {
