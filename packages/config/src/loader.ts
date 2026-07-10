@@ -10,6 +10,11 @@ type MonitoringSnapshot = {
   fingerprint: string;
 };
 
+export interface MonitoringGroupsResult {
+  groups: MonitoringGroup[];
+  fingerprint: string;
+}
+
 // ============================================================================
 // MODULE STATE
 let cachedSnapshot: MonitoringSnapshot | null = null;
@@ -17,9 +22,16 @@ let loadPromise: Promise<MonitoringSnapshot> | null = null;
 
 // ============================================================================
 // PUBLIC API
-export async function getMonitoringGroups(chain: Chain, dir: string, logger: AppLogger): Promise<MonitoringGroup[]> {
+export async function getMonitoringGroups(
+  chain: Chain,
+  dir: string,
+  logger: AppLogger,
+): Promise<MonitoringGroupsResult> {
   const snapshot = await loadSnapshot(dir, logger);
-  return (snapshot.byChain.get(chain) || []).filter(group => group.monitors.length > 0);
+  return {
+    groups: (snapshot.byChain.get(chain) || []).filter(group => group.monitors.length > 0),
+    fingerprint: snapshot.fingerprint,
+  };
 }
 
 // ============================================================================

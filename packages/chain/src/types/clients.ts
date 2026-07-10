@@ -57,5 +57,5 @@ export interface ChainTelemetryClient {
 }
 
 export interface MonitoringConfigClient {
-  getMonitoringGroups(): Promise<MonitoringGroup[]>;
+  getMonitoringGroups(): Promise<{ groups: MonitoringGroup[]; fingerprint: string }>;
 }

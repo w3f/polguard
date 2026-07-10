@@ -150,8 +150,6 @@ export class TestRunner {
       const incidentHandler = new TestIncidentHandler(testId);
 
       const runtimeClient = getTypedApi(client, testCase.chain);
-      // Override via CHAIN_STORAGE_QUERY_ENGINE=legacyRpc to verify the alternative engine against
-      // this same suite - see docs/STORAGE_QUERY_ENGINES.md.
       const storageQueryEngine = process.env.CHAIN_STORAGE_QUERY_ENGINE as StorageQueryEngine | undefined;
       const chainProvider = createChainDataProvider(
         client,
@@ -170,7 +168,7 @@ export class TestRunner {
 
       const watcher = new ChainWatcher(
         logger,
-        { getMonitoringGroups: async () => [group] },
+        { getMonitoringGroups: async () => ({ groups: [group], fingerprint: 'test' }) },
         store,
         client,
         runtimeClient,

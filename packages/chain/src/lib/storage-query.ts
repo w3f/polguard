@@ -75,7 +75,10 @@ function chainHeadFetch(chainHead: InternalChainHead): FetchRaw {
             }
           }
         },
-        error: reject,
+        error: err => {
+          subscription.unsubscribe();
+          reject(err);
+        },
         complete: () => {
           subscription.unsubscribe();
           resolve();

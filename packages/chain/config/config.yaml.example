@@ -11,7 +11,6 @@ chain:
   # startBlock: 9430730     # optional, starts from latest if not specified
 
   # Batched per-address storage query engine (optional, default: chainHead)
-  # See docs/STORAGE_QUERY_ENGINES.md for background and benchmark comparison.
   # Values:
   #   chainHead  - batches keys into one chainHead_v1_storage operation (PAPI internal API)
   #   legacyRpc  - batches keys into one legacy state_queryStorageAt RPC call (public API)

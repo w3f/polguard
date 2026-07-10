@@ -46,7 +46,7 @@ describe('getPayoutAccounts', () => {
 
   it('does not surface a standalone payout config to monitoring', async () => {
     const dir = path.join(FIXTURES_DIR, 'standalone');
-    const groups = await getMonitoringGroups(Chain.AssetHubKusama, dir, createLogger());
+    const { groups } = await getMonitoringGroups(Chain.AssetHubKusama, dir, createLogger());
     expect(groups).toEqual([]);
   });
 
@@ -86,7 +86,7 @@ describe('getPayoutAccounts', () => {
 
   it('still exposes monitored groups to monitoring in a mixed config', async () => {
     const dir = path.join(FIXTURES_DIR, 'mixed');
-    const groups = await getMonitoringGroups(Chain.AssetHubKusama, dir, createLogger());
+    const { groups } = await getMonitoringGroups(Chain.AssetHubKusama, dir, createLogger());
     const ids = groups.map(g => g.id);
     expect(ids).toContain('companies-validators-group');
     expect(ids).toContain('partners-monitoring-only-grp');

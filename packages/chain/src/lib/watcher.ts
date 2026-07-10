@@ -36,6 +36,7 @@ export class ChainWatcher {
   private latestBlockNumber = 0;
   private latestProcessedBlock?: number;
   private finalizedSub?: Subscription;
+  private lastConfigFingerprint?: string;
 
   private static readonly monitorConfigs = [
     [MonitorType.Governance, GovernanceMonitor],
@@ -107,7 +108,12 @@ export class ChainWatcher {
    * Initializes monitors based on the latest configuration.
    */
   async initializeMonitors(): Promise<void> {
-    const groups = await this.configClient.getMonitoringGroups();
+    const { groups, fingerprint } = await this.configClient.getMonitoringGroups();
+
+    if (fingerprint === this.lastConfigFingerprint) {
+      return;
+    }
+    this.lastConfigFingerprint = fingerprint;
 
     this.telemetry?.recordMonitoringConfig(groups);
 
@@ -145,15 +151,14 @@ export class ChainWatcher {
     let nextBlockNumber = startBlock ?? lastProcessedBlock ?? this.latestBlockNumber;
 
     while (this.isRunning) {
-      // Check for config changes every block
-      await this.initializeMonitors();
-
-      if (this.monitors.length === 0) {
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        continue;
-      }
-
       if (nextBlockNumber <= this.latestBlockNumber) {
+        await this.initializeMonitors();
+
+        if (this.monitors.length === 0) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue;
+        }
+
         this.telemetry?.recordCurrentBlock(nextBlockNumber);
         const start = performance.now();
         await this.processBlock(nextBlockNumber);
