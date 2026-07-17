@@ -21,11 +21,12 @@ async function run(): Promise<number> {
     const client = createChainClient(rpcUrl);
     try {
       const api = getPayoutApi(client, chain);
+      const at = (await client.getFinalizedBlock()).hash;
       for (const group of groups) {
         const groupLogger = logger.child({ chain, signer: group.signer });
         try {
           const signer = signerFromMnemonic(config.signers[group.signer]);
-          const submitted = await claimGroup(api, group.accounts, signer, config.claim, groupLogger);
+          const submitted = await claimGroup(api, at, group.accounts, signer, config.claim, groupLogger);
           groupLogger.info({ submitted: submitted.length }, 'Signer group complete');
           await reportClaims(config.notifications, chain, group.accounts, { ok: true, claims: submitted }, groupLogger);
         } catch (error) {

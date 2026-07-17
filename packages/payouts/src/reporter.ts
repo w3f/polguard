@@ -24,9 +24,13 @@ function errorMessage(error: unknown): string {
 
 function accountLine(chain: Chain, account: PayoutAccount, claims: Claim[]): string {
   const mine = claims.filter(c => c.stash === account.ss58);
-  if (mine.length === 0) return `${account.name}: nothing to claim`;
   const links = mine.map(c => `[era ${c.era} p${c.page}](${buildExplorerUrl(chain, 'extrinsic', c.txHash)})`);
   return `${account.name}: claimed ${mine.length} page(s) — ${links.join(', ')}`;
+}
+
+function claimedAccounts(accounts: PayoutAccount[], claims: Claim[]): PayoutAccount[] {
+  const stashes = new Set(claims.map(c => c.stash));
+  return accounts.filter(a => stashes.has(a.ss58));
 }
 
 function buildContent(chain: Chain, accounts: PayoutAccount[], outcome: ClaimOutcome): Banner {
@@ -37,10 +41,12 @@ function buildContent(chain: Chain, accounts: PayoutAccount[], outcome: ClaimOut
       details: [`Accounts: ${accounts.map(a => a.name).join(', ')}`, `Error: ${errorMessage(outcome.error)}`],
     };
   }
+  // Only list accounts that actually claimed — no "nothing to claim" rows.
+  const claims = outcome.claims ?? [];
   return {
     icon: '✅',
     title: `${chain} — payout run complete`,
-    details: accounts.map(a => accountLine(chain, a, outcome.claims ?? [])),
+    details: claimedAccounts(accounts, claims).map(a => accountLine(chain, a, claims)),
   };
 }
 
@@ -75,6 +81,10 @@ export async function reportClaims(
     if (!url) continue;
     const style = MESSENGER_STYLE_MAP[messengerType];
     for (const [channelId, channelAccounts] of channels) {
+      if (outcome.ok && claimedAccounts(channelAccounts, outcome.claims ?? []).length === 0) {
+        logger.debug(`No claims for ${channelId}; skipping report`);
+        continue;
+      }
       const message = renderBanner(style, buildContent(chain, channelAccounts, outcome));
       if (await sendNotification(messengerType, url, channelId, message, logger)) {
         logger.info(`Reported to ${channelId}`);

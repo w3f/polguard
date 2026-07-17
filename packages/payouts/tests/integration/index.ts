@@ -113,11 +113,11 @@ async function main(): Promise<void> {
       const api = getPayoutApi(client, chain);
       const signer = signerFromMnemonic(config.signers[groups[0].signer]);
 
-      const first = await claimGroup(api, groups[0].accounts, signer, config.claim, logger);
+      const first = await claimGroup(api, (await client.getFinalizedBlock()).hash, groups[0].accounts, signer, config.claim, logger);
       assert(first.length > 0, 'expected at least one claim to be submitted');
       logger.info({ submitted: first }, 'First run submitted claims');
 
-      const second = await claimGroup(api, groups[0].accounts, signer, config.claim, logger);
+      const second = await claimGroup(api, (await client.getFinalizedBlock()).hash, groups[0].accounts, signer, config.claim, logger);
       assert.strictEqual(second.length, 0, 'second run should be idempotent (nothing to claim)');
       logger.info('Idempotent re-run found nothing to claim');
     } finally {

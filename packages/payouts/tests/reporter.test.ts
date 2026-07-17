@@ -69,7 +69,7 @@ describe('reportClaims', () => {
   it('logs an error but does not throw when the POST fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
     const logger = fakeLogger();
-    await reportClaims(notifications, Chain.AssetHubPolkadot, [account('A', 'val-a', ['!room-a'])], { ok: true, claims: [] }, logger);
+    await reportClaims(notifications, Chain.AssetHubPolkadot, [account('A', 'val-a', ['!room-a'])], { ok: true, claims: [claim('A', 100, 0)] }, logger);
     expect(logger.error).toHaveBeenCalled();
   });
 });
