@@ -3,15 +3,13 @@ import { IncidentService } from '../incident/incident.service';
 import {
   CreateIncidentSchema,
   GetIncidentsSchema,
-  AcknowledgeIncidentSchema,
+  ChannelUserActionSchema,
   ResolveByChainSchema,
-  ResolveManuallySchema,
   IncidentIdParamsSchema,
   type CreateIncidentBody,
   type GetIncidentsQuery,
-  type AcknowledgeIncidentBody,
+  type ChannelUserActionBody,
   type ResolveByChainBody,
-  type ResolveManuallyBody,
   type IncidentIdParams,
 } from '../schemas/incident.schemas';
 
@@ -64,12 +62,12 @@ export function incidentRoutes(incidentService: IncidentService) {
       },
     );
 
-    app.post<{ Params: IncidentIdParams; Body: AcknowledgeIncidentBody }>(
+    app.post<{ Params: IncidentIdParams; Body: ChannelUserActionBody }>(
       '/incidents/:id/acknowledge',
       {
         schema: {
           params: IncidentIdParamsSchema,
-          body: AcknowledgeIncidentSchema,
+          body: ChannelUserActionSchema,
           tags: ['incidents'],
           summary: 'Acknowledge an incident by ID',
           description: 'Mark an incident as acknowledged by a specific user.',
@@ -96,12 +94,12 @@ export function incidentRoutes(incidentService: IncidentService) {
       },
     );
 
-    app.post<{ Params: IncidentIdParams; Body: ResolveManuallyBody }>(
+    app.post<{ Params: IncidentIdParams; Body: ChannelUserActionBody }>(
       '/incidents/:id/resolve-manual',
       {
         schema: {
           params: IncidentIdParamsSchema,
-          body: ResolveManuallySchema,
+          body: ChannelUserActionSchema,
           tags: ['incidents'],
           summary: 'Resolve an incident manually (Matrix Bot)',
           description: 'Manually resolve an incident via Matrix bot command.',

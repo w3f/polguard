@@ -1,4 +1,11 @@
-import { IncidentHandlerClient, BlockContext, AppLogger, NotificationSettings, IncidentKey } from '../../src/types';
+import {
+  IncidentHandlerClient,
+  BlockContext,
+  AppLogger,
+  NotificationSettings,
+  IncidentKey,
+  IncidentContent,
+} from '../../src/types';
 
 export class LoggerAdapter implements AppLogger {
   constructor(
@@ -39,7 +46,7 @@ export class TestIncidentHandler implements IncidentHandlerClient {
   constructor(private testId?: string) {}
 
   async handle(
-    message: string[],
+    content: IncidentContent,
     notifications: NotificationSettings,
     incidentKey: IncidentKey,
     blockContext: BlockContext,
@@ -52,7 +59,7 @@ export class TestIncidentHandler implements IncidentHandlerClient {
     this.incidents.set(key, currentCount + 1);
 
     const testId = this.testId || 'Unknown';
-    const formattedMessage = message.join('\n  ');
+    const formattedMessage = [content.condition, ...content.details].join('\n  ');
     console.log(`${colors.yellow}${testId}${colors.reset}\n  ${colors.cyan}${formattedMessage}${colors.reset}`);
   }
 

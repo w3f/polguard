@@ -2,6 +2,7 @@ export const TELEMETRY_PREFIX = 'w3f.polguard';
 
 export interface ChainProperties {
   chain: Chain,
+  displayName: string;
   specName: string;
   chainDecimals: number;
   chainToken: string;
@@ -84,6 +85,7 @@ export enum AssetsHandlerType {
 export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   [Chain.Polkadot]: {
     chain: Chain.Polkadot,
+    displayName: 'Polkadot',
     specName: 'polkadot',
     chainDecimals: 10,
     chainToken: 'DOT',
@@ -92,6 +94,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.Kusama]: {
     chain: Chain.Kusama,
+    displayName: 'Kusama',
     specName: 'kusama',
     chainDecimals: 12,
     chainToken: 'KSM',
@@ -100,6 +103,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.Paseo]: {
     chain: Chain.Paseo,
+    displayName: 'Paseo',
     specName: 'paseo',
     chainDecimals: 10,
     chainToken: 'PAS',
@@ -108,6 +112,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.AssetHubPolkadot]: {
     chain: Chain.AssetHubPolkadot,
+    displayName: 'Asset Hub (Polkadot)',
     specName: 'statemint',
     chainDecimals: 10,
     chainToken: 'DOT',
@@ -116,6 +121,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.AssetHubKusama]: {
     chain: Chain.AssetHubKusama,
+    displayName: 'Asset Hub (Kusama)',
     specName: 'statemine',
     chainDecimals: 12,
     chainToken: 'KSM',
@@ -124,6 +130,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.AssetHubPaseo]: {
     chain: Chain.AssetHubPaseo,
+    displayName: 'Asset Hub (Paseo)',
     specName: 'asset-hub-paseo',
     chainDecimals: 10,
     chainToken: 'PAS',
@@ -132,6 +139,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.PeoplePolkadot]: {
     chain: Chain.PeoplePolkadot,
+    displayName: 'People (Polkadot)',
     specName: 'people-polkadot',
     chainDecimals: 10,
     chainToken: 'DOT',
@@ -140,6 +148,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.PeopleKusama]: {
     chain: Chain.PeopleKusama,
+    displayName: 'People (Kusama)',
     specName: 'people-kusama',
     chainDecimals: 12,
     chainToken: 'KSM',
@@ -148,6 +157,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.PeoplePaseo]: {
     chain: Chain.PeoplePaseo,
+    displayName: 'People (Paseo)',
     specName: 'people-paseo',
     chainDecimals: 10,
     chainToken: 'PAS',
@@ -156,6 +166,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.Centrifuge]: {
     chain: Chain.Centrifuge,
+    displayName: 'Centrifuge',
     specName: 'centrifuge',
     chainDecimals: 18,
     chainToken: 'CFG',
@@ -164,6 +175,7 @@ export const CHAIN_CONFIGS: Record<Chain, ChainProperties> = {
   },
   [Chain.Frequency]: {
     chain: Chain.Frequency,
+    displayName: 'Frequency',
     specName: 'frequency',
     chainDecimals: 8,
     chainToken: 'FRQCY',

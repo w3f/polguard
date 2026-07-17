@@ -1,5 +1,15 @@
 import { eq, and, lt, isNotNull, or } from 'drizzle-orm';
-import { AppLogger, MessengerType, NotificationType, MESSENGER_STYLE_MAP, MessagePayload, MessageRenderer, sendNotification } from '@w3f/polguard-common';
+import {
+  AppLogger,
+  Chain,
+  MessengerType,
+  NotificationType,
+  MESSENGER_STYLE_MAP,
+  IncidentView,
+  IncidentContent,
+  renderIncident,
+  sendNotification,
+} from '@w3f/polguard-common';
 import type { Database } from '../database/db';
 import { incidents, notifications } from '../database/schema';
 import { ConfigService } from '../config/config.service';
@@ -11,39 +21,29 @@ export class NotificationService {
     private readonly logger: AppLogger,
   ) {}
 
-  parseIncidentMessage(message: string): { title: string; details: string[] } {
-    const lines = (message || '')
-      .split('\n')
-      .map(s => s.trim())
-      .filter(Boolean);
-    return { title: lines[0] ?? '', details: lines.slice(1) };
-  }
-
   /**
    * Create notifications for an incident.
    */
   async createNotifications(
-    incident: { id: string; needsAck: boolean; isResolved: boolean },
+    incident: { id: string; chain: string; needsAck: boolean; isResolved: boolean },
     channels: { channelId: string; messengerType: MessengerType; repeatFiringMs?: number }[],
     type: NotificationType,
-    message: string,
+    content: IncidentContent,
+    block?: { blockNumber?: number; eventIdx?: number; extrinsicIdx?: number },
   ): Promise<void> {
-    const { title, details } = this.parseIncidentMessage(message);
-
-    const basePayload: Omit<MessagePayload, 'kind'> = {
-      title,
-      details,
+    const view: IncidentView = {
       incidentId: incident.id,
-      needsAck: incident.needsAck,
+      type,
+      chain: incident.chain as Chain,
       isResolved: incident.isResolved,
+      needsAck: incident.needsAck,
+      content,
+      ...block,
     };
 
     const notificationRows = channels.map(channel => {
       const styleType = MESSENGER_STYLE_MAP[channel.messengerType];
-      const styledMessage = MessageRenderer.format(styleType, {
-        ...basePayload,
-        kind: type,
-      });
+      const styledMessage = renderIncident(styleType, view);
 
       return {
         incidentId: incident.id,
@@ -64,25 +64,13 @@ export class NotificationService {
   /**
    * Create resolution notifications for an incident.
    */
-  async createResolutionNotifications(incident: {
-    id: string;
-    needsAck: boolean;
-    isResolved: boolean;
-    resolutionMessage: string | null;
-  }): Promise<void> {
-    // Find all channels that received alert notifications for this incident
-    const alertNotifications = await this.db
-      .select()
-      .from(notifications)
-      .where(and(eq(notifications.incidentId, incident.id), eq(notifications.type, NotificationType.Alert)));
-
-    const channels = alertNotifications.map(alert => ({
-      channelId: alert.channelId,
-      messengerType: alert.messengerType as MessengerType,
-      repeatFiringMs: alert.repeatFiringMs ?? undefined,
-    }));
-
-    await this.createNotifications(incident, channels, NotificationType.Resolution, incident.resolutionMessage ?? '');
+  async createResolutionNotifications(
+    incident: { id: string; chain: string; needsAck: boolean; isResolved: boolean; notificationChannels: unknown },
+    content: IncidentContent,
+    block?: { blockNumber?: number; eventIdx?: number; extrinsicIdx?: number },
+  ): Promise<void> {
+    const channels = incident.notificationChannels as { channelId: string; messengerType: MessengerType; repeatFiringMs?: number }[];
+    await this.createNotifications(incident, channels, NotificationType.Resolution, content, block);
   }
 
   /**

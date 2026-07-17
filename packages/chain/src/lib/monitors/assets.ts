@@ -3,44 +3,33 @@ import {
   MonitorType,
   Chain,
   EventHandlerParams,
-  StateHandlerParams,
   ID_TOKEN_MAP,
   TokenBalances,
 } from '../../types';
 import { Event, State } from '../decorators';
 import { AbstractMonitor } from './abstract-monitor';
 
+type GetBalances = (addresses: string[], tokens: string[], block: number) => Promise<TokenBalances>;
+
 export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
   @State(H.AssetBalanceDecreaseState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
-  async assetBalanceDecrease(params: StateHandlerParams<H.AssetBalanceDecreaseState>): Promise<void> {
-    return this.handleBalanceDecrease(
-      (addrs, tokens, block) => this.chain.assetsAccountBalance(addrs, tokens, block),
-      params,
-    );
+  async assetBalanceDecrease(): Promise<void> {
+    return this.handleBalanceDecrease((addrs, tokens, block) => this.chain.assetsAccountBalance(addrs, tokens, block));
   }
 
   @State(H.AssetBalanceDecreaseState, [Chain.Centrifuge])
-  async ormlTokensBalanceDecrease(params: StateHandlerParams<H.AssetBalanceDecreaseState>): Promise<void> {
-    return this.handleBalanceDecrease(
-      (addrs, tokens, block) => this.chain.ormlTokensAccountBalance(addrs, tokens, block),
-      params,
-    );
+  async ormlTokensBalanceDecrease(): Promise<void> {
+    return this.handleBalanceDecrease((addrs, tokens, block) => this.chain.ormlTokensAccountBalance(addrs, tokens, block));
   }
 
   @State(H.AssetBalanceThresholdState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
-  async assetBalanceThreshold(params: StateHandlerParams<H.AssetBalanceThresholdState>): Promise<void> {
-    return this.handleBalanceThreshold(
-      (addrs, tokens, block) => this.chain.assetsAccountBalance(addrs, tokens, block),
-      params,
-    );
+  async assetBalanceThreshold(): Promise<void> {
+    return this.handleBalanceThreshold((addrs, tokens, block) => this.chain.assetsAccountBalance(addrs, tokens, block));
   }
 
   @State(H.AssetBalanceThresholdState, [Chain.Centrifuge])
-  async ormlTokensBalanceThreshold(params: StateHandlerParams<H.AssetBalanceThresholdState>): Promise<void> {
-    return this.handleBalanceThreshold(
-      (addrs, tokens, block) => this.chain.ormlTokensAccountBalance(addrs, tokens, block),
-      params,
-    );
+  async ormlTokensBalanceThreshold(): Promise<void> {
+    return this.handleBalanceThreshold((addrs, tokens, block) => this.chain.ormlTokensAccountBalance(addrs, tokens, block));
   }
 
   @Event(
@@ -49,28 +38,14 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
     'assets.Transferred',
   )
   @Event(H.AssetTransferIngressEvent, [Chain.Centrifuge], 'ormlTokens.Transfer')
-  async onTransferIngress({
-    payload,
-    blockContext,
-    handlerType,
-  }: EventHandlerParams<H.AssetTransferIngressEvent>): Promise<void> {
+  async onTransferIngress({ payload }: EventHandlerParams<H.AssetTransferIngressEvent>): Promise<void> {
     const tokenId = String(payload.asset_id || payload.currency_id);
     const { from, to, amount } = payload;
     const token = ID_TOKEN_MAP[this.chainProps.chain][tokenId];
 
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, to)) {
-      if (!account.settings.tokens?.includes(token)) continue;
-
-      const message = this.fmt.message(
-        [
-          `${this.fmt.accountLink(account.name, account.ss58)} received ${this.fmt.balance(amount, token)}`,
-          `From: ${this.fmt.accountLink(from, from)}`,
-        ],
-        blockContext,
-      );
-
-      const key = { account: account.ss58, groupId, handlerType, token };
-      await this.incidents.handle(message, notifications, key, blockContext);
+    for (const a of this.matched(to)) {
+      if (!a.settings.tokens?.includes(token)) continue;
+      await a.report(`Received ${this.balance(amount, token)}`, [`From: ${this.accountRef(from)}`], token);
     }
   }
 
@@ -80,40 +55,22 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
     'assets.Transferred',
   )
   @Event(H.AssetTransferEgressEvent, [Chain.Centrifuge], 'ormlTokens.Transfer')
-  async onTransferEgress({
-    payload,
-    blockContext,
-    handlerType,
-  }: EventHandlerParams<H.AssetTransferEgressEvent>): Promise<void> {
+  async onTransferEgress({ payload }: EventHandlerParams<H.AssetTransferEgressEvent>): Promise<void> {
     const tokenId = String(payload.asset_id || payload.currency_id);
     const { from, to, amount } = payload;
     const token = ID_TOKEN_MAP[this.chainProps.chain][tokenId];
 
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, from)) {
-      if (!account.settings.tokens?.includes(token)) continue;
-
-      const message = this.fmt.message(
-        [
-          `${this.fmt.accountLink(account.name, account.ss58)} sent ${this.fmt.balance(amount, token)}`,
-          `To: ${this.fmt.accountLink(to, to)}`,
-        ],
-        blockContext,
-      );
-
-      const key = { account: account.ss58, groupId, handlerType, token };
-      await this.incidents.handle(message, notifications, key, blockContext);
+    for (const a of this.matched(from)) {
+      if (!a.settings.tokens?.includes(token)) continue;
+      await a.report(`Sent ${this.balance(amount, token)}`, [`To: ${this.accountRef(to)}`], token);
     }
   }
 
   /**
    * Common handler for balance decrease monitoring that works with any token source
    */
-  private async handleBalanceDecrease(
-    getBalances: (addresses: string[], tokens: string[], block: number) => Promise<TokenBalances>,
-    params: StateHandlerParams<H.AssetBalanceDecreaseState>,
-  ): Promise<void> {
-    const { blockContext, handlerType } = params;
-    const { blockNumber } = blockContext;
+  private async handleBalanceDecrease(getBalances: GetBalances): Promise<void> {
+    const { blockNumber } = this.block;
     const addresses = this.reg.getUniqueAddresses();
     const tokens = this.reg.getUniqueTokens();
     if (tokens.length === 0) return;
@@ -123,24 +80,17 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
       getBalances(addresses, tokens, blockNumber - 1),
     ]);
 
-    for (const address of addresses) {
-      for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
-        if (!account.settings.tokens) continue;
-        for (const token of account.settings.tokens) {
-          const currentBalance = curr[token][address];
-          const previousBalance = prev[token][address];
-          if (currentBalance < previousBalance) {
-            const msg = this.fmt.message(
-              [
-                `Balance decreased for ${this.fmt.accountLink(account.name, account.ss58)}`,
-                `Previous: ${this.fmt.balance(previousBalance, token)}`,
-                `Current:  ${this.fmt.balance(currentBalance, token)}`,
-              ],
-              blockContext,
-            );
-            const key = { account: account.ss58, groupId, handlerType, token };
-            await this.incidents.handle(msg, notifications, key, blockContext);
-          }
+    for (const a of this.watched()) {
+      if (!a.settings.tokens) continue;
+      for (const token of a.settings.tokens) {
+        const currentBalance = curr[token][a.ss58];
+        const previousBalance = prev[token][a.ss58];
+        if (currentBalance < previousBalance) {
+          await a.report(
+            'Balance decreased',
+            [`Previous: ${this.balance(previousBalance, token)}`, `Current: ${this.balance(currentBalance, token)}`],
+            token,
+          );
         }
       }
     }
@@ -149,37 +99,24 @@ export class AssetsMonitor extends AbstractMonitor<MonitorType.Assets> {
   /**
    * Common handler for balance threshold monitoring that works with any token source
    */
-  private async handleBalanceThreshold(
-    getBalances: (addresses: string[], tokens: string[], block: number) => Promise<TokenBalances>,
-    params: StateHandlerParams<H.AssetBalanceThresholdState>,
-  ): Promise<void> {
-    const { blockContext, handlerType } = params;
-    const { blockNumber } = blockContext;
+  private async handleBalanceThreshold(getBalances: GetBalances): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
     const tokens = this.reg.getUniqueTokens();
     if (tokens.length === 0) return;
 
-    const cur = await getBalances(addresses, tokens, blockNumber);
+    const cur = await getBalances(addresses, tokens, this.block.blockNumber);
 
-    for (const address of addresses) {
-      for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
-        if (!account.settings.tokenThresholds) continue;
-
-        for (const [token, threshold] of account.settings.tokenThresholds) {
-          const currentBalance = cur[token][address];
-          if (currentBalance < threshold) {
-            const message = this.fmt.message(
-              [
-                `Balance for ${this.fmt.accountLink(account.name, account.ss58)} is below threshold`,
-                `Current balance: ${this.fmt.balance(currentBalance, token)}`,
-                `Threshold: ${this.fmt.balance(threshold, token)}`,
-              ],
-              blockContext,
-            );
-
-            const key = { account: account.ss58, groupId, handlerType, token };
-            await this.incidents.handle(message, notifications, key, blockContext, true);
-          }
+    for (const a of this.watched()) {
+      if (!a.settings.tokenThresholds) continue;
+      for (const [token, threshold] of a.settings.tokenThresholds) {
+        const currentBalance = cur[token][a.ss58];
+        if (currentBalance < threshold) {
+          await a.track(
+            'Balance below threshold',
+            [`Threshold: ${this.balance(threshold, token)}`, `Balance: ${this.balance(currentBalance, token)}`],
+            true,
+            token,
+          );
         }
       }
     }

@@ -3,7 +3,8 @@ import {
   AppLogger,
   NotificationSettings,
   Chain,
-  CreateIncidentDto,
+  IncidentContent,
+  CreateIncidentBody,
   IncidentKey,
   Store,
   IncidentHandlerClient,
@@ -51,7 +52,7 @@ export class IncidentHandler implements IncidentHandlerClient {
   ) {}
 
   async handle(
-    message: string[],
+    content: IncidentContent,
     notifications: NotificationSettings,
     incidentKey: IncidentKey,
     blockContext: BlockContext,
@@ -63,7 +64,7 @@ export class IncidentHandler implements IncidentHandlerClient {
 
     // One-time incident (created as immediately resolved)
     if (isOneTime) {
-      await this.createIncident(message, notifications, incidentKey, blockContext, true, idempotencyKey);
+      await this.createIncident(content, notifications, incidentKey, blockContext, true, idempotencyKey);
       return;
     }
 
@@ -71,20 +72,19 @@ export class IncidentHandler implements IncidentHandlerClient {
     const incidentId = await this.store.get<string>(idempotencyKey);
 
     if (isFiring && !incidentId) {
-      const id = await this.createIncident(message, notifications, incidentKey, blockContext, false, idempotencyKey);
+      const id = await this.createIncident(content, notifications, incidentKey, blockContext, false, idempotencyKey);
       if (id) {
         // Setex: once in a while try creating a new incident just in case the old one was manually resolved
         await this.store.setex(idempotencyKey, 3600 * 3, id);
       }
     } else if (!isFiring && incidentId) {
-      const resolutionMessage = message.join('\n');
-      await this.resolveIncident(incidentId, blockContext.blockNumber, resolutionMessage);
+      await this.resolveIncident(incidentId, blockContext.blockNumber, content);
       await this.store.del(idempotencyKey);
     }
   }
 
   private async createIncident(
-    message: string[],
+    content: IncidentContent,
     notifications: NotificationSettings,
     incidentKey: IncidentKey,
     blockContext: BlockContext,
@@ -93,8 +93,8 @@ export class IncidentHandler implements IncidentHandlerClient {
   ): Promise<string | null> {
     const { channels, escalationChannels, escalationTimeoutMs, messengerType, repeatFiringMs } = notifications;
 
-    const createIncidentDto: CreateIncidentDto = {
-      message: message.join('\n'),
+    const createIncidentBody: CreateIncidentBody = {
+      content,
       chain: this.chain,
       blockNumber: blockContext.blockNumber,
       // Required fields
@@ -113,9 +113,9 @@ export class IncidentHandler implements IncidentHandlerClient {
       extrinsicIdx: blockContext.extrinsicIdx,
     };
 
-    this.logger.debug(`Reporting incident: ${JSON.stringify(createIncidentDto)}`);
+    this.logger.debug(`Reporting incident: ${JSON.stringify(createIncidentBody)}`);
 
-    const incidentId = await this.reporter.createIncident(createIncidentDto);
+    const incidentId = await this.reporter.createIncident(createIncidentBody);
     if (incidentId) {
       this.logger.debug(`Reported incident with ID: ${incidentId}`);
     } else {
@@ -124,8 +124,8 @@ export class IncidentHandler implements IncidentHandlerClient {
     return incidentId;
   }
 
-  private async resolveIncident(incidentId: string, blockNumber: number, resolutionMessage: string): Promise<void> {
+  private async resolveIncident(incidentId: string, blockNumber: number, content: IncidentContent): Promise<void> {
     this.logger.debug(`Resolving incident with ID: ${incidentId}`);
-    await this.reporter.resolveIncident(incidentId, { chain: this.chain, blockNumber, resolutionMessage });
+    await this.reporter.resolveIncident(incidentId, { chain: this.chain, blockNumber, content });
   }
 }

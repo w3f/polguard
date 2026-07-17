@@ -13,9 +13,31 @@ import {
   StateHandlerParams,
   SystemEvent,
   BlockContext,
+  MonitorHandlerType,
+  MonitorSettings,
+  IncidentContent,
+  IncidentKey,
+  balance,
+  accountRef,
 } from '../../types';
-import { Formatter } from '../formatter';
-import { ConfigRegistry } from '../config-registry';
+import { ConfigRegistry, AccountConfig } from '../config-registry';
+
+type Row = string | false | null | undefined;
+
+/**
+ * A watched account bound to the current handler invocation. Hides the mechanical
+ * plumbing (subject/key/handlerType/block/dispatch) so handlers read as
+ * "for each account, report/track this condition".
+ */
+export interface BoundAccount<T extends MonitorType> {
+  readonly ss58: string;
+  readonly name: string;
+  readonly settings: MonitorSettings<T>;
+  /** One-time incident (created already-resolved). */
+  report(condition: string, details: Row[], token?: string): Promise<void>;
+  /** Ongoing incident whose create/resolve lifecycle is driven by `isFiring`. */
+  track(condition: string, details: Row[], isFiring: boolean, token?: string): Promise<void>;
+}
 
 /**
  * Base class for all chain monitors in the monitoring polkadot.
@@ -35,8 +57,14 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     state: new Set<StateHandlerFunction>(),
   };
 
-  protected fmt: Formatter;
   protected reg: ConfigRegistry<T>;
+
+  // Ambient per-invocation context, stashed by the decorator wrapper (`bindContext`) before
+  // each handler runs. Safe because handlers never run concurrently within a single monitor
+  // instance: ChainWatcher.processBlock awaits state, then events, then calls in order, and
+  // AbstractMonitor iterates each in awaited `for` loops. If handlers are ever parallelized
+  // within one instance, this would race and must become an explicit per-call context.
+  private _ctx?: { handlerType: MonitorHandlerType[T]; block: BlockContext };
 
   constructor(
     protected logger: AppLogger,
@@ -46,9 +74,63 @@ export abstract class AbstractMonitor<T extends MonitorType> implements Monitor 
     protected chain: ChainDataProvider,
     protected monitorType: T,
   ) {
-    this.fmt = new Formatter(this.chainProps);
     this.reg = new ConfigRegistry<T>(groups, monitorType);
     this.initializeHandlers();
+  }
+
+  /** Called by the handler decorators before each invocation. */
+  bindContext(handlerType: MonitorHandlerType[T], block: BlockContext): void {
+    this._ctx = { handlerType, block };
+  }
+
+  protected get block(): BlockContext {
+    return this._ctx!.block;
+  }
+
+  protected get handlerType(): MonitorHandlerType[T] {
+    return this._ctx!.handlerType;
+  }
+
+  protected balance(amount: number | string | bigint, token?: string): string {
+    return balance(this.chainProps.chain, amount, token);
+  }
+
+  /** Chain-free account marker; the renderer resolves it to a real explorer link. */
+  protected accountRef(address: string, name?: string): string {
+    return accountRef(address, name);
+  }
+
+  /** Watched accounts matching a specific address, eligible for the current handler. */
+  protected *matched(address: string): Iterable<BoundAccount<T>> {
+    for (const cfg of this.reg.getAccounts(this.handlerType, address)) yield this.bound(cfg);
+  }
+
+  /** Every watched account eligible for the current handler. */
+  protected *watched(): Iterable<BoundAccount<T>> {
+    for (const address of this.reg.getUniqueAddresses())
+      for (const cfg of this.reg.getAccounts(this.handlerType, address)) yield this.bound(cfg);
+  }
+
+  private bound(cfg: AccountConfig<T>): BoundAccount<T> {
+    const { account } = cfg;
+    return {
+      ss58: account.ss58,
+      name: account.name,
+      settings: account.settings,
+      report: (condition, details, token) => this.emit(cfg, condition, details, undefined, token),
+      track: (condition, details, isFiring, token) => this.emit(cfg, condition, details, isFiring, token),
+    };
+  }
+
+  private emit(cfg: AccountConfig<T>, condition: string, details: Row[], isFiring?: boolean, token?: string): Promise<void> {
+    const { account, notifications, groupId } = cfg;
+    const content: IncidentContent = {
+      subject: { name: account.name, address: account.ss58 },
+      condition,
+      details: details.filter(Boolean) as string[], // pure facts; the renderer appends the footer
+    };
+    const key: IncidentKey = { account: account.ss58, groupId, handlerType: this.handlerType, token };
+    return this.incidents.handle(content, notifications, key, this.block, isFiring);
   }
 
   /**

@@ -1,6 +1,14 @@
 import { MatrixClient } from './matrix-client';
-import { MatrixConfig, IncidentServiceInterface, QueryFilters } from './interfaces';
-import { AppLogger, MessengerType, NotificationType, HttpError, Chain, buildExplorerUrl } from '@w3f/polguard-common';
+import { MatrixConfig, IncidentServiceInterface } from './interfaces';
+import {
+  AppLogger,
+  MessengerType,
+  NotificationType,
+  HttpError,
+  Chain,
+  explorerLink,
+  GetIncidentsQuery,
+} from '@w3f/polguard-common';
 import { MatrixEvent } from 'matrix-js-sdk';
 
 export class MatrixBot extends MatrixClient {
@@ -164,8 +172,11 @@ export class MatrixBot extends MatrixClient {
       const incident = await this.incidentService.getIncidentById(incidentId);
       let message = `<p>${this.getDisplayMessage(incident, roomId, NotificationType.Alert)}</p>`;
 
-      if (incident.isResolved && incident.resolutionMessage) {
-        message += `<p>${this.getDisplayMessage(incident, roomId, NotificationType.Resolution)}</p>`;
+      if (incident.isResolved) {
+        const resolutionMessage = this.getDisplayMessage(incident, roomId, NotificationType.Resolution);
+        if (resolutionMessage) {
+          message += `<p>${resolutionMessage}</p>`;
+        }
       }
 
       await this.sendMessage(roomId, message);
@@ -323,12 +334,7 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
         notification.type === notificationType,
     );
 
-    if (notification) {
-      return notification.message;
-    }
-
-    // Fallback to raw incident data based on notification type
-    return notificationType === NotificationType.Resolution ? incident.resolutionMessage : incident.message;
+    return notification?.message ?? '';
   }
 
   private buildDebugInfo(incident: any): string {
@@ -387,7 +393,7 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
         'needsAck',
       ]);
       const booleanFields = new Set(['isResolved', 'isAcked', 'needsAck']);
-      const filters: QueryFilters = {};
+      const filters: Partial<GetIncidentsQuery> = {};
 
       for (const arg of args) {
         const [key, value] = arg.split('=');
@@ -447,19 +453,8 @@ Incidents with exclamation points (❗) at the end require acknowledgment. Both 
   }
 
   private generateExplorerLink(incident: any): string {
-    const chain = incident.chain as Chain;
-    const block = incident.blockNumber;
-
-    let url: string;
-    if (incident.eventIdx !== undefined) {
-      url = buildExplorerUrl(chain, 'event', `${block}-${incident.eventIdx}`);
-    } else if (incident.extrinsicIdx !== undefined) {
-      url = buildExplorerUrl(chain, 'extrinsic', `${block}-${incident.extrinsicIdx}`);
-    } else {
-      url = buildExplorerUrl(chain, 'block', block);
-    }
-
-    return `<a href="${url}">Explorer</a>`;
+    const link = explorerLink(incident.chain as Chain, incident);
+    return link ? `<a href="${link.url}">Explorer</a>` : '';
   }
 
   private formatDate(date: Date): string {

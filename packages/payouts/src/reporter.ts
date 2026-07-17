@@ -1,19 +1,17 @@
 import {
   MESSENGER_STYLE_MAP,
-  MessageRenderer,
-  MessengerType,
   buildExplorerUrl,
+  renderBanner,
+  MessengerType,
   sendNotification,
   type AppLogger,
   type Chain,
-  type MessageContent,
+  type Banner,
   type PayoutAccount,
 } from '@w3f/polguard-common';
 import type { Claim } from './claim-engine';
 import type { NotificationsConfig } from './config';
 
-// A single optional-field shape rather than a tagged union: discriminated-union narrowing is
-// unavailable here because the workspace tsconfig sets strictNullChecks: false.
 export interface ClaimOutcome {
   ok: boolean;
   claims?: Claim[];
@@ -31,7 +29,7 @@ function accountLine(chain: Chain, account: PayoutAccount, claims: Claim[]): str
   return `${account.name}: claimed ${mine.length} page(s) — ${links.join(', ')}`;
 }
 
-function buildContent(chain: Chain, accounts: PayoutAccount[], outcome: ClaimOutcome): MessageContent {
+function buildContent(chain: Chain, accounts: PayoutAccount[], outcome: ClaimOutcome): Banner {
   if (!outcome.ok) {
     return {
       icon: '❌',
@@ -77,7 +75,7 @@ export async function reportClaims(
     if (!url) continue;
     const style = MESSENGER_STYLE_MAP[messengerType];
     for (const [channelId, channelAccounts] of channels) {
-      const message = MessageRenderer.render(style, buildContent(chain, channelAccounts, outcome));
+      const message = renderBanner(style, buildContent(chain, channelAccounts, outcome));
       if (await sendNotification(messengerType, url, channelId, message, logger)) {
         logger.info(`Reported to ${channelId}`);
       }

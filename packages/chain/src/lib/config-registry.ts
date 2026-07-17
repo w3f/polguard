@@ -9,7 +9,7 @@ import {
   AssetsSettings,
 } from '../types';
 
-type AccountConfig<T extends MonitorType> = {
+export type AccountConfig<T extends MonitorType> = {
   account: AccountSettings<T>;
   notifications: NotificationSettings;
   groupId: string;
@@ -119,28 +119,6 @@ export class ConfigRegistry<T extends MonitorType> {
       const handlers = account.account.settings.handlers as MonitorHandlerType[T][];
       return handlers.includes(handlerType);
     });
-  }
-
-  /**
-   * Helper method to iterate through all accounts for a given handler type.
-   * Simplifies common pattern of iterating through unique addresses and their accounts.
-   *
-   * @param handlerType - Type of handler to get accounts for
-   * @param callback - Function to execute for each account
-   */
-  async forEachAccount(
-    handlerType: MonitorHandlerType[T],
-    callback: (params: {
-      account: AccountSettings<T>;
-      notifications: NotificationSettings;
-      groupId: string;
-    }) => Promise<void>,
-  ): Promise<void> {
-    for (const address of this.uniqueAddresses) {
-      for (const accountInfo of this.getAccounts(handlerType, address)) {
-        await callback(accountInfo);
-      }
-    }
   }
 
   /**

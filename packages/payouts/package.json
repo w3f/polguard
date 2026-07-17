@@ -30,7 +30,7 @@
     "js-yaml": "^4.1.0",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
-    "polkadot-api": "^2.0.1",
+    "polkadot-api": "2.1.8",
     "rxjs": "^7.8.0"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
-import { Incident, IncidentServiceInterface, QueryFilters } from '../lib/interfaces';
-import { AppLogger, MessengerType, fetchOrThrow } from '@w3f/polguard-common';
+import { Incident, IncidentServiceInterface } from '../lib/interfaces';
+import { AppLogger, MessengerType, GetIncidentsQuery, fetchOrThrow } from '@w3f/polguard-common';
 
 export class IncidentService implements IncidentServiceInterface {
   constructor(
@@ -49,7 +49,7 @@ export class IncidentService implements IncidentServiceInterface {
     });
   }
 
-  async queryIncidents(roomId: string, filters: QueryFilters): Promise<Incident[]> {
+  async queryIncidents(roomId: string, filters: Partial<GetIncidentsQuery>): Promise<Incident[]> {
     const params = new URLSearchParams({
       channelId: roomId,
       messengerType: MessengerType.Matrix,

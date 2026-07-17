@@ -1,5 +1,5 @@
 import type { AppLogger } from '@w3f/polguard-common';
-import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '../../types';
+import { IncidentReporter, CreateIncidentBody, ResolveByChainBody } from '../../types';
 import { ConfigService } from '../config/config.service';
 
 /**
@@ -24,7 +24,7 @@ export class WebhookIncidentReporter implements IncidentReporter {
     this.headers = config.webhook!.headers ?? {};
   }
 
-  async createIncident(incident: CreateIncidentDto): Promise<string | null> {
+  async createIncident(incident: CreateIncidentBody): Promise<string | null> {
     try {
       const payload = {
         type: 'incident_created',
@@ -48,7 +48,7 @@ export class WebhookIncidentReporter implements IncidentReporter {
     return incident.idempotencyKey; // Return idempotency key for incident lifecycle tracking
   }
 
-  async resolveIncident(id: string, resolveData: ResolveIncidentByChainDto): Promise<void> {
+  async resolveIncident(id: string, resolveData: ResolveByChainBody): Promise<void> {
     try {
       const payload = {
         type: 'incident_resolved',

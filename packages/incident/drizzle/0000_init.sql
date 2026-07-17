@@ -4,7 +4,7 @@ CREATE TYPE "public"."notification_type_enum" AS ENUM('Alert', 'Resolution', 'Es
 CREATE TYPE "public"."incident_resolution_type_enum" AS ENUM('ChainService', 'AutoTimeout', 'Manual');--> statement-breakpoint
 CREATE TABLE "incident" (
 	"id" varchar PRIMARY KEY NOT NULL,
-	"message" varchar NOT NULL,
+	"content" jsonb NOT NULL,
 	"block_number" integer,
 	"event_idx" integer,
 	"extrinsic_idx" integer,
@@ -24,7 +24,6 @@ CREATE TABLE "incident" (
 	"resolution_type" "incident_resolution_type_enum",
 	"resolved_by" varchar,
 	"resolved_at" timestamp,
-	"resolution_message" varchar,
 	"is_escalated" boolean DEFAULT false NOT NULL,
 	"escalated_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,

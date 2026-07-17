@@ -1,6 +1,13 @@
 import { pgTable, pgEnum, varchar, integer, boolean, timestamp, text, jsonb, serial, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { Chain, MessengerType, NotificationType, ResolutionType, type NotificationChannel } from '@w3f/polguard-common';
+import {
+  Chain,
+  MessengerType,
+  NotificationType,
+  ResolutionType,
+  type NotificationChannel,
+  type IncidentContent,
+} from '@w3f/polguard-common';
 
 // --- Enums  ---
 
@@ -24,7 +31,7 @@ export const incidents = pgTable(
   'incident',
   {
     id: varchar('id').primaryKey(),
-    message: varchar('message').notNull(),
+    content: jsonb('content').$type<IncidentContent>().notNull(),
     blockNumber: integer('block_number'),
     eventIdx: integer('event_idx'),
     extrinsicIdx: integer('extrinsic_idx'),
@@ -44,7 +51,6 @@ export const incidents = pgTable(
     resolutionType: resolutionTypeEnum('resolution_type'),
     resolvedBy: varchar('resolved_by'),
     resolvedAt: timestamp('resolved_at'),
-    resolutionMessage: varchar('resolution_message'),
     isEscalated: boolean('is_escalated').notNull().default(false),
     escalatedAt: timestamp('escalated_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),

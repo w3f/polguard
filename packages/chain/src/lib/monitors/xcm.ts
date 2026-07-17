@@ -28,38 +28,26 @@ export class XcmMonitor extends AbstractMonitor<MonitorType.Xcm> {
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
     ['polkadotxcm.Sent', 'xcmpallet.Sent'],
   )
-  async xcmTransferEgress({
-    payload,
-    blockContext,
-    handlerType,
-  }: EventHandlerParams<H.XcmTransferEgressEvent>): Promise<void> {
+  async xcmTransferEgress({ payload }: EventHandlerParams<H.XcmTransferEgressEvent>): Promise<void> {
     const { origin, destination, message } = payload;
-    const transferInfo = this.extractXcmTransferInfo(origin, destination, message, blockContext.blockNumber);
+    const transferInfo = this.extractXcmTransferInfo(origin, destination, message, this.block.blockNumber);
     const { origin: originAddr, destination: destAddr, destinationChain, transfers } = transferInfo;
 
     if (!originAddr) {
       return;
     }
 
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, originAddr)) {
+    for (const a of this.matched(originAddr)) {
       for (const [token, amount] of transfers) {
-        const messageLines = [];
+        const condition =
+          token !== undefined && amount !== undefined
+            ? `Sent ${token === this.chainProps.chainToken ? this.balance(amount) : this.balance(amount, token)}`
+            : 'Sent XCM transfer';
 
-        if (token !== undefined && amount !== undefined) {
-          const formattedBalance =
-            token === this.chainProps.chainToken ? this.fmt.balance(amount) : this.fmt.balance(amount, token);
-
-          messageLines.push(`${this.fmt.accountLink(account.name, account.ss58)} sent ${formattedBalance}`);
-        } else {
-          messageLines.push(`${this.fmt.accountLink(account.name, account.ss58)} sent XCM transfer`);
-        }
-
-        messageLines.push(`To: ${destAddr ?? 'Unknown'}`, `Destination chain: ${destinationChain ?? 'Unknown'}`);
-
-        const message = this.fmt.message(messageLines, blockContext);
-
-        const key = { account: account.ss58, groupId, handlerType };
-        await this.incidents.handle(message, notifications, key, blockContext);
+        await a.report(condition, [
+          `To: ${destAddr ?? 'Unknown'}`,
+          `Destination chain: ${destinationChain ?? 'Unknown'}`,
+        ]);
       }
     }
   }

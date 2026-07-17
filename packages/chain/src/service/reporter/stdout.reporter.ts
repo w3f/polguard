@@ -1,5 +1,5 @@
 import type { AppLogger } from '@w3f/polguard-common';
-import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '../../types';
+import { IncidentReporter, CreateIncidentBody, ResolveByChainBody, IncidentContent } from '../../types';
 
 /**
  * StdoutIncidentReporter: Outputs incidents directly to stdout
@@ -15,7 +15,7 @@ export class StdoutIncidentReporter implements IncidentReporter {
     private readonly format: 'json' | 'pretty' = 'pretty',
   ) {}
 
-  async createIncident(dto: CreateIncidentDto): Promise<string | null> {
+  async createIncident(dto: CreateIncidentBody): Promise<string | null> {
     if (this.format === 'pretty') {
       this.logPrettyCreate(dto);
     } else {
@@ -24,7 +24,7 @@ export class StdoutIncidentReporter implements IncidentReporter {
     return dto.idempotencyKey; // Return idempotency key for incident lifecycle tracking
   }
 
-  async resolveIncident(id: string, data: ResolveIncidentByChainDto): Promise<void> {
+  async resolveIncident(id: string, data: ResolveByChainBody): Promise<void> {
     if (this.format === 'pretty') {
       this.logPrettyResolve(id, data);
     } else {
@@ -32,7 +32,7 @@ export class StdoutIncidentReporter implements IncidentReporter {
     }
   }
 
-  private logJsonCreate(dto: CreateIncidentDto): void {
+  private logJsonCreate(dto: CreateIncidentBody): void {
     console.log(
       JSON.stringify({
         type: 'incident_created',
@@ -42,7 +42,7 @@ export class StdoutIncidentReporter implements IncidentReporter {
     );
   }
 
-  private logJsonResolve(id: string, data: ResolveIncidentByChainDto): void {
+  private logJsonResolve(id: string, data: ResolveByChainBody): void {
     console.log(
       JSON.stringify({
         type: 'incident_resolved',
@@ -53,7 +53,16 @@ export class StdoutIncidentReporter implements IncidentReporter {
     );
   }
 
-  private logPrettyCreate(dto: CreateIncidentDto): void {
+  private formatContent(content: IncidentContent): string[] {
+    const subject = content.subject ? `${content.subject.name} (${content.subject.address})` : null;
+    return [
+      `Condition: ${content.condition}`,
+      subject ? `Subject: ${subject}` : null,
+      ...content.details.map(line => `  ${line}`),
+    ].filter(Boolean) as string[];
+  }
+
+  private logPrettyCreate(dto: CreateIncidentBody): void {
     const lines = [
       '',
       'INCIDENT CREATED',
@@ -62,8 +71,7 @@ export class StdoutIncidentReporter implements IncidentReporter {
       dto.account ? `Account: ${dto.account}` : null,
       `Handler: ${dto.handlerType}`,
       `Group: ${dto.groupId}`,
-      'Message:',
-      ...dto.message.split('\n').map(line => `  ${line}`),
+      ...this.formatContent(dto.content),
       '─'.repeat(50),
       '',
     ].filter(Boolean);
@@ -71,15 +79,14 @@ export class StdoutIncidentReporter implements IncidentReporter {
     console.log(lines.join('\n'));
   }
 
-  private logPrettyResolve(id: string, data: ResolveIncidentByChainDto): void {
+  private logPrettyResolve(id: string, data: ResolveByChainBody): void {
     const lines = [
       '',
       'INCIDENT RESOLVED',
       `Incident ID: ${id}`,
       `Chain: ${data.chain}`,
       `Block: #${data.blockNumber}`,
-      'Resolution:',
-      ...data.resolutionMessage.split('\n').map(line => `  ${line}`),
+      ...this.formatContent(data.content),
       '─'.repeat(50),
       '',
     ];

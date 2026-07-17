@@ -16,7 +16,7 @@ describe('Incident API (integration)', () => {
   const TEST_ESCALATION_TIMEOUT = 500;
 
   const createIncidentDto = (overrides: Partial<CreateIncidentBody> = {}): CreateIncidentBody => ({
-    message: 'Test incident',
+    content: { condition: 'Test incident', details: [] },
     chain: TEST_CHAIN,
     blockNumber: 1000,
     account: TEST_ACCOUNT,
@@ -48,11 +48,15 @@ describe('Incident API (integration)', () => {
   const acknowledgeIncident = (id: string, username = 'testuser', channelId = TEST_CHANNEL_ID) =>
     ctx.app.inject({ method: 'POST', url: `/incidents/${id}/acknowledge`, payload: { username, channelId } });
 
-  const resolveIncident = (id: string, blockNumber = 1000, resolutionMessage = 'Test resolution message') =>
+  const resolveIncident = (
+    id: string,
+    blockNumber = 1000,
+    content: { condition: string; details: string[] } = { condition: 'Test resolution', details: [] },
+  ) =>
     ctx.app.inject({
       method: 'POST',
       url: `/incidents/${id}/resolve`,
-      payload: { chain: TEST_CHAIN, blockNumber, resolutionMessage },
+      payload: { chain: TEST_CHAIN, blockNumber, content },
     });
 
   const setLastBlock = async (blockNumber: number) => {
@@ -106,7 +110,7 @@ describe('Incident API (integration)', () => {
     });
 
     it('validates required fields', async () => {
-      const res = await postIncident(createIncidentDto({ message: '', notificationChannels: [] }));
+      const res = await postIncident(createIncidentDto({ notificationChannels: [] }));
       expect(res.statusCode).toBe(400);
     });
 
@@ -229,12 +233,20 @@ describe('Incident API (integration)', () => {
 
   describe('GET /incidents', () => {
     beforeEach(async () => {
-      await postIncident(createOneTimeIncident({ idempotencyKey: 'resolved', message: 'Resolved incident' }));
       await postIncident(
-        createOngoingIncident({ idempotencyKey: 'unresolved-ack', message: 'Unresolved needing ack' }),
+        createOneTimeIncident({ idempotencyKey: 'resolved', content: { condition: 'Resolved incident', details: [] } }),
       );
       await postIncident(
-        createIncidentDto({ idempotencyKey: 'unresolved-no-ack', message: 'Unresolved not needing ack' }),
+        createOngoingIncident({
+          idempotencyKey: 'unresolved-ack',
+          content: { condition: 'Unresolved needing ack', details: [] },
+        }),
+      );
+      await postIncident(
+        createIncidentDto({
+          idempotencyKey: 'unresolved-no-ack',
+          content: { condition: 'Unresolved not needing ack', details: [] },
+        }),
       );
     });
 
@@ -254,7 +266,7 @@ describe('Incident API (integration)', () => {
     it('filters by acknowledgment requirement', async () => {
       const needsAck = parseBody(await ctx.app.inject({ method: 'GET', url: '/incidents?needsAck=true' }));
       expect(needsAck).toHaveLength(1);
-      expect(needsAck[0].message).toBe('Unresolved needing ack');
+      expect(needsAck[0].content.condition).toBe('Unresolved needing ack');
     });
 
     it('filters by chain and account', async () => {
@@ -273,7 +285,7 @@ describe('Incident API (integration)', () => {
       const body = parseBody(res);
       expect(body).toMatchObject({
         id: created.id,
-        message: 'Test incident',
+        content: { condition: 'Test incident', details: [] },
         chain: TEST_CHAIN,
         account: TEST_ACCOUNT,
       });

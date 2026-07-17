@@ -1,4 +1,4 @@
-import { NotificationSettings, IncidentKey, CreateIncidentDto, ResolveIncidentByChainDto } from '../types';
+import { NotificationSettings, IncidentKey, IncidentContent, CreateIncidentBody, ResolveByChainBody } from '../types';
 
 export interface BlockContext {
   blockNumber: number; // always set
@@ -9,7 +9,7 @@ export interface BlockContext {
 
 export interface IncidentHandlerClient {
   handle(
-    message: string[],
+    content: IncidentContent,
     notifications: NotificationSettings,
     incidentKey: IncidentKey,
     blockContext: BlockContext,
@@ -18,6 +18,6 @@ export interface IncidentHandlerClient {
 }
 
 export interface IncidentReporter {
-  createIncident(incident: CreateIncidentDto): Promise<string | null>;
-  resolveIncident(id: string, resolveData: ResolveIncidentByChainDto): Promise<void>;
+  createIncident(incident: CreateIncidentBody): Promise<string | null>;
+  resolveIncident(id: string, resolveData: ResolveByChainBody): Promise<void>;
 }

@@ -2,7 +2,6 @@ import {
   Chain,
   MonitorType,
   BalancesHandlerType as H,
-  StateHandlerParams,
   EventHandlerParams,
   CallHandlerParams,
 } from '../../types';
@@ -12,60 +11,43 @@ import { AbstractMonitor } from './abstract-monitor';
 
 export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
   @State(H.BalanceDecreaseState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.Frequency, Chain.AssetHubPaseo])
-  async balanceDecrease({ blockContext, handlerType }: StateHandlerParams<H.BalanceDecreaseState>): Promise<void> {
-    const { blockNumber } = blockContext;
+  async balanceDecrease(): Promise<void> {
+    const { blockNumber } = this.block;
     const addresses = this.reg.getUniqueAddresses();
     const [curr, prev] = await Promise.all([
-      await this.chain.systemAccountBalance(addresses, blockNumber),
-      await this.chain.systemAccountBalance(addresses, blockNumber - 1),
+      this.chain.systemAccountBalance(addresses, blockNumber),
+      this.chain.systemAccountBalance(addresses, blockNumber - 1),
     ]);
 
-    for (const address of addresses) {
-      const currentBalance = curr[address];
-      const previousBalance = prev[address];
-
-      for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
-        const message = this.fmt.message(
-          [
-            `Balance changed for ${this.fmt.accountLink(account.name, account.ss58)}`,
-            `Previous: ${this.fmt.balance(previousBalance)}`,
-            `Current: ${this.fmt.balance(currentBalance)}`,
-          ],
-          blockContext,
-        );
-        // TODO: We will implement a flexible value definition system so we can use BalanceChange
-        // instead of two BalanceDecrease, BalanceIncrease
-        // See: https://github.com/w3f/polguard/issues/69
-        if (currentBalance < previousBalance) {
-          const key = { account: account.ss58, groupId, handlerType };
-          await this.incidents.handle(message, notifications, key, blockContext);
-        }
+    for (const a of this.watched()) {
+      const currentBalance = curr[a.ss58];
+      const previousBalance = prev[a.ss58];
+      // TODO: We will implement a flexible value definition system so we can use BalanceChange
+      // instead of two BalanceDecrease, BalanceIncrease
+      // See: https://github.com/w3f/polguard/issues/69
+      if (currentBalance < previousBalance) {
+        await a.report('Balance decreased', [
+          `Previous: ${this.balance(previousBalance)}`,
+          `Current: ${this.balance(currentBalance)}`,
+        ]);
       }
     }
   }
 
   @State(H.BalanceThresholdState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.Frequency, Chain.AssetHubPaseo])
-  async balanceThreshold({ blockContext, handlerType }: StateHandlerParams<H.BalanceThresholdState>): Promise<void> {
-    const addresses = this.reg.getUniqueAddresses();
-    const cur = await this.chain.systemAccountBalance(addresses, blockContext.blockNumber);
+  async balanceThreshold(): Promise<void> {
+    const cur = await this.chain.systemAccountBalance(this.reg.getUniqueAddresses(), this.block.blockNumber);
 
-    for (const address of addresses) {
-      const currentBalance = cur[address];
-      for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
-        if (!account.settings.threshold) continue;
+    for (const a of this.watched()) {
+      const threshold = a.settings.threshold;
+      if (!threshold) continue;
 
-        const message = this.fmt.message(
-          [
-            `Balance for ${this.fmt.accountLink(account.name, account.ss58)} is below threshold.`,
-            `Current balance: ${this.fmt.balance(currentBalance)}`,
-            `Threshold: ${this.fmt.balance(account.settings.threshold)}`,
-          ],
-          blockContext,
-        );
-        const key = { account: account.ss58, groupId, handlerType };
-        const isFiring = currentBalance < account.settings.threshold;
-        await this.incidents.handle(message, notifications, key, blockContext, isFiring);
-      }
+      const currentBalance = cur[a.ss58];
+      await a.track(
+        'Balance below threshold',
+        [`Threshold: ${this.balance(threshold)}`, `Balance: ${this.balance(currentBalance)}`],
+        currentBalance < threshold,
+      );
     }
   }
 
@@ -76,28 +58,12 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.Frequency, Chain.AssetHubPaseo],
     ['Balances.transfer_allow_death', 'Balances.transfer_keep_alive'],
   )
-  async balancesTransfer({
-    call,
-    origin,
-    blockContext,
-    handlerType,
-  }: CallHandlerParams<H.TransferCall>): Promise<void> {
+  async balancesTransfer({ call, origin }: CallHandlerParams<H.TransferCall>): Promise<void> {
     const args = call.value.value;
     const to = resolveMultiAddress(args.dest);
     const amount = String(args.value);
 
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
-      const message = this.fmt.message(
-        [
-          `${this.fmt.accountLink(account.name, account.ss58)} initiated a transfer of ${this.fmt.balance(amount)}`,
-          `To: ${this.fmt.accountLink(to, to)}`,
-        ],
-        blockContext,
-      );
-
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext);
-    }
+    for (const a of this.matched(origin)) await a.report(`Sent ${this.balance(amount)}`, [`To: ${this.accountRef(to)}`]);
   }
 
   @Event(
@@ -105,24 +71,9 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.Frequency, Chain.AssetHubPaseo],
     'balances.Transfer',
   )
-  async balancesTransferIngress({
-    payload,
-    blockContext,
-    handlerType,
-  }: EventHandlerParams<H.TransferIngressEvent>): Promise<void> {
+  async balancesTransferIngress({ payload }: EventHandlerParams<H.TransferIngressEvent>): Promise<void> {
     const { from, to, amount } = payload;
-
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, to)) {
-      const message = this.fmt.message(
-        [
-          `${this.fmt.accountLink(account.name, account.ss58)} received ${this.fmt.balance(amount)}`,
-          `From: ${this.fmt.accountLink(from, from)}`,
-        ],
-        blockContext,
-      );
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext);
-    }
+    for (const a of this.matched(to)) await a.report(`Received ${this.balance(amount)}`, [`From: ${this.accountRef(from)}`]);
   }
 
   @Event(
@@ -130,23 +81,8 @@ export class BalancesMonitor extends AbstractMonitor<MonitorType.Balances> {
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.Frequency, Chain.AssetHubPaseo],
     'balances.Transfer',
   )
-  async balancesTransferEgress({
-    payload,
-    blockContext,
-    handlerType,
-  }: EventHandlerParams<H.TransferEgressEvent>): Promise<void> {
+  async balancesTransferEgress({ payload }: EventHandlerParams<H.TransferEgressEvent>): Promise<void> {
     const { from, to, amount } = payload;
-
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, from)) {
-      const message = this.fmt.message(
-        [
-          `${this.fmt.accountLink(account.name, account.ss58)} sent ${this.fmt.balance(amount)}`,
-          `To: ${this.fmt.accountLink(to, to)}`,
-        ],
-        blockContext,
-      );
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext);
-    }
+    for (const a of this.matched(from)) await a.report(`Sent ${this.balance(amount)}`, [`To: ${this.accountRef(to)}`]);
   }
 }

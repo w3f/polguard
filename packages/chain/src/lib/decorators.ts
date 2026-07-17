@@ -48,6 +48,7 @@ export function Event(handler: HandlerType, chains: Chain[], eventNames: string 
     descriptor.value = async function (...args: any[]) {
       const params = args[0] || {};
       params.handlerType = handler;
+      (this as any).bindContext?.(handler, params.blockContext);
       return await originalMethod.call(this, params);
     };
 
@@ -82,6 +83,7 @@ export function Call(handler: HandlerType, chains: Chain[], callNames: string | 
     descriptor.value = async function (...args: any[]) {
       const params = args[0] || {};
       params.handlerType = handler;
+      (this as any).bindContext?.(handler, params.blockContext);
       return await originalMethod.call(this, params);
     };
 
@@ -109,6 +111,7 @@ export function State(handler: HandlerType, chains: Chain[]) {
     descriptor.value = async function (...args: any[]) {
       const params = args[0] || {};
       params.handlerType = handler;
+      (this as any).bindContext?.(handler, params.blockContext);
       return await originalMethod.call(this, params);
     };
 

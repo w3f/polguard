@@ -22,11 +22,11 @@ export type {
   IncidentKey,
   ChainProperties,
   AccountId,
-  CreateIncidentDto,
-  ResolveIncidentByChainDto,
+  IncidentContent,
+  CreateIncidentBody,
+  ResolveByChainBody,
   TokenBalances,
   MonitorHandlerType,
-  ExplorerResource,
 } from '@w3f/polguard-common';
 
 export {
@@ -40,7 +40,8 @@ export {
   AssetsHandlerType,
   MonitorType,
   getChainProperties,
-  buildExplorerUrl,
+  accountRef,
+  balance,
   TELEMETRY_PREFIX,
   getLogLevels,
   buildOtelSdk,

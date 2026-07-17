@@ -17,62 +17,14 @@ export interface MatrixConfig {
   tokenAuth?: TokenAuth;
 }
 
-export interface Notification {
-  id: number;
-  incidentId: string;
-  channelId: string;
-  messengerType: string;
-  type: string;
-  repeatFiringMs: number;
-  lastSentAt?: Date;
-  isDelivered: boolean;
-  message: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Incident {
-  id: string;
-  message: string;
-  blockNumber: number;
-  eventIdx?: number;
-  extrinsicIdx?: number;
-  chain: string;
-  account: string;
-  groupId: string;
-  handlerType: string;
-  needsAck: boolean;
-  isAcked: boolean;
-  ackedBy?: string;
-  ackedAt?: Date;
-  isResolved: boolean;
-  resolvedAt?: Date;
-  resolutionMessage?: string;
-  isEscalated: boolean;
-  escalatedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  notifications?: Notification[];
-}
-
-export interface QueryFilters {
-  status?: string;
-  createdAfter?: string;
-  createdBefore?: string;
-  chain?: string;
-  account?: string;
-  groupId?: string;
-  handlerType?: string;
-  needsAck?: boolean;
-  isAcked?: boolean;
-  isResolved?: boolean;
-}
+export type { IncidentResponse as Incident, NotificationResponse as Notification, GetIncidentsQuery } from '@w3f/polguard-common';
+import type { IncidentResponse, GetIncidentsQuery } from '@w3f/polguard-common';
 
 export interface IncidentServiceInterface {
-  getNonResolved(roomId: string): Promise<Incident[]>;
-  getNonAcked(roomId: string): Promise<Incident[]>;
-  getIncidentById(incidentId: string): Promise<Incident>;
+  getNonResolved(roomId: string): Promise<IncidentResponse[]>;
+  getNonAcked(roomId: string): Promise<IncidentResponse[]>;
+  getIncidentById(incidentId: string): Promise<IncidentResponse>;
   acknowledgeIncident(incidentId: string, username: string, channelId: string): Promise<void>;
   resolveIncident(incidentId: string, username: string, channelId: string): Promise<void>;
-  queryIncidents(roomId: string, filters: QueryFilters): Promise<Incident[]>;
+  queryIncidents(roomId: string, filters: Partial<GetIncidentsQuery>): Promise<IncidentResponse[]>;
 }

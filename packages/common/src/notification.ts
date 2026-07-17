@@ -1,3 +1,6 @@
+import { Chain } from './constants';
+import type { IncidentContent } from './incident-dto';
+
 export enum MessengerType {
   Matrix = 'Matrix',
   Slack = 'Slack',
@@ -18,16 +21,24 @@ export const MESSENGER_STYLE_MAP: Record<MessengerType, Style> = {
   [MessengerType.Telegram]: Style.Html,
 };
 
-export interface MessagePayload {
-  title: string;
-  details?: string[];
-  kind: NotificationType;
-  incidentId: string;
-  needsAck?: boolean;
-  isResolved?: boolean;
+export function channelLink(messengerType: MessengerType, channelId: string): string {
+  return messengerType === MessengerType.Matrix ? `https://matrix.to/#/${channelId}` : channelId;
 }
 
-export interface MessageContent {
+export interface IncidentView {
+  incidentId: string;
+  type: NotificationType;
+  chain: Chain;
+  isResolved: boolean;
+  needsAck?: boolean;
+  content: IncidentContent;
+  // Block context used to render the footer (block/event/extrinsic link + chain line).
+  blockNumber?: number;
+  eventIdx?: number;
+  extrinsicIdx?: number;
+}
+
+export interface Banner {
   icon: string;
   title: string;
   details?: string[];

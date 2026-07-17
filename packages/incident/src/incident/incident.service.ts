@@ -2,10 +2,11 @@ import { eq, and, lte, desc, inArray, sql, type SQL } from 'drizzle-orm';
 import {
   AppLogger,
   NotificationType,
-  MessengerType,
   ResolutionType,
   NotFoundError,
   ForbiddenError,
+  channelLink,
+  IncidentContent,
 } from '@w3f/polguard-common';
 import type { Database } from '../database/db';
 import { incidents, notifications } from '../database/schema';
@@ -16,7 +17,7 @@ import type {
   CreateIncidentBody,
   GetIncidentsQuery,
   ResolveByChainBody,
-  ResolveManuallyBody,
+  ChannelUserActionBody,
 } from '../schemas/incident.schemas';
 
 export class IncidentService {
@@ -129,7 +130,8 @@ export class IncidentService {
       savedIncident,
       dto.notificationChannels,
       NotificationType.Alert,
-      dto.message,
+      dto.content,
+      { blockNumber: dto.blockNumber, eventIdx: dto.eventIdx, extrinsicIdx: dto.extrinsicIdx },
     );
 
     return savedIncident;
@@ -192,7 +194,6 @@ export class IncidentService {
       .update(incidents)
       .set({
         resolutionType: ResolutionType.ChainService,
-        resolutionMessage: dto.resolutionMessage,
         isResolved: true,
         resolvedAt: now,
         updatedAt: now,
@@ -202,17 +203,14 @@ export class IncidentService {
 
     this.logger.debug(`Incident ${id} resolved by chain service.`);
 
-    await this.notificationService.createResolutionNotifications({
-      id: savedIncident.id,
-      needsAck: savedIncident.needsAck,
-      isResolved: savedIncident.isResolved,
-      resolutionMessage: savedIncident.resolutionMessage,
+    await this.notificationService.createResolutionNotifications(savedIncident, dto.content, {
+      blockNumber: dto.blockNumber,
     });
 
     return savedIncident;
   }
 
-  async resolveIncidentManually(id: string, dto: ResolveManuallyBody) {
+  async resolveIncidentManually(id: string, dto: ChannelUserActionBody) {
     const incident = await this.db.query.incidents.findFirst({
       where: eq(incidents.id, id),
     });
@@ -233,12 +231,10 @@ export class IncidentService {
     }
 
     const now = new Date();
-    const resolutionMessage = `Incident manually resolved by ${dto.username}`;
     const [savedIncident] = await this.db
       .update(incidents)
       .set({
         resolutionType: ResolutionType.Manual,
-        resolutionMessage,
         resolvedBy: dto.username,
         isResolved: true,
         resolvedAt: now,
@@ -249,12 +245,8 @@ export class IncidentService {
 
     this.logger.debug(`Incident ${id} manually resolved by: ${dto.username}.`);
 
-    await this.notificationService.createResolutionNotifications({
-      id: savedIncident.id,
-      needsAck: savedIncident.needsAck,
-      isResolved: savedIncident.isResolved,
-      resolutionMessage: savedIncident.resolutionMessage,
-    });
+    const resolutionContent: IncidentContent = { condition: `Manually resolved by ${dto.username}`, details: [] };
+    await this.notificationService.createResolutionNotifications(savedIncident, resolutionContent);
 
     return savedIncident;
   }
@@ -273,9 +265,6 @@ export class IncidentService {
       if (now < i.createdAt.getTime() + i.escalationTimeoutMs) continue;
 
       const timeoutInMinutes = Math.floor(i.escalationTimeoutMs / 60000);
-      const destinations = notificationChannels
-        .map(c => (c.messengerType === MessengerType.Matrix ? `https://matrix.to/#/${c.channelId}` : c.channelId))
-        .join(', ');
 
       const escalatedAt = new Date();
       await this.db
@@ -283,24 +272,28 @@ export class IncidentService {
         .set({ isEscalated: true, escalatedAt, updatedAt: escalatedAt })
         .where(eq(incidents.id, i.id));
 
-      // Escalation channels: escalation message with original alert
-      const escalationMessageWithOriginal =
-        `Escalation. The incident was not acknowledged within ${timeoutInMinutes} minutes in any of the following rooms: ${destinations} ` +
-        `(the original message is repeated below)\n\n${i.message}`;
-      await this.notificationService.createNotifications(
-        i,
-        escalationChannels,
-        NotificationType.Escalation,
-        escalationMessageWithOriginal,
-      );
+      const headline = `Not acknowledged in ${timeoutInMinutes} min`;
 
-      // Normal notification channels: short escalation message
-      const shortEscalationMessage = `The incident was not acknowledged within ${timeoutInMinutes} minutes and has therefore been escalated`;
+      const block = {
+        blockNumber: i.blockNumber ?? undefined,
+        eventIdx: i.eventIdx ?? undefined,
+        extrinsicIdx: i.extrinsicIdx ?? undefined,
+      };
+
+      const escalationContent: IncidentContent = {
+        subject: i.content.subject,
+        condition: headline,
+        details: [
+          `Rooms: ${notificationChannels.map(c => channelLink(c.messengerType, c.channelId)).join(', ')}`,
+          ...i.content.details,
+        ],
+      };
       await this.notificationService.createNotifications(
         i,
-        notificationChannels,
+        [...escalationChannels, ...notificationChannels],
         NotificationType.Escalation,
-        shortEscalationMessage,
+        escalationContent,
+        block,
       );
     }
   }
@@ -319,16 +312,16 @@ export class IncidentService {
 
     this.logger.info(`Auto-resolving ${staleIncidents.length} stale incidents (createdAt <= ${cutoff.toISOString()}).`);
 
+    const resolutionContent: IncidentContent = { condition: 'Auto-resolved by timeout policy (30 days)', details: [] };
+
     for (const incident of staleIncidents) {
       const now = new Date();
-      const resolutionMessage = 'Incident auto-resolved by timeout policy (30 days).';
 
       await this.db
         .update(incidents)
         .set({
           isResolved: true,
           resolutionType: ResolutionType.AutoTimeout,
-          resolutionMessage,
           resolvedAt: now,
           updatedAt: now,
         })
@@ -340,7 +333,7 @@ export class IncidentService {
         { ...incident, isResolved: true },
         incident.notificationChannels,
         NotificationType.Resolution,
-        resolutionMessage,
+        resolutionContent,
       );
     }
   }

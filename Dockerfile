@@ -61,7 +61,8 @@ COPY --from=builder /app/packages/chain/dist packages/chain/dist
 COPY --from=builder /app/packages/chain/.papi packages/chain/.papi
 COPY --from=builder /app/packages/matrix/dist packages/matrix/dist
 COPY --from=builder /app/packages/payouts/dist packages/payouts/dist
-# Payouts has no .papi here: it relies on chain's hoisted @polkadot-api/descriptors (a superset).
+
+RUN ln -sfn /app/packages/chain/.papi/descriptors node_modules/@polkadot-api/descriptors
 
 # Create config directories
 RUN mkdir -p packages/incident/config \

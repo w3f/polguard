@@ -14,9 +14,9 @@
           "primaryKey": true,
           "notNull": true
         },
-        "message": {
-          "name": "message",
-          "type": "varchar",
+        "content": {
+          "name": "content",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true
         },
@@ -136,12 +136,6 @@
         "resolved_at": {
           "name": "resolved_at",
           "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resolution_message": {
-          "name": "resolution_message",
-          "type": "varchar",
           "primaryKey": false,
           "notNull": false
         },

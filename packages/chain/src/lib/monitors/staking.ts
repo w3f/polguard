@@ -3,7 +3,6 @@ import {
   StakingHandlerType as H,
   MonitorType,
   Chain,
-  StateHandlerParams,
   CallHandlerParams,
   EventHandlerParams,
 } from '../../types';
@@ -53,18 +52,8 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
     'staking.OffenceReported',
   )
-  async offenceReported({
-    payload,
-    blockContext,
-    handlerType,
-  }: EventHandlerParams<H.OffenceReportedEvent>): Promise<void> {
-    const validatorId = payload.validator;
-
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, validatorId)) {
-      const message = this.fmt.message([`Offence reported for validator ${account.name}`], blockContext);
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext);
-    }
+  async offenceReported({ payload }: EventHandlerParams<H.OffenceReportedEvent>): Promise<void> {
+    for (const a of this.matched(payload.validator)) await a.report('Offence reported', []);
   }
 
   @Event(
@@ -72,42 +61,14 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
     'staking.ValidatorPrefsSet',
   )
-  async commissionChanged({
-    payload,
-    blockContext,
-    handlerType,
-  }: EventHandlerParams<H.CommissionChangedEvent>): Promise<void> {
-    const stash = payload.stash;
+  async commissionChanged({ payload }: EventHandlerParams<H.CommissionChangedEvent>): Promise<void> {
     const commission = payload.prefs.commission;
-
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, stash)) {
-      const message = this.fmt.message(
-        [
-          `Commission change detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
-          `Commission: ${commission}`,
-        ],
-        blockContext,
-      );
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext);
-    }
+    for (const a of this.matched(payload.stash)) await a.report('Commission changed', [`Commission: ${commission}`]);
   }
 
   @Event(H.UnbondedEvent, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo], 'staking.Unbonded')
-  async unbonded({ payload, blockContext, handlerType }: EventHandlerParams<H.UnbondedEvent>): Promise<void> {
-    const { stash, amount } = payload;
-
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, stash)) {
-      const message = this.fmt.message(
-        [
-          `Unbond detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
-          `Amount: ${this.fmt.balance(amount)}`,
-        ],
-        blockContext,
-      );
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext);
-    }
+  async unbonded({ payload }: EventHandlerParams<H.UnbondedEvent>): Promise<void> {
+    for (const a of this.matched(payload.stash)) await a.report('Unbonded', [`Amount: ${this.balance(payload.amount)}`]);
   }
 
   @Call(
@@ -115,230 +76,149 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
     ['Staking.set_payee', 'Staking.bond'],
   )
-  async destinationChanged({
-    call,
-    origin,
-    blockContext,
-    handlerType,
-  }: CallHandlerParams<H.DestinationChangedCall>): Promise<void> {
+  async destinationChanged({ call, origin }: CallHandlerParams<H.DestinationChangedCall>): Promise<void> {
     const args = call.value.value;
     const payee = call.value.type === 'set_payee' ? args.payee : args.payee;
     // PAPI represents RewardDestination as an enum: { type: "Account", value: "SS58" } | { type: "Staked" } etc.
     const destination = payee?.type === 'Account' ? String(payee.value) : String(payee?.type ?? payee);
 
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
-      const message = this.fmt.message(
-        [
-          `Destination change detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
-          `Destination: ${destination}`,
-        ],
-        blockContext,
-      );
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext);
-    }
+    for (const a of this.matched(origin)) await a.report('Reward destination changed', [`Destination: ${destination}`]);
   }
 
   @State(H.DestinationChangedState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
-  async destinationChangedState({
-    blockContext,
-    handlerType,
-  }: StateHandlerParams<H.DestinationChangedState>): Promise<void> {
+  async destinationChangedState(): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
     const [curr, prev] = await Promise.all([
-      this.chain.stakingPayee(addresses, blockContext.blockNumber),
-      this.chain.stakingPayee(addresses, blockContext.blockNumber - 1),
+      this.chain.stakingPayee(addresses, this.block.blockNumber),
+      this.chain.stakingPayee(addresses, this.block.blockNumber - 1),
     ]);
 
-    for (const address of addresses) {
-      const currDestination = curr[address];
-      const prevDestination = prev[address];
-
-      for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
-        if (currDestination !== null && prevDestination !== null && currDestination !== prevDestination) {
-          const message = this.fmt.message(
-            [
-              `Reward destination changed for ${this.fmt.accountLink(account.name, account.ss58)}`,
-              `Previous: ${prevDestination}`,
-              `Current: ${currDestination}`,
-            ],
-            blockContext,
-          );
-          const key = { account: account.ss58, groupId, handlerType };
-          await this.incidents.handle(message, notifications, key, blockContext);
-        }
+    for (const a of this.watched()) {
+      const currDestination = curr[a.ss58];
+      const prevDestination = prev[a.ss58];
+      if (currDestination !== null && prevDestination !== null && currDestination !== prevDestination) {
+        await a.report('Reward destination changed', [`Previous: ${prevDestination}`, `Current: ${currDestination}`]);
       }
     }
   }
 
   @State(H.CommissionUnexpectedState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
-  async commissionUnexpected({
-    blockContext,
-    handlerType,
-  }: StateHandlerParams<H.CommissionUnexpectedState>): Promise<void> {
-    const addresses = this.reg.getUniqueAddresses();
-    const [commissions, activeEra] = await Promise.all([
-      this.chain.stakingValidatorsCommission(addresses, blockContext.blockNumber),
-      this.chain.stakingActiveEra(blockContext.blockNumber),
+  async commissionUnexpected(): Promise<void> {
+    const [commissions, era] = await Promise.all([
+      this.chain.stakingValidatorsCommission(this.reg.getUniqueAddresses(), this.block.blockNumber),
+      this.chain.stakingActiveEra(this.block.blockNumber),
     ]);
 
-    await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
-      const { fromEra, untilEra } = account.settings;
+    for (const a of this.watched()) {
+      const commission = commissions[a.ss58];
+      const expected = a.settings.commission;
+      if (commission === null || !expected) continue;
 
-      const commission = commissions[account.ss58];
-      if (commission === null) return;
-
-      const expectedCommission = account.settings?.commission;
-      if (!expectedCommission) return;
-
-      const inRange = this.isAccountInEraRange(fromEra, untilEra, activeEra);
-      const isFiring = inRange && commission > expectedCommission;
-      const message = this.fmt.message(
-        [
-          `Unexpected commission detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
-          `Expected ${expectedCommission}, got ${commission}`,
-          this.formatEraRangeInfo(fromEra, untilEra, activeEra),
-        ],
-        blockContext,
+      const { fromEra, untilEra } = a.settings;
+      await a.track(
+        'Commission above expected',
+        [`Expected: ${expected}`, `Actual: ${commission}`, this.formatEraRangeInfo(fromEra, untilEra, era)],
+        this.isAccountInEraRange(fromEra, untilEra, era) && commission > expected,
       );
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext, isFiring);
-    });
+    }
   }
 
   @State(H.SelfStakeUnexpectedState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
-  async selfStakeUnexpected({
-    blockContext,
-    handlerType,
-  }: StateHandlerParams<H.SelfStakeUnexpectedState>): Promise<void> {
+  async selfStakeUnexpected(): Promise<void> {
     // Note: The staking.ledger storage is still keyed by what was historically the controller address.
     // Although stash-controller separation is deprecated and staking.bonded now returns the same address,
     // we still need this two-step lookup process to access the ledger storage due to backward compatibility
     // with the existing storage layout.
     const addresses = this.reg.getUniqueAddresses();
-    const [bondedInfo, activeEra] = await Promise.all([
-      this.chain.stakingBonded(addresses, blockContext.blockNumber),
-      this.chain.stakingActiveEra(blockContext.blockNumber),
+    const [bondedInfo, era] = await Promise.all([
+      this.chain.stakingBonded(addresses, this.block.blockNumber),
+      this.chain.stakingActiveEra(this.block.blockNumber),
     ]);
     const bondedAddresses = Object.values(bondedInfo).filter((addr): addr is string => addr !== null);
-    const ledgers = await this.chain.stakingLedgerActive(bondedAddresses, blockContext.blockNumber);
+    const ledgers = await this.chain.stakingLedgerActive(bondedAddresses, this.block.blockNumber);
 
-    for (const address of addresses) {
-      const bondedAddress = bondedInfo[address];
+    for (const a of this.watched()) {
+      const bondedAddress = bondedInfo[a.ss58];
       if (!bondedAddress) continue;
 
       const stake = ledgers[bondedAddress];
       if (stake === null) continue;
 
-      for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, address)) {
-        const { fromEra, untilEra } = account.settings;
-        const expectedStake = account.settings?.selfStake;
-        if (!expectedStake) continue;
+      const expected = a.settings.selfStake;
+      if (!expected) continue;
 
-        const inRange = this.isAccountInEraRange(fromEra, untilEra, activeEra);
-        const isFiring = inRange && stake < expectedStake;
-        const message = this.fmt.message(
-          [
-            `Unexpected self-stake detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
-            `Expected ${this.fmt.balance(expectedStake)}, got ${this.fmt.balance(stake)}`,
-            this.formatEraRangeInfo(fromEra, untilEra, activeEra),
-          ],
-          blockContext,
-        );
-        const key = { account: account.ss58, groupId, handlerType };
-        await this.incidents.handle(message, notifications, key, blockContext, isFiring);
-      }
+      const { fromEra, untilEra } = a.settings;
+      await a.track(
+        'Self-stake below expected',
+        [
+          `Expected: ${this.balance(expected)}`,
+          `Actual: ${this.balance(stake)}`,
+          this.formatEraRangeInfo(fromEra, untilEra, era),
+        ],
+        this.isAccountInEraRange(fromEra, untilEra, era) && stake < expected,
+      );
     }
   }
 
   @State(H.ValidatorIntentionMissingState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
-  async validatorIntentionMissing({
-    blockContext,
-    handlerType,
-  }: StateHandlerParams<H.ValidatorIntentionMissingState>): Promise<void> {
+  async validatorIntentionMissing(): Promise<void> {
     const addresses = this.reg.getUniqueAddresses();
-    const [bondedInfo, commissions, activeEra] = await Promise.all([
-      this.chain.stakingBonded(addresses, blockContext.blockNumber),
-      this.chain.stakingValidatorsCommission(addresses, blockContext.blockNumber),
-      this.chain.stakingActiveEra(blockContext.blockNumber),
+    const [bondedInfo, commissions, era] = await Promise.all([
+      this.chain.stakingBonded(addresses, this.block.blockNumber),
+      this.chain.stakingValidatorsCommission(addresses, this.block.blockNumber),
+      this.chain.stakingActiveEra(this.block.blockNumber),
     ]);
 
-    await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
-      const { fromEra, untilEra } = account.settings;
-      const isBonded = bondedInfo[account.ss58] !== null;
-      const hasValidatorPrefs = commissions[account.ss58] !== null;
+    for (const a of this.watched()) {
+      const isBonded = bondedInfo[a.ss58] !== null;
+      const hasValidatorPrefs = commissions[a.ss58] !== null;
 
-      const inRange = this.isAccountInEraRange(fromEra, untilEra, activeEra);
-      const isFiring = inRange && (!isBonded || !hasValidatorPrefs);
-
-      const message = this.fmt.message(
+      const { fromEra, untilEra } = a.settings;
+      await a.track(
+        'Validator not fully set up',
         [
-          `Account ${this.fmt.accountLink(account.name, account.ss58)} is not properly set up as validator`,
-          !isBonded && 'Account is not bonded.',
-          !hasValidatorPrefs && 'No validator preferences (commission) set.',
-          this.formatEraRangeInfo(fromEra, untilEra, activeEra),
+          !isBonded && 'Account is not bonded',
+          !hasValidatorPrefs && 'No validator preferences set',
+          this.formatEraRangeInfo(fromEra, untilEra, era),
         ],
-        blockContext,
+        this.isAccountInEraRange(fromEra, untilEra, era) && (!isBonded || !hasValidatorPrefs),
       );
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext, isFiring);
-    });
+    }
   }
 
   @State(H.DestinationUnexpectedState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
-  async destinationUnexpected({
-    blockContext,
-    handlerType,
-  }: StateHandlerParams<H.DestinationUnexpectedState>): Promise<void> {
-    const addresses = this.reg.getUniqueAddresses();
-    const [payees, activeEra] = await Promise.all([
-      this.chain.stakingPayee(addresses, blockContext.blockNumber),
-      this.chain.stakingActiveEra(blockContext.blockNumber),
+  async destinationUnexpected(): Promise<void> {
+    const [payees, era] = await Promise.all([
+      this.chain.stakingPayee(this.reg.getUniqueAddresses(), this.block.blockNumber),
+      this.chain.stakingActiveEra(this.block.blockNumber),
     ]);
 
-    await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
-      const { fromEra, untilEra } = account.settings;
+    for (const a of this.watched()) {
+      const destination = payees[a.ss58];
+      const expected = a.settings.payee;
+      if (destination === null || !expected) continue;
 
-      const destination = payees[account.ss58];
-      if (destination === null) return;
-
-      const expectedDestination = account.settings?.payee;
-      if (!expectedDestination) return;
-
-      const inRange = this.isAccountInEraRange(fromEra, untilEra, activeEra);
-      const isFiring = inRange && destination !== expectedDestination;
-      const message = this.fmt.message(
-        [
-          `Unexpected reward destination detected for ${this.fmt.accountLink(account.name, account.ss58)}`,
-          `Expected "${expectedDestination}", got "${destination}"`,
-          this.formatEraRangeInfo(fromEra, untilEra, activeEra),
-        ],
-        blockContext,
+      const { fromEra, untilEra } = a.settings;
+      await a.track(
+        'Unexpected reward destination',
+        [`Expected: ${expected}`, `Actual: ${destination}`, this.formatEraRangeInfo(fromEra, untilEra, era)],
+        this.isAccountInEraRange(fromEra, untilEra, era) && destination !== expected,
       );
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext, isFiring);
-    });
+    }
   }
 
   @State(H.ActiveSetPresenceState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama])
-  async activeSetPresense({ blockContext, handlerType }: StateHandlerParams<H.ActiveSetPresenceState>): Promise<void> {
-    const activeEra = await this.chain.stakingActiveEra(blockContext.blockNumber);
-    const validators = await this.chain.stakingEraValidators(activeEra, blockContext.blockNumber);
+  async activeSetPresense(): Promise<void> {
+    const era = await this.chain.stakingActiveEra(this.block.blockNumber);
+    const validators = await this.chain.stakingEraValidators(era, this.block.blockNumber);
 
-    await this.reg.forEachAccount(handlerType, async ({ account, notifications, groupId }) => {
-      const { fromEra, untilEra } = account.settings;
-
-      const inRange = this.isAccountInEraRange(fromEra, untilEra, activeEra);
-      const isFiring = inRange && !validators[account.ss58];
-      const message = this.fmt.message(
-        [
-          `Target ${this.fmt.accountLink(account.name, account.ss58)} is not present in the validation active set`,
-          this.formatEraRangeInfo(fromEra, untilEra, activeEra) || `Era: ${activeEra}`,
-        ],
-        blockContext,
+    for (const a of this.watched()) {
+      const { fromEra, untilEra } = a.settings;
+      await a.track(
+        'Not in active set',
+        [this.formatEraRangeInfo(fromEra, untilEra, era) || `Era: ${era}`],
+        this.isAccountInEraRange(fromEra, untilEra, era) && !validators[a.ss58],
       );
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext, isFiring);
-    });
+    }
   }
 }

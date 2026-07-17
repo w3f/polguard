@@ -21,31 +21,27 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
     'referenda.Submitted',
   )
-  async referendaSubmitted({
-    payload,
-    blockContext,
-    handlerType,
-  }: EventHandlerParams<H.ReferendaSubmittedEvent>): Promise<void> {
-    const { blockNumber } = blockContext;
+  async referendaSubmitted({ payload }: EventHandlerParams<H.ReferendaSubmittedEvent>): Promise<void> {
     const { index, track } = payload;
-    const proposer = (await this.chain.referendaInfoFor(index, blockNumber)) ?? 'unknown';
+    const proposer = await this.chain.referendaInfoFor(index, this.block.blockNumber);
     const chainSlug = this.getGovernanceChainSlug();
-    const subsquareLink = this.fmt.link('Subsquare', `https://${chainSlug}.subsquare.io/referenda/${index}`);
-    const polkassemblyLink = this.fmt.link('Polkassembly', `https://${chainSlug}.polkassembly.io/referenda/${index}`);
+    const subsquareLink = `[Subsquare](https://${chainSlug}.subsquare.io/referenda/${index})`;
+    const polkassemblyLink = `[Polkassembly](https://${chainSlug}.polkassembly.io/referenda/${index})`;
     // Sanitize C-style string
     const trackName = (await this.chain.referendaTrack(track)).replace(/\0/g, '');
-    const message = this.fmt.message(
-      [
-        `Referendum #${index} submitted`,
-        `Proposed by: ${this.fmt.accountLink(proposer, proposer)}`,
+
+    // Account-less handler bypasses the bound-account API (matched/watched) by design.
+    const content = {
+      condition: `Referendum #${index} submitted`,
+      details: [
+        proposer ? `Proposed by: ${this.accountRef(proposer)}` : false,
         `Track: ${trackName}`,
         `Links: ${subsquareLink} | ${polkassemblyLink}`,
-      ],
-      blockContext,
-    );
-    for (const { groupId, notifications } of this.reg.getGroupsByHandler(handlerType)) {
-      const key = { account: 'None', groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext);
+      ].filter(Boolean) as string[],
+    };
+    for (const { groupId, notifications } of this.reg.getGroupsByHandler(this.handlerType)) {
+      const key = { account: 'None', groupId, handlerType: this.handlerType };
+      await this.incidents.handle(content, notifications, key, this.block);
     }
   }
 
@@ -54,12 +50,7 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
     [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo],
     'ConvictionVoting.vote',
   )
-  async convictionVote({
-    call,
-    origin,
-    blockContext,
-    handlerType,
-  }: CallHandlerParams<H.ConvictionVoteCall>): Promise<void> {
+  async convictionVote({ call, origin }: CallHandlerParams<H.ConvictionVoteCall>): Promise<void> {
     const args = call.value.value;
     const pollIndex = String(args.poll_index);
     const voteArg = args.vote;
@@ -69,30 +60,23 @@ export class GovernanceMonitor extends AbstractMonitor<MonitorType.Governance> {
       const { vote, balance } = voteArg.value;
       // vote is a compact vote byte: bit 7 = aye, bits 0-6 = conviction
       const direction = typeof vote === 'number' ? (vote & 0x80 ? 'Aye' : 'Nay') : String(vote);
-      voteLines = [`Direction: ${direction}`, `Amount: ${this.fmt.balance(String(balance))}`];
+      voteLines = [`Direction: ${direction}`, `Amount: ${this.balance(String(balance))}`];
       // { type: "Split", value: { aye: bigint, nay: bigint } }
     } else if (voteArg?.type === 'Split') {
       const { aye, nay } = voteArg.value;
-      voteLines = [`Aye: ${this.fmt.balance(String(aye))}`, `Nay: ${this.fmt.balance(String(nay))}`];
+      voteLines = [`Aye: ${this.balance(String(aye))}`, `Nay: ${this.balance(String(nay))}`];
       //{ type: "SplitAbstain", value: { aye: bigint, nay: bigint, abstain: bigint } }
     } else if (voteArg?.type === 'SplitAbstain') {
       const { aye, nay, abstain } = voteArg.value;
       voteLines = [
-        `Aye: ${this.fmt.balance(String(aye))}`,
-        `Nay: ${this.fmt.balance(String(nay))}`,
-        `Abstain: ${this.fmt.balance(String(abstain))}`,
+        `Aye: ${this.balance(String(aye))}`,
+        `Nay: ${this.balance(String(nay))}`,
+        `Abstain: ${this.balance(String(abstain))}`,
       ];
     } else {
       voteLines = ['(Unknown vote format)'];
     }
 
-    for (const { account, notifications, groupId } of this.reg.getAccounts(handlerType, origin)) {
-      const message = this.fmt.message(
-        [`${this.fmt.accountLink(account.name, account.ss58)} cast a vote on referendum #${pollIndex}`, ...voteLines],
-        blockContext,
-      );
-      const key = { account: account.ss58, groupId, handlerType };
-      await this.incidents.handle(message, notifications, key, blockContext);
-    }
+    for (const a of this.matched(origin)) await a.report(`Voted on referendum #${pollIndex}`, voteLines);
   }
 }

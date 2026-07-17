@@ -1,5 +1,5 @@
 import type { AppLogger } from '@w3f/polguard-common';
-import { IncidentReporter, CreateIncidentDto, ResolveIncidentByChainDto } from '../../types';
+import { IncidentReporter, CreateIncidentBody, ResolveByChainBody } from '../../types';
 import { ConfigService } from '../config/config.service';
 
 /**
@@ -22,7 +22,7 @@ export class IncidentServiceReporter implements IncidentReporter {
     this.baseUrl = config.service!.url;
   }
 
-  async createIncident(incident: CreateIncidentDto): Promise<string | null> {
+  async createIncident(incident: CreateIncidentBody): Promise<string | null> {
     try {
       const response = await fetch(this.baseUrl, {
         method: 'POST',
@@ -53,7 +53,7 @@ export class IncidentServiceReporter implements IncidentReporter {
     }
   }
 
-  async resolveIncident(id: string, resolveData: ResolveIncidentByChainDto): Promise<void> {
+  async resolveIncident(id: string, resolveData: ResolveByChainBody): Promise<void> {
     try {
       const url = `${this.baseUrl}/${id}/resolve`;
       const response = await fetch(url, {

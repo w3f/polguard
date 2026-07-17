@@ -35,7 +35,7 @@ env:
 jobs:
   code-quality:
     name: Code quality
-    if: ${{ !startsWith(github.ref, 'refs/tags/') && github.event.pull_request.draft != true }}
+    if: ${{ github.event_name != 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/') && github.event.pull_request.draft != true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -63,7 +63,6 @@ jobs:
   e2e-pr:
     name: E2E (manual)
     if: ${{ github.event_name == 'workflow_dispatch' }}
-    needs: [code-quality]
     uses: ./.github/workflows/e2e.yml
     secrets: inherit
     with:
