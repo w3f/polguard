@@ -10,7 +10,7 @@ groups:
       - AssetHubKusama
     monitors:
       - name: Balances
-        # Start from block 11588659 to test
+        # To see it fire, start the chain service with chain.startBlock: 11588659
         handlers:
           - TransferEgressEvent
     accountSetNames: [kusama-accounts]
@@ -20,7 +20,7 @@ groups:
       - AssetHubPolkadot
     monitors:
       - name: Balances
-        # Start from block 10338234 to test
+        # To see it fire, start the chain service with chain.startBlock: 10338234
         handlers:
           - TransferEgressEvent
     accountSetNames: [polkadot-accounts]

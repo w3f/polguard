@@ -1,34 +1,26 @@
 # Incident Service Configuration
 
-# Environment (optional, default: development)
-# Values: development, production, test, staging
-environment: development
-
-# Database configuration (required)
 database:
   host: localhost
-  port: 5432              # default: 5432
   username: postgres
-  password: postgres      # or use POSTGRES_PASSWORD env var
   database: monitoring
-
-# HTTP Server (optional, default: 3000/0.0.0.0)
-server:
-  port: 3000
-  host: 0.0.0.0
-
-# Notification services (required)
+  # password via POSTGRES_PASSWORD env var
 notifications:
   matrix:
     url: http://localhost:3001
 
-# Logging (optional, default: debug)
-# Values: error, warn, info, debug, verbose
-logging:
-  level: debug
+# --- All options ---
 
-# Cron schedules (optional, cron format)
-crons:
-  escalations: "*/5 * * * *"    # Check unacknowledged incidents
-  retries: "*/2 * * * *"         # Retry failed notifications
-  autoResolve: "0 */6 * * *"     # Auto-resolve orphaned incidents
+# environment: development       # development | production | test | staging (default: development)
+# database:
+#   port: 5432                   # default: 5432
+#   password: postgres           # or POSTGRES_PASSWORD env var
+# server:
+#   port: 3000                   # default: 3000
+#   host: 0.0.0.0                # default: 0.0.0.0
+# logging:
+#   level: debug                 # error | warn | info | debug | trace (default: debug)
+# crons:                         # cron format; each is optional and disabled if unset
+#   escalations: "*/5 * * * *"   # check unacknowledged incidents
+#   retries: "*/2 * * * *"       # retry failed notifications
+#   autoResolve: "0 */6 * * *"   # auto-resolve orphaned incidents

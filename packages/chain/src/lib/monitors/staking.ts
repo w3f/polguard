@@ -207,7 +207,7 @@ export class StakingMonitor extends AbstractMonitor<MonitorType.Staking> {
     }
   }
 
-  @State(H.ActiveSetPresenceState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama])
+  @State(H.ActiveSetPresenceState, [Chain.AssetHubPolkadot, Chain.AssetHubKusama, Chain.AssetHubPaseo])
   async activeSetPresense(): Promise<void> {
     const era = await this.chain.stakingActiveEra(this.block.blockNumber);
     const validators = await this.chain.stakingEraValidators(era, this.block.blockNumber);

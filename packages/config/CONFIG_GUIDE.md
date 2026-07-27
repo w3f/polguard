@@ -2,16 +2,32 @@
 
 This guide explains how to configure the monitoring polkadot using YAML configuration files. It references the monitors and handlers described in the [Monitors & Handlers Reference](./MONITORS.md).
 
+## Incidents: one concept, two properties
+
+Everything PolGuard reports is an **incident**. Each incident has two independent properties you control through configuration:
+
+- **Lifecycle** — determined by the **handler** you choose:
+  - *one-time* — a single occurrence, recorded and immediately resolved (e.g. `TransferEgressEvent`)
+  - *ongoing* — a condition that fires and later resolves (e.g. `BalanceThresholdState`)
+
+  Each handler's lifecycle is documented in the [Monitors & Handlers Reference](./MONITORS.md).
+- **Response** — determined by **`needsAck`** in the group's `notifications`:
+  - *actionable* (`needsAck: true`) — a human must acknowledge it; if escalation is configured, it escalates when left unacknowledged
+  - *informational* (`needsAck: false`, the default) — surfaced for awareness, no reaction expected
+
+The two are independent: a one-time incident can be actionable (e.g. a watched-account transfer someone must confirm), and an ongoing one can be informational.
+
 ## Configuration Structure
 
-A configuration file consists of three main sections:
-- `accountSets` - Named account sets that can be referenced by groups
-- `defaults` - Default settings applied to all groups
-- `groups` - List of monitoring groups with their specific settings
+A configuration file consists of three sections:
+
+- `accountSets` — named sets of accounts, referenced by groups (required)
+- `groups` — what to monitor, and how to report it (required)
+- `defaults` — settings applied to groups that don't define their own (optional)
 
 ```yaml
 defaults:
-  # Default settings
+  # Fallbacks for chains, monitors, notifications, operations
 
 accountSets:
   account-set-name:
@@ -19,47 +35,16 @@ accountSets:
     # ... more accounts
 
 groups:
-  - name: group1
-    accountSet: account-set-name
+  - id: group-with-a-long-id
+    accountSetNames: [account-set-name]
     # Group settings
 ```
 
-## Required Configuration
-
-Every configuration must have:
-1. At least one group
-2. At least one account set in the `accountSets` section
-3. Each group must have:
-   - `chains` (directly or from defaults)
-   - `monitors` (directly or from defaults)
-   - `notifications` (directly or from defaults)
-   - `accountSet` field referencing an account set name
-
-## Default Settings
-
-```yaml
-defaults:
-  chains:
-    - Polkadot
-    - Kusama
-    
-  notifications:
-    messengerType: Matrix
-    channels: ['!roomid:matrix.org']
-    needsAck: true
-    repeatFiringMs: 3600
-    
-  monitors:
-    - name: Staking
-      commission: 10
-      handlers:
-        - CommissionChangedEvent
-        - OffenceReportedEvent
-```
+Every group needs `chains`, `accountSetNames`, and — if it monitors anything — `monitors` and `notifications`. All of these except `accountSetNames` can come from `defaults`.
 
 ## Account Sets
 
-Account sets allow you to define groups of accounts once and reference them across multiple monitoring groups:
+Account sets let you define accounts once and reference them from several groups. Accounts exist **only** inside account sets; groups never list them inline.
 
 ```yaml
 accountSets:
@@ -72,139 +57,162 @@ accountSets:
       name: "Validator2"
 ```
 
-## Group Configuration
+Monitor settings placed on an account (`commission`, `threshold`, `display`, …) override the group's values for that account.
 
-Each group references an account set and defines monitoring settings:
+## Groups
 
 ```yaml
 groups:
-  - name: validators-group
+  - id: validators-group-kusama
     chains:
-      - Kusama
-    
+      - AssetHubKusama
+
     notifications:
       messengerType: Matrix
       channels: ['!customroom:matrix.org']
-    
+
     monitors:
       - name: Staking
         commission: 7
+        handlers: [CommissionUnexpectedState]
       - name: Balances
         threshold: "500.75"
-      - name: Identity
-    
-    accountSet: validators-set
+        handlers: [BalanceThresholdState]
+
+    accountSetNames: [validators-set]
 ```
 
-## Value Formats & Validation
+- `id` — slug (lowercase letters, digits, hyphens; starts with a letter), longer than 16 characters, unique across all files. It identifies the group in incidents, so keep it stable and descriptive.
+- `chains` — one group is created per chain, each monitoring the same accounts. Handlers only run on chains their monitor supports (see [Monitors & Handlers Reference](./MONITORS.md)); note that most on-chain activity now lives on the Asset Hubs, not the relay chains.
+- `accountSetNames` — one or more account set names; all their accounts are monitored by the group.
+- `monitors` — each entry needs `name` and at least one `handler`.
+- `notifications` — where incidents go; required whenever the group has monitors.
 
-### Addresses
-- Can be either SS58 or hex format
-- SS58: 47-48 characters starting with a number or letter
-- Hex: 64 characters prefixed with "0x"
-- Will be automatically converted to chain-specific SS58 format
-
-### Balance Values
-- Must be strings with optional decimal point (e.g., "100.5", "1000")
-- Represent token units (DOT/KSM), not planks
-- Will be automatically converted to chain-specific bigint values
-- Examples: "0.1" DOT = 1000000000n planks (0.1 * 10^10)
-
-### Notification Channels
-- Currently only supports Matrix rooms
-- Must match format: `!roomid:server.name`
-- At least one channel required
-
-### Incident Escalation
-
-You can configure escalation channels and a timeout to automatically notify additional recipients if an incident requiring acknowledgment is not acknowledged in time.
+## Defaults
 
 ```yaml
-notifications:
-  messengerType: Matrix
-  channels: ['!roomid:matrix.org']
-  escalationChannels: ['!escalationroom:matrix.org']  # optional
-  escalationTimeoutMs: 3600000  # optional value in milliseconds, defaults to 1 hour
-  needsAck: true
-```
-When `needsAck` is true, escalation will trigger after `escalationTimeoutMs` unless the incident is acknowledged.
+defaults:
+  chains:
+    - AssetHubPolkadot
+    - AssetHubKusama
 
-## Configuration Processing
+  notifications:
+    messengerType: Matrix
+    channels: ['!roomid:matrix.org']
+    needsAck: true
+    repeatFiringMs: 3600000
 
-The platform processes configuration in the following order:
-
-1. Load and Validate:
-   - Validate file structure and required fields
-   - Check format of addresses, decimals, and other values
-
-2. Transform Values:
-   - Generate default names for accounts if not provided
-   - Convert addresses to chain-specific SS58 format
-   - Convert decimal balances to chain-specific bigint values
-   - Build monitor-specific settings objects for each account
-
-3. Group Processing:
-   - Create separate group for each chain in group's chains
-   - Apply monitor settings hierarchy (account overrides group settings)
-   - Preserve handler configurations from monitor level
-
-## Handler Configuration
-
-```yaml
-# Handlers array is required and must contain at least one handler
-handlers:
-  - CommissionChangedEvent
-  - OffenceReportedEvent
+  monitors:
+    - name: Staking
+      commission: 10
+      handlers:
+        - CommissionChangedEvent
+        - OffenceReportedEvent
 ```
 
-## Monitor Settings Hierarchy
+Defaults are replaced, not merged: a group that defines `monitors` ignores `defaults.monitors` entirely.
 
-The configuration system supports a hierarchical approach to settings:
+## Settings Hierarchy
 
-1. **Default Level**: Settings defined in the `defaults.monitors` section
-2. **Group Level**: Settings defined in a group's `monitors` section override defaults
-3. **Account Level**: Settings defined directly on an account override both group and defaults
+Monitor settings are resolved in this order, most specific first:
 
-Example:
+1. **Account level** — settings on an account in an account set
+2. **Group level** — settings in the group's `monitors`
+3. **Default level** — settings in `defaults.monitors`
 
 ```yaml
 defaults:
   monitors:
     - name: Staking
-      commission: 10  # Default commission for all validators
+      commission: 10          # applies to all groups without their own monitors
+      handlers: [CommissionUnexpectedState]
 
 groups:
-  - name: validators-group
+  - id: validators-group-polkadot
     monitors:
       - name: Staking
-        commission: 7  # Override for this group
-    
-    accounts:
-      - address: "..."
-        name: "Validator1"
-        commission: 3  # Override for this specific validator
+        commission: 7         # applies to this group
+        handlers: [CommissionUnexpectedState]
+    accountSetNames: [validators-set]
+
+accountSets:
+  validators-set:
+    - address: "..."
+      commission: 3           # applies to this account only
 ```
 
-## Annotations
+## Notifications
 
-The configuration supports an `annotations` field at the group, monitor, and account levels. This field allows external tools to store arbitrary metadata in the monitoring configuration.
+```yaml
+notifications:
+  messengerType: Matrix
+  channels: ['!roomid:matrix.org']
+  needsAck: true
+  repeatFiringMs: 3600000                             # optional
+  escalationChannels: ['!escalationroom:matrix.org']  # optional
+  escalationTimeoutMs: 3600000                        # optional
+```
+
+- `channels` — at least one Matrix room, in `!roomid:server.name` format (Matrix is the only messenger currently supported)
+- `needsAck` — see [above](#incidents-one-concept-two-properties); defaults to `false`
+- `repeatFiringMs` — re-send an incident that is still firing after this many **milliseconds**
+- `escalationChannels` + `escalationTimeoutMs` — notify these channels when an incident with `needsAck: true` has not been acknowledged for that many milliseconds. Escalation needs **both** fields; with either missing, nothing escalates.
+
+## Operations: Payouts
+
+`operations.payout` marks accounts whose staking rewards the [Payouts service](../payouts/README.md) should claim. It can sit on `defaults`, a group, or an account (most specific wins), and is independent of monitoring — a group can be payout-only, without `monitors` or `notifications`.
 
 ```yaml
 groups:
-  - name: validators
-    annotations:
-      enablePayout: true
-    monitors:
-      - name: Staking
-        annotations:
-          tag: group-N
-    accounts:
-      - address: "..."
-        annotations:
-          tag: group-R  # Overrides monitor's tag
+  - id: payouts-validators-polkadot
+    chains: [AssetHubPolkadot]
+    accountSetNames: [validators-set]
+    operations:
+      payout:
+        signer: signer-x                              # optional
+        notifications:                                # optional
+          messengerType: Matrix
+          channels: ['!payoutsroom:matrix.org']
 ```
 
-The `annotations` field bypasses validation and follows the same override rules as other settings.
+- `signer` — name of a signer defined in the Payouts service config, which holds the actual secret. Every payout account must resolve to one, from the account, group, or defaults.
+- `notifications` — where payout results go; falls back to the group's `notifications`.
+
+## Annotations
+
+`annotations` can be set on a group, monitor, or account to store arbitrary metadata for external tools. It bypasses validation and follows the same override rules as other settings.
+
+```yaml
+groups:
+  - id: validators-group-polkadot
+    annotations:
+      owner: secops
+    monitors:
+      - name: Staking
+        handlers: [CommissionUnexpectedState]
+        annotations:
+          tag: red
+    accountSetNames: [validators-set]
+```
+
+## Value Formats & Validation
+
+### Addresses
+
+- SS58 (47-48 characters) or hex (64 characters prefixed with `0x`)
+- Automatically converted to the chain-specific SS58 format
+
+### Balance Values
+
+- Strings with an optional decimal point, e.g. `"100.5"`, `"1000"`
+- Token units (DOT/KSM), not planks — converted to chain-specific bigint values
+- Example: `"0.1"` DOT = `1000000000n` planks (0.1 * 10^10)
+
+## Configuration Processing
+
+1. **Load and validate** — file structure, required fields, and the format of addresses, decimals, handlers, and tokens
+2. **Transform** — generate account names if absent, convert addresses to chain-specific SS58, convert decimal balances to bigint
+3. **Group** — create one group per chain, apply the settings hierarchy, and build the per-account monitor settings
 
 ## Configuration Example
 
@@ -218,28 +226,28 @@ accountSets:
 
 defaults:
   chains:
-    - Polkadot
+    - AssetHubPolkadot
   notifications:
     messengerType: Matrix
     channels: ['!roomid:matrix.org']
     needsAck: true
 
 groups:
-  - name: validators-staking-with-ack
+  - id: validators-staking-with-ack
     monitors:
       - name: Staking
         commission: 5
         handlers:
-          - CommissionChangedEvent
+          - CommissionUnexpectedState
           - OffenceReportedEvent
       - name: Balances
         threshold: "1000.0"
         handlers:
           - BalanceThresholdState
           - TransferIngressEvent
-    accountSet: validators-set
+    accountSetNames: [validators-set]
 
-  - name: validators-balances-no-ack
+  - id: validators-transfers-no-ack
     monitors:
       - name: Balances
         handlers:
@@ -248,8 +256,8 @@ groups:
       messengerType: Matrix
       channels: ['!roomid:matrix.org']
       needsAck: false
-      repeatFiringMs: 604800
-    accountSet: validators-set
+      repeatFiringMs: 604800000
+    accountSetNames: [validators-set]
 ```
 
 For a complete reference of all available monitors and handlers, see the [Monitors & Handlers Reference](./MONITORS.md).

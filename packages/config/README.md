@@ -4,12 +4,12 @@ The Config package is responsible for loading, validating, and processing monito
 
 ## Documentation
 
-- [Configuration Guide](CONFIG_GUIDE.md) - Detailed guide to the YAML configuration format
-- [Monitors & Handlers Reference](MONITORS.md) - Comprehensive list of all monitors and handlers
+- [Configuration Guide](CONFIG_GUIDE.md) — Detailed guide to the YAML configuration format
+- [Monitors & Handlers Reference](MONITORS.md) — Comprehensive list of all monitors and handlers
 
 ## Components
 
-#### ConfigProcessor
+### ConfigProcessor
 
 Internal component for processing configuration files:
 - Loads and validates YAML configuration files
@@ -19,26 +19,25 @@ Internal component for processing configuration files:
 - Merges monitor-level settings and account-level settings
 - Converts decimal balance strings to chain-specific BigInt values
 
-#### ConfigValidator
+### ConfigValidator
 
 Performs validation of raw configuration data:
 - Ensures proper structure and required fields
 - Validates field formats and values
 - Checks cross-field dependencies
 
-#### AccountSettingsBuilder
+### AccountSettingsBuilder
 
 Builds account monitor settings by:
 - Combining monitor and account-level configurations
 - Applying defaults for missing settings
 - Converting decimal balances to BigInt values
 
-#### AddressTransformer
+### AddressTransformer
 
 Handles blockchain address transformations:
 - Converts between hex and SS58 formats
 - Ensures correct chain-specific encoding
-
 
 ## Installation
 

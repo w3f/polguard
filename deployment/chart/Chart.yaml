@@ -4,4 +4,4 @@ name: polguard
 description: An application stack that allows monitoring of Polkadot and Kusama.
 
 type: application
-version: 1.7.0
+version: 1.7.1

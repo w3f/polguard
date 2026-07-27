@@ -1,70 +1,42 @@
 # Chain Service Configuration
 
-# Chain configuration (optional, defaults shown)
 chain:
-  name: AssetHubPolkadot    # default: AssetHubPolkadot
   rpcUrl: wss://polkadot-asset-hub-rpc.polkadot.io
-  # rpcUrl can also be a list of endpoints (different providers) for automatic failover:
-  # rpcUrl:
-  #   - wss://polkadot-asset-hub-rpc.polkadot.io
-  #   - wss://rpc-asset-hub-polkadot.luckyfriday.io
-  # startBlock: 9430730     # optional, starts from latest if not specified
-
-  # Batched per-address storage query engine (optional, default: chainHead)
-  # Values:
-  #   chainHead  - batches keys into one chainHead_v1_storage operation (PAPI internal API)
-  #   legacyRpc  - batches keys into one legacy state_queryStorageAt RPC call (public API)
-  #   getValues  - un-batched baseline: PAPI typed getValues(), one chainHead_v1_storage
-  #                operation per key (the pre-batching path, kept for A/B/C comparison)
-  # Can be flipped without a redeploy - only requires the config to be reloaded (pod restart).
-  storageQueryEngine: chainHead
-
-# Environment (optional, default: development)
-# Values: development, production, test, staging
-environment: development
-
-# HTTP Server (optional, default: 3000/0.0.0.0)
-# Exposes /health endpoint for readiness checks
-server:
-  port: 3002
-  host: 0.0.0.0
-
-# Logging (optional, default: debug)
-# Values: error, warn, info, debug, trace
-logging:
-  level: debug
-
-# State storage (optional, default: inMemory)
-# Determines where last processed block is stored
 store:
-  type: inMemory    # inMemory (ephemeral) | service (API) | file (persistent)
-  
-  # Only for type: file
-  # file:
-  #   path: ./data/chain-store.json
-  
-  # Only for type: service (production with API)
-  # service:
-  #   url: http://localhost:3000/last-block/:chain
-
-# Incident output (optional, default: stdout)
-# Determines where incidents are sent
+  type: inMemory
 incidentReporter:
-  type: stdout    # stdout (console) | service (API) | webhook (custom)
-  
-  # Only for type: stdout
+  type: stdout
   stdout:
-    format: pretty    # json | pretty
-  
-  # Only for type: service (production with API)
-  # service:
-  #   url: http://localhost:3000/incidents
-  
-  # Only for type: webhook
-  # webhook:
-  #   url: https://webhook.example.com
-  #   headers:
-  #     Authorization: Bearer token
+    format: pretty
+monitoringConfigsDir: ../config/examples
 
-# Monitoring configuration (optional)
-monitoringConfigsDir: ../config/examples    # default: ../config/examples
+# --- All options ---
+
+# chain:
+#   name: AssetHubPolkadot          # default: AssetHubPolkadot
+#   rpcUrl: wss://...               # string, or a list for automatic failover
+#   startBlock: 9430730             # default: latest
+#   storageQueryEngine: chainHead   # chainHead | legacyRpc | getValues (default: chainHead) — see docs/NOTES.md
+# environment: development          # development | production | test | staging (default: development)
+# logging:
+#   level: debug                    # error | warn | info | debug | trace (default: debug)
+# server:
+#   port: 3000                      # default: 3000
+#   host: 0.0.0.0                   # default: 0.0.0.0
+# store:
+#   type: inMemory                  # inMemory | file | service
+#   file:
+#     path: ./data/chain-store.json # required if type: file
+#   service:
+#     url: http://localhost:3000/last-block/:chain   # required if type: service
+# incidentReporter:
+#   type: stdout                    # stdout | webhook | service
+#   stdout:
+#     format: pretty                # json | pretty (default: pretty)
+#   webhook:
+#     url: https://webhook.example.com   # required if type: webhook
+#     headers:
+#       Authorization: Bearer token
+#   service:
+#     url: http://localhost:3000/incidents   # required if type: service
+# monitoringConfigsDir: ../config/examples   # default: ../config/examples

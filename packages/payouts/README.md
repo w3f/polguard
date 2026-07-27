@@ -23,9 +23,10 @@ self-heals on the next one. No local state, no in-process retries.
 
 Two configs:
 
-- **App config** (`config/config.yaml`) — RPC URLs per chain, signer mnemonics, claim knobs, optional
-  Matrix URL. See [config.yaml.example](./config/config.yaml.example).
-- **Accounts config** — the shared monitoring YAML files (`payoutConfigsDir`); accounts to claim for
+- **App config** (`config/config.yaml`): RPC URLs per chain, signer mnemonics, claim knobs, optional
+  Matrix URL. See [config.yaml.example](./config/config.yaml.example) — comments there cover
+  defaults, required vs. optional fields, allowed values, and env-var overrides.
+- **Monitoring config** (`payoutConfigsDir`): the shared YAML rules directory; accounts to claim for
   are any group. See the [Config Guide](../config/CONFIG_GUIDE.md).
 
 ## Development

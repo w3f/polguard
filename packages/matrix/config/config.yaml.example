@@ -1,42 +1,27 @@
 # Matrix Service Configuration
 
-# Environment (optional, default: development)
-# Values: development, production, test, staging
-environment: development
-
-# Matrix client configuration (required)
 matrix:
   url: https://matrix.web3.foundation
   userId: "@bot:server.org"
-  storageDir: data/local-storage    # default: data/local-storage
-  
-  # Matrix SDK logging (optional, default: warn)
-  # Values: trace, debug, info, warn, error
-  logging:
-    level: warn
-  
-  # Authentication: choose ONE method
   passwordAuth:
-    password: ***    # or use MATRIX_PASSWORD env var
-  
-  # OR use token auth (requires enableEncryption: false)
-  # tokenAuth:
-  #   accessToken: ***    # or use MATRIX_TOKEN env var
-  #   deviceId: device123
-  
-  # enableEncryption: false    # auto-inferred from auth type
-
-# Incident Service API (required)
+    password: "***"    # or use MATRIX_PASSWORD env var
 incidents:
   url: http://localhost:3000/incidents
 
-# HTTP Server (optional, default: 3000/0.0.0.0)
-# Exposes notification webhook and health endpoints
-server:
-  port: 3001
-  host: 0.0.0.0
+# --- All options ---
 
-# Logging (optional, default: debug)
-# Values: error, warn, info, debug, trace
-logging:
-  level: debug
+# environment: development        # development | production | test | staging (default: development)
+# matrix:
+#   logging:
+#     level: error                # trace | debug | info | warn | error (default: error)
+#   pruneOtherDevices: true        # default: false
+#   passwordAuth:
+#     recoveryKey: "***"          # or MATRIX_RECOVERY_KEY env var; avoids "not verified" warnings
+#   tokenAuth:                     # alternative to passwordAuth (mutually exclusive); plaintext, no encryption
+#     accessToken: "***"          # or MATRIX_TOKEN env var
+#     deviceId: device123
+# server:
+#   port: 3000                    # default: 3000
+#   host: 0.0.0.0                 # default: 0.0.0.0
+# logging:
+#   level: debug                  # error | warn | info | debug | trace (default: debug)

@@ -1,30 +1,19 @@
-# Environment (optional, default: development)
-# Values: development, production, test, staging
-environment: development
+# Payouts Service Configuration
 
-# Logging (optional, default: info)
-# Values: error, warn, info, debug, trace
-logging:
-  level: info
-
-# Shared payouts configs directory (the same files the chain service reads)
-payoutConfigsDir: ../config/examples
-
-# Connectivity per chain. A chain is claimable only if listed here.
 chains:
-  AssetHubKusama:
-    rpcUrl: wss://kusama-asset-hub-rpc.polkadot.io
   AssetHubPolkadot:
     rpcUrl: wss://polkadot-asset-hub-rpc.polkadot.io
-
-# Signer name -> sr25519 mnemonic
 signers:
   signer-x: "bottom drive obey ..."
+payoutConfigsDir: ../config/examples
 
-claim:
-  gracePeriodEras: 16   # claim eras older than activeEra-1-gracePeriodEras (default: 16)
+# --- All options ---
 
-# Notifications (optional). Omit -> stdout only.
-notifications:
-  matrix:
-    url: http://matrix-service/notifications
+# environment: development       # development | production | test | staging (default: development)
+# logging:
+#   level: info                  # error | warn | info | debug | trace (default: info)
+# claim:
+#   gracePeriodEras: 16           # claim eras older than activeEra-1-gracePeriodEras (default: 16)
+# notifications:                  # optional — omit for stdout only
+#   matrix:
+#     url: http://matrix-service/notifications

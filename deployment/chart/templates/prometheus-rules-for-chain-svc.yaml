@@ -9,7 +9,7 @@ spec:
     - name: ChainBlockAlerts
       rules:
         - alert: ProcessingBehindAlert
-          expr: "w3f_polguard_chain_latest_block_on_chain{namespace=\"{{ .Release.Namespace }}\"} - w3f_polguard_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"} > 100"
+          expr: "polguard_chain_latest_block_on_chain{namespace=\"{{ .Release.Namespace }}\"} - polguard_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"} > 200"
           for: "5m"
           labels:
             severity: warning
@@ -17,7 +17,7 @@ spec:
             summary: The last processed block is more than 100 blocks behind the latest block on the chain.
             description: "Chain {{`{{ $labels.chain }}`}} (pod {{`{{ $labels.pod }}`}}): The last processed block is {{`{{ $value }}`}} behind the latest block on the chain."
         - alert: ProcessingStoppedAlert
-          expr: "changes(w3f_polguard_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"}[15m]) == 0"
+          expr: "changes(polguard_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"}[15m]) == 0"
           labels:
             severity: warning
           annotations:

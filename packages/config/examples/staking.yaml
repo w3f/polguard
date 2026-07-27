@@ -14,8 +14,13 @@ groups:
         handlers:
           - ActiveSetPresenceState
           - OffenceReportedEvent
+    # Claim staking rewards for these accounts (payouts service)
+    operations:
+      payout:
+        signer: signer-x
     accountSetNames: [example-accounts]
 
 accountSets:
   example-accounts:
-    - address: "1i1vQ39YeQk4QiKF16wuA4neTuQfCRWwnwm7Xuk2yuQtd8Q"
+    - name: example-validator
+      address: "1i1vQ39YeQk4QiKF16wuA4neTuQfCRWwnwm7Xuk2yuQtd8Q"

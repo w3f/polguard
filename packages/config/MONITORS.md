@@ -1,325 +1,206 @@
 # Monitors & Handlers Reference
 
-The platform includes several specialized monitors, each responsible for tracking different aspects of blockchain networks:
+Handlers are the unit of configuration: a monitor groups related handlers, and you enable the ones you want explicitly. See the [Configuration Guide](CONFIG_GUIDE.md) for the YAML format.
 
-- **Staking Monitor**: Tracks validator activities, commission rates, staking parameters
-- **Balances Monitor**: Monitors account balances and transfers
-- **Assets Monitor**: Monitors asset/token balances and transfers
-- **Identity Monitor**: Tracks on-chain identity information
-- **Governance Monitor**: Monitors governance activities like referenda and voting
-- **XCM Monitor**: Tracks cross-chain asset transfers
+**Handler type** — the kind of chain data processed:
 
-Each monitor contains multiple handlers that process specific events, calls, or state changes.
+- `*Event` — a chain event
+- `*Call` — an extrinsic call, including nested ones (batch, proxy, multisig)
+- `*State` — a storage check, run on every block
+
+**Lifecycle** — independent from the type:
+
+- *one-time* — recorded and resolved immediately
+- *ongoing* — fires while the condition holds, resolves automatically when it clears
+
+Note that a `*State` handler is not necessarily *ongoing*: some compare two blocks and report a one-time incident. Each table below marks the lifecycle per handler.
+
+Chain support is per monitor. A handler enabled for a chain the monitor doesn't support is silently ignored.
 
 ## Staking Monitor
 
-Monitors validator staking activities.
+Chains: `AssetHubPolkadot`, `AssetHubKusama`, `AssetHubPaseo`
 
-### Handlers
+| Handler | Type | Lifecycle | Fires when |
+| --- | --- | --- | --- |
+| `OffenceReportedEvent` | Event `staking.OffenceReported` | one-time | an offence is reported for the validator |
+| `CommissionChangedEvent` | Event `staking.ValidatorPrefsSet` | one-time | validator preferences (commission) are set |
+| `UnbondedEvent` | Event `staking.Unbonded` | one-time | tokens are unbonded |
+| `DestinationChangedCall` | Call `staking.setPayee`, `staking.bond` | one-time | the account submits a call that sets the reward destination |
+| `DestinationChangedState` | State `staking.payee` | one-time | the reward destination differs from the previous block |
+| `CommissionUnexpectedState` | State `staking.validators` | ongoing | commission is **above** `commission` |
+| `SelfStakeUnexpectedState` | State `staking.bonded`, `staking.ledger` | ongoing | active self-stake is **below** `selfStake` |
+| `DestinationUnexpectedState` | State `staking.payee` | ongoing | the reward destination is not `payee` |
+| `ValidatorIntentionMissingState` | State `staking.bonded`, `staking.validators` | ongoing | the account is not bonded, or has no validator preferences |
+| `ActiveSetPresenceState` | State `staking.activeEra`, `staking.erasStakersOverview` | ongoing | the account is not in the active set of the active era |
 
-#### OffenceReportedEvent
-- **Type**: Event (`staking.OffenceReported`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Detects when an offence has been reported for a validator
+Config keys:
 
-#### CommissionChangedEvent
-- **Type**: Event (`staking.ValidatorPrefsSet`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Detects changes to validator commission
-
-#### UnbondedEvent
-- **Type**: Event (`staking.Unbonded`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Detects when tokens are unbonded
-
-#### DestinationChangedCall
-- **Type**: Call (`staking.setPayee`, `staking.bond`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Detects changes to reward destination
-
-#### CommissionUnexpectedState
-- **Type**: State (`staking.validators`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Alerts when commission doesn't match expected value
-- **Config Keys**:
-  - `commission`: (number) Expected commission percentage (0-100)
-  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
-  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
-
-#### SelfStakeUnexpectedState
-- **Type**: State (`staking.bonded`, `staking.ledger`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Alerts when self-stake doesn't match expected value
-- **Config Keys**:
-  - `selfStake`: (string) Expected self-stake amount as a decimal string (e.g., "1000.5")
-  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
-  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
-
-#### ValidatorIntentionMissingState
-- **Type**: State (`staking.bonded`, `staking.validators`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Alerts when validator intention is missing
-- **Config Keys**:
-  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
-  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
-
-#### DestinationUnexpectedState
-- **Type**: State (`staking.payee`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Alerts when reward destination doesn't match expected value
-- **Config Keys**:
-  - `payee`: (string) Expected reward destination - one of: "Staked", "Stash", "Controller"
-  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
-  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
-
-#### DestinationChangedState
-- **Type**: State (`staking.payee`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Detects changes to reward destination between blocks
-
-#### ActiveSetPresenceState
-- **Type**: State (`session.validators`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Monitors validator presence in the active set
-- **Config Keys**:
-  - `fromEra`: (number, optional) Start monitoring from this era (inclusive)
-  - `untilEra`: (number, optional) Stop monitoring before this era (exclusive)
+- `commission`: (number) expected commission percentage (0-100)
+- `selfStake`: (string) expected self-stake as a decimal string, e.g. `"1000.5"`
+- `payee`: (string) expected reward destination as reported on chain — `Staked`, `Stash`, `Controller`, `None`, or an SS58 address for `Account`
+- `fromEra` / `untilEra`: (number, optional) era bounds, see below
 
 ### Era Bounds
 
-Era bounds allow you to limit monitoring to specific era ranges. This is particularly useful when transitioning between validator cohorts to avoid false incidents.
-
-**Example - Cohort Transition:**
+All `*State` handlers of this monitor respect optional era bounds: `fromEra` (inclusive) and `untilEra` (exclusive). Outside that window the handler stays quiet, and any incident still open is resolved. This avoids false incidents when transitioning between validator cohorts. When both are set, `fromEra` must be lower than `untilEra`.
 
 ```yaml
-accountSets:
-  old-validators:
-    - address: "5GrwvaEF..."
-      name: "Validator Old"
-  
-  new-validators:
-    - address: "5HGjWAeF..."
-      name: "Validator New"
-
 groups:
-  # Monitor old cohort until era 1050 (exclusive)
-  - name: validators-cohort-1
+  # Old cohort: monitored until era 1050
+  - id: validators-cohort-1-example
     chains: [AssetHubPolkadot]
-    accountSet: old-validators
+    accountSetNames: [old-validators]
     monitors:
       - name: Staking
         untilEra: 1050
-        handlers:
-          - ActiveSetPresenceState
-  
-  # Monitor new cohort from era 1050 onwards
-  - name: validators-cohort-2
+        handlers: [ActiveSetPresenceState]
+
+  # New cohort: monitored from era 1050 on
+  - id: validators-cohort-2-example
     chains: [AssetHubPolkadot]
-    accountSet: new-validators
+    accountSetNames: [new-validators]
     monitors:
       - name: Staking
         fromEra: 1050
-        handlers:
-          - ActiveSetPresenceState
+        handlers: [ActiveSetPresenceState]
 ```
 
-Alternatively, set era bounds at the account level:
+Era bounds can also be set per account in an account set, which is handy for mixed cohorts:
 
 ```yaml
 accountSets:
   mixed-validators:
     - address: "5GrwvaEF..."
-      name: "Validator Old"
       untilEra: 1050
     - address: "5HGjWAeF..."
-      name: "Validator New"
       fromEra: 1050
 ```
 
-### Example Configuration
+### Example
 
 ```yaml
 monitors:
   - name: Staking
-    commission: 10  # Default commission percentage
+    commission: 10          # group-wide expectation
     handlers:
-      - CommissionChangedEvent
+      - CommissionUnexpectedState
       - OffenceReportedEvent
 
-accounts:
-  - address: "..."
-    commission: 5  # Expected commission percentage
-    selfStake: "1000.5"  # Expected self-stake amount
-    payee: "Staked"  # Expected reward destination
+accountSets:
+  validators-set:
+    - address: "..."
+      commission: 5         # overrides the group value
+      selfStake: "1000.5"
+      payee: "Staked"
 ```
 
 ## Balances Monitor
 
-Monitors account balances and transfers.
+Chains: `AssetHubPolkadot`, `AssetHubKusama`, `AssetHubPaseo`, `Frequency`
 
-### Handlers
+Balances are the **free** balance of the native token.
 
-#### BalanceDecreaseState
-- **Type**: State (`system.account`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama, Frequency
-- **Description**: Detects any balance decreases between blocks
+| Handler | Type | Lifecycle | Fires when |
+| --- | --- | --- | --- |
+| `BalanceDecreaseState` | State `system.account` | one-time | the balance is lower than in the previous block |
+| `BalanceThresholdState` | State `system.account` | ongoing | the balance is below `threshold` |
+| `TransferIngressEvent` | Event `balances.Transfer` | one-time | the account receives a transfer |
+| `TransferEgressEvent` | Event `balances.Transfer` | one-time | the account sends a transfer |
+| `TransferCall` | Call `balances.transferAllowDeath`, `balances.transferKeepAlive` | one-time | the account submits a transfer call (kept for testing nested calls) |
 
-#### BalanceThresholdState
-- **Type**: State (`system.account`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama, Frequency
-- **Description**: Alerts when balance falls below a threshold
-- **Config Keys**:
-  - `threshold`: (string) Balance threshold value as a decimal string (e.g., "1000.0")
+Config keys:
 
-#### TransferIngressEvent
-- **Type**: Event (`balances.Transfer`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama, Frequency
-- **Description**: Detects incoming transfers
+- `threshold`: (string) balance threshold as a decimal string, e.g. `"1000.0"`
 
-#### TransferEgressEvent
-- **Type**: Event (`balances.Transfer`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama, Frequency
-- **Description**: Detects outgoing transfers
-
-#### TransferCall
-- **Type**: Call (`balances.transfer`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama, Frequency
-- **Description**: Detects transfer calls (for testing purposes)
-
-### Example Configuration
+### Example
 
 ```yaml
 monitors:
   - name: Balances
-    threshold: "1000.0"  # Default balance threshold
+    threshold: "1000.0"
     handlers:
       - BalanceThresholdState
       - TransferIngressEvent
 
-accounts:
-  - address: "..."
-    threshold: "500.0"  # Account-specific threshold
+accountSets:
+  treasury-set:
+    - address: "..."
+      threshold: "500.0"    # overrides the group value
 ```
 
 ## Assets Monitor
 
-Monitors asset/token balances and transfers.
+Chains: `AssetHubPolkadot`, `AssetHubKusama`, `AssetHubPaseo` (`assets` pallet), `Centrifuge` (`ormlTokens` pallet)
 
-### Handlers
+Only known tokens can be monitored, and `tokens` / `tokenThresholds` are validated against this list: `USDC` and `USDT` on AssetHubPolkadot, `USDT` on AssetHubKusama, `localUSDC` on Centrifuge (none on AssetHubPaseo yet). The native token (DOT, KSM, …) is covered by the Balances monitor.
 
-#### AssetBalanceDecreaseState
-- **Type**: State (`assets.account`, `ormlTokens.accounts`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
-- **Description**: Detects any asset balance decreases between blocks
-- **Config Keys**:
-  - `tokens`: (array) List of token names to monitor
+| Handler | Type | Lifecycle | Fires when |
+| --- | --- | --- | --- |
+| `AssetBalanceDecreaseState` | State `assets.account`, `ormlTokens.accounts` | one-time | an asset balance is lower than in the previous block |
+| `AssetBalanceThresholdState` | State `assets.account`, `ormlTokens.accounts` | ongoing | an asset balance is below its threshold |
+| `AssetTransferIngressEvent` | Event `assets.Transferred`, `ormlTokens.Transfer` | one-time | the account receives an asset transfer |
+| `AssetTransferEgressEvent` | Event `assets.Transferred`, `ormlTokens.Transfer` | one-time | the account sends an asset transfer |
 
-#### AssetBalanceThresholdState
-- **Type**: State (`assets.account`, `ormlTokens.accounts`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
-- **Description**: Alerts when asset balance falls below a threshold
-- **Config Keys**:
-  - `tokenThresholds`: (array) Array of [token, threshold] pairs where threshold is a decimal string
+Config keys:
 
-#### AssetTransferIngressEvent
-- **Type**: Event (`assets.Transferred`, `ormlTokens.Transfer`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
-- **Description**: Detects incoming asset transfers
-- **Config Keys**:
-  - `tokens`: (array) List of token names to monitor
+- `tokens`: (array) token names to watch — used by the decrease and transfer handlers
+- `tokenThresholds`: (array) `[token, threshold]` pairs, threshold as a decimal string — used by `AssetBalanceThresholdState`
 
-#### AssetTransferEgressEvent
-- **Type**: Event (`assets.Transferred`, `ormlTokens.Transfer`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama, Centrifuge
-- **Description**: Detects outgoing asset transfers
-- **Config Keys**:
-  - `tokens`: (array) List of token names to monitor
-
-### Example Configuration
+### Example
 
 ```yaml
 monitors:
   - name: Assets
+    tokens: [USDC, USDT]
+    tokenThresholds: [[USDC, "100.0"], [USDT, "100.0"]]
     handlers:
       - AssetBalanceThresholdState
-      - AssetTransferIngressEvent
       - AssetTransferEgressEvent
-
-accounts:
-  - address: "..."
-    tokens: ["DOT", "KSM"]
-    tokenThresholds: [["DOT", "100.0"], ["KSM", "10.0"]]
 ```
 
 ## Identity Monitor
 
-Monitors on-chain identity information.
+Chains: `PeoplePolkadot`, `PeopleKusama`, `PeoplePaseo`
 
-### Handlers
+Sub-identities are resolved through `identity.superOf`, so for a sub-account the parent's identity is checked.
 
-#### IdentityUnexpectedState
-- **Type**: State (`identity.identityOf`, `identity.superOf`)
-- **Chains**: PeoplePolkadot, PeopleKusama
-- **Description**: Alerts when identity doesn't match expected values
-- **Config Keys**:
-  - `display`: (string) Expected display name
-  - `legal`: (string) Expected legal name
-  - `web`: (string) Expected website URL
-  - `matrix`: (string) Expected Matrix ID (e.g., "@user:matrix.org")
-  - `email`: (string) Expected email address
-  - `image`: (string) Expected image hash
-  - `twitter`: (string) Expected Twitter handle
-  - `github`: (string) Expected GitHub username
-  - `discord`: (string) Expected Discord username
+| Handler | Type | Lifecycle | Fires when |
+| --- | --- | --- | --- |
+| `IdentityUnexpectedState` | State `identity.identityOf`, `identity.superOf` | ongoing | a configured field does not match the on-chain value |
+| `IdentityChangedEvent` | Event `identity.IdentitySet`, `identity.IdentityCleared`, `identity.IdentityKilled` | one-time | the identity is set, cleared, or killed |
+| `IdentityMissingState` | State `identity.identityOf`, `identity.superOf` | ongoing | the account (or its parent) has no identity |
+| `IdentityFieldsMissingState` | State `identity.identityOf`, `identity.superOf` | ongoing | `email` or `matrix` is not set — the required set is fixed, not yet configurable |
 
-#### IdentityChangedEvent
-- **Type**: Event (`identity.IdentitySet`, `identity.IdentityCleared`, `identity.IdentityKilled`)
-- **Chains**: PeoplePolkadot, PeopleKusama
-- **Description**: Detects changes to identity information
+Config keys — the expected value of any identity field, all optional: `display`, `legal`, `web`, `matrix`, `email`, `image`, `twitter`, `github`, `discord`. Only the fields you set are checked.
 
-#### IdentityMissingState
-- **Type**: State (`identity.identityOf`, `identity.superOf`)
-- **Chains**: PeoplePolkadot, PeopleKusama
-- **Description**: Alerts when identity is missing
-
-#### IdentityFieldsMissingState
-- **Type**: State (`identity.identityOf`, `identity.superOf`)
-- **Chains**: PeoplePolkadot, PeopleKusama
-- **Description**: Alerts when specific identity fields are missing
-
-### Example Configuration
+### Example
 
 ```yaml
 monitors:
   - name: Identity
     handlers:
-      - IdentityChanged
-      - IdentityMissing
+      - IdentityChangedEvent
+      - IdentityMissingState
 
-accounts:
-  - address: "..."
-    display: "Validator Name"  # Expected display name
-    email: "email@example.com"  # Expected email
-    matrix: "@user:matrix.org"  # Expected Matrix ID
+accountSets:
+  validators-set:
+    - address: "..."
+      display: "Validator Name"
+      email: "email@example.com"
+      matrix: "@user:matrix.org"
 ```
 
 ## Governance Monitor
 
-Monitors governance activities.
+Chains: `AssetHubPolkadot`, `AssetHubKusama`, `AssetHubPaseo`
 
-### Handlers
+| Handler | Type | Lifecycle | Fires when |
+| --- | --- | --- | --- |
+| `ReferendaSubmittedEvent` | Event `referenda.Submitted` | one-time | any referendum is submitted — this handler is account-independent: it fires once per group that enables it, regardless of the group's accounts |
+| `ConvictionVoteCall` | Call `convictionVoting.vote` | one-time | the account votes on a referendum |
 
-#### ReferendaSubmittedEvent
-- **Type**: Event (`referenda.Submitted`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Detects when new referenda are submitted
-
-#### ConvictionVoteCall
-- **Type**: Call (`convictionVoting.vote`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Detects conviction voting activities
-
-### Example Configuration
+### Example
 
 ```yaml
 monitors:
@@ -331,16 +212,13 @@ monitors:
 
 ## XCM Monitor
 
-Monitors cross-chain asset transfers.
+Chains: `AssetHubPolkadot`, `AssetHubKusama`, `AssetHubPaseo`
 
-### Handlers
+| Handler | Type | Lifecycle | Fires when |
+| --- | --- | --- | --- |
+| `XcmTransferEgressEvent` | Event `polkadotXcm.Sent`, `xcmPallet.Sent` | one-time | the account sends a cross-chain transfer |
 
-#### XcmTransferEgressEvent
-- **Type**: Event (`polkadotXcm.Sent`, `xcmPallet.Sent`)
-- **Chains**: AssetHubPolkadot, AssetHubKusama
-- **Description**: Detects outgoing cross-chain asset transfers
-
-### Example Configuration
+### Example
 
 ```yaml
 monitors:
@@ -349,24 +227,6 @@ monitors:
       - XcmTransferEgressEvent
 ```
 
-## Handler Types
-
-Handlers are categorized by the type of blockchain data they process:
-
-- **Event Handlers**: Process specific blockchain events
-- **Call Handlers**: Process extrinsic calls
-- **State Handlers**: Execute periodically on every block to check blockchain state
-
-## Handler Configuration
-
-You should configure which handlers are active for each monitor:
-
-```yaml
-handlers:  # Required: explicitly list desired handlers
-  - CommissionChangedEvent
-  - OffenceReportedEvent
-```
-
 ## Related Documentation
 
-- [Configuration Guide](CONFIG_GUIDE.md) - Detailed guide to the YAML configuration format
+- [Configuration Guide](CONFIG_GUIDE.md) — the YAML configuration format
