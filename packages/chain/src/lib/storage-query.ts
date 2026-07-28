@@ -12,7 +12,14 @@ import type { RuntimeClient } from '../types';
  *   `runtimeClient.query.<Pallet>.<Storage>.getValues()`, which opens one `chainHead_v1_storage`
  *   operation per key. Kept as an A/B/C comparison point to confirm in k8s whether batching helps.
  *
- * Rationale, benchmarks, and the plan to prune to one engine: docs/NOTES.md.
+ * **Why three engines.** PAPI has no batched storage-query API, so `getValues()` opens one operation
+ * per key — with multiple monitored accounts that serialized behind the node's concurrent-operation limit
+ * and pushed block processing from ~100–300ms (pjs) to 2.5–4s. The two batched engines were written to
+ * work around it, and A/B/C testing confirmed `chainHead` as the default (lowest latency, clear
+ * CPU/memory headroom). Upstream issue: https://github.com/polkadot-api/polkadot-api/issues/1420
+ *
+ * TODO: once PAPI ships a batched storage API, drop all three engines and the config switch in favour
+ * of it.
  *
  * Assumes polkadot-api 2.0.1 internals (pinned exactly in package.json, guarded by tests/integration):
  * codecs come only from the unstable `___INTERNAL_DO_NOT_USE` (no public accessor), and `legacyRpc`

@@ -143,5 +143,3 @@ npx papi                                             # regenerate after metadata
 ```
 
 New descriptors also need an entry in `src/service/papi-descriptors.ts` and a `Chain` enum value in `@w3f/polguard-common`.
-
-See [Development Notes](../../docs/NOTES.md) for architectural decisions.

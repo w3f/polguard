@@ -13,11 +13,17 @@ notifications:
 
 # environment: development       # development | production | test | staging (default: development)
 # database:
+#   host: localhost              # required
 #   port: 5432                   # default: 5432
-#   password: postgres           # or POSTGRES_PASSWORD env var
+#   username: postgres           # required
+#   database: monitoring         # required
+#   password: postgres           # or POSTGRES_PASSWORD env var (one of them required)
 # server:
 #   port: 3000                   # default: 3000
 #   host: 0.0.0.0                # default: 0.0.0.0
+# notifications:
+#   matrix:
+#     url: http://localhost:3001 # required
 # logging:
 #   level: debug                 # error | warn | info | debug | trace (default: debug)
 # crons:                         # cron format; each is optional and disabled if unset

@@ -12,14 +12,19 @@ incidents:
 
 # environment: development        # development | production | test | staging (default: development)
 # matrix:
+#   url: https://matrix.web3.foundation   # required
+#   userId: "@bot:server.org"     # required
 #   logging:
 #     level: error                # trace | debug | info | warn | error (default: error)
-#   pruneOtherDevices: true        # default: false
-#   passwordAuth:
+#   pruneOtherDevices: true       # default: false
+#   passwordAuth:                 # exactly one of passwordAuth | tokenAuth is required
+#     password: "***"             # or MATRIX_PASSWORD env var
 #     recoveryKey: "***"          # or MATRIX_RECOVERY_KEY env var; avoids "not verified" warnings
-#   tokenAuth:                     # alternative to passwordAuth (mutually exclusive); plaintext, no encryption
+#   tokenAuth:                    # alternative to passwordAuth (mutually exclusive); plaintext, no encryption
 #     accessToken: "***"          # or MATRIX_TOKEN env var
 #     deviceId: device123
+# incidents:
+#   url: http://localhost:3000/incidents   # required
 # server:
 #   port: 3000                    # default: 3000
 #   host: 0.0.0.0                 # default: 0.0.0.0

@@ -71,7 +71,7 @@ polguard:
     config:
       matrix:
         url: "https://matrix.web3.foundation"
-        userId: "@mp-ci-bot:web3.foundation"
+        userId: "@polguard-e2e-bot:web3.foundation"
         tokenAuth:
           deviceId: "BAD_DEVICE_ID"
         # accessToken is provided via MATRIX_TOKEN environment variable
@@ -122,7 +122,7 @@ tests:
       roomId: "!qheQMilERwmQosvZnI:web3.foundation"
       # MonitoringPlatformCI (escalation) non-encrypted room
       escalationRoomId: "!YfPVnKvvxefYreTclH:web3.foundation"
-      userId: "@mp-ci-bot:web3.foundation"
+      userId: "@polguard-e2e-bot:web3.foundation"
       tokenAuth:
         deviceId: "BAD_DEVICE_ID_IN_TESTS"
       # accessToken is provided via MATRIX_TOKEN environment variable

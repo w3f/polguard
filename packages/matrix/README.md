@@ -42,8 +42,7 @@ Configured via `config/config.yaml`; see [config.yaml.example](./config/config.y
 every option — comments there cover defaults, required vs. optional fields, allowed values, and
 env-var overrides.
 
-Rooms are joined automatically when the bot is invited — there is no room list to configure. The
-`incidents.url` field points at the Incident service API — see
+The `incidents.url` field points at the Incident service API — see
 [packages/incident/README.md](../incident/README.md) for its contract.
 
 ### Authentication & encryption

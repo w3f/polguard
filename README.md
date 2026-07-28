@@ -107,7 +107,5 @@ See [Monitors & Handlers](packages/config/MONITORS.md) for everything that can b
 - [**Monitors & Handlers**](packages/config/MONITORS.md) - List of all supported monitors and handlers
 
 ### Development & Operations
-- [**Deployment Guide**](deployment/README.md) - CI/CD, Helm, ArgoCD, Kubernetes deployment
+- [**Deployment Guide**](deployment/README.md) - CI/CD, Helm, ArgoCD, Kubernetes deployment & NPM publishing
 - [**E2E Tests**](e2e/README.md) - End-to-end testing setup and execution
-- [**Development Notes**](docs/NOTES.md) - Architecture, design decisions & known issues
-- [**Publishing Guide**](docs/PUBLISHING.md) - NPM package release process

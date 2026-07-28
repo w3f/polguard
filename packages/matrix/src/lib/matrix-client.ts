@@ -11,7 +11,6 @@ import {
   AuthDict,
 } from 'matrix-js-sdk';
 import { decodeRecoveryKey } from 'matrix-js-sdk/lib/crypto-api/recovery-key.js';
-import { KnownMembership } from 'matrix-js-sdk/lib/@types/membership.js';
 import type { Logger as MatrixLogger } from 'matrix-js-sdk/lib/logger.js';
 import { logger as matrixGlobalLogger } from 'matrix-js-sdk/lib/logger.js';
 import { Tracing, LoggerLevel } from '@matrix-org/matrix-sdk-crypto-wasm';
@@ -86,7 +85,7 @@ export class MatrixClient {
       await this.pruneOtherDevices();
     }
     await this.setupClientAndSync();
-    this.setupEventHandlers();
+    this.setupMessageHandler();
 
     const rooms = this.client.getRooms();
     this.logger.info(`Matrix client initialized successfully. Bot is in ${rooms.length} rooms:`);
@@ -144,11 +143,6 @@ export class MatrixClient {
     } catch (err) {
       this.logger.warn(`Failed to cross-sign Matrix device: ${err}`);
     }
-  }
-
-  private setupEventHandlers(): void {
-    this.setupMessageHandler();
-    this.setupAutoJoinHandler();
   }
 
   private async createClient(): Promise<SDKMatrixClient> {
@@ -323,17 +317,6 @@ export class MatrixClient {
   protected handleCommand(roomId: string, command: string, event?: MatrixEvent) {
     // Default implementation does nothing
     // Subclasses should override this method to provide command handling
-  }
-
-  private setupAutoJoinHandler() {
-    this.client.on(RoomEvent.MyMembership, (room, membership /*, prevMembership*/) => {
-      if (membership === KnownMembership.Invite) {
-        this.client
-          .joinRoom(room.roomId)
-          .then(() => this.logger.info(`Auto-joined ${room.roomId}`))
-          .catch(err => this.logger.error(`Auto-join failed for ${room.roomId}:`, err));
-      }
-    });
   }
 
   public async sendMessage(roomId: string, message: string) {

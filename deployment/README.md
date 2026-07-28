@@ -56,3 +56,18 @@ Helm charts are published to the W3F chart repository as part of the CI pipeline
 https://github.com/w3f/helm-charts/tree/gh-pages
 
 The `publish-chart.sh` script is automatically triggered by CircleCI when a release tag is created.
+
+## NPM Packages
+
+Two packages are published to npm — `@w3f/polguard-common` and `@w3f/polguard-config`. All service packages are private.
+
+Publishing is manual, from the package directory, using yarn:
+
+```bash
+yarn npm login          # once per session
+yarn version patch      # bump (patch | minor | major)
+yarn build && yarn test
+yarn npm publish
+```
+
+Publish `common` before `config`, since `config` depends on it.

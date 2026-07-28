@@ -12,6 +12,12 @@ payoutConfigsDir: ../config/examples
 # environment: development       # development | production | test | staging (default: development)
 # logging:
 #   level: info                  # error | warn | info | debug | trace (default: info)
+# chains:                        # required, at least one entry
+#   AssetHubPolkadot:            # chain name from the Chain enum
+#     rpcUrl: wss://...          # required, ws:// or wss://
+# signers:                       # required, at least one; name -> mnemonic, referenced by payout configs
+#   signer-x: "bottom drive obey ..."
+# payoutConfigsDir: ../config/examples   # required
 # claim:
 #   gracePeriodEras: 16           # claim eras older than activeEra-1-gracePeriodEras (default: 16)
 # notifications:                  # optional — omit for stdout only
