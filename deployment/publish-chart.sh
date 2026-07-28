@@ -46,7 +46,7 @@ else
   echo "No changes detected; skipping commit."
 fi
 
-git push "https://${HELM_CHARTS_TOKEN}@github.com/$REPO.git" "$BRANCH"
+git push "https://x-access-token:${HELM_CHARTS_TOKEN}@github.com/$REPO.git" "$BRANCH"
 popd >/dev/null
 
 echo "✅ Published $CHART_DIR to $REPO#$BRANCH"
