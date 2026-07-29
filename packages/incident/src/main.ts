@@ -22,12 +22,11 @@ async function bootstrap() {
   otelSdk.start();
 
   // Config (uses a temporary debug-level logger for initial load)
-  const bootLogger = createRootLogger('debug', true);
+  const bootLogger = createRootLogger('debug');
   const config = new ConfigService(bootLogger.child({ context: 'Config' }));
 
   // Create the root logger at the configured level
-  const isDev = config.getEnvironment() !== 'production';
-  const rootLogger = createRootLogger(config.getLoggingLevel(), isDev);
+  const rootLogger = createRootLogger(config.getLoggingLevel());
   const logger = rootLogger.child({ context: 'Main' });
 
   // Database
