@@ -6,30 +6,32 @@
         - .global: $
         - .kind: 'chain' or 'api' or 'matrix'
 */}}
-{{- define "foundation.web3.mp.deployment" }}
+{{- define "polguard.deployment" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "common.names.fullname" .global }}-{{ .name }}
-  labels: {{ include "foundation.web3.mp.common.labels" . | nindent 4 }}
+  labels: {{ include "polguard.labels" . | nindent 4 }}
 spec:
   replicas: {{ .svc.replicas | default 1 }}
   revisionHistoryLimit: 3
   strategy:
     type: Recreate
   selector:
-    matchLabels: {{ include "foundation.web3.mp.common.matchLabels" . | nindent 6 }}
+    matchLabels: {{ include "polguard.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels: {{ include "foundation.web3.mp.common.matchLabels" . | nindent 8 }}
+      labels: {{ include "polguard.selectorLabels" . | nindent 8 }}
       annotations:
         checksum/config:  {{ toYaml .svc.config  | sha256sum }}
         checksum/secrets: {{ toYaml .svc.secrets | sha256sum }}
     spec:
-{{- /*      {{- with (include "common.images.renderPullSecrets" (dict "images" (list .global.Values.image) "context" .)) }}*/ -}}
-{{- /*      imagePullSecrets:*/ -}}
-{{- /*{{ . | indent 8 }}*/ -}}
-{{- /*      {{- end }}*/ -}}
+      {{- with .global.Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range . }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
 
       {{- if eq .kind "chain" }}
       {{- if .global.Values.chainInitContainers }}
@@ -64,7 +66,28 @@ spec:
               containerPort: {{ .svc.containerMetricsPort | default 9464 }}
               protocol: TCP
 
-          {{- /* todo re-add probes */ -}}
+          {{- if .global.Values.probesEnabled }}
+          # Every service serves GET /health on its HTTP port as soon as it is listening.
+          # The matrix service only starts listening after the bot has logged in, hence the
+          # generous startupProbe budget (5 min) before the liveness probe takes over.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            failureThreshold: 3
+          {{- end }}
 
           {{- if .svc.secrets }}
           envFrom:

@@ -4,19 +4,12 @@ The platform uses a consolidated Docker image for all services, with different c
 
 ## Environments
 
-We have three deployment environments:
+We have two deployment environments, each with a dedicated Kubernetes namespace:
 
-- **staging** - Staging environment for testing
-- **production** - Production environment
-- **production-oncall** - Production environment with higher criticality (currently used only for Finance)
-
-## Kubernetes Namespaces
-
-Each environment corresponds to a dedicated Kubernetes namespace in the engineering cluster:
-
-- `monitoring-stage`
-- `monitoring-prod`
-- `monitoring-oncall`
+| Environment | Namespace        | Notes                                                      |
+|-------------|------------------|------------------------------------------------------------|
+| staging     | `polguard-stage` | Testing; the payouts CronJob is suspended (manual trigger) |
+| production  | `polguard-prod`  | Runs the payouts CronJob on its regular schedule           |
 
 Engineering ArgoCD: https://argocd.w3f.tech/applications
 

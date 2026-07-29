@@ -21,9 +21,22 @@ serviceMonitorsEnabled: true
 
 prometheusRulesEnabled: true
 
+# extra labels for the PrometheusRule, for clusters whose Prometheus selects rules by label
+prometheusRuleLabels: {}
+
+# HTTP probes against each service's /health endpoint. Set to false to disable them everywhere
+probesEnabled: true
+
 # --------------------------------------------------- Chain services ---------------------------------------------------
 
 # chainServices: # each chain listed here will create a new set of chain svc instances (x replica count)
+
+# Merged underneath every chainServices entry (per-chain values win), so config shared by all
+# chains — store, incidentReporter, environment, logging — is written once.
+chainDefaults:
+  containerArgs: ["start:chain"]
+  config:
+    monitoringConfigsDir: "/app/monitoring-configs"  # where the config-fetcher PVC is mounted
 
 chainInitContainers:
   - name: "wait-for-monitoring-configs"
@@ -111,3 +124,13 @@ configFetcher:
 payouts:
   enabled: false
   schedule: "0 9 * * *"  # Daily at 09:00 UTC
+  suspend: false  # true keeps the CronJob registered but never triggers it automatically
+  config:
+    payoutConfigsDir: "/app/monitoring-configs"  # where the config-fetcher PVC is mounted
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"

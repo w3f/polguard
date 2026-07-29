@@ -5,13 +5,13 @@
         - .svc: struct
         - .global $
 */}}
-{{- define "foundation.web3.mp.secret" }}
+{{- define "polguard.secret" }}
 apiVersion: v1
 kind: Secret
 type: Opaque
 metadata:
   name: {{ include "common.names.fullname" .global }}-{{ .name }}-secrets
-  labels: {{ include "foundation.web3.mp.common.labels" . | nindent 4 }}
+  labels: {{ include "polguard.labels" . | nindent 4 }}
 stringData:
 {{- range $k, $v := .svc.secrets }}
   {{ $k }}: {{ $v | quote }}

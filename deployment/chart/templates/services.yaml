@@ -1,0 +1,30 @@
+{{/*
+    Every application service renders the same set of resources — one service per chainServices
+    entry, plus incident and matrix — so they are built from a single list here. `kind` carries the
+    per-service differences (config mount path, init containers, monitoring-configs volume) into
+    the subtemplates.
+*/}}
+{{- $services := list }}
+{{- range $chainName, $chain := .Values.chainServices }}
+{{- $svc := include "polguard.chainSvc" (dict "svc" $chain "global" $) | fromYaml }}
+{{- $services = append $services (dict "name" $chainName "kind" "chain" "svc" $svc "global" $) }}
+{{- end }}
+{{- $services = append $services (dict "name" "incident" "kind" "incident" "svc" .Values.incidentService "global" $) }}
+{{- $services = append $services (dict "name" "matrix" "kind" "matrix" "svc" .Values.matrixService "global" $) }}
+
+{{- range $ctx := $services }}
+---
+{{ include "polguard.configmap" $ctx }}
+---
+{{ include "polguard.service" $ctx }}
+---
+{{ include "polguard.deployment" $ctx }}
+{{- if $ctx.svc.secrets }}
+---
+{{ include "polguard.secret" $ctx }}
+{{- end }}
+{{- if $.Values.serviceMonitorsEnabled }}
+---
+{{ include "polguard.serviceMonitor" $ctx }}
+{{- end }}
+{{- end }}

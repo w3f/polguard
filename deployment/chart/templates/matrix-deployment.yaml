@@ -1,2 +1,0 @@
-{{ $context := dict "name" "matrix" "svc" $.Values.matrixService "global" $ "kind" "matrix" }}
-{{ include "foundation.web3.mp.deployment" $context }}

@@ -33,7 +33,6 @@ polguard:
           name: "AssetHubPolkadot"
           rpcUrl: "wss://rpc-asset-hub-polkadot.luckyfriday.io"
           startBlock: "10351963"
-        monitoringConfigsDir: "/app/monitoring-configs"
         store:
           type: service
           service:
@@ -45,8 +44,6 @@ polguard:
         environment: "test"
         logging:
           level: "debug"
-      secrets: {}
-      containerArgs: [ "start:chain" ]
 
   incidentService:
     config:
@@ -65,7 +62,6 @@ polguard:
       environment: "test"
       logging:
         level: "debug"
-    containerArgs: ["start:incident"] # not explicitly required but added or consistency
 
   matrixService:
     config:
@@ -84,10 +80,8 @@ polguard:
         level: "debug"
     secrets:
       MATRIX_TOKEN: "BAD_TOKEN" # this should match the value provided for /secrets.MATRIX_TOKEN (below)
-    containerArgs: ["start:matrix"] # not explicitly required but added for consistency
 
   configFetcher:
-    syncPeriod: "15m"
     repos:
       - name: "stage"
         url: "git@github.com:w3f/monitoring-configs-stage.git"

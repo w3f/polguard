@@ -12,6 +12,14 @@
       "description": "Should PrometheusRule resources be created?",
       "type": "boolean"
     },
+    "prometheusRuleLabels": {
+      "description": "Extra labels added to the PrometheusRule, for clusters whose Prometheus selects rules by label.",
+      "type": "object"
+    },
+    "probesEnabled": {
+      "description": "Should startup/readiness/liveness probes against /health be added to every service?",
+      "type": "boolean"
+    },
     "chainServices": {
       "type": "object",
       "description": "Per-chain configurations. Each chain creates a new set of chain service instances.",
@@ -19,10 +27,16 @@
         "^[a-zA-Z0-9-_]+$": {
           "allOf": [
             { "$ref": "#/definitions/svc" },
-            { "required": [ "config", "containerArgs" ] }
+            { "required": [ "config" ] }
           ]
         }
       }
+    },
+    "chainDefaults": {
+      "allOf": [
+        { "$ref": "#/definitions/svc" },
+        { "description": "Defaults merged underneath every chainServices entry; per-chain values win." }
+      ]
     },
     "chainInitContainers": { "$ref": "#/definitions/initContainers" },
 
@@ -108,6 +122,10 @@
           "type": "string",
           "description": "Cron schedule for the payouts job"
         },
+        "suspend": {
+          "type": "boolean",
+          "description": "Keep the CronJob registered but never trigger it automatically; it can still be run on demand. Default false."
+        },
         "resources": { "$ref": "#/definitions/resources" },
         "config": {
           "type": "object",
@@ -120,7 +138,7 @@
   "required": [],
   "definitions": {
     "svc": {
-      "$comment": "This object configures a single service. Either an incident service, a matrix service, or a chain service for a single chain.",
+      "$comment": "This object configures a single service. Either an incident service, a matrix service, or a chain service for a single chain. Required fields are declared at each usage site, since chainDefaults requires none of them.",
       "type": "object",
       "properties": {
         "replicas": {
@@ -161,8 +179,7 @@
         },
         "resources": { "$ref": "#/definitions/resources" },
         "persistence": { "$ref": "#/definitions/persistence" }
-      },
-      "required": ["config"]
+      }
     },
     "resources": {
       "$comment": "Resource settings applied to this service's pods.",

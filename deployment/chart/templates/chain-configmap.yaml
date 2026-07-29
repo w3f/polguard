@@ -1,7 +1,0 @@
-{{- range $chainName, $chain := $.Values.chainServices }}
-
----
-{{ $context := dict "name" $chainName "svc" $chain "global" $ }}
-{{ include "foundation.web3.mp.configmap" $context }}
-
-{{- end }}

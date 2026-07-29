@@ -1,6 +1,0 @@
-{{- if $.Values.serviceMonitorsEnabled }}
-
-{{ $context := dict "name" "incident" "global" $ }}
-{{ include "foundation.web3.mp.servicemonitor" $context }}
-
-{{- end }}

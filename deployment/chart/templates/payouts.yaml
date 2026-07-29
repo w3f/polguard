@@ -1,4 +1,19 @@
 {{- if .Values.payouts.enabled }}
+{{/*
+    Opt-in payouts job: its rendered config.yaml, plus the CronJob that claims validator rewards.
+    It reads the same monitoring-configs PVC the chain services use, so it waits for the
+    config-fetcher to populate it before starting.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" . }}-payouts
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: payouts
+data:
+  config.yaml: |-
+    {{- toYaml .Values.payouts.config | nindent 4 }}
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -7,6 +22,9 @@ metadata:
     app.kubernetes.io/component: payouts
 spec:
   schedule: {{ .Values.payouts.schedule | quote }}
+  # A suspended CronJob never fires on its own, but can still be run on demand with
+  # `kubectl create job <name> --from=cronjob/<name>`.
+  suspend: {{ .Values.payouts.suspend }}
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   concurrencyPolicy: Forbid
@@ -36,8 +54,9 @@ spec:
               image: {{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}
               imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
               args: ["start:payouts"]
-              resources:
-{{ toYaml .Values.payouts.resources | indent 16 }}
+              {{- with .Values.payouts.resources }}
+              resources: {{- toYaml . | nindent 16 }}
+              {{- end }}
               volumeMounts:
                 - name: config
                   mountPath: /app/packages/payouts/config

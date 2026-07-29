@@ -1,3 +1,52 @@
+{{/*
+    The config-fetcher and the volume it fills: the shared monitoring-configs PVC (also mounted by
+    every chain service and the payouts job), pinned known_hosts, one SSH key Secret and optional
+    sparse-checkout ConfigMap per repo, and the git-sync Deployment that clones into the PVC.
+*/}}
+{{ $context := dict "name" "monitoring-configs" "persistence" $.Values.configFetcher.persistence "global" $ }}
+{{ include "polguard.pvc" $context }}
+---
+{{- if .Values.configFetcher.knownHosts }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" . }}-config-fetcher-known-hosts
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: config-fetcher
+data:
+  known_hosts: |
+{{ .Values.configFetcher.knownHosts | indent 4 }}
+{{- end }}
+{{- range $repo := .Values.configFetcher.repos }}
+{{- if $repo.sparseCheckout }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" $ }}-config-fetcher-sparse-{{ $repo.name }}
+  labels: {{ include "common.labels.standard" $ | nindent 4 }}
+    app.kubernetes.io/component: config-fetcher
+data:
+  sparse-checkout: |
+{{ $repo.sparseCheckout | indent 4 }}
+{{- end }}
+{{- end }}
+{{- range $repo := .Values.configFetcher.repos }}
+---
+# Rendered for every repo, even without a key: the Deployment below mounts this Secret
+# unconditionally, so skipping it would leave the pod stuck on FailedMount instead of
+# failing visibly in the git-sync logs.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "common.names.fullname" $ }}-config-fetcher-ssh-{{ $repo.name }}
+  labels: {{ include "common.labels.standard" $ | nindent 4 }}
+    app.kubernetes.io/component: config-fetcher
+type: Opaque
+data:
+  ssh-private-key: {{ $repo.sshPrivateKeyBase64 | default "" | quote }}
+{{- end }}
+---
 {{- if .Values.configFetcher.repos }}
 apiVersion: apps/v1
 kind: Deployment

@@ -6,12 +6,12 @@
         - .global $
 
 */}}
-{{- define "foundation.web3.mp.pvc" }}
+{{- define "polguard.pvc" }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ include "common.names.fullname" .global }}-{{ .name }}
-  labels: {{ include "foundation.web3.mp.common.labels" . | nindent 4 }}
+  labels: {{ include "polguard.labels" . | nindent 4 }}
 spec:
   accessModes: {{ toYaml .persistence.accessModes | nindent 4 }}
   resources:

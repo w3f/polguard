@@ -1,9 +1,15 @@
 {{ if .Values.prometheusRulesEnabled }}
-# TODO: Test these Prometheus rules
+# Metric names and the `chain` label are the ones emitted by ChainTelemetryService;
+# `namespace` and `pod` are added by the Prometheus operator when it scrapes the chain ServiceMonitor.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: chain-service-rules
+  name: {{ include "common.names.fullname" . }}-chain-service-rules
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: chain
+    {{- with .Values.prometheusRuleLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   groups:
     - name: ChainBlockAlerts
@@ -14,10 +20,12 @@ spec:
           labels:
             severity: warning
           annotations:
-            summary: The last processed block is more than 100 blocks behind the latest block on the chain.
+            summary: The last processed block is more than 200 blocks behind the latest block on the chain.
             description: "Chain {{`{{ $labels.chain }}`}} (pod {{`{{ $labels.pod }}`}}): The last processed block is {{`{{ $value }}`}} behind the latest block on the chain."
         - alert: ProcessingStoppedAlert
           expr: "changes(polguard_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"}[15m]) == 0"
+          # `for` rides out the first scrapes after a restart, when the 15m window holds a single sample.
+          for: "5m"
           labels:
             severity: warning
           annotations:

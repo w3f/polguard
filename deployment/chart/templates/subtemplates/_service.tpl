@@ -1,16 +1,16 @@
 {{/*
-    Creates a Secret
+    Creates a Service
     req. variables:
         - .name: string
         - .svc: struct
         - .global $
 */}}
-{{- define "foundation.web3.mp.service" }}
+{{- define "polguard.service" }}
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "common.names.fullname" .global }}-{{ .name }}
-  labels: {{ include "foundation.web3.mp.common.labels" . | nindent 4 }}
+  labels: {{ include "polguard.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -20,5 +20,5 @@ spec:
     - name: metrics
       port: {{ .svc.serviceMetricsPort | default 9464 }}
       targetPort: metrics
-  selector: {{ include "foundation.web3.mp.common.matchLabels" . | nindent 4 }}
+  selector: {{ include "polguard.selectorLabels" . | nindent 4 }}
 {{- end }}
