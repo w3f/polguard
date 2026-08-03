@@ -876,15 +876,15 @@
       {
         "current": {
           "selected": true,
-          "text": "polguard-stage",
-          "value": "polguard-stage"
+          "text": "",
+          "value": ""
         },
         "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
         },
         "definition": "label_values(target_info,namespace)",
-        "description": "The k8s namespace to show results for (e.g. polguard-stage, polguard-prod). Populated live from Prometheus - not a static list.",
+        "description": "The k8s namespace PolGuard is deployed in. Populated live from Prometheus - not a static list.",
         "hide": 0,
         "includeAll": false,
         "multi": false,

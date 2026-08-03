@@ -1,9 +1,21 @@
 version: 2
 updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "security"
+    groups:
+      actions:
+        patterns:
+          - "*"
+
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     # 0 = no version-update PRs. Security-update PRs are NOT limited by this
     open-pull-requests-limit: 0
     rebase-strategy: "disabled"

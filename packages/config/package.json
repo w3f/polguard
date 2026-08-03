@@ -3,7 +3,13 @@
   "version": "0.3.1",
   "description": "Configuration processor for W3F monitoring polkadot. Handles YAML configuration loading, validation and transformation for blockchain monitoring setup",
   "author": "W3F SecOps Team <devops@web3.foundation>",
-  "license": "MIT",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/w3f/polguard.git",
+    "directory": "packages/config"
+  },
+  "homepage": "https://github.com/w3f/polguard/tree/master/packages/config",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

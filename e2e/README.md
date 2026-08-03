@@ -1,84 +1,56 @@
-# End-to-End Tests for PolGuard
+# End-to-End Tests
 
-This directory contains end-to-end tests for PolGuard. These tests verify the complete flow from chain events to API incidents to Matrix notifications.
+Runs the full stack in a KinD cluster via the Helm chart in [`chart/`](chart), and verifies the
+whole path from a chain event to a Matrix notification.
 
-## Overview
+## What it checks
 
-The e2e tests follow this scenario:
+1. The Chain service processes a specific block.
+2. The Incident service creates an incident with the expected handler type.
+3. The Matrix service posts a matching message to the alert room.
+4. An unacknowledged incident escalates to the escalation room.
 
-1. Wait for the Chain service to process a specific block number
-2. Check if the Incident service has created incidents with a specific handler type
-3. Verify that Matrix service sent notifications to the specific room with the expected message pattern
-
-## Prerequisites
-
-- Docker
-- KinD (Kubernetes in Docker)
-- Helm
-- kubectl
+Because it replays a fixed block, the expected incident is deterministic.
 
 ## Configuration
 
-The e2e tests are configured using the `e2e/configs/e2e.yaml` file. This file contains settings for:
+Everything lives in [`chart/values.yaml`](chart/values.yaml):
 
-- Chain service: URL and target block number
-- Incident service: URL and incident handler type to check for
-- Matrix service: Homeserver URL, room ID, and message pattern to look for
+| Key | Holds |
+|-----|-------|
+| `tests.config` | target block, expected handler type, message patterns, Matrix room IDs |
+| `polguard.*` | the stack under test — chain, incident and matrix service config |
+| `polguard.configFetcher.repos` | the monitoring config repo supplying the rules |
 
-## Required Environment Variables
+`tests.config` is rendered into a ConfigMap and read by the test pod. Credentials are the only
+thing not in the file — they're passed in at install time.
 
-For CI and local testing, the following environment variables are required:
+## Running locally
 
-```bash
-export MATRIX_TOKEN=""  # Required for Matrix authentication
-export CONFIG_REPO_DEPLOY_KEY_BASE64=""  # Required for Config Fetcher
-```
-
-## Running Tests Locally
-
-### Using KinD
-
-To run the full e2e tests in a Kubernetes environment, use the provided script:
+Needs Docker, KinD, Helm and kubectl, plus:
 
 ```bash
-./e2e/scripts/run-e2e-local.sh
+export MATRIX_TOKEN=""                   # access token for the bot session
+export MATRIX_DEVICE_ID=""               # device ID for that same session
+export CONFIG_REPO_DEPLOY_KEY_BASE64=""  # base64 read-only deploy key for the config repo
 ```
-
-This script will:
-1. Check for required tools (Docker, KinD, kubectl, Helm)
-2. Build Docker images for the monitoring polkadot and e2e tests
-3. Create a KinD cluster (or use an existing one)
-4. Load the Docker images into the KinD cluster
-5. Create necessary Kubernetes secrets
-6. Update Helm dependencies for both the deployment chart and e2e chart
-7. Deploy the e2e chart with all components (Incident, Chain, Matrix, PostgreSQL)
-8. Run the e2e tests
-
-## CI/CD Integration
-
-The e2e tests are integrated into the CircleCI pipeline in the `end_to_end_tests` job. The CI pipeline uses the same Helm chart from `e2e/chart` to deploy and run the tests.
-
-## Troubleshooting
-
-If the tests fail, check the logs:
 
 ```bash
-# For local tests
-kubectl -n dev logs -l app.kubernetes.io/instance=polguard-e2e
-
-# For CI tests
-kubectl -n e2e logs -l app.kubernetes.io/instance=e2e-<job-id>
+./e2e/scripts/run-e2e-local.sh            # build, create cluster, install, test
+./e2e/scripts/run-e2e-local.sh --cleanup  # tear down and exit
 ```
 
-## Debugging KinD in CircleCI
+The script builds both images, creates a KinD cluster named `dev`, loads the images, installs the
+chart and runs `helm test`.
 
-If an e2e test job fails, you can inspect the KinD cluster:
+## In CI
 
-1. **Rerun job with SSH** in the CircleCI UI.
-2. **Shell into the control-plane node**:
-```bash
-docker exec -it ci-control-plane bash
-crictl ps -a
-crictl pods
-crictl logs <CID>
-```
+[`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) is a reusable workflow called from
+`ci.yml` in two modes:
+
+| Trigger | Image | Why |
+|---------|-------|-----|
+| `master` | pulls the just-pushed `:<sha>` | tests the exact artifact that gets promoted |
+| `workflow_dispatch` | builds locally, pushes nothing | pre-merge coverage on a branch |
+
+It never runs on fork pull requests, since it needs secrets.

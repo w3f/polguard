@@ -4,7 +4,7 @@
   "description": "",
   "author": "W3F SecOps Team <devops@web3.foundation>",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "type": "module",
   "engines": {
     "node": ">=22"

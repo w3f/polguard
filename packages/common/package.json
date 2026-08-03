@@ -3,7 +3,13 @@
   "version": "0.3.0",
   "description": "Common types, interfaces, constants and utilities for W3F monitoring services including chain watcher, matrix notifications and configuration",
   "author": "W3F SecOps Team <devops@web3.foundation>",
-  "license": "MIT",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/w3f/polguard.git",
+    "directory": "packages/common"
+  },
+  "homepage": "https://github.com/w3f/polguard/tree/master/packages/common",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -1,0 +1,9 @@
+PolGuard
+Copyright 2024-2026 Web3 Foundation
+
+This product includes software developed at the Web3 Foundation
+(https://web3.foundation/).
+
+The Helm chart under deployment/chart bundles files from the Bitnami Common
+Chart Library, copyright 2023 VMware, Inc., licensed under the Apache License,
+Version 2.0. See deployment/chart/NOTICE.md for details.

@@ -1,8 +1,9 @@
 defaults:
   notifications:
     messengerType: Matrix
+    # Replace with a room your Matrix bot has joined. Format: !<roomId>:<homeserver>
     channels:
-      - "!ZRBUkvtLMgvAvKiaLF:web3.foundation"
+      - "!exampleRoomId:example.org"
 
 groups:
   - id: balances-kusama-example

@@ -1,7 +1,7 @@
 # Matrix Service Configuration
 
 matrix:
-  url: https://matrix.web3.foundation
+  url: https://matrix.example.org
   userId: "@bot:server.org"
   passwordAuth:
     password: "***"    # or use MATRIX_PASSWORD env var
@@ -12,7 +12,7 @@ incidents:
 
 # environment: development        # development | production | test | staging (default: development)
 # matrix:
-#   url: https://matrix.web3.foundation   # required
+#   url: https://matrix.example.org   # required
 #   userId: "@bot:server.org"     # required
 #   logging:
 #     level: error                # trace | debug | info | warn | error (default: error)

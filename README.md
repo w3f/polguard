@@ -107,5 +107,13 @@ See [Monitors & Handlers](packages/config/MONITORS.md) for everything that can b
 - [**Monitors & Handlers**](packages/config/MONITORS.md) - List of all supported monitors and handlers
 
 ### Development & Operations
-- [**Deployment Guide**](deployment/README.md) - CI/CD, Helm, ArgoCD, Kubernetes deployment & NPM publishing
+- [**Deployment Guide**](deployment/README.md) - Docker images, Helm chart, CI & npm publishing
 - [**E2E Tests**](e2e/README.md) - End-to-end testing setup and execution
+
+## Contributing
+
+PolGuard is built and maintained by the Web3 Foundation SecOps team for our own monitoring needs. See [CONTRIBUTING.md](CONTRIBUTING.md) for what that means for issues and pull requests, and [SECURITY.md](SECURITY.md) for reporting vulnerabilities privately.
+
+## License
+
+[Apache License 2.0](LICENSE) — see [NOTICE](NOTICE) for attribution.

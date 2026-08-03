@@ -3,6 +3,7 @@
   "type": "module",
   "packageManager": "yarn@4.11.0",
   "private": true,
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/w3f/polguard.git"
