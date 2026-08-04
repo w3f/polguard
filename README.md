@@ -16,19 +16,14 @@ yarn build
 yarn start:chain
 ```
 
-- Zero configuration needed
-- Monitors Polkadot Asset Hub by default
-- Starts from the latest finalized block
-- Uses example [monitoring configs](packages/config/CONFIG_GUIDE.md) from `packages/config/examples/`
+Uses default monitoring configuration from `packages/config/examples/`, starts from the Asset Hub Polkadot latest finalized block.
 
 ## Incidents
 
 Everything PolGuard detects is an **incident**, with two independent properties:
 
-- **Lifecycle** - *one-time* (a single occurrence, immediately resolved — e.g. a transfer) or *ongoing* (fires and later resolves - e.g. a balance dipping below a threshold)
+- **Lifecycle** - *one-time* (a single occurrence, immediately resolved - e.g. a transfer) or *ongoing* (fires and later resolves - e.g. a balance dipping below a threshold)
 - **Response** - *actionable* (a human acknowledges it via the bot, and it escalates to extra channels if they don't) or *informational* (surfaced for awareness)
-
-Both are set per group in the [Config Guide](packages/config/CONFIG_GUIDE.md); each handler's lifecycle is listed in [Monitors & Handlers](packages/config/MONITORS.md).
 
 ## Deployment Modes
 
@@ -79,7 +74,7 @@ yarn start:chain
 **Setup requirements:**
 - PostgreSQL database for the Incident service
 - Service config files for each service (examples in `packages/*/config/`)
-- Matrix server credentials for the Matrix service
+- Matrix server credentials
 
 ## Monitoring Configuration
 
