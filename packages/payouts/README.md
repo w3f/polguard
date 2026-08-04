@@ -11,8 +11,8 @@ transaction fees.
 1. Loads its app config (`config/config.yaml`).
 2. Resolves the accounts to claim for from the shared monitoring config files via.
 3. Groups by chain then signer.
-4. For each signer group, scans the claimable era window and submits `payout_stakers_by_page`
-   transaction per unclaimed reward page.
+4. For each signer group, scans the claimable era window and submits one `payout_stakers_by_page`
+   transaction per unclaimed reward page, waiting for each to be included in a block (not finalized).
 5. Reports to stdout always, and posts a summary to other notification channels (ex. matrix) when configured.
 6. Exits non-zero if any signer group fails.
 

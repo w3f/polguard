@@ -36,6 +36,7 @@ export async function getPayoutAccounts(dir: string, logger: AppLogger): Promise
         hex: account.hex,
         name: account.name,
         chain: group.chain,
+        group: group.id,
         signer: resolved.signer,
         ...(notifications && { notifications }),
       });

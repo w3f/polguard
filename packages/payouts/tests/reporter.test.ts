@@ -12,6 +12,7 @@ function account(ss58: string, name: string, channels?: string[], messengerType 
   return {
     chain: Chain.AssetHubPolkadot,
     signer: 'signer-x',
+    group: 'group-x',
     ss58,
     hex: '0x',
     name,
@@ -36,7 +37,7 @@ describe('reportClaims', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('routes each account only to its own channel, with explorer links', async () => {
+  it('routes each account only to its own channel, listing the eras it claimed', async () => {
     const accounts = [account('A', 'val-a', ['!room-a']), account('B', 'val-b', ['!room-b'])];
     const claims = [claim('A', 100, 0), claim('B', 100, 0)];
 
@@ -46,11 +47,10 @@ describe('reportClaims', () => {
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map(([, init]) => JSON.parse(init.body));
     const roomA = calls.find(c => c.channelId === '!room-a');
     const roomB = calls.find(c => c.channelId === '!room-b');
-    expect(roomA.message).toContain('val-a');
+    expect(roomA.message).toContain('val-a: era 100');
     expect(roomA.message).not.toContain('val-b');
-    expect(roomB.message).toContain('val-b');
-    // Matrix → HTML rendering, with the extrinsic link from common's explorer
-    expect(roomA.message).toContain('<a href="https://statemint.subscan.io/extrinsic/0xtx1000">');
+    expect(roomB.message).toContain('val-b: era 100');
+    expect(roomA.message).toContain('AssetHubPolkadot · group-x — payout run complete');
   });
 
   it('reports a failure with the error message', async () => {

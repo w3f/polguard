@@ -1,5 +1,7 @@
 import type { AppLogger, PayoutAccount } from '@w3f/polguard-common';
 import type { PolkadotSigner } from 'polkadot-api/signer';
+import type { TxBestBlocksState, TxEvent, TxFinalized, TxInBestBlocksFound } from 'polkadot-api';
+import { filter, firstValueFrom } from 'rxjs';
 import type { PayoutApi } from './papi';
 import type { ClaimConfig } from './config';
 
@@ -10,6 +12,9 @@ export interface Claim {
   page: number;
   txHash: string;
 }
+
+const isInBlock = (event: TxEvent): event is (TxBestBlocksState & TxInBestBlocksFound) | TxFinalized =>
+  (event.type === 'txBestBlocksState' && event.found) || event.type === 'finalized';
 
 export function claimableEraRange(
   activeEra: number,
@@ -71,26 +76,43 @@ export async function claimGroup(
     }
   }
 
-  logger.info(`Discovered ${pending.length} unclaimed page(s) across ${accounts.length} account(s)`);
+  if (pending.length === 0) {
+    logger.info(`No unclaimed pages across ${accounts.length} account(s)`);
+    return [];
+  }
+
+  const pagesByGroup = new Map<string, number>();
+  for (const page of pending) {
+    const { group } = byStash.get(page.stash)!;
+    pagesByGroup.set(group, (pagesByGroup.get(group) ?? 0) + 1);
+  }
+  const breakdown = [...pagesByGroup].map(([group, count]) => `${group} (${count})`).join(', ');
+  logger.info(`Discovered ${pending.length} unclaimed page(s) across ${accounts.length} account(s): ${breakdown}`);
 
   // One page per tx: batch_all is atomic, so an over-sized batch claims nothing, and the safe
   // size is unknown ahead of time. Single calls always fit and give partial progress.
   const submitted: Claim[] = [];
+  const failures: string[] = [];
   for (const page of pending) {
+    const label = `${page.name} era ${page.era} page ${page.page}`;
     const tx = api.tx.Staking.payout_stakers_by_page({
       validator_stash: page.stash,
       era: page.era,
       page: page.page,
     });
-    const result = await tx.signAndSubmit(signer);
+    const result = await firstValueFrom(tx.signSubmitAndWatch(signer).pipe(filter(isInBlock)));
     if (!result.ok) {
-      throw new Error(
-        `payout failed for ${page.name} era ${page.era} page ${page.page} at ${result.txHash}: ` +
-          JSON.stringify(result.dispatchError),
-      );
+      logger.error(`Payout rejected for ${label} at ${result.txHash}: ${JSON.stringify(result.dispatchError)}`);
+      failures.push(label);
+      continue;
     }
-    logger.info(`Claimed ${page.name} era ${page.era} page ${page.page}: ${result.txHash}`);
+    logger.info(`Claimed ${label}: ${result.txHash}`);
     submitted.push({ ...page, txHash: result.txHash });
+  }
+
+  if (failures.length > 0) {
+    const shown = failures.slice(0, 3).join('; ');
+    throw new Error(`${failures.length} payout(s) rejected: ${shown}${failures.length > 3 ? '; …' : ''}`);
   }
 
   return submitted;

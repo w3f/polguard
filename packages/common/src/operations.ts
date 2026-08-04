@@ -13,6 +13,7 @@ export interface Operations {
 
 export interface PayoutAccount extends AccountId {
   chain: Chain;
+  group: string;
   signer: string;
   notifications?: NotificationSettings;
 }

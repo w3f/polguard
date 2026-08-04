@@ -3,7 +3,7 @@ import { Chain, type AppLogger, type PayoutAccount } from '@w3f/polguard-common'
 import { buildPlan } from '../src/planner';
 
 function account(chain: Chain, signer: string, ss58: string): PayoutAccount {
-  return { chain, signer, ss58, hex: '0x', name: ss58 };
+  return { chain, signer, group: 'group-x', ss58, hex: '0x', name: ss58 };
 }
 
 function fakeLogger(): AppLogger {
