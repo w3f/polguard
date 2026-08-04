@@ -2,7 +2,7 @@
 
 # PolGuard
 
-PolGuard is a modular real-time monitoring platform for Polkadot, Kusama, and parachains. It tracks on-chain activity — balances, staking, governance, identity, assets, and XCM — surfacing what it detects as incidents, with monitoring rules defined in a single YAML config family shared across services.
+PolGuard is a modular real-time monitoring platform for Polkadot, Kusama, and parachains. It tracks on-chain activity - balances, staking, governance, identity, assets, and XCM - surfacing what it detects as incidents, with monitoring rules defined in a single YAML config family shared across services.
 
 ## Quick Start
 
@@ -25,8 +25,8 @@ yarn start:chain
 
 Everything PolGuard detects is an **incident**, with two independent properties:
 
-- **Lifecycle** — *one-time* (a single occurrence, immediately resolved — e.g. a transfer) or *ongoing* (fires and later resolves — e.g. a balance dipping below a threshold)
-- **Response** — *actionable* (a human acknowledges it via the bot, and it escalates to extra channels if they don't) or *informational* (surfaced for awareness)
+- **Lifecycle** - *one-time* (a single occurrence, immediately resolved — e.g. a transfer) or *ongoing* (fires and later resolves - e.g. a balance dipping below a threshold)
+- **Response** - *actionable* (a human acknowledges it via the bot, and it escalates to extra channels if they don't) or *informational* (surfaced for awareness)
 
 Both are set per group in the [Config Guide](packages/config/CONFIG_GUIDE.md); each handler's lifecycle is listed in [Monitors & Handlers](packages/config/MONITORS.md).
 
@@ -34,12 +34,12 @@ Both are set per group in the [Config Guide](packages/config/CONFIG_GUIDE.md); e
 
 ### Standalone Mode
 
-Run the Chain service on its own — for trying it out, integrating via webhooks, or simple deployments.
+Run the Chain service on its own - for trying it out, integrating via webhooks, or simple deployments.
 See the [Chain service documentation](packages/chain/README.md) for architecture and configuration.
 
 ### Platform Mode
 
-Run the full stack — incident management with database persistence and Matrix notifications.
+Run the full stack - incident management with database persistence and Matrix notifications.
 
 ```mermaid
 graph LR
@@ -83,12 +83,12 @@ yarn start:chain
 
 ## Monitoring Configuration
 
-Monitoring rules — what to watch and how to report it — are written in YAML, separately from each service's own runtime config (RPC endpoint, store, reporters, etc.). By default the Chain service loads the example rules in `packages/config/examples/`. To define your own:
+Monitoring rules - what to watch and how to report it - are written in YAML, separately from each service's own runtime config (RPC endpoint, store, reporters, etc.). By default the Chain service loads the example rules in `packages/config/examples/`. To define your own:
 
 - Write YAML rules following the [Config Guide](packages/config/CONFIG_GUIDE.md)
 - Point `monitoringConfigsDir` in the Chain service config at your directory
 
-See [Monitors & Handlers](packages/config/MONITORS.md) for everything that can be monitored. The same files also enroll accounts for the optional Payouts service — see [Operations: Payouts](packages/config/CONFIG_GUIDE.md#operations-payouts).
+See [Monitors & Handlers](packages/config/MONITORS.md) for everything that can be monitored. The same files also enroll accounts for the optional Payouts service - see [Operations: Payouts](packages/config/CONFIG_GUIDE.md#operations-payouts).
 
 ## Documentation
 
@@ -113,7 +113,3 @@ See [Monitors & Handlers](packages/config/MONITORS.md) for everything that can b
 ## Contributing
 
 PolGuard is built and maintained by the Web3 Foundation SecOps team for our own monitoring needs. See [CONTRIBUTING.md](CONTRIBUTING.md) for what that means for issues and pull requests, and [SECURITY.md](SECURITY.md) for reporting vulnerabilities privately.
-
-## License
-
-[Apache License 2.0](LICENSE) — see [NOTICE](NOTICE) for attribution.
