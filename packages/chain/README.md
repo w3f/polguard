@@ -32,7 +32,7 @@ graph LR
         ServiceReporter["Service Mode<br>(for Platform)"]:::notused
     end
 
-    Config["<a href='https://github.com/w3f/polguard/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
+    Config["<a href='https://github.com/w3f/polguard/blob/main/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
 
     Chain -->|"Subscribes to blocks,<br>queries state"| Blockchain
     Chain -.->|"Reads rules"| Config
@@ -54,7 +54,7 @@ In platform mode, the store and reporter switch to *service* mode (dashed above)
 ```mermaid
 graph TB
     Blockchain[("RPC node")]:::blockchain
-    Config["<a href='https://github.com/w3f/polguard/blob/master/packages/config/CONFIG_GUIDE.md'>Monitoring Config</a><br>(YAML)"]:::config
+    Config["<a href='https://github.com/w3f/polguard/blob/main/packages/config/CONFIG_GUIDE.md'>Monitoring Config</a><br>(YAML)"]:::config
 
     subgraph Processing ["Block Processing"]
         Watcher["Watcher<br>(Subscribe & Process Blocks)"]:::component

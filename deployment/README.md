@@ -9,8 +9,8 @@ Published to Docker Hub as [`web3f/polguard`](https://hub.docker.com/r/web3f/pol
 
 | Tag | Published on |
 |-----|--------------|
-| `<sha>` | every commit to `master` |
-| `master`, `latest` | `master`, after E2E passes |
+| `<sha>` | every commit to `main` |
+| `main`, `latest` | `main`, after E2E passes |
 | `vX.Y.Z` | release tags |
 
 Release tags don't rebuild — they retag the already-tested `<sha>` image, so the artifact you
@@ -23,7 +23,7 @@ chain), the incident and matrix services, an optional payouts CronJob, and a git
 that clones your monitoring config repos onto a shared volume.
 
 It's published to the [W3F chart repository](https://github.com/w3f/helm-charts/tree/gh-pages)
-on every `master` build:
+on every `main` build:
 
 ```bash
 helm repo add w3f https://w3f.github.io/helm-charts
@@ -50,8 +50,8 @@ Prometheus operator. Reference Grafana dashboards are in [`grafana/`](grafana).
 GitHub Actions ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) is trust-separated:
 
 - **Pull requests** — lint, build, unit and integration tests.
-- **`master`** — push the `<sha>` image, run E2E against that exact image, promote
-  `master`/`latest` and publish the chart.
+- **`main`** — push the `<sha>` image, run E2E against that exact image, promote
+  `main`/`latest` and publish the chart.
 - **Release tags** — retag the tested image and create a GitHub Release.
 
 E2E ([`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml)) provisions a KinD cluster and

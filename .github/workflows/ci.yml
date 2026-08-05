@@ -5,8 +5,8 @@
 #   • PRs                ⇒ code-quality only. E2E can be run manually via
 #                          workflow_dispatch (hermetic: build → kind load →
 #                          test, nothing is pushed) for pre-merge coverage.
-#   • master (trusted)  ⇒ push :sha → e2e against that exact image → only then
-#                          promote master/latest and publish Helm charts.
+#   • main (trusted)    ⇒ push :sha → e2e against that exact image → only then
+#                          promote main/latest and publish Helm charts.
 #   • Release tags vX.Y.Z ⇒ retag the tested :sha → :vX.Y.Z + GitHub Release.
 #
 #  Shared e2e steps live in the reusable .github/workflows/e2e.yml.
@@ -15,10 +15,10 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     tags: ['v[0-9]+.[0-9]+.[0-9]+']
   pull_request:
-    branches: [master]
+    branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
@@ -75,11 +75,11 @@ jobs:
       app-image: web3f/polguard
       app-tag: ${{ github.sha }}
 
-  # Trusted master path: build & push the :sha artifact only. The moving tags
-  # (master/latest) are pushed later by promote-master-image, after e2e passes.
+  # Trusted main path: build & push the :sha artifact only. The moving tags
+  # (main/latest) are pushed later by promote-main-image, after e2e passes.
   docker-build:
     name: Docker build & push
-    if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: [code-quality]
     runs-on: ubuntu-latest
     steps:
@@ -106,9 +106,9 @@ jobs:
           cache-from: type=gha,scope=app
           cache-to: type=gha,scope=app,mode=max
 
-  e2e-master:
-    name: E2E (master)
-    if: ${{ github.ref == 'refs/heads/master' }}
+  e2e-main:
+    name: E2E (main)
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: [docker-build]
     uses: ./.github/workflows/e2e.yml
     secrets:
@@ -122,10 +122,10 @@ jobs:
       app-image: web3f/polguard
       app-tag: ${{ github.sha }}
 
-  promote-master-image:
-    name: Promote master image
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [e2e-master]
+  promote-main-image:
+    name: Promote main image
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [e2e-main]
     runs-on: ubuntu-latest
     steps:
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -134,17 +134,17 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Promote SHA image to master and latest
+      - name: Promote SHA image to main and latest
         run: |
           docker buildx imagetools create \
-            -t "${IMAGE}:master" \
+            -t "${IMAGE}:main" \
             -t "${IMAGE}:latest" \
             "${IMAGE}:${GITHUB_SHA}"
 
   publish-charts:
     name: Publish Helm charts
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [e2e-master]
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [e2e-main]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -173,7 +173,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Verify master SHA image exists
+      - name: Verify main SHA image exists
         run: docker manifest inspect "${IMAGE}:${GITHUB_SHA}"
       - name: Promote SHA image to release tag
         run: |

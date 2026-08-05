@@ -50,7 +50,7 @@ chart and runs `helm test`.
 
 | Trigger | Image | Why |
 |---------|-------|-----|
-| `master` | pulls the just-pushed `:<sha>` | tests the exact artifact that gets promoted |
+| `main` | pulls the just-pushed `:<sha>` | tests the exact artifact that gets promoted |
 | `workflow_dispatch` | builds locally, pushes nothing | pre-merge coverage on a branch |
 
 It never runs on fork pull requests, since it needs secrets.

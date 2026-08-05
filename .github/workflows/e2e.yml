@@ -1,10 +1,10 @@
 # ──────────────────────────────────────────────────────────────────────────────
 #  Reusable KinD end-to-end test workflow.
 #
-#  The only difference between the PR and master paths is how the app image is
+#  The only difference between the PR and main paths is how the app image is
 #  obtained, controlled by `app-image-mode`:
 #    • local-build ⇒ build it here with BuildKit (PRs: nothing is pushed)
-#    • pull        ⇒ pull the already-pushed :<sha> (master: test the exact
+#    • pull        ⇒ pull the already-pushed :<sha> (main: test the exact
 #                     artifact that will be promoted & deployed)
 #  Everything downstream (E2E runner image, KinD, Helm install, tests) is shared.
 # ──────────────────────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ jobs:
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       # E2E only runs in trusted contexts (workflow_dispatch, which needs write access,
-      # or master), never on fork PRs, so secrets are always available. Login avoids
+      # or main), never on fork PRs, so secrets are always available. Login avoids
       # anonymous Docker Hub pull rate limits and is required for the `pull` mode below.
       - name: Docker login
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4

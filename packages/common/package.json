@@ -9,7 +9,7 @@
     "url": "https://github.com/w3f/polguard.git",
     "directory": "packages/common"
   },
-  "homepage": "https://github.com/w3f/polguard/tree/master/packages/common",
+  "homepage": "https://github.com/w3f/polguard/tree/main/packages/common",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -41,12 +41,12 @@ graph LR
     Blockchain[("RPC node")]:::blockchain
     Postgres[(PostgreSQL)]:::database
     MatrixExt["Matrix<br>(Server & Rooms)"]:::external
-    Config["<a href='https://github.com/w3f/polguard/blob/master/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
+    Config["<a href='https://github.com/w3f/polguard/blob/main/packages/config/CONFIG_GUIDE.md' title='Configuration Guide'>Monitoring Config</a><br>(YAML files)"]:::config
 
     subgraph Services ["PolGuard"]
-        Incident["<a href='https://github.com/w3f/polguard/blob/master/packages/incident/README.md' title='Incident Service Documentation'>Incident Service</a><br>Incident & state management"]:::service
-        Matrix["<a href='https://github.com/w3f/polguard/blob/master/packages/matrix/README.md' title='Matrix Service Documentation'>Matrix Service</a><br>Notifications & bot"]:::service
-        Chain["<a href='https://github.com/w3f/polguard/blob/master/packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a><br>Blockchain monitor"]:::service
+        Incident["<a href='https://github.com/w3f/polguard/blob/main/packages/incident/README.md' title='Incident Service Documentation'>Incident Service</a><br>Incident & state management"]:::service
+        Matrix["<a href='https://github.com/w3f/polguard/blob/main/packages/matrix/README.md' title='Matrix Service Documentation'>Matrix Service</a><br>Notifications & bot"]:::service
+        Chain["<a href='https://github.com/w3f/polguard/blob/main/packages/chain/README.md' title='Chain Service Documentation'>Chain Service</a><br>Blockchain monitor"]:::service
     end
 
     Chain -->|"Subscribes to blocks,<br>queries state"| Blockchain

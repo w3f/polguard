@@ -223,7 +223,7 @@ export class MatrixBot extends MatrixClient {
     const manualMessage = `<p><strong>PolGuard User Manual</strong></p>
 
 <p><strong>How It Works:</strong></p>
-<p>Responsible teams configure the monitoring system by updating YAML files in Git repositories following the <a href="https://github.com/w3f/polguard/blob/master/packages/config/CONFIG_GUIDE.md">configuration guide</a>. The monitoring system periodically updates its active configuration from these repositories.</p>
+<p>Responsible teams configure the monitoring system by updating YAML files in Git repositories following the <a href="https://github.com/w3f/polguard/blob/main/packages/config/CONFIG_GUIDE.md">configuration guide</a>. The monitoring system periodically updates its active configuration from these repositories.</p>
 
 <p>Every block, the system checks configured rules and generates incidents:</p>
 <ul>
