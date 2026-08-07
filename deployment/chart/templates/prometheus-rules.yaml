@@ -1,6 +1,7 @@
-{{ if .Values.prometheusRulesEnabled }}
+{{ if and .Values.prometheusRulesEnabled .Values.chainServices }}
 # Metric names and the `chain` label are the ones emitted by ChainTelemetryService;
 # `namespace` and `pod` are added by the Prometheus operator when it scrapes the chain ServiceMonitor.
+{{- $behindBlocks := .Values.prometheusRuleBehindBlocks | int }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -15,12 +16,12 @@ spec:
     - name: ChainBlockAlerts
       rules:
         - alert: ProcessingBehindAlert
-          expr: "polguard_chain_latest_block_on_chain{namespace=\"{{ .Release.Namespace }}\"} - polguard_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"} > 200"
+          expr: "polguard_chain_latest_block_on_chain{namespace=\"{{ .Release.Namespace }}\"} - polguard_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"} > {{ $behindBlocks }}"
           for: "5m"
           labels:
             severity: warning
           annotations:
-            summary: The last processed block is more than 200 blocks behind the latest block on the chain.
+            summary: The last processed block is more than {{ $behindBlocks }} blocks behind the latest block on the chain.
             description: "Chain {{`{{ $labels.chain }}`}} (pod {{`{{ $labels.pod }}`}}): The last processed block is {{`{{ $value }}`}} behind the latest block on the chain."
         - alert: ProcessingStoppedAlert
           expr: "changes(polguard_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"}[15m]) == 0"
