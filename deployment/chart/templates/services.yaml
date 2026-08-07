@@ -9,8 +9,12 @@
 {{- $svc := include "polguard.chainSvc" (dict "svc" $chain "global" $) | fromYaml }}
 {{- $services = append $services (dict "name" $chainName "kind" "chain" "svc" $svc "global" $) }}
 {{- end }}
+{{- if .Values.incidentService.enabled }}
 {{- $services = append $services (dict "name" "incident" "kind" "incident" "svc" .Values.incidentService "global" $) }}
+{{- end }}
+{{- if .Values.matrixService.enabled }}
 {{- $services = append $services (dict "name" "matrix" "kind" "matrix" "svc" .Values.matrixService "global" $) }}
+{{- end }}
 
 {{- range $ctx := $services }}
 ---

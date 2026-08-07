@@ -9,8 +9,13 @@
       "type": "boolean"
     },
     "prometheusRulesEnabled": {
-      "description": "Should PrometheusRule resources be created?",
+      "description": "Should PrometheusRule resources be created? Chain rules also need a non-empty chainServices.",
       "type": "boolean"
+    },
+    "prometheusRuleBehindBlocks": {
+      "description": "How many blocks a chain service may fall behind the chain head before ProcessingBehindAlert fires.",
+      "type": "integer",
+      "minimum": 1
     },
     "prometheusRuleLabels": {
       "description": "Extra labels added to the PrometheusRule, for clusters whose Prometheus selects rules by label.",
@@ -59,6 +64,10 @@
     "configFetcher": {
       "type": "object",
       "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Render the monitoring-configs PVC and the git-sync Deployment? Set false only when neither chain services nor payouts need the monitoring configs."
+        },
         "image": {
           "type": "object",
           "description": "git-sync image",
@@ -141,6 +150,10 @@
       "$comment": "This object configures a single service. Either an incident service, a matrix service, or a chain service for a single chain. Required fields are declared at each usage site, since chainDefaults requires none of them.",
       "type": "object",
       "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Render this service? Read for incidentService and matrixService only; chain services are enabled by being listed in chainServices."
+        },
         "replicas": {
           "type": "integer",
           "minimum": 1,

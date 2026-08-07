@@ -24,6 +24,9 @@ prometheusRulesEnabled: true
 # extra labels for the PrometheusRule, for clusters whose Prometheus selects rules by label
 prometheusRuleLabels: {}
 
+# ProcessingBehindAlert threshold; 450 blocks ~ 15 minutes at 2s per block
+prometheusRuleBehindBlocks: 450
+
 # HTTP probes against each service's /health endpoint. Set to false to disable them everywhere
 probesEnabled: true
 
@@ -53,6 +56,7 @@ chainInitContainers:
 
 # for the default values.yaml file, all fields MUST be provided
 incidentService:
+  enabled: true
   replicas: 1
   containerArgs: ["start:incident"]
   secrets: {} # OPTIONAL secrets map
@@ -72,8 +76,12 @@ incidentInitContainers:
 
 # --------------------------------------------------- Matrix service ---------------------------------------------------
 
+# Runs standalone: with `chainServices: {}`, `incidentService.enabled: false` and
+# `configFetcher.enabled: false` the release holds nothing but the matrix service.
+
 # for the default values.yaml file, all fields MUST be provided
 matrixService:
+  enabled: true
   replicas: 1
   containerArgs: ["start:matrix"]
   secrets: {} # OPTIONAL secrets map
@@ -86,6 +94,7 @@ matrixService:
 # ------------------------------------------------ Config fetcher ------------------------------------------------------
 
 configFetcher:
+  enabled: true  # false skips the shared PVC and the git-sync Deployment
   # kubernetes/git-sync clones each config repo over SSH onto the shared
   # PVC, one dir per repo at /app/monitoring-configs/<name> with a `current` symlink
   # pointing at the latest checkout. The app reads every .yaml/.yml recursively under

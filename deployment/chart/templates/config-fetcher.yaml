@@ -3,6 +3,10 @@
     every chain service and the payouts job), pinned known_hosts, one SSH key Secret and optional
     sparse-checkout ConfigMap per repo, and the git-sync Deployment that clones into the PVC.
 */}}
+{{- if and (not .Values.configFetcher.enabled) (or .Values.chainServices .Values.payouts.enabled) }}
+{{- fail "configFetcher.enabled is false, but chain services and the payouts job mount the monitoring-configs volume it provides" }}
+{{- end }}
+{{- if .Values.configFetcher.enabled }}
 {{ $context := dict "name" "monitoring-configs" "persistence" $.Values.configFetcher.persistence "global" $ }}
 {{ include "polguard.pvc" $context }}
 ---
@@ -141,4 +145,5 @@ spec:
             name: {{ include "common.names.fullname" $ }}-config-fetcher-sparse-{{ $repo.name }}
         {{- end }}
         {{- end }}
+{{- end }}
 {{- end }}
