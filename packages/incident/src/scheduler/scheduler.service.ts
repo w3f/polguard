@@ -27,7 +27,8 @@ export class SchedulerService {
 
     this.addCronJob('notifications-retries', sched.retries ?? DEFAULT_CRON_5_MINUTES, async () => {
       this.logger.debug('Running notification retry job');
-      await this.notificationService.retryNotifications();
+      await this.notificationService.deliver();
+      await this.notificationService.sendRepeatNotifications();
     });
 
     this.addCronJob('auto-resolve-stale', sched.autoResolve ?? DEFAULT_CRON_6_HOURS, async () => {

@@ -1,4 +1,4 @@
-import { eq, and, lt, isNotNull, or } from 'drizzle-orm';
+import { eq, and, or, lt, isNull, isNotNull } from 'drizzle-orm';
 import {
   AppLogger,
   Chain,
@@ -14,7 +14,11 @@ import type { Database } from '../database/db';
 import { incidents, notifications } from '../database/schema';
 import { ConfigService } from '../config/config.service';
 
+const RETRY_AFTER_MS = 5 * 60 * 1000;
+
 export class NotificationService {
+  private delivering: Promise<void> = Promise.resolve();
+
   constructor(
     private readonly db: Database,
     private readonly configService: ConfigService,
@@ -55,10 +59,9 @@ export class NotificationService {
       };
     });
 
-    const savedNotifications = await this.db.insert(notifications).values(notificationRows).returning();
+    await this.db.insert(notifications).values(notificationRows);
 
-    // Send notifications immediately
-    await Promise.all(savedNotifications.map(n => this.deliverNotification(n)));
+    void this.deliver();
   }
 
   /**
@@ -71,6 +74,39 @@ export class NotificationService {
   ): Promise<void> {
     const channels = incident.notificationChannels as { channelId: string; messengerType: MessengerType; repeatFiringMs?: number }[];
     await this.createNotifications(incident, channels, NotificationType.Resolution, content, block);
+  }
+
+  /**
+   * Deliver queued notifications, in the background. A pass queued while another one is running
+   * starts only after it finishes, so it always sees the rows that were just inserted, and a
+   * resolution can never overtake its own alert.
+   */
+  deliver(): Promise<void> {
+    this.delivering = this.delivering
+      .then(() => this.deliverDue())
+      .catch(error => this.logger.error(`Notification delivery failed: ${(error as Error).message}`));
+
+    return this.delivering;
+  }
+
+  private async deliverDue(): Promise<void> {
+    const retryCutoff = new Date(Date.now() - RETRY_AFTER_MS);
+
+    const due = await this.db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.isDelivered, false),
+          or(isNull(notifications.lastSentAt), lt(notifications.lastSentAt, retryCutoff)),
+        ),
+      )
+      // `id` is serial, so this is insertion order: an alert is always sent before its resolution.
+      .orderBy(notifications.id);
+
+    for (const notification of due) {
+      await this.deliverNotification(notification);
+    }
   }
 
   /**
@@ -106,9 +142,9 @@ export class NotificationService {
   }
 
   /**
-   * Retry failed notifications and handle repeating notifications.
+   * Re-send notifications for incidents that are still firing.
    */
-  async retryNotifications(): Promise<void> {
+  async sendRepeatNotifications(): Promise<void> {
     const now = new Date();
     const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
 
@@ -117,26 +153,18 @@ export class NotificationService {
       .from(notifications)
       .leftJoin(incidents, eq(notifications.incidentId, incidents.id))
       .where(
-        or(
-          // Never delivered successfully
-          eq(notifications.isDelivered, false),
-          // Delivered but need repeating: unresolved incidents with repeat interval
-          and(
-            eq(notifications.isDelivered, true),
-            lt(notifications.lastSentAt, oneMinuteAgo),
-            isNotNull(notifications.repeatFiringMs),
-            eq(incidents.isResolved, false),
-          ),
+        and(
+          eq(notifications.isDelivered, true),
+          lt(notifications.lastSentAt, oneMinuteAgo),
+          isNotNull(notifications.repeatFiringMs),
+          eq(incidents.isResolved, false),
         ),
       );
 
     for (const { notification } of rows) {
-      // For repeating notifications, check if the full interval has passed
-      if (notification.isDelivered && notification.lastSentAt && notification.repeatFiringMs) {
-        const nextSendTime = new Date(notification.lastSentAt.getTime() + notification.repeatFiringMs);
-        if (nextSendTime > now) {
-          continue;
-        }
+      const nextSendTime = new Date(notification.lastSentAt!.getTime() + notification.repeatFiringMs!);
+      if (nextSendTime > now) {
+        continue;
       }
 
       await this.deliverNotification(notification);

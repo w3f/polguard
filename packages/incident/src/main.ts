@@ -46,12 +46,7 @@ async function bootstrap() {
   // Wire services
   const lastBlockService = new LastBlockService(db);
   const notificationService = new NotificationService(db, config, rootLogger.child({ context: 'Notification' }));
-  const incidentService = new IncidentService(
-    db,
-    notificationService,
-    lastBlockService,
-    rootLogger.child({ context: 'Incident' }),
-  );
+  const incidentService = new IncidentService(db, notificationService, rootLogger.child({ context: 'Incident' }));
 
   // Scheduler (cron jobs)
   const schedulerService = new SchedulerService(

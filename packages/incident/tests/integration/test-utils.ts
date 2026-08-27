@@ -37,6 +37,7 @@ export interface TestContext {
   pool: pg.Pool;
   container: StartedPostgreSqlContainer;
   incidentService: IncidentService;
+  notificationService: NotificationService;
   lastBlockService: LastBlockService;
 }
 
@@ -67,7 +68,7 @@ export async function createTestApp(): Promise<TestContext> {
   const notificationService = new NotificationService(db, config, silentLogger);
   (notificationService as any).send = vi.fn().mockResolvedValue(true);
 
-  const incidentService = new IncidentService(db, notificationService, lastBlockService, silentLogger);
+  const incidentService = new IncidentService(db, notificationService, silentLogger);
 
   // Build Fastify app
   const app = Fastify({ logger: false });
@@ -87,7 +88,7 @@ export async function createTestApp(): Promise<TestContext> {
 
   await app.ready();
 
-  return { app, db, pool, container, incidentService, lastBlockService };
+  return { app, db, pool, container, incidentService, notificationService, lastBlockService };
 }
 
 export async function clearTables(ctx: TestContext): Promise<void> {
