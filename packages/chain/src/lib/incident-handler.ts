@@ -33,6 +33,14 @@ function buildIdempotencyKey(chain: Chain, ik: IncidentKey, ctx: BlockContext, i
   return `inc:${md5_16([...base, ctx.blockNumber, ctx.eventIdx ?? null, ctx.extrinsicIdx ?? null, ctx.callIdx ?? null])}`;
 }
 
+/** `checkedAt` drives a periodic re-create, which re-alerts if the incident was resolved manually. */
+interface OngoingIncident {
+  id: string;
+  checkedAt: number;
+}
+
+const RECHECK_MS = 3 * 60 * 60 * 1000;
+
 /**
  * IncidentHandler is responsible for managing and sending incidents to the monitoring service.
  * It handles both ongoing incidents and one-time incidents.
@@ -69,16 +77,15 @@ export class IncidentHandler implements IncidentHandlerClient {
     }
 
     // Ongoing incident lifecycle
-    const incidentId = await this.store.get<string>(idempotencyKey);
+    const open = await this.store.get<OngoingIncident>(idempotencyKey);
 
-    if (isFiring && !incidentId) {
+    if (isFiring) {
+      if (open && Date.now() - open.checkedAt < RECHECK_MS) return;
+
       const id = await this.createIncident(content, notifications, incidentKey, blockContext, false, idempotencyKey);
-      if (id) {
-        // Setex: once in a while try creating a new incident just in case the old one was manually resolved
-        await this.store.setex(idempotencyKey, 3600 * 3, id);
-      }
-    } else if (!isFiring && incidentId) {
-      await this.resolveIncident(incidentId, blockContext.blockNumber, content);
+      await this.store.set(idempotencyKey, { id, checkedAt: Date.now() } satisfies OngoingIncident);
+    } else if (open) {
+      await this.resolveIncident(open.id, blockContext.blockNumber, content);
       await this.store.del(idempotencyKey);
     }
   }
@@ -90,7 +97,7 @@ export class IncidentHandler implements IncidentHandlerClient {
     blockContext: BlockContext,
     isResolved: boolean,
     idempotencyKey: string,
-  ): Promise<string | null> {
+  ): Promise<string> {
     const { channels, escalationChannels, escalationTimeoutMs, messengerType, repeatFiringMs } = notifications;
 
     const createIncidentBody: CreateIncidentBody = {
@@ -116,16 +123,12 @@ export class IncidentHandler implements IncidentHandlerClient {
     this.logger.debug(`Reporting incident: ${JSON.stringify(createIncidentBody)}`);
 
     const incidentId = await this.reporter.createIncident(createIncidentBody);
-    if (incidentId) {
-      this.logger.debug(`Reported incident with ID: ${incidentId}`);
-    } else {
-      this.logger.debug('Skipping incident (reporter returned null).');
-    }
+    this.logger.debug(`Reported incident with ID: ${incidentId}`);
     return incidentId;
   }
 
   private async resolveIncident(incidentId: string, blockNumber: number, content: IncidentContent): Promise<void> {
     this.logger.debug(`Resolving incident with ID: ${incidentId}`);
-    await this.reporter.resolveIncident(incidentId, { chain: this.chain, blockNumber, content });
+    return this.reporter.resolveIncident(incidentId, { chain: this.chain, blockNumber, content });
   }
 }

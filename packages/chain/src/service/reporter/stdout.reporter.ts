@@ -15,7 +15,7 @@ export class StdoutIncidentReporter implements IncidentReporter {
     private readonly format: 'json' | 'pretty' = 'pretty',
   ) {}
 
-  async createIncident(dto: CreateIncidentBody): Promise<string | null> {
+  async createIncident(dto: CreateIncidentBody): Promise<string> {
     if (this.format === 'pretty') {
       this.logPrettyCreate(dto);
     } else {

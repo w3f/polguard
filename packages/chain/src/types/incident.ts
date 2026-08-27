@@ -18,6 +18,6 @@ export interface IncidentHandlerClient {
 }
 
 export interface IncidentReporter {
-  createIncident(incident: CreateIncidentBody): Promise<string | null>;
+  createIncident(incident: CreateIncidentBody): Promise<string>;
   resolveIncident(id: string, resolveData: ResolveByChainBody): Promise<void>;
 }

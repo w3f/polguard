@@ -1,7 +1,7 @@
 import { Chain, MessengerType, NotificationType, ResolutionType } from '@w3f/polguard-common';
 import { createTestApp, clearTables, destroyTestApp, TestContext } from './test-utils';
 import type { CreateIncidentBody } from '../../src/schemas/incident.schemas';
-import { incidents, notifications, lastBlocks } from '../../src/database/schema';
+import { incidents, notifications } from '../../src/database/schema';
 import { eq } from 'drizzle-orm';
 
 describe('Incident API (integration)', () => {
@@ -59,16 +59,6 @@ describe('Incident API (integration)', () => {
       payload: { chain: TEST_CHAIN, blockNumber, content },
     });
 
-  const setLastBlock = async (blockNumber: number) => {
-    await ctx.db
-      .insert(lastBlocks)
-      .values({ chain: TEST_CHAIN, blockNumber })
-      .onConflictDoUpdate({
-        target: lastBlocks.chain,
-        set: { blockNumber, updatedAt: new Date() },
-      });
-  };
-
   beforeAll(async () => {
     ctx = await createTestApp();
   });
@@ -79,7 +69,6 @@ describe('Incident API (integration)', () => {
 
   beforeEach(async () => {
     await clearTables(ctx);
-    await setLastBlock(1000);
   });
 
   // --- Helpers ---
@@ -112,14 +101,6 @@ describe('Incident API (integration)', () => {
     it('validates required fields', async () => {
       const res = await postIncident(createIncidentDto({ notificationChannels: [] }));
       expect(res.statusCode).toBe(400);
-    });
-
-    it('updates last block', async () => {
-      const res = await postIncident(createOneTimeIncident({ blockNumber: 1500 }));
-      expect(res.statusCode).toBe(201);
-
-      const lb = await ctx.db.select().from(lastBlocks).where(eq(lastBlocks.chain, TEST_CHAIN)).limit(1);
-      expect(lb[0]?.blockNumber).toBe(1500);
     });
   });
 
@@ -155,6 +136,70 @@ describe('Incident API (integration)', () => {
     });
   });
 
+  describe('Notification delivery', () => {
+    const sendMock = () => (ctx.notificationService as any).send as ReturnType<typeof vi.fn>;
+
+    const notificationsFor = (incidentId: string) =>
+      ctx.db.select().from(notifications).where(eq(notifications.incidentId, incidentId));
+
+    afterEach(() => {
+      sendMock().mockResolvedValue(true);
+    });
+
+    it('returns before delivery completes and delivers in the background', async () => {
+      let release: () => void = () => {};
+      sendMock().mockImplementationOnce(
+        () =>
+          new Promise<boolean>(resolve => {
+            release = () => resolve(true);
+          }),
+      );
+
+      const res = await postIncident(createOngoingIncident());
+      expect(res.statusCode).toBe(201);
+      const incidentId = parseBody(res).id;
+
+      // The request completed while the send is still in flight.
+      expect((await notificationsFor(incidentId))[0].isDelivered).toBe(false);
+
+      release();
+      await vi.waitFor(async () => {
+        expect((await notificationsFor(incidentId))[0].isDelivered).toBe(true);
+      });
+    });
+
+    it('keeps a failed notification pending instead of losing it', async () => {
+      sendMock().mockResolvedValue(false);
+
+      const incidentId = parseBody(await postIncident(createOngoingIncident())).id;
+
+      await vi.waitFor(async () => {
+        expect((await notificationsFor(incidentId))[0].lastSentAt).not.toBeNull();
+      });
+      expect((await notificationsFor(incidentId))[0].isDelivered).toBe(false);
+    });
+
+    it('retries a failed notification once its backoff has elapsed', async () => {
+      sendMock().mockResolvedValue(false);
+
+      const incidentId = parseBody(await postIncident(createOngoingIncident())).id;
+      await vi.waitFor(async () => {
+        expect((await notificationsFor(incidentId))[0].lastSentAt).not.toBeNull();
+      });
+
+      // Age the failed attempt past the retry backoff.
+      await ctx.db
+        .update(notifications)
+        .set({ lastSentAt: new Date(Date.now() - 60 * 60 * 1000) })
+        .where(eq(notifications.incidentId, incidentId));
+
+      sendMock().mockResolvedValue(true);
+      await ctx.notificationService.deliver();
+
+      expect((await notificationsFor(incidentId))[0].isDelivered).toBe(true);
+    });
+  });
+
   describe('POST /incidents/:id/acknowledge', () => {
     it('acknowledges incident successfully', async () => {
       const incident = parseBody(await postIncident(createOngoingIncident()));
@@ -187,47 +232,6 @@ describe('Incident API (integration)', () => {
       expect(first.ackedBy).toBe('user1');
       expect(second.ackedBy).toBe('user1');
       expect(first.ackedAt).toBe(second.ackedAt);
-    });
-  });
-
-  describe('Last block validation', () => {
-    it('allows block equal to last block', async () => {
-      const res = await postIncident(createOneTimeIncident({ blockNumber: 1000 }));
-      expect(res.statusCode).toBe(201);
-    });
-
-    it('allows block greater than last block and updates it', async () => {
-      const res = await postIncident(createOneTimeIncident({ blockNumber: 1500 }));
-      expect(res.statusCode).toBe(201);
-      const lb = await ctx.db.select().from(lastBlocks).where(eq(lastBlocks.chain, TEST_CHAIN)).limit(1);
-      expect(lb[0]?.blockNumber).toBe(1500);
-    });
-
-    it('rejects block less than last block with 409', async () => {
-      await setLastBlock(1500);
-      const res = await postIncident(createOneTimeIncident({ blockNumber: 999 }));
-      expect(res.statusCode).toBe(409);
-    });
-
-    it('allows resolving with same block number', async () => {
-      const incident = parseBody(await postIncident(createOngoingIncident()));
-      const res = await resolveIncident(incident.id, 1000);
-      expect(res.statusCode).toBe(200);
-    });
-
-    it('allows resolving with greater block and updates last block', async () => {
-      const incident = parseBody(await postIncident(createOngoingIncident()));
-      const res = await resolveIncident(incident.id, 1200);
-      expect(res.statusCode).toBe(200);
-      const lb = await ctx.db.select().from(lastBlocks).where(eq(lastBlocks.chain, TEST_CHAIN)).limit(1);
-      expect(lb[0]?.blockNumber).toBe(1200);
-    });
-
-    it('rejects resolving with block less than last block with 409', async () => {
-      await setLastBlock(1500);
-      const incident = parseBody(await postIncident(createOngoingIncident({ blockNumber: 1500 })));
-      const res = await resolveIncident(incident.id, 999);
-      expect(res.statusCode).toBe(409);
     });
   });
 

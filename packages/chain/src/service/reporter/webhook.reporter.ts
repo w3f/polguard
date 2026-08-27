@@ -24,49 +24,41 @@ export class WebhookIncidentReporter implements IncidentReporter {
     this.headers = config.webhook!.headers ?? {};
   }
 
-  async createIncident(incident: CreateIncidentBody): Promise<string | null> {
-    try {
-      const payload = {
-        type: 'incident_created',
-        timestamp: new Date().toISOString(),
-        ...incident,
-      };
+  async createIncident(incident: CreateIncidentBody): Promise<string> {
+    await this.post(
+      { type: 'incident_created', timestamp: new Date().toISOString(), ...incident },
+      `create incident for block ${incident.blockNumber}`,
+    );
 
-      await fetch(this.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...this.headers },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(this.timeoutMs),
-      });
-
-      this.logger.debug(`Webhook incident created for block ${incident.blockNumber}`);
-    } catch (error) {
-      // Log as warning, don't throw - webhook failures shouldn't break monitoring
-      this.logger.warn(`Failed to send incident to webhook: ${(error as Error).message}`);
-    }
-
-    return incident.idempotencyKey; // Return idempotency key for incident lifecycle tracking
+    this.logger.debug(`Webhook incident created for block ${incident.blockNumber}`);
+    return incident.idempotencyKey; // No server-assigned id: the idempotency key tracks the lifecycle
   }
 
   async resolveIncident(id: string, resolveData: ResolveByChainBody): Promise<void> {
-    try {
-      const payload = {
-        type: 'incident_resolved',
-        timestamp: new Date().toISOString(),
-        incidentId: id,
-        ...resolveData,
-      };
+    await this.post(
+      { type: 'incident_resolved', timestamp: new Date().toISOString(), incidentId: id, ...resolveData },
+      `resolve incident ${id}`,
+    );
 
-      await fetch(this.url, {
+    this.logger.debug(`Webhook incident resolved: ${id}`);
+  }
+
+  private async post(payload: unknown, action: string): Promise<void> {
+    let response: Response;
+
+    try {
+      response = await fetch(this.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...this.headers },
         body: JSON.stringify(payload),
         signal: AbortSignal.timeout(this.timeoutMs),
       });
-
-      this.logger.debug(`Webhook incident resolved: ${id}`);
     } catch (error) {
-      this.logger.warn(`Failed to send resolution to webhook: ${(error as Error).message}`);
+      throw new Error(`Webhook failed to ${action}: ${(error as Error).message}`, { cause: error });
+    }
+
+    if (!response.ok) {
+      throw new Error(`Webhook failed to ${action}: HTTP ${response.status}`);
     }
   }
 }

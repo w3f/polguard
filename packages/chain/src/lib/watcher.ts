@@ -161,7 +161,13 @@ export class ChainWatcher {
 
         this.telemetry?.recordCurrentBlock(nextBlockNumber);
         const start = performance.now();
-        await this.processBlock(nextBlockNumber);
+        try {
+          await this.processBlock(nextBlockNumber);
+        } catch (error) {
+          this.logger.error(`Failed to process block #${nextBlockNumber}: ${(error as Error).message}. Retrying...`);
+          await new Promise(resolve => setTimeout(resolve, 10000));
+          continue;
+        }
         const end = performance.now();
         this.telemetry?.recordProcessingTime(end - start);
         this.latestProcessedBlock = nextBlockNumber;

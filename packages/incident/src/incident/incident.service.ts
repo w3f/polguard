@@ -11,7 +11,6 @@ import {
 import type { Database } from '../database/db';
 import { incidents, notifications } from '../database/schema';
 import { NotificationService } from '../notification/notification.service';
-import { LastBlockService } from '../last-block/last-block.service';
 import { generateIncidentId } from '../database/id-generator';
 import type {
   CreateIncidentBody,
@@ -26,7 +25,6 @@ export class IncidentService {
   constructor(
     private readonly db: Database,
     private readonly notificationService: NotificationService,
-    private readonly lastBlockService: LastBlockService,
     private readonly logger: AppLogger,
   ) {}
 
@@ -99,8 +97,6 @@ export class IncidentService {
   }
 
   async createIncident(dto: CreateIncidentBody) {
-    await this.lastBlockService.setLastBlock(dto.chain, dto.blockNumber);
-
     const isResolved = dto.isResolved ?? false;
 
     // Idempotency check
@@ -176,8 +172,6 @@ export class IncidentService {
   }
 
   async resolveIncidentByChain(id: string, dto: ResolveByChainBody) {
-    await this.lastBlockService.setLastBlock(dto.chain, dto.blockNumber);
-
     const incident = await this.db.query.incidents.findFirst({
       where: eq(incidents.id, id),
     });
