@@ -4,7 +4,6 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import Joi from 'joi';
 import { Chain } from '../../types';
-import { StorageQueryEngine } from '../../lib/storage-query';
 
 type StoreType = 'inMemory' | 'service' | 'file';
 interface StoreConfig {
@@ -65,11 +64,9 @@ export class ConfigService {
           .try(Joi.string().uri(), Joi.array().items(Joi.string().uri()).min(1))
           .default('wss://polkadot-asset-hub-rpc.polkadot.io'),
         startBlock: Joi.number().integer().min(0).optional(),
-        storageQueryEngine: Joi.string().valid('chainHead', 'legacyRpc', 'getValues').default('chainHead'),
       }).default({
         name: Chain.AssetHubPolkadot,
         rpcUrl: 'wss://polkadot-asset-hub-rpc.polkadot.io',
-        storageQueryEngine: 'chainHead',
       }),
       environment: Joi.string().valid('development', 'production', 'test', 'staging').default('development'),
       logging: Joi.object({
@@ -146,10 +143,6 @@ export class ConfigService {
     return this.config.chain.startBlock;
   }
 
-  getStorageQueryEngine(): StorageQueryEngine {
-    return this.config.chain.storageQueryEngine;
-  }
-
   getEnvironment(): string {
     return this.config.environment;
   }
@@ -180,7 +173,6 @@ interface Config {
     name: Chain;
     rpcUrl: string | string[];
     startBlock?: number;
-    storageQueryEngine: StorageQueryEngine;
   };
   server: {
     port: number;

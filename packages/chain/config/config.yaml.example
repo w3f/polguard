@@ -16,7 +16,6 @@ monitoringConfigsDir: ../config/examples
 #   name: AssetHubPolkadot          # default: AssetHubPolkadot
 #   rpcUrl: wss://...               # string, or a list for automatic failover
 #   startBlock: 9430730             # default: latest
-#   storageQueryEngine: chainHead   # chainHead | legacyRpc | getValues (default: chainHead) — see src/lib/storage-query.ts
 # environment: development          # development | production | test | staging (default: development)
 # logging:
 #   level: debug                    # error | warn | info | debug | trace (default: debug)

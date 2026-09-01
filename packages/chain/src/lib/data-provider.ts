@@ -1,4 +1,3 @@
-import type { PolkadotClient } from 'polkadot-api';
 import {
   AppLogger,
   Chain,
@@ -11,7 +10,6 @@ import {
   CHAIN_TOKENS,
 } from '../types';
 import { createCachedQueryDecorator } from './decorators';
-import { createStorageQuery, StorageQueryEngine } from './storage-query';
 
 /**
  * Creates a chain data provider that implements chain queries with caching layer.
@@ -22,10 +20,8 @@ export function createChainDataProvider(
   store: Store,
   logger: AppLogger,
   chain: Chain,
-  storageQueryEngine: StorageQueryEngine = 'chainHead',
 ) {
   const Cached = createCachedQueryDecorator(store);
-  const storage = createStorageQuery(storageQueryEngine, blockClient as unknown as PolkadotClient, runtimeClient);
 
   class DataProvider implements ChainDataProvider {
     private blockHashCache: Map<number, string> = new Map();
@@ -72,11 +68,9 @@ export function createChainDataProvider(
     ): Promise<Record<string, number | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
       const validatorAddresses = new Set(await this.stakingValidators(blockNumber));
-      const prefs = await storage.queryValues(
-        'Staking',
-        'Validators',
+      const prefs = await runtimeClient.query.Staking.Validators.getValues(
         addresses.map(addr => [addr]),
-        blockHash,
+        { at: blockHash },
       );
       const result: Record<string, number | null> = {};
 
@@ -94,11 +88,9 @@ export function createChainDataProvider(
     @Cached()
     async stakingBonded(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const bondedInfo = await storage.queryValues<string>(
-        'Staking',
-        'Bonded',
+      const bondedInfo = await runtimeClient.query.Staking.Bonded.getValues(
         addresses.map(addr => [addr]),
-        blockHash,
+        { at: blockHash },
       );
       const result: Record<string, string | null> = {};
 
@@ -113,11 +105,9 @@ export function createChainDataProvider(
     @Cached()
     async stakingLedgerActive(addresses: string[], blockNumber: number): Promise<Record<string, bigint | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const ledgers = await storage.queryValues(
-        'Staking',
-        'Ledger',
+      const ledgers = await runtimeClient.query.Staking.Ledger.getValues(
         addresses.map(addr => [addr]),
-        blockHash,
+        { at: blockHash },
       );
       const result: Record<string, bigint | null> = {};
 
@@ -132,11 +122,9 @@ export function createChainDataProvider(
     @Cached()
     async stakingPayee(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const payees = await storage.queryValues(
-        'Staking',
-        'Payee',
+      const payees = await runtimeClient.query.Staking.Payee.getValues(
         addresses.map(addr => [addr]),
-        blockHash,
+        { at: blockHash },
       );
       const result: Record<string, string | null> = {};
 
@@ -193,11 +181,9 @@ export function createChainDataProvider(
     @Cached()
     async systemAccountBalance(addresses: string[], blockNumber: number): Promise<Record<string, bigint>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const accounts = await storage.queryValues(
-        'System',
-        'Account',
+      const accounts = await runtimeClient.query.System.Account.getValues(
         addresses.map(addr => [addr]),
-        blockHash,
+        { at: blockHash },
       );
       const result: Record<string, bigint> = {};
 
@@ -211,11 +197,9 @@ export function createChainDataProvider(
     @Cached()
     async identityOf(addresses: string[], blockNumber: number): Promise<Record<string, IdentityInfo | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const identities = await storage.queryValues(
-        'Identity',
-        'IdentityOf',
+      const identities = await runtimeClient.query.Identity.IdentityOf.getValues(
         addresses.map(addr => [addr]),
-        blockHash,
+        { at: blockHash },
       );
       const result: Record<string, IdentityInfo | null> = {};
 
@@ -236,11 +220,9 @@ export function createChainDataProvider(
     @Cached()
     async identitySuperOf(addresses: string[], blockNumber: number): Promise<Record<string, string | null>> {
       const blockHash = await this.getBlockHash(blockNumber);
-      const superIds = await storage.queryValues(
-        'Identity',
-        'SuperOf',
+      const superIds = await runtimeClient.query.Identity.SuperOf.getValues(
         addresses.map(addr => [addr]),
-        blockHash,
+        { at: blockHash },
       );
       const result: Record<string, string | null> = {};
 
@@ -278,7 +260,7 @@ export function createChainDataProvider(
         result[tokenName] = {};
         const assetId = Number(CHAIN_TOKENS[this.chain][tokenName].id);
         const keys = addresses.map(address => [assetId, address]);
-        const assetAccounts = await storage.queryValues('Assets', 'Account', keys, blockHash);
+        const assetAccounts = await runtimeClient.query.Assets.Account.getValues(keys, { at: blockHash });
 
         addresses.forEach((address, index) => {
           const assetAccount = assetAccounts[index];
@@ -305,7 +287,7 @@ export function createChainDataProvider(
         result[tokenName] = {};
         const currencyId = CHAIN_TOKENS[this.chain][tokenName].id;
         const keys = addresses.map(address => [address, JSON.parse(currencyId)]);
-        const tokenAccounts = await storage.queryValues('OrmlTokens', 'Accounts', keys, blockHash);
+        const tokenAccounts = await runtimeClient.query.OrmlTokens.Accounts.getValues(keys, { at: blockHash });
 
         addresses.forEach((address, idx) => {
           const acct = tokenAccounts[idx];
