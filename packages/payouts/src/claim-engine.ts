@@ -10,18 +10,10 @@ export interface Claim {
   era: number;
   page: number;
   txHash: string;
-  amount: bigint;
 }
 
 const isInBlock = (event: TxEvent): event is TxInBestBlock | TxFinalized =>
   event.type === 'inBestBlock' || event.type === 'finalized';
-
-/** What the stash itself earned; the same payout also rewards its nominators. */
-function rewardedTo(events: TxFinalized['events'], stash: string): bigint {
-  return events
-    .filter(e => e.type === 'Staking' && e.value.type === 'Rewarded' && e.value.value.stash === stash)
-    .reduce((total, e) => total + BigInt(e.value.value.amount), 0n);
-}
 
 export function claimableEraRange(
   activeEra: number,
@@ -61,7 +53,7 @@ export async function claimGroup(
   const eraCount = Math.max(upper - lower + 1, 0);
   logger.info(`Scanning eras ${lower}..${upper} (${eraCount}) for ${accounts.length} account(s)`);
 
-  const pending: Omit<Claim, 'txHash' | 'amount'>[] = [];
+  const pending: Omit<Claim, 'txHash'>[] = [];
   for (let era = lower; era <= upper; era++) {
     logger.debug(`Scanning era ${era} (${era - lower + 1}/${eraCount})`);
 
@@ -113,9 +105,8 @@ export async function claimGroup(
       failures.push(label);
       continue;
     }
-    const amount = rewardedTo(result.events, page.stash);
     logger.info(`Claimed ${label}: ${result.txHash}`);
-    submitted.push({ ...page, txHash: result.txHash, amount });
+    submitted.push({ ...page, txHash: result.txHash });
   }
 
   if (failures.length > 0) {
