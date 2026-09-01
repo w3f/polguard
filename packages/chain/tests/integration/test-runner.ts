@@ -1,7 +1,6 @@
 import * as fs from 'node:fs';
 import yaml from 'js-yaml';
 import { createChainDataProvider } from '../../src/lib/data-provider';
-import { StorageQueryEngine } from '../../src/lib/storage-query';
 import { ChainWatcher } from '../../src/lib/watcher';
 import { Chain, MonitorType, MonitoringGroup, MessengerType, getChainProperties } from '@w3f/polguard-common';
 import { LoggerAdapter, TestIncidentHandler, colors } from './test-utils';
@@ -150,15 +149,7 @@ export class TestRunner {
       const incidentHandler = new TestIncidentHandler(testId);
 
       const runtimeClient = getTypedApi(client, testCase.chain);
-      const storageQueryEngine = process.env.CHAIN_STORAGE_QUERY_ENGINE as StorageQueryEngine | undefined;
-      const chainProvider = createChainDataProvider(
-        client,
-        runtimeClient,
-        store,
-        logger,
-        testCase.chain,
-        storageQueryEngine,
-      );
+      const chainProvider = createChainDataProvider(client, runtimeClient, store, logger, testCase.chain);
       const group = this.createMonitoringGroup(
         testCase.chain,
         testCase.monitor,

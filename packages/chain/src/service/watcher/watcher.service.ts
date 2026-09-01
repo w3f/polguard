@@ -63,7 +63,6 @@ export class WatcherService {
       this.store,
       this.logger,
       chainProps.chain,
-      this.config.getStorageQueryEngine(),
     );
     const incidentHandler = new IncidentHandler(this.logger, this.store, this.reporter, chainProps.chain);
 
