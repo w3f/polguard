@@ -56,7 +56,7 @@ function buildContent(chain: Chain, accounts: PayoutAccount[], outcome: ClaimOut
   const claimed = claimedAccounts(accounts, claims);
   return {
     icon: '✅',
-    title: `${chain} · ${groupNames(claimed)} — claimed era ${claimedEras(claimed, claims).join(', ')}`,
+    title: `${chain} · ${groupNames(claimed)} — payouts claimed for era ${claimedEras(claimed, claims).join(', ')}`,
     details: claimed.map(a => accountLine(a, claims)),
   };
 }
