@@ -1,8 +1,7 @@
 import type { AppLogger, PayoutAccount } from '@w3f/polguard-common';
-import type { PolkadotSigner } from 'polkadot-api/signer';
-import type { TxBestBlocksState, TxEvent, TxFinalized, TxInBestBlocksFound } from 'polkadot-api';
+import type { TxEvent, TxFinalized, TxInBestBlock } from 'polkadot-api';
 import { filter, firstValueFrom } from 'rxjs';
-import type { PayoutApi } from './papi';
+import type { PayoutApi, Signer } from './papi';
 import type { ClaimConfig } from './config';
 
 export interface Claim {
@@ -13,8 +12,8 @@ export interface Claim {
   txHash: string;
 }
 
-const isInBlock = (event: TxEvent): event is (TxBestBlocksState & TxInBestBlocksFound) | TxFinalized =>
-  (event.type === 'txBestBlocksState' && event.found) || event.type === 'finalized';
+const isInBlock = (event: TxEvent): event is TxInBestBlock | TxFinalized =>
+  event.type === 'inBestBlock' || event.type === 'finalized';
 
 export function claimableEraRange(
   activeEra: number,
@@ -40,7 +39,7 @@ export async function claimGroup(
   api: PayoutApi,
   at: string,
   accounts: PayoutAccount[],
-  signer: PolkadotSigner,
+  signer: Signer,
   claim: ClaimConfig,
   logger: AppLogger,
 ): Promise<Claim[]> {
@@ -100,7 +99,7 @@ export async function claimGroup(
       era: page.era,
       page: page.page,
     });
-    const result = await firstValueFrom(tx.signSubmitAndWatch(signer).pipe(filter(isInBlock)));
+    const result = await firstValueFrom(tx.createSubmitAndWatch(signer).pipe(filter(isInBlock)));
     if (!result.ok) {
       logger.error(`Payout rejected for ${label} at ${result.txHash}: ${JSON.stringify(result.dispatchError)}`);
       failures.push(label);

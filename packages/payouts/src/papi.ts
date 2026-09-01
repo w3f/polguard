@@ -4,7 +4,9 @@ import { createClient, type PolkadotClient, type TypedApi } from 'polkadot-api';
 import { getWsProvider } from 'polkadot-api/ws';
 import { sr25519CreateDerive } from '@polkadot-labs/hdkd';
 import { entropyToMiniSecret, mnemonicToEntropy } from '@polkadot-labs/hdkd-helpers';
-import { getPolkadotSigner, type PolkadotSigner } from 'polkadot-api/signer';
+import { getTxCreator } from 'polkadot-api/tx-creator';
+
+export type Signer = ReturnType<typeof getTxCreator>;
 
 export type PayoutApi = TypedApi<typeof assetHubPolkadot> | TypedApi<typeof assetHubKusama>;
 
@@ -23,8 +25,8 @@ export function getPayoutApi(client: PolkadotClient, chain: Chain): PayoutApi {
   }
 }
 
-export function signerFromMnemonic(mnemonic: string): PolkadotSigner {
+export function signerFromMnemonic(mnemonic: string): Signer {
   const miniSecret = entropyToMiniSecret(mnemonicToEntropy(mnemonic));
   const keypair = sr25519CreateDerive(miniSecret)('');
-  return getPolkadotSigner(keypair.publicKey, 'Sr25519', keypair.sign);
+  return getTxCreator(keypair.publicKey, 'Sr25519', keypair.sign);
 }

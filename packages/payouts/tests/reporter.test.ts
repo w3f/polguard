@@ -50,7 +50,7 @@ describe('reportClaims', () => {
     expect(roomA.message).toContain('val-a: era 100');
     expect(roomA.message).not.toContain('val-b');
     expect(roomB.message).toContain('val-b: era 100');
-    expect(roomA.message).toContain('AssetHubPolkadot · group-x — payout run complete');
+    expect(roomA.message).toContain('AssetHubPolkadot · group-x — payouts claimed');
   });
 
   it('reports a failure with the error message', async () => {
