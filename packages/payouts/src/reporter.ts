@@ -21,11 +21,6 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function claimedEras(accounts: PayoutAccount[], claims: Claim[]): number[] {
-  const stashes = new Set(accounts.map(a => a.ss58));
-  return [...new Set(claims.filter(c => stashes.has(c.stash)).map(c => c.era))].sort((a, b) => a - b);
-}
-
 function accountLine(account: PayoutAccount, claims: Claim[]): string {
   const eras = claims
     .filter(c => c.stash === account.ss58)
@@ -56,7 +51,7 @@ function buildContent(chain: Chain, accounts: PayoutAccount[], outcome: ClaimOut
   const claimed = claimedAccounts(accounts, claims);
   return {
     icon: '✅',
-    title: `${chain} · ${groupNames(claimed)} — payouts claimed for era ${claimedEras(claimed, claims).join(', ')}`,
+    title: `${chain} · ${groupNames(claimed)} — payouts claimed`,
     details: claimed.map(a => accountLine(a, claims)),
   };
 }
