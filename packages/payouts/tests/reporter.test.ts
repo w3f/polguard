@@ -20,8 +20,8 @@ function account(ss58: string, name: string, channels?: string[], messengerType 
   };
 }
 
-function claim(stash: string, era: number, page: number): Claim {
-  return { stash, name: stash, era, page, txHash: `0xtx${era}${page}` };
+function claim(stash: string, era: number, page: number, amount = 10_000_000_000n): Claim {
+  return { stash, name: stash, era, page, txHash: `0xtx${era}${page}`, amount };
 }
 
 const notifications: NotificationsConfig = { matrix: { url: 'http://notifier/notifications' } };
@@ -47,10 +47,10 @@ describe('reportClaims', () => {
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map(([, init]) => JSON.parse(init.body));
     const roomA = calls.find(c => c.channelId === '!room-a');
     const roomB = calls.find(c => c.channelId === '!room-b');
-    expect(roomA.message).toContain('val-a: era 100');
+    expect(roomA.message).toContain('val-a: 1.00 DOT — era 100');
     expect(roomA.message).not.toContain('val-b');
-    expect(roomB.message).toContain('val-b: era 100');
-    expect(roomA.message).toContain('AssetHubPolkadot · group-x — payout run complete');
+    expect(roomB.message).toContain('val-b: 1.00 DOT — era 100');
+    expect(roomA.message).toContain('AssetHubPolkadot · group-x — claimed 1.00 DOT');
   });
 
   it('reports a failure with the error message', async () => {

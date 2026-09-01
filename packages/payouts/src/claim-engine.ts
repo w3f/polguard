@@ -1,8 +1,7 @@
 import type { AppLogger, PayoutAccount } from '@w3f/polguard-common';
-import type { PolkadotSigner } from 'polkadot-api/signer';
-import type { TxBestBlocksState, TxEvent, TxFinalized, TxInBestBlocksFound } from 'polkadot-api';
+import type { TxEvent, TxFinalized, TxInBestBlock } from 'polkadot-api';
 import { filter, firstValueFrom } from 'rxjs';
-import type { PayoutApi } from './papi';
+import type { PayoutApi, Signer } from './papi';
 import type { ClaimConfig } from './config';
 
 export interface Claim {
@@ -11,10 +10,18 @@ export interface Claim {
   era: number;
   page: number;
   txHash: string;
+  amount: bigint;
 }
 
-const isInBlock = (event: TxEvent): event is (TxBestBlocksState & TxInBestBlocksFound) | TxFinalized =>
-  (event.type === 'txBestBlocksState' && event.found) || event.type === 'finalized';
+const isInBlock = (event: TxEvent): event is TxInBestBlock | TxFinalized =>
+  event.type === 'inBestBlock' || event.type === 'finalized';
+
+/** What the stash itself earned; the same payout also rewards its nominators. */
+function rewardedTo(events: TxFinalized['events'], stash: string): bigint {
+  return events
+    .filter(e => e.type === 'Staking' && e.value.type === 'Rewarded' && e.value.value.stash === stash)
+    .reduce((total, e) => total + BigInt(e.value.value.amount), 0n);
+}
 
 export function claimableEraRange(
   activeEra: number,
@@ -40,7 +47,7 @@ export async function claimGroup(
   api: PayoutApi,
   at: string,
   accounts: PayoutAccount[],
-  signer: PolkadotSigner,
+  signer: Signer,
   claim: ClaimConfig,
   logger: AppLogger,
 ): Promise<Claim[]> {
@@ -54,7 +61,7 @@ export async function claimGroup(
   const eraCount = Math.max(upper - lower + 1, 0);
   logger.info(`Scanning eras ${lower}..${upper} (${eraCount}) for ${accounts.length} account(s)`);
 
-  const pending: Omit<Claim, 'txHash'>[] = [];
+  const pending: Omit<Claim, 'txHash' | 'amount'>[] = [];
   for (let era = lower; era <= upper; era++) {
     logger.debug(`Scanning era ${era} (${era - lower + 1}/${eraCount})`);
 
@@ -100,14 +107,15 @@ export async function claimGroup(
       era: page.era,
       page: page.page,
     });
-    const result = await firstValueFrom(tx.signSubmitAndWatch(signer).pipe(filter(isInBlock)));
+    const result = await firstValueFrom(tx.createSubmitAndWatch(signer).pipe(filter(isInBlock)));
     if (!result.ok) {
       logger.error(`Payout rejected for ${label} at ${result.txHash}: ${JSON.stringify(result.dispatchError)}`);
       failures.push(label);
       continue;
     }
+    const amount = rewardedTo(result.events, page.stash);
     logger.info(`Claimed ${label}: ${result.txHash}`);
-    submitted.push({ ...page, txHash: result.txHash });
+    submitted.push({ ...page, txHash: result.txHash, amount });
   }
 
   if (failures.length > 0) {

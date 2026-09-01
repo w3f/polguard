@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import pino from 'pino';
+import { filter, firstValueFrom } from 'rxjs';
 import yaml from 'js-yaml';
 import { getPayoutAccounts } from '@w3f/polguard-config';
 import { Chain } from '@w3f/polguard-common';
@@ -116,6 +117,10 @@ async function main(): Promise<void> {
       const first = await claimGroup(api, (await client.getFinalizedBlock()).hash, groups[0].accounts, signer, config.claim, logger);
       assert(first.length > 0, 'expected at least one claim to be submitted');
       logger.info({ submitted: first }, 'First run submitted claims');
+
+      // Claims are tracked to a best block, so wait for finality before re-reading state.
+      const best = (await client.getBestBlocks())[0].number;
+      await firstValueFrom(client.finalizedBlock$.pipe(filter(b => b.number >= best)));
 
       const second = await claimGroup(api, (await client.getFinalizedBlock()).hash, groups[0].accounts, signer, config.claim, logger);
       assert.strictEqual(second.length, 0, 'second run should be idempotent (nothing to claim)');

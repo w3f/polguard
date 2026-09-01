@@ -1,4 +1,5 @@
 import {
+  balance,
   MESSENGER_STYLE_MAP,
   renderBanner,
   MessengerType,
@@ -21,12 +22,14 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function accountLine(account: PayoutAccount, claims: Claim[]): string {
-  const eras = claims
-    .filter(c => c.stash === account.ss58)
-    .map(c => c.era)
-    .sort((a, b) => a - b);
-  return `${account.name}: era ${eras.join(', ')}`;
+function totalClaimed(claims: Claim[]): bigint {
+  return claims.reduce((total, c) => total + c.amount, 0n);
+}
+
+function accountLine(chain: Chain, account: PayoutAccount, claims: Claim[]): string {
+  const own = claims.filter(c => c.stash === account.ss58);
+  const eras = [...new Set(own.map(c => c.era))].sort((a, b) => a - b);
+  return `${account.name}: ${balance(chain, totalClaimed(own))} — era ${eras.join(', ')}`;
 }
 
 function groupNames(accounts: PayoutAccount[]): string {
@@ -47,12 +50,12 @@ function buildContent(chain: Chain, accounts: PayoutAccount[], outcome: ClaimOut
     };
   }
   // Only list accounts that actually claimed — no "nothing to claim" rows.
-  const claims = outcome.claims ?? [];
+  const claims = (outcome.claims ?? []).filter(c => accounts.some(a => a.ss58 === c.stash));
   const claimed = claimedAccounts(accounts, claims);
   return {
     icon: '✅',
-    title: `${chain} · ${groupNames(claimed)} — payout run complete`,
-    details: claimed.map(a => accountLine(a, claims)),
+    title: `${chain} · ${groupNames(claimed)} — claimed ${balance(chain, totalClaimed(claims))}`,
+    details: claimed.map(a => accountLine(chain, a, claims)),
   };
 }
 
