@@ -16,7 +16,11 @@ export class ConfigService {
     if (rawConfig?.matrix?.passwordAuth && !rawConfig.matrix.passwordAuth.password) {
       rawConfig.matrix.passwordAuth.password = process.env.MATRIX_PASSWORD;
     }
-    if (rawConfig?.matrix?.passwordAuth && !rawConfig.matrix.passwordAuth.recoveryKey && process.env.MATRIX_RECOVERY_KEY) {
+    if (
+      rawConfig?.matrix?.passwordAuth &&
+      !rawConfig.matrix.passwordAuth.recoveryKey &&
+      process.env.MATRIX_RECOVERY_KEY
+    ) {
       rawConfig.matrix.passwordAuth.recoveryKey = process.env.MATRIX_RECOVERY_KEY;
     }
     if (rawConfig?.matrix?.tokenAuth && !rawConfig.matrix.tokenAuth.accessToken && process.env.MATRIX_TOKEN) {
@@ -59,7 +63,7 @@ export class ConfigService {
         logging: Joi.object({
           level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error').default('error'),
         }).default({ level: 'error' }),
-        pruneOtherDevices: Joi.boolean().optional(),
+        pruneDevicesLabeled: Joi.string().optional(),
         passwordAuth: Joi.object({
           password: Joi.string().required().messages({
             'any.required':
@@ -79,7 +83,7 @@ export class ConfigService {
         }),
       incidents: Joi.object({
         url: Joi.string().uri().required(),
-      }).required(),
+      }).optional(),
       server: Joi.object({
         port: Joi.number().default(3000),
         host: Joi.string().default('0.0.0.0'),
@@ -101,8 +105,8 @@ export class ConfigService {
     return this.config.matrix;
   }
 
-  getIncidentsUrl(): string {
-    return this.config.incidents.url;
+  getIncidentsUrl(): string | undefined {
+    return this.config.incidents?.url;
   }
 
   getLoggingLevel(): string {
@@ -117,7 +121,7 @@ export class ConfigService {
 interface AppConfig {
   environment: string;
   matrix: MatrixConfig;
-  incidents: {
+  incidents?: {
     url: string;
   };
   server: {

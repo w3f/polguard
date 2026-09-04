@@ -9,7 +9,7 @@ import {
   explorerLink,
   GetIncidentsQuery,
 } from '@w3f/polguard-common';
-import { MatrixEvent } from 'matrix-js-sdk';
+import { MatrixEvent, Room, RoomEvent } from 'matrix-js-sdk';
 
 export class MatrixBot extends MatrixClient {
   // This property handles "Message too long (112988 bytes)"
@@ -23,10 +23,30 @@ export class MatrixBot extends MatrixClient {
 
   async init() {
     await super.init();
+    this.client.on(RoomEvent.Timeline, (event: MatrixEvent, room: Room) => {
+      if (event.getType() === 'm.room.message' || event.getType() === 'm.room.encrypted') {
+        this.handleIncomingMessage(event, room);
+      }
+    });
     this.logger.info('MatrixBot initialized and listening for commands in rooms');
   }
 
-  protected handleCommand(roomId: string, command: string, event: MatrixEvent) {
+  private async handleIncomingMessage(event: MatrixEvent, room: Room) {
+    if (event.getSender() === this.client.getUserId()) {
+      return;
+    }
+    if (event.isEncrypted()) {
+      await this.client.decryptEventIfNeeded(event);
+    }
+
+    const body: string = event.getContent().body || '';
+    this.logger.debug(`Message in ${room.roomId} from ${event.getSender()}: "${body}"`);
+    if (body.startsWith('!')) {
+      this.handleCommand(room.roomId, body, event);
+    }
+  }
+
+  private handleCommand(roomId: string, command: string, event: MatrixEvent) {
     const parts = command
       .slice(1)
       .split(' ')

@@ -12,10 +12,10 @@ export async function sendNotification(
   switch (messengerType) {
     case MessengerType.Matrix:
       try {
-        await fetchOrThrow(url, {
+        await fetchOrThrow(`${url}/${encodeURIComponent(channelId)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ channelId, message }),
+          body: JSON.stringify({ message }),
         });
         return true;
       } catch (error) {

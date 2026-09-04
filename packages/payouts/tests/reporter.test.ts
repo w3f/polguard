@@ -44,9 +44,12 @@ describe('reportClaims', () => {
     await reportClaims(notifications, Chain.AssetHubPolkadot, accounts, { ok: true, claims }, fakeLogger());
 
     expect(fetch).toHaveBeenCalledTimes(2);
-    const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map(([, init]) => JSON.parse(init.body));
-    const roomA = calls.find(c => c.channelId === '!room-a');
-    const roomB = calls.find(c => c.channelId === '!room-b');
+    const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map(([url, init]) => ({
+      url,
+      ...JSON.parse(init.body),
+    }));
+    const roomA = calls.find(c => c.url === 'http://notifier/notifications/!room-a');
+    const roomB = calls.find(c => c.url === 'http://notifier/notifications/!room-b');
     expect(roomA.message).toContain('val-a: era 100');
     expect(roomA.message).not.toContain('val-b');
     expect(roomB.message).toContain('val-b: era 100');
@@ -54,7 +57,13 @@ describe('reportClaims', () => {
   });
 
   it('reports a failure with the error message', async () => {
-    await reportClaims(notifications, Chain.AssetHubPolkadot, [account('A', 'val-a', ['!room-a'])], { ok: false, error: new Error('boom') }, fakeLogger());
+    await reportClaims(
+      notifications,
+      Chain.AssetHubPolkadot,
+      [account('A', 'val-a', ['!room-a'])],
+      { ok: false, error: new Error('boom') },
+      fakeLogger(),
+    );
     const { message } = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
     expect(message).toContain('payout run failed');
     expect(message).toContain('boom');
@@ -69,7 +78,13 @@ describe('reportClaims', () => {
   it('logs an error but does not throw when the POST fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
     const logger = fakeLogger();
-    await reportClaims(notifications, Chain.AssetHubPolkadot, [account('A', 'val-a', ['!room-a'])], { ok: true, claims: [claim('A', 100, 0)] }, logger);
+    await reportClaims(
+      notifications,
+      Chain.AssetHubPolkadot,
+      [account('A', 'val-a', ['!room-a'])],
+      { ok: true, claims: [claim('A', 100, 0)] },
+      logger,
+    );
     expect(logger.error).toHaveBeenCalled();
   });
 });

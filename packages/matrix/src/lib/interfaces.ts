@@ -12,12 +12,16 @@ export interface MatrixConfig {
   url: string;
   userId: string;
   logging: { level: 'trace' | 'debug' | 'info' | 'warn' | 'error' };
-  pruneOtherDevices?: boolean;
+  pruneDevicesLabeled?: string;
   passwordAuth?: PasswordAuth;
   tokenAuth?: TokenAuth;
 }
 
-export type { IncidentResponse as Incident, NotificationResponse as Notification, GetIncidentsQuery } from '@w3f/polguard-common';
+export type {
+  IncidentResponse as Incident,
+  NotificationResponse as Notification,
+  GetIncidentsQuery,
+} from '@w3f/polguard-common';
 import type { IncidentResponse, GetIncidentsQuery } from '@w3f/polguard-common';
 
 export interface IncidentServiceInterface {

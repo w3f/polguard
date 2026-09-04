@@ -2,9 +2,6 @@ import {
   MatrixClient as SDKMatrixClient,
   createClient,
   ClientEvent,
-  MatrixEvent,
-  Room,
-  RoomEvent,
   MsgType,
   ICreateClientOpts,
   MatrixError,
@@ -81,11 +78,10 @@ export class MatrixClient {
 
   async init() {
     this.client = await this.createClient();
-    if (this.encryptionEnabled && this.config.pruneOtherDevices) {
-      await this.pruneOtherDevices();
+    if (this.encryptionEnabled && this.config.pruneDevicesLabeled) {
+      await this.pruneDevicesLabeled(this.config.pruneDevicesLabeled);
     }
     await this.setupClientAndSync();
-    this.setupMessageHandler();
 
     const rooms = this.client.getRooms();
     this.logger.info(`Matrix client initialized successfully. Bot is in ${rooms.length} rooms:`);
@@ -164,6 +160,7 @@ export class MatrixClient {
       const response = await loginClient.login('m.login.password', {
         user: this.config.userId,
         password: this.config.passwordAuth.password,
+        initial_device_display_name: this.config.pruneDevicesLabeled,
       });
       return {
         newAccessToken: response.access_token,
@@ -206,14 +203,13 @@ export class MatrixClient {
     return createClient(options);
   }
 
-  /**
-   * Deletes the bot's other devices, keeping only the current session.
-   */
-  private async pruneOtherDevices(): Promise<void> {
+  private async pruneDevicesLabeled(label: string): Promise<void> {
     try {
       const currentDeviceId = this.client.getDeviceId();
       const { devices } = await this.client.getDevices();
-      const staleIds = devices.map(d => d.device_id).filter(id => id && id !== currentDeviceId);
+      const staleIds = devices
+        .filter(d => d.device_id !== currentDeviceId && d.display_name === label)
+        .map(d => d.device_id);
       if (staleIds.length === 0) {
         return;
       }
@@ -245,86 +241,19 @@ export class MatrixClient {
       this.client.once(ClientEvent.Sync, (state: string) => {
         this.logger.debug(`Matrix client sync state: ${state}`);
         if (state === 'PREPARED') {
-          this.logger.info('Matrix client sync completed - ready to receive messages');
+          this.logger.info('Matrix client sync completed');
           resolve();
         }
       });
     });
   }
 
-  private setupMessageHandler(): void {
-    this.logger.debug('Setting up Matrix message handler for Timeline events');
-    this.client.on(RoomEvent.Timeline, (event: MatrixEvent, room: Room) => {
-      this.logger.debug(
-        `Timeline event received: type=${event.getType()}, room=${room.roomId}, sender=${event.getSender()}`,
-      );
-      if (event.getType() === 'm.room.message' || event.getType() === 'm.room.encrypted') {
-        this.handleIncomingMessage(event, room);
-      }
-    });
-    this.logger.debug('Matrix message handler setup complete');
-  }
-
-  protected async handleIncomingMessage(event: MatrixEvent, room: Room) {
-    const sender = event.getSender();
-    const roomId = room.roomId;
-    const eventType = event.getType();
-
-    this.logger.debug(`MatrixClient processing ${eventType} from ${sender} in room ${roomId}`);
-
-    if (sender === this.client.getUserId()) {
-      this.logger.debug('Ignoring message from bot itself');
-      return;
-    }
-
-    // Decrypt the event if it's encrypted
-    if (event.isEncrypted()) {
-      this.logger.debug('Decrypting encrypted message...');
-      await this.client.decryptEventIfNeeded(event);
-    }
-
-    const content = event.getContent();
-    const body = content.body || '';
-
-    this.logger.debug(`Message body: "${body}"`);
-
-    if (!body) {
-      this.logger.debug('Message body is empty');
-      return;
-    }
-
-    if (body.startsWith('!')) {
-      this.logger.debug(`Detected command: ${body}`);
-      this.handleCommand(roomId, body, event);
-    } else {
-      this.logger.debug(`Non-command message: ${body}`);
-    }
-  }
-
-  /**
-   * Handles incoming room commands (messages starting with '!').
-   *
-   * This is a placeholder method in the base class, designed to be
-   * overridden by subclasses for specific command handling logic.
-   * It allows for easy extension of functionality in derived classes
-   * without modifying the base MatrixClient implementation.
-   *
-   * @param roomId The ID of the room where the command was received
-   * @param command The full command string, including the leading '!'
-   * @param event The original Matrix event object
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected handleCommand(roomId: string, command: string, event?: MatrixEvent) {
-    // Default implementation does nothing
-    // Subclasses should override this method to provide command handling
-  }
-
-  public async sendMessage(roomId: string, message: string) {
+  public async sendMessage(roomId: string, formatted: string, plain = formatted) {
     const content: any = {
       msgtype: MsgType.Text,
-      body: message,
+      body: plain,
       format: 'org.matrix.custom.html',
-      formatted_body: message,
+      formatted_body: formatted,
     };
 
     await this.client.sendMessage(roomId, content);
