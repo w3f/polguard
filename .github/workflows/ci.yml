@@ -6,7 +6,7 @@
 #                          workflow_dispatch (hermetic: build → kind load →
 #                          test, nothing is pushed) for pre-merge coverage.
 #   • main (trusted)    ⇒ push :sha → e2e against that exact image → only then
-#                          promote main/latest and publish Helm charts.
+#                          promote main/latest and publish the Helm chart.
 #   • Release tags vX.Y.Z ⇒ retag the tested :sha → :vX.Y.Z + GitHub Release.
 #
 #  Shared e2e steps live in the reusable .github/workflows/e2e.yml.
@@ -141,23 +141,15 @@ jobs:
             -t "${IMAGE}:latest" \
             "${IMAGE}:${GITHUB_SHA}"
 
-  publish-charts:
-    name: Publish Helm charts
+  publish-chart:
+    name: Publish Helm chart
     if: ${{ github.ref == 'refs/heads/main' }}
     needs: [e2e-main]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Install Helm
-        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
-        with:
-          version: v3.17.3
-      - name: Publish Helm chart
-        env:
-          HELM_CHARTS_TOKEN: ${{ secrets.HELM_CHARTS_TOKEN }}
-        run: |
-          chmod +x deployment/publish-chart.sh
-          ./deployment/publish-chart.sh w3f/helm-charts
+    uses: w3f/helm-charts/.github/workflows/publish-chart.yml@master
+    with:
+      chart-path: deployment/chart
+    secrets:
+      HELM_CHARTS_TOKEN: ${{ secrets.HELM_CHARTS_TOKEN }}
 
   release-tag:
     name: Release tag
