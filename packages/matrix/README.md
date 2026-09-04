@@ -1,23 +1,22 @@
 # @w3f/polguard-matrix
 
-The Matrix service delivers incident notifications to Matrix rooms and provides a bot interface for incident management. It receives notification requests from the Incident service and enables team interaction via bot commands.
+The Matrix service is PolGuard's bot in Matrix. It logs in as a Matrix user, posts the messages other services hand it over HTTP into the rooms they name, and answers commands typed in those rooms: acknowledging, listing, querying and resolving incidents through the Incident service.
 
-## Key Features
-
-- **Notification Delivery**: Sends incident notifications to Matrix rooms
-- **Bot Commands**: Interactive incident management via Matrix chat
-- **Incident Acknowledgment**: Allows users to acknowledge incidents directly from Matrix
-- **Incident Queries**: Support for querying and debugging incidents
+The Incident service is the main source of messages. The Payouts service and Prometheus Alertmanager can post through the same endpoints.
 
 ## API Endpoints
 
-### Notifications
-- `POST /notifications` — Send notification to Matrix room
+The target room is part of the URL: a Matrix room id such as `!abc:example.org`, URL-encoded. Room aliases are not accepted.
 
-### Health
+- `POST /notifications/:roomId` — body `{ "message": "<html>" }`, delivered as is
+- `POST /notifications/:roomId/alertmanager` — an [Alertmanager webhook payload](https://prometheus.io/docs/alerting/latest/configuration/#webhook_config), rendered in the incident message layout
 - `GET /health` — Health check
 
+Delivery failures answer 502; invalid input answers 400. There is no authentication: the service is meant to be reachable only inside the cluster.
+
 ## Bot Commands
+
+Available when `incidents.url` is configured. Without it the service does not read room messages at all and only sends.
 
 ### Core Commands
 - `!show <id>` — Show incident message for specific incident
@@ -52,7 +51,9 @@ The bot supports two mutually exclusive auth modes:
 - **`passwordAuth`**: logs in fresh on each start and communicates over end-to-end encryption. Provide the password via `MATRIX_PASSWORD`. To avoid clients flagging the bot's messages as *"Encrypted by a device not verified by its owner"*, also set `MATRIX_RECOVERY_KEY` — the account's Secure Backup (4S) recovery key, created once in a client such as Element.
 - **`tokenAuth`** (dev/CI flow): reuses a fixed session (`accessToken` + `deviceId`) and runs in plaintext — no encryption, no device pruning, and no recovery key needed. The access token can also be provided via `MATRIX_TOKEN`.
 
-Set the top-level `matrix.pruneOtherDevices: true` to delete the account's other devices on startup (opt-in, default off)
+### Devices
+
+Each start with `passwordAuth` creates a new Matrix device. `matrix.pruneDevicesLabeled` is any label you choose: the new device is registered under it, and on startup the account's other devices with the same label are deleted. Several instances can share one account, each cleaning up only its own predecessors.
 
 ## Telemetry
 
