@@ -148,12 +148,8 @@ describe('Incident API (integration)', () => {
 
     it('returns before delivery completes and delivers in the background', async () => {
       let release: () => void = () => {};
-      sendMock().mockImplementationOnce(
-        () =>
-          new Promise<boolean>(resolve => {
-            release = () => resolve(true);
-          }),
-      );
+      const sent = new Promise<boolean>(resolve => (release = () => resolve(true)));
+      sendMock().mockImplementationOnce(() => sent);
 
       const res = await postIncident(createOngoingIncident());
       expect(res.statusCode).toBe(201);
