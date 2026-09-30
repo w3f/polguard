@@ -142,4 +142,4 @@ npx papi add assetHubPolkadot -n polkadot_asset_hub  # add a descriptor
 npx papi                                             # regenerate after metadata changes
 ```
 
-New descriptors also need an entry in `src/service/papi-descriptors.ts` and a `Chain` enum value in `@w3f/polguard-common`.
+New descriptors also need an entry in `src/service/papi.ts` and a `Chain` enum value in `@w3f/polguard-common`.

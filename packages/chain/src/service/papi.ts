@@ -1,5 +1,8 @@
 import { Chain } from '@w3f/polguard-common';
+import type { AppLogger } from '@w3f/polguard-common';
+import { createClient } from 'polkadot-api';
 import type { PolkadotClient } from 'polkadot-api';
+import { getWsProvider, WsEvent } from 'polkadot-api/ws';
 import {
   assetHubPolkadot,
   assetHubKusama,
@@ -39,4 +42,39 @@ export function getTypedApi(client: PolkadotClient, chain: Chain) {
     throw new Error(`No PAPI descriptor found for chain: ${chain}`);
   }
   return client.getUnsafeApi<typeof descriptor>();
+}
+
+/**
+ * Connects to the RPC and verifies it serves `chain`, by comparing genesis hashes.
+ *
+ * `getWsProvider` reconnects by itself on socket-level failures (error, close, ~40s heartbeat
+ * stale), rotating through the endpoint list. A connection that reconnects but never delivers
+ * blocks again is not visible at this layer; `WatcherService`'s stall guard covers that.
+ */
+export async function connectChain(
+  endpoints: string | string[],
+  logger: AppLogger,
+  chain: Chain,
+): Promise<PolkadotClient> {
+  const provider = getWsProvider(endpoints, {
+    onStatusChanged: status => {
+      const uri = 'uri' in status ? ` (${status.uri})` : '';
+      const reason = status.type === WsEvent.ERROR && status.event?.type ? ` (${status.event.type})` : '';
+      logger.info(`RPC status: ${status.type}${uri}${reason}`);
+    },
+  });
+  const client = createClient(provider);
+  const rpc = [endpoints].flat().join(', ');
+
+  const expectedGenesis = CHAIN_DESCRIPTORS[chain]?.genesis;
+  const { genesisHash } = await client.getChainSpecData();
+  if (genesisHash !== expectedGenesis) {
+    client.destroy();
+    throw new Error(
+      `RPC ${rpc} does not serve ${chain}: its genesis hash is ${genesisHash}, expected ${expectedGenesis}`,
+    );
+  }
+
+  logger.info(`Connected to RPC: ${rpc}`);
+  return client;
 }

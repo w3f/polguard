@@ -7,15 +7,17 @@ import { ChainWatcher } from '../../lib/watcher';
 import { IncidentHandler } from '../../lib/incident-handler';
 import { createChainDataProvider } from '../../lib/data-provider';
 import { getMonitoringGroups } from '@w3f/polguard-config';
-import { getTypedApi } from '../papi-descriptors';
-import { ChainConnection } from '../chain-connection';
+import { connectChain, getTypedApi } from '../papi';
 
 export class WatcherService {
-  private conn: ChainConnection;
   private client: PolkadotClient;
   private watcher: ChainWatcher;
   private persistenceInterval: NodeJS.Timeout;
-  private restarting = false;
+  private stallGuard: NodeJS.Timeout;
+
+  private static readonly STALL_CHECK_INTERVAL_MS = 30_000;
+  private static readonly REBUILD_AFTER_MS = 2 * 60_000;
+  private static readonly EXIT_AFTER_MS = 10 * 60_000;
 
   constructor(
     private readonly logger: AppLogger,
@@ -27,6 +29,15 @@ export class WatcherService {
 
   async start(): Promise<void> {
     const chain = this.config.getChain();
+
+    // Published before connecting, so ProcessingStoppedAlert keeps its series when the RPC never answers.
+    const watermark = await this.store.getLastBlock(chain);
+    if (watermark !== null) {
+      this.telemetry.recordProcessedBlock(watermark);
+    }
+
+    // Started before the first connect, so a connection that never initialises is covered too.
+    this.startStallGuard();
 
     // Config `startBlock` is a one-time bootstrap override; rebuilds resume from the Store watermark.
     await this.buildAndStart(this.config.getStartBlock());
@@ -53,8 +64,7 @@ export class WatcherService {
     const rpc = this.config.getRpcUrl();
     const configsDir = this.config.getMonitoringConfigsDir();
 
-    this.conn = await ChainConnection.connect(rpc, this.logger, { expectedSpecName: chainProps.specName });
-    this.client = this.conn.client;
+    this.client = await connectChain(rpc, this.logger, chain);
 
     const runtimeClient = getTypedApi(this.client, chain);
     const chainDataProvider = createChainDataProvider(
@@ -81,14 +91,39 @@ export class WatcherService {
     );
 
     await this.watcher.start(startBlock);
+  }
 
-    // Guards against a stuck RPC connection: on stall, rebuild the whole connection.
-    this.conn.startStuckGuard(
-      () => this.watcher?.getLastProcessedBlock(),
-      () => {
-        void this.restart();
-      },
-    );
+  /**
+   * Heals a stall in block progress: one in-process rebuild first, then a process exit for the
+   * orchestrator to restart. The guard outlives the connection, so a rebuild that hangs cannot
+   * disable it. The throw reaches the process-level handler in `main.ts`, which exits cleanly.
+   */
+  private startStallGuard(): void {
+    let lastProgress: number | undefined;
+    let lastProgressAt = Date.now();
+    let rebuilt = false;
+
+    this.stallGuard = setInterval(() => {
+      const current = this.watcher?.getLastProcessedBlock();
+      if (current !== undefined && current !== lastProgress) {
+        lastProgress = current;
+        lastProgressAt = Date.now();
+        rebuilt = false;
+        return;
+      }
+
+      const stalledMs = Date.now() - lastProgressAt;
+      if (stalledMs > WatcherService.EXIT_AFTER_MS) {
+        throw new Error(`No block progress in over ${WatcherService.EXIT_AFTER_MS}ms (stuck at ${current})`);
+      }
+      if (stalledMs > WatcherService.REBUILD_AFTER_MS && !rebuilt) {
+        rebuilt = true;
+        this.logger.error(
+          `No block progress in over ${WatcherService.REBUILD_AFTER_MS}ms (stuck at ${current}). Rebuilding connection...`,
+        );
+        void this.rebuild();
+      }
+    }, WatcherService.STALL_CHECK_INTERVAL_MS);
   }
 
   /**
@@ -98,21 +133,15 @@ export class WatcherService {
    * `startBlock`. If the rebuild itself fails, the rejection surfaces to the process-level handler in
    * `main.ts`, which exits cleanly for the orchestrator to restart.
    */
-  private async restart(): Promise<void> {
-    if (this.restarting) return;
-    this.restarting = true;
-    try {
-      this.logger.warn('Rebuilding chain connection after stall...');
-      await this.watcher.stop();
-      this.conn.destroy();
-      await this.buildAndStart();
-      this.logger.info('Chain connection rebuilt.');
-    } finally {
-      this.restarting = false;
-    }
+  private async rebuild(): Promise<void> {
+    await this.watcher?.stop();
+    this.client?.destroy();
+    await this.buildAndStart();
+    this.logger.info('Chain connection rebuilt.');
   }
 
   async stop(): Promise<void> {
+    clearInterval(this.stallGuard);
     try {
       if (this.persistenceInterval) {
         clearInterval(this.persistenceInterval);
@@ -129,7 +158,7 @@ export class WatcherService {
       this.logger.error(`Failed to flush last processed block: ${(error as Error).message}`);
     } finally {
       await this.watcher?.stop();
-      this.conn?.destroy();
+      this.client?.destroy();
     }
   }
 }
