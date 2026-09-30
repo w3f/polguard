@@ -191,7 +191,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Blocks behind per pod = latest block on chain - last block processed. Shows which pod is lagging over time, without switching chains/pods. Both values come from the same RPC connection, so the line freezes (often at 0) when that connection stalls; ProcessingStoppedAlert covers that case.",
+      "description": "Blocks behind per pod = latest block on chain - last block processed. Shows which pod is lagging over time, without switching chains/pods.",
       "fieldConfig": {
         "defaults": {
           "color": {

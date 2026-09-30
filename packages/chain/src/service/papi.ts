@@ -46,10 +46,6 @@ export function getTypedApi(client: PolkadotClient, chain: Chain) {
 
 /**
  * Connects to the RPC and verifies it serves `chain`, by comparing genesis hashes.
- *
- * `getWsProvider` reconnects by itself on socket-level failures (error, close, ~40s heartbeat
- * stale), rotating through the endpoint list. A connection that reconnects but never delivers
- * blocks again is not visible at this layer; `WatcherService`'s stall guard covers that.
  */
 export async function connectChain(
   endpoints: string | string[],

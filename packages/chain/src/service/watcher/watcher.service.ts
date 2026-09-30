@@ -30,13 +30,11 @@ export class WatcherService {
   async start(): Promise<void> {
     const chain = this.config.getChain();
 
-    // Published before connecting, so ProcessingStoppedAlert keeps its series when the RPC never answers.
     const watermark = await this.store.getLastBlock(chain);
     if (watermark !== null) {
       this.telemetry.recordProcessedBlock(watermark);
     }
 
-    // Started before the first connect, so a connection that never initialises is covered too.
     this.startStallGuard();
 
     // Config `startBlock` is a one-time bootstrap override; rebuilds resume from the Store watermark.
@@ -95,8 +93,7 @@ export class WatcherService {
 
   /**
    * Heals a stall in block progress: one in-process rebuild first, then a process exit for the
-   * orchestrator to restart. The guard outlives the connection, so a rebuild that hangs cannot
-   * disable it. The throw reaches the process-level handler in `main.ts`, which exits cleanly.
+   * orchestrator to restart.
    */
   private startStallGuard(): void {
     let lastProgress: number | undefined;
