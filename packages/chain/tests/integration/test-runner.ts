@@ -6,8 +6,7 @@ import { Chain, MonitorType, MonitoringGroup, MessengerType, getChainProperties 
 import { LoggerAdapter, TestIncidentHandler, colors } from './test-utils';
 import { InMemoryStore } from '../../src/service/store/in-memory.store';
 import type { PolkadotClient } from 'polkadot-api';
-import { getTypedApi } from '../../src/service/papi-descriptors';
-import { ChainConnection } from '../../src/service/chain-connection';
+import { connectChain, getTypedApi } from '../../src/service/papi';
 
 export interface TestCase {
   chain: Chain;
@@ -120,8 +119,7 @@ export class TestRunner {
   ): Promise<TestResult[]> {
     console.log(`\n${colors.cyan}Running ${testCases.length} tests for ${chain}...${colors.reset}`);
     console.log(`Connecting to ${chain} at ${[rpcEndpoints].flat().join(', ')}`);
-    const conn = await ChainConnection.connect(rpcEndpoints, new LoggerAdapter(console, debug));
-    const client = conn.client;
+    const client = await connectChain(rpcEndpoints, new LoggerAdapter(console, debug), chain);
 
     try {
       const concurrencyLimit = 5;
@@ -136,7 +134,7 @@ export class TestRunner {
       return results;
     } finally {
       console.log(`Disconnecting from ${chain}`);
-      conn.destroy();
+      client.destroy();
     }
   }
 

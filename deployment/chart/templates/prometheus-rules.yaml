@@ -22,7 +22,7 @@ spec:
             severity: warning
           annotations:
             summary: The last processed block is more than {{ $behindBlocks }} blocks behind the latest block on the chain.
-            description: "Chain {{`{{ $labels.chain }}`}} (pod {{`{{ $labels.pod }}`}}): The last processed block is {{`{{ $value }}`}} behind the latest block on the chain."
+            description: "Chain {{`{{ $labels.chain }}`}} (pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}}): The last processed block is {{`{{ $value }}`}} behind the latest block on the chain."
         - alert: ProcessingStoppedAlert
           expr: "changes(polguard_chain_last_block_processed{namespace=\"{{ .Release.Namespace }}\"}[15m]) == 0"
           # `for` rides out the first scrapes after a restart, when the 15m window holds a single sample.
@@ -31,5 +31,5 @@ spec:
             severity: warning
           annotations:
             summary: The chain service has not processed a new block in more than 15 minutes.
-            description: "Chain {{`{{ $labels.chain }}`}} (pod {{`{{ $labels.pod }}`}}): The chain service has not processed a new block in more than 15 minutes."
+            description: "Chain {{`{{ $labels.chain }}`}} (pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}}): The chain service has not processed a new block in more than 15 minutes."
 {{- end }}

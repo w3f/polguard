@@ -300,7 +300,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Block processing time broken down per pod (instead of aggregated per chain). Each A/B/C storage query engine runs in its own pod, so compare pods side by side.",
+      "description": "Block processing time broken down per pod (instead of aggregated per chain). Shown only while blocks are being processed; a gap means the pod processed no block in the last 5 minutes.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -383,8 +383,8 @@
             "uid": "prometheus"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "max by(chain, pod) (polguard_chain_block_processing_time{namespace=\"$namespace\", chain=~\"$chain\", pod=~\"$pod\"})",
+          "editorMode": "code",
+          "expr": "max by(chain, pod) (polguard_chain_block_processing_time{namespace=\"$namespace\", chain=~\"$chain\", pod=~\"$pod\"}) and on(chain, pod) changes(polguard_chain_last_block_processed{namespace=\"$namespace\", chain=~\"$chain\", pod=~\"$pod\"}[5m]) > 0",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
